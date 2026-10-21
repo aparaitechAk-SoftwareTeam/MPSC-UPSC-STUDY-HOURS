@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "name": "Abhyas Tracker",
+    "slug": "abhyas-tracker",
+    "scheme": "abhyas",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.aparaitech.abhyastracker"
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}
