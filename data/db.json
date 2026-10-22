@@ -1,0 +1,22 @@
+{
+  "users": [
+    {
+      "id": "1792569268259zojir",
+      "name": "Disha",
+      "email": "student@abhyas.local",
+      "role": "student",
+      "passwordHash": "$2a$10$x471U6L40a1rfwAzYlqUzOsO3V1zL0W4FkPyYr7jWTYgm4MAjNX4e"
+    },
+    {
+      "id": "1792569268375scczp",
+      "name": "Admin",
+      "email": "admin@abhyas.local",
+      "role": "admin",
+      "passwordHash": "$2a$10$Wwb9mjLRrHSmF6mu3gjlRuQi.uWg/Ot3sm3qT6Ufl4MZRCG1Ig/1m"
+    }
+  ],
+  "subjects": [],
+  "plans": [],
+  "sessions": [],
+  "notifications": []
+}
