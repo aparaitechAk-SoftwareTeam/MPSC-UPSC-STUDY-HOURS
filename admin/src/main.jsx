@@ -190,7 +190,6 @@ function App() {
           <div className="space-y-1.5">
             <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">Email Address</label>
             <input
-              id="login-email"
               type="email"
               value={email}
               placeholder="admin@abhyas.local"
@@ -203,7 +202,6 @@ function App() {
           <div className="space-y-1.5">
             <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">Password</label>
             <input
-              id="login-password"
               type="password"
               value={password}
               placeholder="••••••••••••"
@@ -214,7 +212,6 @@ function App() {
           </div>
 
           <button
-            id="login-submit"
             type="submit"
             disabled={isSubmitting}
             className="w-full mt-2 py-2.5 px-4 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm transition-colors disabled:opacity-50"

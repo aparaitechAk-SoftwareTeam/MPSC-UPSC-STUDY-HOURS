@@ -37,7 +37,7 @@ export function SignOutDialog({ open, onOpenChange, onSignOut }) {
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction id="confirm-sign-out-btn" className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={async () => {
+          <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={async () => {
             try {
                 localStorage.removeItem("abhyas_admin_token");
                 localStorage.removeItem("abhyas_admin_profile");
@@ -81,7 +81,7 @@ function Sidebar({ onNavigate, onSignOut }) {
         <Link to="/settings" onClick={onNavigate} className={itemCls} activeProps={{ className: activeCls }}>
           <Settings className="h-[18px] w-[18px]"/> Settings
         </Link>
-        <button id="sidebar-sign-out-btn" type="button" onClick={() => setSignOut(true)} className={cn(itemCls, "text-left")}>
+        <button type="button" onClick={() => setSignOut(true)} className={cn(itemCls, "text-left")}>
           <LogOut className="h-[18px] w-[18px]"/> Sign Out
         </button>
       </div>
