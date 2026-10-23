@@ -19,6 +19,7 @@ const COLORS = {
   line: '#E8EEF8',
 };
 
+
 export default function Timer({
   elapsed = 0,
   running = false,
@@ -35,9 +36,18 @@ export default function Timer({
   customMinutes = 30,
   setCustomMinutes,
   focusMode = false,
-setFocusMode,
-requestExitFocus,
+  zenMode='Light Zen',
+  setZenMode,
+  deepZenUnlocked=false,
+  setDeepZenUnlocked,
+  setFocusMode,
+  requestExitFocus,
 }) {
+  const deepZenLocked =
+  focusMode &&
+  zenMode === 'Deep Zen' &&
+  !deepZenUnlocked;
+
   const formatTime = (totalSeconds) => {
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = totalSeconds % 60;
@@ -55,6 +65,9 @@ requestExitFocus,
       );
       return;
     }
+    if (nextMode === 'Stopwatch' && zenMode === 'Deep Zen') {
+    setZenMode?.('Light Zen');
+  }
 
     setMode?.(nextMode);
   };
@@ -63,12 +76,18 @@ requestExitFocus,
     <View style={styles.container}>
         
 {focusMode ? (
-  <TouchableOpacity
-    style={styles.focusButton}
-    onPress={requestExitFocus}
-  >
-    <Text style={styles.focusButtonText}>Exit Focus Mode</Text>
-  </TouchableOpacity>
+  deepZenLocked ? (
+    <Text style={styles.subtitle}>
+      Deep Zen is locked. Complete the countdown to exit Focus Mode.
+    </Text>
+  ) : (
+    <TouchableOpacity
+      style={styles.focusButton}
+      onPress={requestExitFocus}
+    >
+      <Text style={styles.focusButtonText}>Exit Focus Mode</Text>
+    </TouchableOpacity>
+  )
 ) : (
   <TouchableOpacity
     style={styles.focusButton}
@@ -82,7 +101,48 @@ requestExitFocus,
       <Text style={styles.subtitle}>
         Track your study sessions and stay consistent.
       </Text>
+      <Text style={[styles.label, { marginTop: 18 }]}>
+  FOCUS STYLE
+</Text>
 
+<View style={styles.modeRow}>
+  {['Light Zen', 'Deep Zen'].map((item) => {
+    const unavailable = mode === 'Stopwatch' && item === 'Deep Zen';
+
+    return (
+      <TouchableOpacity
+        key={item}
+        style={[
+          styles.modeButton,
+          zenMode === item && styles.activeMode,
+          unavailable && { opacity: 0.4 },
+        ]}
+        disabled={unavailable || running || elapsed > 0 || saving}
+        onPress={() => {
+  setDeepZenUnlocked?.(false);
+  setZenMode?.(item);
+}}
+      >
+        <Text
+          style={[
+            styles.modeText,
+            zenMode === item && styles.activeModeText,
+          ]}
+        >
+          {item}
+        </Text>
+      </TouchableOpacity>
+    );
+  })}
+</View>
+
+<Text style={styles.subtitle}>
+  {mode === 'Stopwatch'
+    ? 'Stopwatch supports Light Zen only.'
+    : zenMode === 'Deep Zen'
+    ? 'Deep Zen is designed to keep you focused until the countdown ends.'
+    : 'Light Zen lets you leave Focus Mode whenever you need.'}
+</Text>
       <View style={styles.modeRow}>
         {['Pomodoro', 'Stopwatch', 'Custom'].map((item) => (
           <TouchableOpacity
@@ -218,16 +278,19 @@ requestExitFocus,
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.secondaryButton}
-          disabled={saving}
+          style={[styles.secondaryButton,
+            deepZenLocked && styles.disabledButton,]
+          }
+          disabled={saving || deepZenLocked}
           onPress={finish}
         >
           <Text style={styles.secondaryText}>Finish & Save Session</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.resetButton}
-          disabled={saving}
+          style={[styles.resetButton,
+            deepZenLocked && styles.disabledButton,]}
+          disabled={saving || deepZenLocked}
           onPress={resetSession}
         >
           <Text style={styles.resetText}>Reset Timer</Text>

@@ -16,10 +16,101 @@ app.get('/api/plan',auth(),(req,res)=>res.json(read().plans.filter(x=>x.userId==
 app.post('/api/plan',auth(),(req,res)=>{const {title,minutes,date,subjectId}=req.body;if(!title||!Number.isFinite(Number(minutes))||Number(minutes)<=0)return res.status(400).json({error:'Title and positive minutes required'});const db=read();const obj={id:Date.now().toString(),userId:req.user.id,title,minutes:Number(minutes),date:date||new Date().toISOString().slice(0,10),subjectId:subjectId||null,done:false};db.plans.push(obj);save(db);res.status(201).json(obj)});
 app.patch('/api/plan/:id',auth(),(req,res)=>{const db=read(),x=db.plans.find(x=>x.id===req.params.id&&x.userId===req.user.id);if(!x)return res.status(404).json({error:'Not found'});x.done=!!req.body.done;save(db);res.json(x)});
 app.get('/api/sessions',auth(),(req,res)=>res.json(read().sessions.filter(x=>x.userId===req.user.id).sort((a,b)=>b.startedAt.localeCompare(a.startedAt))));
-app.post('/api/sessions',auth(),(req,res)=>{const {subjectId,minutes,mode,focusScore}=req.body;const m=Number(minutes);if(!Number.isFinite(m)||m<=0||m>1440)return res.status(400).json({error:'Minutes must be 1–1440'});const db=read();const obj={id:Date.now().toString(),userId:req.user.id,subjectId:subjectId||null,minutes:m,mode:mode||'Pomodoro',focusScore:Math.min(100,Math.max(0,Number(focusScore)||90)),startedAt:new Date().toISOString()};db.sessions.push(obj);save(db);res.status(201).json(obj)});
+app.post('/api/sessions',auth(),(req,res)=>{const {subjectId,minutes,mode,focusScore}=req.body;const m=Number(minutes);if(!Number.isFinite(m)||m<=0||m>1440)return res.status(400).json({error:'Minutes must be 1â€“1440'});const db=read();const obj={id:Date.now().toString(),userId:req.user.id,subjectId:subjectId||null,minutes:m,mode:mode||'Pomodoro',focusScore:Math.min(100,Math.max(0,Number(focusScore)||90)),startedAt:new Date().toISOString()};db.sessions.push(obj);save(db);res.status(201).json(obj)});
 app.get('/api/notifications',auth(),(req,res)=>res.json(read().notifications.filter(x=>x.userId===req.user.id||x.userId==='all')));
 app.patch('/api/notifications/:id/read',auth(),(req,res)=>{const db=read(),n=db.notifications.find(x=>x.id===req.params.id&&(x.userId===req.user.id||x.userId==='all'));if(!n)return res.status(404).json({error:'Not found'});n.readBy=n.readBy||[];if(!n.readBy.includes(req.user.id))n.readBy.push(req.user.id);save(db);res.json(n)});
-app.get('/api/analytics',auth(),(req,res)=>{const sessions=read().sessions.filter(s=>s.userId===req.user.id),minutes=sessions.reduce((a,x)=>a+x.minutes,0),focus=sessions.length?Math.round(sessions.reduce((a,x)=>a+x.focusScore,0)/sessions.length):0;res.json({sessionCount:sessions.length,totalMinutes:minutes,averageFocus:focus,weekly:sessions.slice(-7).map(s=>({date:s.startedAt.slice(0,10),minutes:s.minutes}))})});
+app.get('/api/analytics',auth(),(req,res)=>{
+  const db=read();
+  const sessions=db.sessions.filter(s=>s.userId===req.user.id);
+  const totalMinutes=sessions.reduce((sum,s)=>sum+(Number(s.minutes)||0),0);
+  const averageFocus=sessions.length?Math.round(sessions.reduce((sum,s)=>sum+(Number(s.focusScore)||0),0)/sessions.length):0;
+  const today=new Date();
+  const dates=Array.from({length:30},(_,i)=>{
+    const d=new Date(Date.UTC(today.getUTCFullYear(),today.getUTCMonth(),today.getUTCDate()-29+i));
+    return {date:d.toISOString().slice(0,10),minutes:0};
+  });
+  const dailyMap=new Map(dates.map(d=>[d.date,d]));
+  const recentSessions=sessions.filter(s=>s.startedAt&&dailyMap.has(s.startedAt.slice(0,10)));
+  recentSessions.forEach(s=>{
+    const day=dailyMap.get(s.startedAt.slice(0,10));
+    day.minutes+=Number(s.minutes)||0;
+  });
+  const subjectMap=new Map();
+  const subjectNames=new Map((db.subjects||[]).map(s=>[s.id,s.name]));
+  recentSessions.forEach(s=>{
+    const id=s.subjectId||'unassigned';
+    const item=subjectMap.get(id)||{subjectId:id,name:subjectNames.get(id)||'Unassigned',minutes:0,sessions:0};
+    item.minutes+=Number(s.minutes)||0;
+    item.sessions+=1;
+    subjectMap.set(id,item);
+  });
+  res.json({
+    sessionCount:sessions.length,
+    totalMinutes,
+    averageFocus,
+    averageSessionMinutes:sessions.length?Math.round(totalMinutes/sessions.length):0,
+    weekly:dates.slice(-7),
+    daily:dates,
+    subjectBreakdown:Array.from(subjectMap.values()).sort((a,b)=>b.minutes-a.minutes),
+    recentSessions:sessions.slice().sort((a,b)=>(b.startedAt||'').localeCompare(a.startedAt||'')).slice(0,10)
+  });
+});
+app.get('/api/admin/analytics',auth('admin'),(req,res)=>{
+  const db=read();
+  const today=new Date().toISOString().slice(0,10);
+  const defaultFrom=new Date(Date.now()-29*86400000).toISOString().slice(0,10);
+  const from=String(req.query.from||defaultFrom);
+  const to=String(req.query.to||today);
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(from)||!/^\d{4}-\d{2}-\d{2}$/.test(to)||from>to||from>today||to<"2000-01-01"){
+    return res.status(400).json({error:'Invalid date range'});
+  }
+  const subjectsById=new Map(db.subjects.map(s=>[String(s.id),s.name]));
+  const sessions=db.sessions.filter(s=>{
+    const date=String(s.startedAt||'').slice(0,10);
+    return date>=from&&date<=to;
+  }).map(s=>({
+    id:s.id,
+    subjectId:s.subjectId||null,
+    subject:subjectsById.get(String(s.subjectId))||'Unassigned',
+    minutes:Number(s.minutes)||0,
+    mode:s.mode||'Pomodoro',
+    focusScore:Number(s.focusScore)||0,
+    startedAt:s.startedAt
+  })).sort((a,b)=>String(b.startedAt).localeCompare(String(a.startedAt)));
+  const totalMinutes=sessions.reduce((sum,s)=>sum+s.minutes,0);
+  const dailyMap=new Map();
+  for(const s of sessions){
+    const date=s.startedAt.slice(0,10);
+    dailyMap.set(date,(dailyMap.get(date)||0)+s.minutes);
+  }
+  const daily=[];
+  for(let d=new Date(from+'T12:00:00Z'),end=new Date(to+'T12:00:00Z');d<=end;d.setUTCDate(d.getUTCDate()+1)){
+    const date=d.toISOString().slice(0,10);
+    daily.push({date,minutes:dailyMap.get(date)||0,hours:Number(((dailyMap.get(date)||0)/60).toFixed(2))});
+  }
+  const subjectMap=new Map();
+  for(const s of sessions){
+    const current=subjectMap.get(s.subject)||{subject:s.subject,sessions:0,minutes:0};
+    current.sessions++;
+    current.minutes+=s.minutes;
+    subjectMap.set(s.subject,current);
+  }
+  const subjectBreakdown=[...subjectMap.values()].sort((a,b)=>b.minutes-a.minutes);
+  res.json({
+    range:{from,to},
+    summary:{
+      totalStudents:db.users.filter(u=>u.role!=='admin').length,
+      totalSessions:sessions.length,
+      totalMinutes,
+      totalHours:Number((totalMinutes/60).toFixed(2)),
+      averageFocus:sessions.length?Math.round(sessions.reduce((sum,s)=>sum+s.focusScore,0)/sessions.length):0,
+      averageSessionMinutes:sessions.length?Math.round(totalMinutes/sessions.length):0
+    },
+    daily,
+    subjectBreakdown,
+    sessions:sessions.slice(0,100)
+  });
+});
 app.get('/api/admin/overview',auth('admin'),(req,res)=>{const db=read();res.json({users:db.users.length,subjects:db.subjects.length,sessions:db.sessions.length,minutes:db.sessions.reduce((a,s)=>a+s.minutes,0)})});
 app.get('/api/admin/users',auth('admin'),(req,res)=>res.json(read().users.map(publicUser)));
 app.get('/api/admin/subjects',auth('admin'),(req,res)=>res.json(read().subjects));

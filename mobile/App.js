@@ -9,7 +9,8 @@ import {
   SafeAreaView,
   ActivityIndicator,
   Alert,
-  Platform
+  Platform,
+  NativeModules
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Svg, { Circle } from 'react-native-svg';
@@ -184,6 +185,10 @@ export default function App() {
   const [name, setName] = useState('');
   const [tab, setTab] = useState('Dashboard');
   const [focusMode, setFocusMode] = useState(false);
+  const [zenMode, setZenMode] = useState('Light Zen');
+  const [deepZenUnlocked, setDeepZenUnlocked] = useState(false);
+  const deepZenLocked =
+  focusMode && zenMode === 'Deep Zen' && !deepZenUnlocked;
 
   // Reset confirmation state belongs inside the App component.
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
@@ -194,6 +199,7 @@ export default function App() {
   const [plans, setPlans] = useState([]);
   const [notes, setNotes] = useState([]);
   const [analytics, setAnalytics] = useState({});
+  const [analyticsRange, setAnalyticsRange] = useState('7');
 
   const [elapsed, setElapsed] = useState(0);
   const [running, setRunning] = useState(false);
@@ -211,6 +217,36 @@ export default function App() {
   const activeStartedAt = useRef(null);
   const elapsedBase = useRef(0);
   const autoSaveTriggered = useRef(false);
+  const nativePinningActive = useRef(false);
+
+  // Android screen pinning for an active Deep Zen countdown.
+  useEffect(() => {
+    if (Platform.OS !== 'android' || !NativeModules.FocusLock) {
+      return;
+    }
+
+    const shouldPin =
+      deepZenLocked && (running || elapsed > 0);
+
+    if (shouldPin && !nativePinningActive.current) {
+      nativePinningActive.current = true;
+
+      NativeModules.FocusLock.startPinning().catch((error) => {
+        nativePinningActive.current = false;
+        console.warn('Deep Zen screen pinning failed:', error);
+        Alert.alert(
+          'Screen pinning unavailable',
+          'Android could not start screen pinning. Deep Zen app-switching restrictions may not be active.'
+        );
+      });
+    } else if (!shouldPin && nativePinningActive.current) {
+      nativePinningActive.current = false;
+
+      NativeModules.FocusLock.stopPinning().catch((error) => {
+        console.warn('Could not stop screen pinning:', error);
+      });
+    }
+  }, [deepZenLocked, running, elapsed]);
 
   
 async function req(route, method = 'GET', body, t = token) {
@@ -354,11 +390,12 @@ async function req(route, method = 'GET', body, t = token) {
 
         setElapsed(countdownSeconds);
         setRunning(false);
+        setDeepZenUnlocked(true);
 
         // Trigger the existing save flow once.
         if (!autoSaveTriggered.current) {
           autoSaveTriggered.current = true;
-          void finish();
+          void finish(true);
         }
 
         return;
@@ -467,7 +504,7 @@ function startSession() {
 
   // Open the in-app reset confirmation dialog.
   function resetSession() {
-    if (savingSession.current) return;
+    if (savingSession.current || deepZenLocked) return;
     setResetConfirmOpen(true);
   }
 
@@ -478,7 +515,7 @@ function startSession() {
 
   // Confirmed reset stops the timer and clears elapsed time.
   function confirmReset() {
-    if (savingSession.current) return;
+    if (savingSession.current || deepZenLocked) return;
 
     if (interval.current) {
       clearInterval(interval.current);
@@ -494,8 +531,8 @@ function startSession() {
   }
 
   // Save the session with a synchronous duplicate-submit guard.
-  async function finish() {
-    if (savingSession.current) return;
+  async function finish(automatic = false) {
+  if (savingSession.current || (deepZenLocked && !automatic)) return;
 
     const finalElapsed =
       elapsedBase.current +
@@ -725,11 +762,11 @@ function startSession() {
           marginBottom: 12
         }}
       >
-        <Chip label="🔥 14-Day Streak" active />
+        <Chip label="ðŸ”¥ 14-Day Streak" active />
         <Chip label="UPSC / MPSC 2026" />
       </View>
 
-      <Title sub="Your study sanctuary • One session at a time">
+      <Title sub="Your study sanctuary â€¢ One session at a time">
         Good morning, {user?.name?.split(' ')[0]}!
       </Title>
 
@@ -747,7 +784,7 @@ function startSession() {
         <Text style={txt(12, false, C.muted)}>Daily goal: 8h 00m</Text>
 
         <Button
-          label="▶ Start Studying Now"
+          label="â–¶ Start Studying Now"
           onPress={() => setTab('Timer')}
         />
       </Card>
@@ -755,7 +792,7 @@ function startSession() {
       <Card>
         <Text style={txt(15, true)}>Study Briefing & Prep</Text>
         <Text style={[txt(12, false, C.muted), { marginTop: 8 }]}>
-          Chapter 7 • Fundamental Rights
+          Chapter 7 â€¢ Fundamental Rights
         </Text>
         <Text style={[txt(20, true), { marginTop: 8 }]}>
           Target Focus Block: 1h 30m
@@ -788,7 +825,7 @@ function startSession() {
                 { marginTop: 12 }
               ]}
             >
-              Retention: 84% • SRS T2
+              Retention: 84% â€¢ SRS T2
             </Text>
           </View>
         </View>
@@ -849,7 +886,7 @@ function startSession() {
       <Card>
         <Text style={txt(15, true)}>Spaced Revision Queue</Text>
         <Button
-          label="Review Notifications →"
+          label="Review Notifications â†’"
           subtle
           onPress={() => setNotifOpen(true)}
         />
@@ -860,7 +897,7 @@ function startSession() {
           <Text style={txt(17, true)}>{subject.name}</Text>
 
           <Text style={[txt(12, false, C.muted), { marginTop: 5 }]}>
-            {subject.paper} • {subject.completed}/{subject.topics} topics
+            {subject.paper} â€¢ {subject.completed}/{subject.topics} topics
             mastered
           </Text>
 
@@ -896,7 +933,7 @@ function startSession() {
       </Title>
 
       <Card>
-        <Text style={txt(15, true)}>Today's Plan • {today()}</Text>
+        <Text style={txt(15, true)}>Today's Plan â€¢ {today()}</Text>
 
         <View style={{ flexDirection: 'row', marginTop: 12 }}>
           <Chip label="Today's Plan" active />
@@ -924,7 +961,7 @@ function startSession() {
             <View style={{ flex: 1 }}>
               <Text style={txt(15, true)}>{plan.title}</Text>
               <Text style={txt(12, false, C.muted)}>
-                {plan.date} • {plan.minutes} mins •{' '}
+                {plan.date} â€¢ {plan.minutes} mins â€¢{' '}
                 {plan.done ? 'Completed' : 'Scheduled'}
               </Text>
             </View>
@@ -960,95 +997,282 @@ function startSession() {
           {plans
             .filter(plan => plan.date === today() && !plan.done)
             .reduce((sum, plan) => sum + plan.minutes, 0)}{' '}
-          minutes planned today • 8h capacity
+          minutes planned today â€¢ 8h capacity
         </Text>
       </Card>
     </>
   );
 
-  const Analytics = () => (
-    <>
-      <Title sub="Study performance, retention and endurance trends">
-        Analytics & Focus Trends
-      </Title>
+  const Analytics = () => {
+    const allDaily = Array.isArray(analytics.daily) ? analytics.daily : [];
+    const chartDays = allDaily.slice(analyticsRange === '7' ? -7 : -30);
+    const visibleDates = new Set(chartDays.map(day => day.date));
+    const rangeSessions = sessions.filter(
+      session => session.startedAt && visibleDates.has(session.startedAt.slice(0, 10))
+    );
 
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-        <Chip label="This Week" active />
-        <Chip label="Last Week" />
-        <Chip label="This Month" />
-      </View>
+    const rangeMinutes = chartDays.reduce(
+      (sum, day) => sum + (Number(day.minutes) || 0),
+      0
+    );
+    const maxMinutes = Math.max(1, ...chartDays.map(day => Number(day.minutes) || 0));
+    const rangeFocus = rangeSessions.length
+      ? Math.round(
+          rangeSessions.reduce(
+            (sum, session) => sum + (Number(session.focusScore) || 0),
+            0
+          ) / rangeSessions.length
+        )
+      : 0;
+    const averageSession = rangeSessions.length
+      ? Math.round(rangeMinutes / rangeSessions.length)
+      : 0;
 
-      <View
-        style={{
-          flexDirection: 'row',
-          flexWrap: 'wrap',
-          gap: 10,
-          marginTop: 12,
-          marginBottom: 14
-        }}
-      >
-        {[
-          ['Logged Hours', `${Math.floor(total / 60)}h ${total % 60}m`],
-          ['Focus Quality', `${focus}%`],
-          ['Total Sessions', analytics.sessionCount || 0],
-          ['Daily Target', '8h 00m']
-        ].map(([label, value]) => (
-          <View
-            key={label}
-            style={[card, { width: '48%', marginBottom: 0 }]}
-          >
-            <Text style={txt(11, false, C.muted)}>{label}</Text>
-            <Text style={[txt(24, true), { marginTop: 15 }]}>
-              {value}
-            </Text>
-          </View>
-        ))}
-      </View>
+    const subjectTotals = rangeSessions.reduce((result, session) => {
+      const subject = subjects.find(item => item.id === session.subjectId);
+      const key = session.subjectId || 'unassigned';
+      if (!result[key]) {
+        result[key] = {
+          name: subject?.name || 'Unassigned',
+          minutes: 0,
+          count: 0
+        };
+      }
+      result[key].minutes += Number(session.minutes) || 0;
+      result[key].count += 1;
+      return result;
+    }, {});
+    const subjectRows = Object.values(subjectTotals).sort(
+      (a, b) => b.minutes - a.minutes
+    );
+    const formatMinutes = value => {
+      const minutes = Number(value) || 0;
+      const hours = Math.floor(minutes / 60);
+      const remainder = minutes % 60;
+      return hours ? `${hours}h ${remainder}m` : `${remainder}m`;
+    };
 
-      <Card>
-        <Text style={txt(16, true)}>Focus Quality Breakdown</Text>
+    return (
+      <>
+        <Title sub="Track your study time, consistency and subject-wise progress">
+          Study Analytics
+        </Title>
 
-        <View style={{ alignItems: 'center', padding: 20 }}>
-          <Ring value={focus} size={200} label="Focus purity" />
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 10 }}>
+          <Chip
+            label="This Week"
+            active={analyticsRange === '7'}
+            onPress={() => setAnalyticsRange('7')}
+          />
+          <Chip
+            label="This Month"
+            active={analyticsRange === '30'}
+            onPress={() => setAnalyticsRange('30')}
+          />
         </View>
 
-        <Text style={txt(12, false, C.muted)}>
-          Based on your recorded sessions. Weekly chart updates as you study.
-        </Text>
-      </Card>
-
-      <Card>
-        <Text style={txt(15, true)}>Session History</Text>
-
-        {sessions.length === 0 ? (
-          <Text>No sessions yet.</Text>
-        ) : (
-          sessions.map(session => (
+        <View
+          style={{
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            justifyContent: 'space-between',
+            marginBottom: 14
+          }}
+        >
+          {[
+            ['Study Time', formatMinutes(rangeMinutes)],
+            ['Sessions', rangeSessions.length],
+            ['Average Focus', `${rangeFocus}%`],
+            ['Avg. Session', formatMinutes(averageSession)]
+          ].map(([label, value]) => (
             <View
-              key={session.id}
+              key={label}
+              style={[card, { width: '48%', marginBottom: 10 }]}
+            >
+              <Text style={txt(11, false, C.muted)}>{label}</Text>
+              <Text style={[txt(22, true), { marginTop: 12 }]}>{value}</Text>
+            </View>
+          ))}
+        </View>
+
+        <Card>
+          <Text style={txt(16, true)}>Daily Study Time</Text>
+          <Text style={[txt(12, false, C.muted), { marginTop: 5, marginBottom: 18 }]}>
+            {analyticsRange === '7'
+              ? 'Minutes studied each day over the last 7 days'
+              : 'Minutes studied each day over the last 30 days'}
+          </Text>
+
+          {chartDays.length === 0 ? (
+            <Text style={txt(12, false, C.muted)}>
+              Daily analytics are not available yet. Refresh after the API is running.
+            </Text>
+          ) : (
+            <View
               style={{
-                paddingVertical: 13,
-                borderBottomWidth: 1,
-                borderColor: C.line
+                flexDirection: 'row',
+                alignItems: 'flex-end',
+                height: 155,
+                justifyContent: 'space-between'
               }}
             >
-              <Text style={txt(14, true)}>
-                {subjects.find(subject => subject.id === session.subjectId)
-                  ?.name || 'Study Session'}
-              </Text>
+              {chartDays.map((day, index) => {
+                const minutes = Number(day.minutes) || 0;
+                const barHeight = minutes > 0
+                  ? Math.max(5, (minutes / maxMinutes) * 105)
+                  : 3;
+                const date = new Date(`${day.date}T12:00:00`);
+                const label = analyticsRange === '7'
+                  ? date.toLocaleDateString(undefined, { weekday: 'short' })
+                  : date.getDate() % 5 === 0 || index === 0
+                    ? String(date.getDate())
+                    : '';
 
-              <Text style={txt(12, false, C.muted)}>
-                {session.minutes} mins • {session.focusScore}% focus •{' '}
-                {session.startedAt
-                  ? new Date(session.startedAt).toLocaleDateString()
-                  : 'Date unavailable'}
-              </Text>
+                return (
+                  <View
+                    key={day.date}
+                    style={{
+                      flex: 1,
+                      alignItems: 'center',
+                      justifyContent: 'flex-end',
+                      height: '100%'
+                    }}
+                  >
+                    {minutes > 0 && analyticsRange === '7' && (
+                      <Text style={txt(9, false, C.muted)}>
+                        {minutes}
+                      </Text>
+                    )}
+                    <View
+                      style={{
+                        width: analyticsRange === '7' ? '55%' : '65%',
+                        maxWidth: 18,
+                        height: barHeight,
+                        borderRadius: 5,
+                        backgroundColor: minutes > 0 ? C.blue : C.soft,
+                        marginTop: 5
+                      }}
+                    />
+                    <Text
+                      style={[
+                        txt(9, false, C.muted),
+                        { marginTop: 7, height: 14 }
+                      ]}
+                    >
+                      {label}
+                    </Text>
+                  </View>
+                );
+              })}
             </View>
-          ))
-        )}
-      </Card>
-    </>
-  );
+          )}
+
+          <Text style={[txt(12, true), { marginTop: 12 }]}>
+            Total: {formatMinutes(rangeMinutes)}
+          </Text>
+        </Card>
+
+        <Card>
+          <Text style={txt(16, true)}>Subject-wise Study Time</Text>
+          <Text style={[txt(12, false, C.muted), { marginTop: 5, marginBottom: 12 }]}>
+            Based on sessions recorded during the selected period
+          </Text>
+
+          {subjectRows.length === 0 ? (
+            <Text style={txt(12, false, C.muted)}>
+              No subject study time recorded for this period.
+            </Text>
+          ) : (
+            subjectRows.map(subject => (
+              <View key={subject.name} style={{ marginBottom: 15 }}>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    marginBottom: 7
+                  }}
+                >
+                  <Text style={[txt(13, true), { flex: 1, marginRight: 8 }]}>
+                    {subject.name}
+                  </Text>
+                  <Text style={txt(12, false, C.muted)}>
+                    {formatMinutes(subject.minutes)}
+                  </Text>
+                </View>
+                <View
+                  style={{
+                    height: 7,
+                    borderRadius: 6,
+                    overflow: 'hidden',
+                    backgroundColor: C.soft
+                  }}
+                >
+                  <View
+                    style={{
+                      height: 7,
+                      borderRadius: 6,
+                      width: `${rangeMinutes > 0
+                        ? Math.min(100, (subject.minutes / rangeMinutes) * 100)
+                        : 0}%`,
+                      backgroundColor: C.blue
+                    }}
+                  />
+                </View>
+                <Text style={[txt(10, false, C.muted), { marginTop: 4 }]}>
+                  {subject.count} {subject.count === 1 ? 'session' : 'sessions'}
+                </Text>
+              </View>
+            ))
+          )}
+        </Card>
+
+        <Card>
+          <Text style={txt(16, true)}>Focus Quality</Text>
+          <View style={{ alignItems: 'center', padding: 18 }}>
+            <Ring value={rangeFocus} size={165} label="Average focus" />
+          </View>
+          <Text style={txt(12, false, C.muted)}>
+            Calculated from recorded sessions in the selected period.
+          </Text>
+        </Card>
+
+        <Card>
+          <Text style={txt(16, true)}>Recent Session History</Text>
+
+          {rangeSessions.length === 0 ? (
+            <Text style={[txt(12, false, C.muted), { marginTop: 12 }]}>
+              No sessions recorded during this period.
+            </Text>
+          ) : (
+            rangeSessions
+              .slice()
+              .sort((a, b) => (b.startedAt || '').localeCompare(a.startedAt || ''))
+              .map(session => (
+                <View
+                  key={session.id}
+                  style={{
+                    paddingVertical: 13,
+                    borderBottomWidth: 1,
+                    borderColor: C.line
+                  }}
+                >
+                  <Text style={txt(14, true)}>
+                    {subjects.find(subject => subject.id === session.subjectId)?.name
+                      || 'Study Session'}
+                  </Text>
+                  <Text style={[txt(12, false, C.muted), { marginTop: 5 }]}>
+                    {session.minutes} mins • {session.focusScore}% focus •{' '}
+                    {session.startedAt
+                      ? new Date(session.startedAt).toLocaleDateString()
+                      : 'Date unavailable'}
+                  </Text>
+                </View>
+              ))
+          )}
+        </Card>
+      </>
+    );
+  };
 
   const tabs = [
     ['Dashboard', 'home-outline'],
@@ -1173,7 +1397,7 @@ function startSession() {
         {notifOpen ? (
           <>
             <TouchableOpacity onPress={() => setNotifOpen(false)}>
-              <Text style={txt(12, true, C.blue)}>← Back to {tab}</Text>
+              <Text style={txt(12, true, C.blue)}>â† Back to {tab}</Text>
             </TouchableOpacity>
 
             <Title sub="Your revision and study reminders">
@@ -1202,7 +1426,7 @@ function startSession() {
                 <Button
                   label={
                     (note.readBy || []).includes(user.id)
-                      ? 'Read ✓'
+                      ? 'Read âœ“'
                       : 'Mark as Read'
                   }
                   subtle
@@ -1230,8 +1454,12 @@ function startSession() {
     customMinutes={customMinutes}
     setCustomMinutes={setCustomMinutes}
     focusMode={focusMode}
-setFocusMode={setFocusMode}
-requestExitFocus={() => setExitFocusConfirmOpen(true)}
+    setFocusMode={setFocusMode}
+    zenMode={zenMode}
+    setZenMode={setZenMode}
+    deepZenUnlocked={deepZenUnlocked}
+    setDeepZenUnlocked={setDeepZenUnlocked}
+    requestExitFocus={() => setExitFocusConfirmOpen(true)}
   />
         ) : tab === 'Syllabus' ? (
           <Syllabus />
@@ -1423,6 +1651,14 @@ requestExitFocus={() => setExitFocusConfirmOpen(true)}
 
         <TouchableOpacity
           onPress={() => {
+            if (deepZenLocked) {
+    setExitFocusConfirmOpen(false);
+    Alert.alert(
+      'Deep Zen is locked',
+      'Complete the countdown before exiting Focus Mode.'
+    );
+    return;
+  }
             setExitFocusConfirmOpen(false);
             setFocusMode(false);
           }}
@@ -1442,8 +1678,6 @@ requestExitFocus={() => setExitFocusConfirmOpen(true)}
     </View>
   </View>
 )}
-
-      )}
     </SafeAreaView>
   );
 }
