@@ -15,18 +15,46 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Svg, { Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import Timer from './Timer';
+import SettingsScreen from './SettingsScreen';
 
-const C = {
+const LIGHT_THEME = {
   bg: '#f7f9fe',
-  white: '#fff',
+  white: '#ffffff',
+  card: '#ffffff',
   ink: '#142841',
   muted: '#72849f',
   blue: '#37689f',
   mid: '#80a9e5',
   soft: '#e9f0fc',
   line: '#e8eef8',
-  light: '#dce8fb'
+  light: '#dce8fb',
+  border: '#edf2fc',
+  danger: '#ef4444',
+  dangerSoft: '#fef2f2',
 };
+
+const DARK_THEME = {
+  bg: '#0f172a',
+  white: '#1e293b',
+  card: '#1e293b',
+  ink: '#f8fafc',
+  muted: '#94a3b8',
+  blue: '#60a5fa',
+  mid: '#93c5fd',
+  soft: '#334155',
+  line: '#334155',
+  light: '#1e293b',
+  border: '#334155',
+  danger: '#ef4444',
+  dangerSoft: '#450a0a',
+};
+
+const ThemeContext = React.createContext({
+  theme: LIGHT_THEME,
+  isDarkMode: false,
+  toggleTheme: () => { }
+});
+const useTheme = () => React.useContext(ThemeContext);
 
 const API =
   process.env.EXPO_PUBLIC_API_URL ||
@@ -34,35 +62,10 @@ const API =
     ? 'http://10.0.2.2:4000/api'
     : 'http://localhost:4000/api');
 
-const card = {
-  backgroundColor: C.white,
-  borderRadius: 20,
-  padding: 18,
-  marginBottom: 14,
-  borderWidth: 1,
-  borderColor: '#edf2fc'
-};
-
-const input = {
-  backgroundColor: C.white,
-  borderWidth: 1,
-  borderColor: C.line,
-  borderRadius: 12,
-  paddingHorizontal: 15,
-  paddingVertical: 12,
-  marginTop: 11,
-  color: C.ink
-};
-
-const txt = (size = 14, bold = false, color = C.ink) => ({
-  fontSize: size,
-  fontWeight: bold ? '700' : '400',
-  color
-});
-
 const today = () => new Date().toISOString().slice(0, 10);
 
 function Chip({ label, active, onPress }) {
+  const { theme: C } = useTheme();
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -75,7 +78,7 @@ function Chip({ label, active, onPress }) {
         marginBottom: 6
       }}
     >
-      <Text style={txt(11, true, active ? 'white' : C.blue)}>
+      <Text style={{ fontSize: 11, fontWeight: '700', color: active ? '#ffffff' : C.blue }}>
         {label}
       </Text>
     </TouchableOpacity>
@@ -83,19 +86,40 @@ function Chip({ label, active, onPress }) {
 }
 
 function Card({ children, style }) {
-  return <View style={[card, style]}>{children}</View>;
+  const { theme: C } = useTheme();
+  return (
+    <View
+      style={[
+        {
+          backgroundColor: C.card || C.white,
+          borderRadius: 20,
+          padding: 18,
+          marginBottom: 14,
+          borderWidth: 1,
+          borderColor: C.border || C.line
+        },
+        style
+      ]}
+    >
+      {children}
+    </View>
+  );
 }
 
 function Title({ children, sub }) {
+  const { theme: C } = useTheme();
   return (
     <View style={{ marginBottom: 16 }}>
-      <Text style={txt(23, true)}>{children}</Text>
+      <Text style={{ fontSize: 23, fontWeight: '700', color: C.ink }}>{children}</Text>
       {sub && (
         <Text
-          style={[
-            txt(12, false, C.muted),
-            { marginTop: 5, lineHeight: 17 }
-          ]}
+          style={{
+            fontSize: 12,
+            fontWeight: '400',
+            color: C.muted,
+            marginTop: 5,
+            lineHeight: 17
+          }}
         >
           {sub}
         </Text>
@@ -105,6 +129,7 @@ function Title({ children, sub }) {
 }
 
 function Ring({ value = 65, size = 160, label = 'Mastered' }) {
+  const { theme: C } = useTheme();
   const r = (size - 18) / 2;
   const circumference = 2 * Math.PI * r;
   const safeValue = Math.max(0, Math.min(100, value));
@@ -146,13 +171,14 @@ function Ring({ value = 65, size = 160, label = 'Mastered' }) {
         />
       </Svg>
 
-      <Text style={txt(25, true)}>{safeValue}%</Text>
-      <Text style={txt(11, false, C.muted)}>{label}</Text>
+      <Text style={{ fontSize: 25, fontWeight: '700', color: C.ink }}>{safeValue}%</Text>
+      <Text style={{ fontSize: 11, fontWeight: '400', color: C.muted }}>{label}</Text>
     </View>
   );
 }
 
 function Button({ label, onPress, subtle = false, disabled = false }) {
+  const { theme: C } = useTheme();
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -167,7 +193,7 @@ function Button({ label, onPress, subtle = false, disabled = false }) {
         opacity: disabled ? 0.55 : 1
       }}
     >
-      <Text style={txt(13, true, subtle ? C.blue : C.white)}>
+      <Text style={{ fontSize: 13, fontWeight: '700', color: subtle ? C.blue : '#ffffff' }}>
         {label}
       </Text>
     </TouchableOpacity>
@@ -184,6 +210,7 @@ export default function App() {
   const [name, setName] = useState('');
   const [tab, setTab] = useState('Dashboard');
   const [focusMode, setFocusMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
   // Reset confirmation state belongs inside the App component.
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
@@ -212,46 +239,123 @@ export default function App() {
   const elapsedBase = useRef(0);
   const autoSaveTriggered = useRef(false);
 
-  
-async function req(route, method = 'GET', body, t = token) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 8000);
+  // Load persistent theme preference on mount
+  useEffect(() => {
+    async function loadThemePreference() {
+      try {
+        const saved = await AsyncStorage.getItem('abhyas_theme_mode');
+        if (saved !== null) {
+          setIsDarkMode(saved === 'dark');
+        }
+      } catch (e) { }
+    }
+    loadThemePreference();
+  }, []);
 
-  try {
-    const response = await fetch(API + route, {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: 'Bearer ' + t
-      },
-      body: body ? JSON.stringify(body) : undefined,
-      signal: controller.signal
-    });
+  const toggleTheme = async (nextValue) => {
+    const next = typeof nextValue === 'boolean' ? nextValue : !isDarkMode;
+    setIsDarkMode(next);
+    try {
+      await AsyncStorage.setItem('abhyas_theme_mode', next ? 'dark' : 'light');
+    } catch (e) { }
+  };
 
-    const data = await response.json();
+  const C = isDarkMode ? DARK_THEME : LIGHT_THEME;
 
-    if (!response.ok) {
-      throw Error(data.error || 'Request failed');
+  const card = {
+    backgroundColor: C.card || C.white,
+    borderRadius: 20,
+    padding: 18,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: C.border || C.line
+  };
+
+  const input = {
+    backgroundColor: C.white,
+    borderWidth: 1,
+    borderColor: C.line,
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    marginTop: 11,
+    color: C.ink
+  };
+
+  const txt = (size = 14, bold = false, color = C.ink) => ({
+    fontSize: size,
+    fontWeight: bold ? '700' : '400',
+    color
+  });
+
+  const handleSignOut = async () => {
+    if (savingSession.current) {
+      Alert.alert(
+        'Save in progress',
+        'Wait until the session save finishes before signing out.'
+      );
+      return;
     }
 
-    return data;
-  } catch (error) {
-    if (error.name === 'AbortError') {
-      throw Error('Server is not responding. Check the backend connection and try again.');
+    if (running || elapsed > 0) {
+      Alert.alert(
+        'Study session in progress',
+        'Finish or reset your unsaved session before signing out.'
+      );
+      return;
     }
 
-    if (
-      error instanceof TypeError ||
-      error.message === 'Network request failed'
-    ) {
-      throw Error('Cannot connect to the server. Check that the backend is running.');
-    }
+    setRunning(false);
+    await AsyncStorage.removeItem('abhyasToken');
+    setToken('');
+    setUser(null);
+    setTab('Dashboard');
+  };
 
-    throw error;
-  } finally {
-    clearTimeout(timeoutId);
+  async function req(route, method = 'GET', body, t = token) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+    try {
+      const response = await fetch(API + route, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + t
+        },
+        body: body ? JSON.stringify(body) : undefined,
+        signal: controller.signal
+      });
+
+      let data = {};
+      try {
+        data = await response.json();
+      } catch {
+        data = { error: `Request returned status ${response.status}` };
+      }
+
+      if (!response.ok) {
+        throw Error(data.error || 'Request failed');
+      }
+
+      return data;
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        throw Error('Server is not responding. Check the backend connection and try again.');
+      }
+
+      if (
+        error instanceof TypeError ||
+        error.message === 'Network request failed'
+      ) {
+        throw Error('Cannot connect to the server. Check that the backend is running.');
+      }
+
+      throw error;
+    } finally {
+      clearTimeout(timeoutId);
+    }
   }
-}
 
 
   async function refresh(t = token) {
@@ -321,9 +425,9 @@ async function req(route, method = 'GET', body, t = token) {
   }, []);
 
   // Update the display using timestamps rather than counting timer ticks.
-  
+
   // Update the timer using timestamps and automatically save completed Pomodoro sessions.
- 
+
   // Update timer using timestamps and automatically save completed countdowns.
   useEffect(() => {
     if (!running || activeStartedAt.current === null) {
@@ -334,8 +438,8 @@ async function req(route, method = 'GET', body, t = token) {
       mode === 'Pomodoro'
         ? 25 * 60
         : mode === 'Custom'
-        ? customMinutes * 60
-        : null;
+          ? customMinutes * 60
+          : null;
 
     interval.current = setInterval(() => {
       const activeSeconds = Math.floor(
@@ -424,29 +528,29 @@ async function req(route, method = 'GET', body, t = token) {
   }
 
   // Start a new session or resume a paused session.
-  
-function startSession() {
-  if (savingSession.current) return;
-  if (activeStartedAt.current !== null) return;
 
-  const limitSeconds =
-    mode === 'Pomodoro'
-      ? 25 * 60
-      : mode === 'Custom'
-      ? customMinutes * 60
-      : null;
+  function startSession() {
+    if (savingSession.current) return;
+    if (activeStartedAt.current !== null) return;
 
-  if (limitSeconds !== null && elapsed >= limitSeconds) {
-    Alert.alert(
-      'Timer complete',
-      'Your countdown has finished. Save the session or reset the timer before starting again.'
-    );
-    return;
+    const limitSeconds =
+      mode === 'Pomodoro'
+        ? 25 * 60
+        : mode === 'Custom'
+          ? customMinutes * 60
+          : null;
+
+    if (limitSeconds !== null && elapsed >= limitSeconds) {
+      Alert.alert(
+        'Timer complete',
+        'Your countdown has finished. Save the session or reset the timer before starting again.'
+      );
+      return;
+    }
+
+    activeStartedAt.current = Date.now();
+    setRunning(true);
   }
-
-  activeStartedAt.current = Date.now();
-  setRunning(true);
-}
 
 
   // Accumulate only active study time.
@@ -501,8 +605,8 @@ function startSession() {
       elapsedBase.current +
       (activeStartedAt.current !== null
         ? Math.floor(
-            (Date.now() - activeStartedAt.current) / 1000
-          )
+          (Date.now() - activeStartedAt.current) / 1000
+        )
         : 0);
 
     if (finalElapsed <= 0) {
@@ -602,7 +706,7 @@ function startSession() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center' }}>
+      <View style={{ flex: 1, justifyContent: 'center', backgroundColor: C.bg }}>
         <ActivityIndicator color={C.blue} />
       </View>
     );
@@ -610,90 +714,95 @@ function startSession() {
 
   if (!token) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
-        <View style={{ flex: 1, justifyContent: 'center', padding: 28 }}>
-          <View
-            style={{
-              alignSelf: 'center',
-              width: 74,
-              height: 74,
-              borderRadius: 22,
-              backgroundColor: C.soft,
-              justifyContent: 'center',
-              alignItems: 'center'
-            }}
-          >
-            <Ionicons name="book-outline" size={38} color={C.blue} />
-          </View>
+      <ThemeContext.Provider value={{ theme: C, isDarkMode, toggleTheme }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
+          <View style={{ flex: 1, justifyContent: 'center', padding: 28 }}>
+            <View
+              style={{
+                alignSelf: 'center',
+                width: 74,
+                height: 74,
+                borderRadius: 22,
+                backgroundColor: C.soft,
+                justifyContent: 'center',
+                alignItems: 'center'
+              }}
+            >
+              <Ionicons name="book-outline" size={38} color={C.blue} />
+            </View>
 
-          <Text
-            style={[
-              txt(30, true),
-              { textAlign: 'center', marginTop: 20 }
-            ]}
-          >
-            Abhyas Tracker
-          </Text>
+            <Text
+              style={[
+                txt(30, true),
+                { textAlign: 'center', marginTop: 20 }
+              ]}
+            >
+              Abhyas Tracker
+            </Text>
 
-          <Text
-            style={[
-              txt(13, false, C.muted),
-              { textAlign: 'center', marginBottom: 35 }
-            ]}
-          >
-            Focused study. Smarter revision.
-          </Text>
+            <Text
+              style={[
+                txt(13, false, C.muted),
+                { textAlign: 'center', marginBottom: 35 }
+              ]}
+            >
+              Focused study. Smarter revision.
+            </Text>
 
-          {register && (
+            {register && (
+              <TextInput
+                placeholder="Full Name"
+                placeholderTextColor={C.muted}
+                value={name}
+                onChangeText={setName}
+                style={input}
+              />
+            )}
+
             <TextInput
-              placeholder="Full Name"
-              value={name}
-              onChangeText={setName}
+              placeholder="Email"
+              placeholderTextColor={C.muted}
+              autoCapitalize="none"
+              value={loginEmail}
+              onChangeText={setEmail}
               style={input}
             />
-          )}
 
-          <TextInput
-            placeholder="Email"
-            autoCapitalize="none"
-            value={loginEmail}
-            onChangeText={setEmail}
-            style={input}
-          />
+            <TextInput
+              placeholder="Password"
+              placeholderTextColor={C.muted}
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+              style={input}
+            />
 
-          <TextInput
-            placeholder="Password"
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-            style={input}
-          />
+            <Button
+              label={register ? 'Create Account' : 'Sign In'}
+              onPress={login}
+            />
 
-          <Button
-            label={register ? 'Create Account' : 'Sign In'}
-            onPress={login}
-          />
+            <Button
+              label={
+                register
+                  ? 'Already registered? Sign in'
+                  : 'Create a student account'
+              }
+              subtle
+              onPress={() => setRegister(!register)}
+            />
 
-          <Button
-            label={
-              register
-                ? 'Already registered? Sign in'
-                : 'Create a student account'
-            }
-            subtle
-            onPress={() => setRegister(!register)}
-          />
-
-          <Text
-            style={[
-              txt(11, false, C.muted),
-              { textAlign: 'center', marginTop: 25 }
-            ]}
-          >
-            Demo: student@abhyas.local / Student123!
-          </Text>
-        </View>
-      </SafeAreaView>
+            <Text
+              style={[
+                txt(11, false, C.muted),
+                { textAlign: 'center', marginTop: 25 }
+              ]}
+            >
+              Demo: student@abhyas.local / Student123!
+            </Text>
+          </View>
+        </SafeAreaView>
+      </ThemeContext.Provider>
     );
   }
 
@@ -706,13 +815,13 @@ function startSession() {
 
   const completion = subjects.length
     ? Math.round(
-        100 *
-          subjects.reduce((sum, subject) => sum + subject.completed, 0) /
-          Math.max(
-            1,
-            subjects.reduce((sum, subject) => sum + subject.topics, 0)
-          )
+      100 *
+      subjects.reduce((sum, subject) => sum + subject.completed, 0) /
+      Math.max(
+        1,
+        subjects.reduce((sum, subject) => sum + subject.topics, 0)
       )
+    )
     : 0;
 
   const Dashboard = () => (
@@ -1055,395 +1164,413 @@ function startSession() {
     ['Timer', 'stopwatch-outline'],
     ['Syllabus', 'book-outline'],
     ['Planner', 'calendar-outline'],
-    ['Analytics', 'analytics-outline']
+    ['Analytics', 'analytics-outline'],
+    ['Settings', 'settings-outline']
   ];
 
   return (
-    <SafeAreaView
-      style={{
-        flex: 1,
-        backgroundColor: C.bg,
-        paddingTop:
-          Platform.OS === 'android' ? StatusBar.currentHeight : 0
-      }}
-    >
-      <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
-
-      {!focusMode && (
-      <View
+    <ThemeContext.Provider value={{ theme: C, isDarkMode, toggleTheme }}>
+      <SafeAreaView
         style={{
-          paddingHorizontal: 19,
-          paddingVertical: 14,
-          backgroundColor: C.white,
-          flexDirection: 'row',
-          alignItems: 'center',
-          borderBottomWidth: 1,
-          borderColor: C.line
+          flex: 1,
+          backgroundColor: C.bg,
+          paddingTop:
+            Platform.OS === 'android' ? StatusBar.currentHeight : 0
         }}
       >
-        <View
-          style={{
-            width: 35,
-            height: 35,
-            borderRadius: 10,
-            backgroundColor: C.soft,
-            justifyContent: 'center',
-            alignItems: 'center'
-          }}
-        >
-          <Ionicons name="book-outline" color={C.blue} size={20} />
-        </View>
+        <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={C.bg} />
 
-        <View style={{ flex: 1, marginLeft: 10 }}>
-          <Text style={txt(15, true)}>Abhyas Tracker</Text>
-          <Text style={txt(10, false, C.muted)}>{tab}</Text>
-        </View>
-
-        <TouchableOpacity
-          onPress={() => setNotifOpen(!notifOpen)}
-          style={{ padding: 12 }}
-        >
-          <Ionicons
-            name="notifications-outline"
-            size={23}
-            color={C.ink}
-          />
-
-          {unread.length > 0 && (
-            <View
-              style={{
-                height: 8,
-                width: 8,
-                borderRadius: 5,
-                backgroundColor: '#e44242',
-                position: 'absolute',
-                right: 9,
-                top: 8
-              }}
-            />
-          )}
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() =>
-            Alert.alert('Account', `${user.name}\n${user.email}`, [
-              {
-                text: 'Sign Out',
-                onPress: async () => {
-                  if (savingSession.current) {
-                    Alert.alert(
-                      'Save in progress',
-                      'Wait until the session save finishes before signing out.'
-                    );
-                    return;
-                  }
-
-                  // Do not silently discard an active timer.
-                  if (running || elapsed > 0) {
-                    Alert.alert(
-                      'Study session in progress',
-                      'Finish or reset your unsaved session before signing out.'
-                    );
-                    return;
-                  }
-
-                  setRunning(false);
-                  await AsyncStorage.removeItem('abhyasToken');
-                  setToken('');
-                  setUser(null);
-                }
-              },
-              { text: 'Cancel', style: 'cancel' }
-            ])
-          }
-          style={{ padding: 9 }}
-        >
-          <Ionicons
-            name="person-circle-outline"
-            size={24}
-            color={C.blue}
-          />
-        </TouchableOpacity>
-      </View>
-      )}
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ padding: 18, paddingBottom: 30 }}
-      >
-        {notifOpen ? (
-          <>
-            <TouchableOpacity onPress={() => setNotifOpen(false)}>
-              <Text style={txt(12, true, C.blue)}>← Back to {tab}</Text>
-            </TouchableOpacity>
-
-            <Title sub="Your revision and study reminders">
-              Notifications
-            </Title>
-
-            {notes.map(note => (
-              <Card key={note.id}>
-                <Text style={txt(11, true, C.blue)}>
-                  SPACED REPETITION PROTOCOL
-                </Text>
-
-                <Text style={[txt(17, true), { marginTop: 8 }]}>
-                  {note.title}
-                </Text>
-
-                <Text
-                  style={[
-                    txt(13, false, C.muted),
-                    { marginTop: 8 }
-                  ]}
-                >
-                  {note.message}
-                </Text>
-
-                <Button
-                  label={
-                    (note.readBy || []).includes(user.id)
-                      ? 'Read ✓'
-                      : 'Mark as Read'
-                  }
-                  subtle
-                  onPress={() => markNote(note)}
-                />
-              </Card>
-            ))}
-          </>
-        ) : tab === 'Dashboard' ? (
-          <Dashboard />
-        ) : tab === 'Timer' ? (
-  <Timer
-    elapsed={elapsed}
-    running={running}
-    mode={mode}
-    setMode={setMode}
-    startSession={startSession}
-    pauseSession={pauseSession}
-    finish={finish}
-    resetSession={resetSession}
-    saving={savingSession.current}
-    selected={selected}
-    subjects={subjects}
-    setSelected={setSelected}
-    customMinutes={customMinutes}
-    setCustomMinutes={setCustomMinutes}
-    focusMode={focusMode}
-setFocusMode={setFocusMode}
-requestExitFocus={() => setExitFocusConfirmOpen(true)}
-  />
-        ) : tab === 'Syllabus' ? (
-          <Syllabus />
-        ) : tab === 'Planner' ? (
-          <Planner />
-        ) : (
-          <Analytics />
-        )}
-      </ScrollView>
-      {!focusMode && (
-      <View
-        style={{
-          backgroundColor: C.white,
-          borderTopWidth: 1,
-          borderColor: C.line,
-          flexDirection: 'row',
-          paddingVertical: 10
-        }}
-      >
-        {tabs.map(([tabName, iconName]) => (
-          <TouchableOpacity
-            key={tabName}
-            style={{ flex: 1, alignItems: 'center' }}
-            onPress={() => {
-              setTab(tabName);
-              setNotifOpen(false);
-              refresh();
-            }}
-          >
-            <Ionicons
-              name={iconName}
-              size={23}
-              color={tab === tabName ? C.blue : '#667080'}
-            />
-
-            <Text
-              style={txt(
-                10,
-                tab === tabName,
-                tab === tabName ? C.blue : C.muted
-              )}
-            >
-              {tabName}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-      )}
-
-      {/* Reset confirmation dialog: inside the main SafeAreaView. */}
-      {resetConfirmOpen && (
-        <View
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(15, 23, 42, 0.5)',
-            justifyContent: 'center',
-            alignItems: 'center',
-            padding: 24,
-            zIndex: 999,
-            elevation: 20
-          }}
-        >
+        {!focusMode && (
           <View
             style={{
-              width: '100%',
-              maxWidth: 380,
+              paddingHorizontal: 19,
+              paddingVertical: 14,
               backgroundColor: C.white,
-              borderRadius: 18,
-              padding: 24,
-              borderWidth: 1,
+              flexDirection: 'row',
+              alignItems: 'center',
+              borderBottomWidth: 1,
               borderColor: C.line
             }}
           >
-            <Text style={{ fontSize: 20, fontWeight: '700', color: C.ink }}>
-              Reset study session?
-            </Text>
-
-            <Text
+            <View
               style={{
-                marginTop: 10,
-                marginBottom: 24,
-                color: C.muted,
-                fontSize: 14,
-                lineHeight: 21
+                width: 35,
+                height: 35,
+                borderRadius: 10,
+                backgroundColor: C.soft,
+                justifyContent: 'center',
+                alignItems: 'center'
               }}
             >
-              Your current unsaved study time will be discarded.
-            </Text>
+              <Ionicons name="book-outline" color={C.blue} size={20} />
+            </View>
 
-            <View style={{ flexDirection: 'row', gap: 12 }}>
-              <TouchableOpacity
-                onPress={cancelReset}
-                style={{
-                  flex: 1,
-                  padding: 13,
-                  borderRadius: 10,
-                  backgroundColor: C.soft,
-                  alignItems: 'center'
-                }}
-              >
-                <Text style={{ color: C.blue, fontWeight: '600' }}>
-                  Cancel
-                </Text>
+            <View style={{ flex: 1, marginLeft: 10 }}>
+              <Text style={txt(15, true)}>Abhyas Tracker</Text>
+              <Text style={txt(10, false, C.muted)}>{tab}</Text>
+            </View>
+
+            <TouchableOpacity
+              onPress={() => setNotifOpen(!notifOpen)}
+              style={{ padding: 10 }}
+              accessibilityLabel="Notifications"
+            >
+              <Ionicons
+                name="notifications-outline"
+                size={23}
+                color={C.ink}
+              />
+
+              {unread.length > 0 && (
+                <View
+                  style={{
+                    height: 8,
+                    width: 8,
+                    borderRadius: 5,
+                    backgroundColor: '#e44242',
+                    position: 'absolute',
+                    right: 7,
+                    top: 6
+                  }}
+                />
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => {
+                setNotifOpen(false);
+                setTab('Settings');
+              }}
+              style={{ padding: 8 }}
+              accessibilityLabel="Settings"
+            >
+              <Ionicons
+                name={tab === 'Settings' ? 'settings' : 'settings-outline'}
+                size={22}
+                color={tab === 'Settings' ? C.blue : C.ink}
+              />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() =>
+                Alert.alert('Account', `${user?.name || ''}\n${user?.email || ''}`, [
+                  {
+                    text: 'Settings',
+                    onPress: () => {
+                      setNotifOpen(false);
+                      setTab('Settings');
+                    }
+                  },
+                  {
+                    text: 'Sign Out',
+                    onPress: handleSignOut
+                  },
+                  { text: 'Cancel', style: 'cancel' }
+                ])
+              }
+              style={{ padding: 8 }}
+              accessibilityLabel="Account Options"
+            >
+              <Ionicons
+                name="person-circle-outline"
+                size={24}
+                color={C.blue}
+              />
+            </TouchableOpacity>
+          </View>
+        )}
+        <ScrollView
+          style={{ flex: 1, backgroundColor: C.bg }}
+          contentContainerStyle={{ padding: 18, paddingBottom: 30 }}
+        >
+          {notifOpen ? (
+            <>
+              <TouchableOpacity onPress={() => setNotifOpen(false)}>
+                <Text style={txt(12, true, C.blue)}>← Back to {tab}</Text>
               </TouchableOpacity>
 
+              <Title sub="Your revision and study reminders">
+                Notifications
+              </Title>
+
+              {notes.map(note => (
+                <Card key={note.id}>
+                  <Text style={txt(11, true, C.blue)}>
+                    SPACED REPETITION PROTOCOL
+                  </Text>
+
+                  <Text style={[txt(17, true), { marginTop: 8 }]}>
+                    {note.title}
+                  </Text>
+
+                  <Text
+                    style={[
+                      txt(13, false, C.muted),
+                      { marginTop: 8 }
+                    ]}
+                  >
+                    {note.message}
+                  </Text>
+
+                  <Button
+                    label={
+                      (note.readBy || []).includes(user.id)
+                        ? 'Read ✓'
+                        : 'Mark as Read'
+                    }
+                    subtle
+                    onPress={() => markNote(note)}
+                  />
+                </Card>
+              ))}
+            </>
+          ) : tab === 'Dashboard' ? (
+            <Dashboard />
+          ) : tab === 'Timer' ? (
+            <Timer
+              elapsed={elapsed}
+              running={running}
+              mode={mode}
+              setMode={setMode}
+              startSession={startSession}
+              pauseSession={pauseSession}
+              finish={finish}
+              resetSession={resetSession}
+              saving={savingSession.current}
+              selected={selected}
+              subjects={subjects}
+              setSelected={setSelected}
+              customMinutes={customMinutes}
+              setCustomMinutes={setCustomMinutes}
+              focusMode={focusMode}
+              setFocusMode={setFocusMode}
+              requestExitFocus={() => setExitFocusConfirmOpen(true)}
+              theme={C}
+              isDarkMode={isDarkMode}
+            />
+          ) : tab === 'Syllabus' ? (
+            <Syllabus />
+          ) : tab === 'Planner' ? (
+            <Planner />
+          ) : tab === 'Analytics' ? (
+            <Analytics />
+          ) : tab === 'Settings' ? (
+            <SettingsScreen
+              user={user}
+              isDarkMode={isDarkMode}
+              toggleTheme={toggleTheme}
+              theme={C}
+              onBack={() => setTab('Dashboard')}
+              onSignOut={handleSignOut}
+              req={req}
+            />
+          ) : (
+            <Dashboard />
+          )}
+        </ScrollView>
+        {!focusMode && (
+          <View
+            style={{
+              backgroundColor: C.white,
+              borderTopWidth: 1,
+              borderColor: C.line,
+              flexDirection: 'row',
+              paddingVertical: 10
+            }}
+          >
+            {tabs.map(([tabName, iconName]) => (
               <TouchableOpacity
-                onPress={confirmReset}
-                disabled={savingSession.current}
-                style={{
-                  flex: 1,
-                  padding: 13,
-                  borderRadius: 10,
-                  backgroundColor: '#DC2626',
-                  alignItems: 'center',
-                  opacity: savingSession.current ? 0.55 : 1
+                key={tabName}
+                style={{ flex: 1, alignItems: 'center' }}
+                onPress={() => {
+                  setTab(tabName);
+                  setNotifOpen(false);
+                  refresh();
                 }}
+                accessibilityLabel={`${tabName} tab`}
               >
-                <Text style={{ color: C.white, fontWeight: '600' }}>
-                  Reset
+                <Ionicons
+                  name={iconName}
+                  size={23}
+                  color={tab === tabName ? C.blue : (isDarkMode ? '#64748b' : '#667080')}
+                />
+
+                <Text
+                  style={txt(
+                    10,
+                    tab === tabName,
+                    tab === tabName ? C.blue : C.muted
+                  )}
+                >
+                  {tabName}
                 </Text>
               </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+        {/* Reset confirmation dialog: inside the main SafeAreaView. */}
+        {resetConfirmOpen && (
+          <View
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(15, 23, 42, 0.5)',
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: 24,
+              zIndex: 999,
+              elevation: 20
+            }}
+          >
+            <View
+              style={{
+                width: '100%',
+                maxWidth: 380,
+                backgroundColor: C.white,
+                borderRadius: 18,
+                padding: 24,
+                borderWidth: 1,
+                borderColor: C.line
+              }}
+            >
+              <Text style={{ fontSize: 20, fontWeight: '700', color: C.ink }}>
+                Reset study session?
+              </Text>
+
+              <Text
+                style={{
+                  marginTop: 10,
+                  marginBottom: 24,
+                  color: C.muted,
+                  fontSize: 14,
+                  lineHeight: 21
+                }}
+              >
+                Your current unsaved study time will be discarded.
+              </Text>
+
+              <View style={{ flexDirection: 'row', gap: 12 }}>
+                <TouchableOpacity
+                  onPress={cancelReset}
+                  style={{
+                    flex: 1,
+                    padding: 13,
+                    borderRadius: 10,
+                    backgroundColor: C.soft,
+                    alignItems: 'center'
+                  }}
+                >
+                  <Text style={{ color: C.blue, fontWeight: '600' }}>
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={confirmReset}
+                  disabled={savingSession.current}
+                  style={{
+                    flex: 1,
+                    padding: 13,
+                    borderRadius: 10,
+                    backgroundColor: '#DC2626',
+                    alignItems: 'center',
+                    opacity: savingSession.current ? 0.55 : 1
+                  }}
+                >
+                  <Text style={{ color: C.white, fontWeight: '600' }}>
+                    Reset
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
-      )}
-{/* Exit Focus Mode confirmation dialog */}
-{exitFocusConfirmOpen && (
-  <View
-    style={{
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(15, 23, 42, 0.5)',
-      justifyContent: 'center',
-      alignItems: 'center',
-      padding: 24,
-      zIndex: 1000,
-      elevation: 21,
-    }}
-  >
-    <View
-      style={{
-        width: '100%',
-        maxWidth: 380,
-        backgroundColor: C.white,
-        borderRadius: 18,
-        padding: 24,
-        borderWidth: 1,
-        borderColor: C.line,
-      }}
-    >
-      <Text style={{ fontSize: 20, fontWeight: '700', color: C.ink }}>
-        Exit Focus Mode?
-      </Text>
+        )}
+        {/* Exit Focus Mode confirmation dialog */}
+        {exitFocusConfirmOpen && (
+          <View
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(15, 23, 42, 0.5)',
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: 24,
+              zIndex: 1000,
+              elevation: 21,
+            }}
+          >
+            <View
+              style={{
+                width: '100%',
+                maxWidth: 380,
+                backgroundColor: C.white,
+                borderRadius: 18,
+                padding: 24,
+                borderWidth: 1,
+                borderColor: C.line,
+              }}
+            >
+              <Text style={{ fontSize: 20, fontWeight: '700', color: C.ink }}>
+                Exit Focus Mode?
+              </Text>
 
-      <Text
-        style={{
-          marginTop: 10,
-          marginBottom: 24,
-          color: C.muted,
-          fontSize: 14,
-          lineHeight: 21,
-        }}
-      >
-        Are you sure you want to leave Focus Mode and return to normal navigation?
-      </Text>
+              <Text
+                style={{
+                  marginTop: 10,
+                  marginBottom: 24,
+                  color: C.muted,
+                  fontSize: 14,
+                  lineHeight: 21,
+                }}
+              >
+                Are you sure you want to leave Focus Mode and return to normal navigation?
+              </Text>
 
-      <View style={{ flexDirection: 'row', gap: 12 }}>
-        <TouchableOpacity
-          onPress={() => setExitFocusConfirmOpen(false)}
-          style={{
-            flex: 1,
-            padding: 13,
-            borderRadius: 10,
-            backgroundColor: C.soft,
-            alignItems: 'center',
-          }}
-        >
-          <Text style={{ color: C.blue, fontWeight: '600' }}>
-            Stay Focused
-          </Text>
-        </TouchableOpacity>
+              <View style={{ flexDirection: 'row', gap: 12 }}>
+                <TouchableOpacity
+                  onPress={() => setExitFocusConfirmOpen(false)}
+                  style={{
+                    flex: 1,
+                    padding: 13,
+                    borderRadius: 10,
+                    backgroundColor: C.soft,
+                    alignItems: 'center',
+                  }}
+                >
+                  <Text style={{ color: C.blue, fontWeight: '600' }}>
+                    Stay Focused
+                  </Text>
+                </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={() => {
-            setExitFocusConfirmOpen(false);
-            setFocusMode(false);
-          }}
-          style={{
-            flex: 1,
-            padding: 13,
-            borderRadius: 10,
-            backgroundColor: C.blue,
-            alignItems: 'center',
-          }}
-        >
-          <Text style={{ color: C.white, fontWeight: '600' }}>
-            Exit Focus Mode
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  </View>
-)}
-
-      )}
-    </SafeAreaView>
+                <TouchableOpacity
+                  onPress={() => {
+                    setExitFocusConfirmOpen(false);
+                    setFocusMode(false);
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: 13,
+                    borderRadius: 10,
+                    backgroundColor: C.blue,
+                    alignItems: 'center',
+                  }}
+                >
+                  <Text style={{ color: C.white, fontWeight: '600' }}>
+                    Exit Focus Mode
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        )}
+      </SafeAreaView>
+    </ThemeContext.Provider>
   );
 }

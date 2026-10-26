@@ -1,24 +1,40 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Plus, Trash2, Bell } from 'lucide-react';
+import { Plus, Trash2, Bell, Megaphone, Search, Filter, Timer, Clock, UserCheck, Eye, RefreshCw, X, BookOpen, Users, CheckCircle2 } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
 
 import '@/styles.css';
 import { AppShell } from '@/components/app-shell';
 import Dashboard from '@/pages/Dashboard';
-import { initProfileFromUser } from '@/lib/profile-store';
+import Profile from '@/pages/Profile';
+import Settings from '@/pages/Settings';
+import Announcements from '@/pages/Announcements';
+import Sessions from '@/pages/Sessions';
+import Students from '@/pages/Students';
+import StudentDetails from '@/pages/StudentDetails';
+import { initProfileFromUser, signOutProfile } from '@/lib/profile-store';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
 function App() {
-  const [token, setToken] = useState(localStorage.getItem('abhyas_admin_token') || '');
+  // The token starts empty: nothing protected renders until the stored token is verified below.
+  const [token, setToken] = useState('');
+  const [checking, setChecking] = useState(() => !!localStorage.getItem('abhyas_admin_token'));
   const [error, setError] = useState('');
-  const [data, setData] = useState({ overview: null, users: [], subjects: [] });
+  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState({ overview: null, users: [], subjects: [], sessions: [] });
   const [form, setForm] = useState({ name: '', paper: 'GS Paper II', topics: 40, title: '', message: '' });
   const [email, setEmail] = useState('admin@abhyas.local');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Destination screen filters and student inspector
+  const [studentSearch, setStudentSearch] = useState('');
+  const [studentFilter, setStudentFilter] = useState('student'); // 'student' | 'all'
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [sessionSearch, setSessionSearch] = useState('');
+  const [sessionModeFilter, setSessionModeFilter] = useState('all');
 
   async function request(url, method = 'GET', body) {
     const res = await fetch(API + url, {
@@ -37,9 +53,10 @@ function App() {
   async function load(currentToken = token) {
     if (!currentToken) return;
     try {
+      setLoading(true);
       setError('');
-      const [overview, users, subjects] = await Promise.all(
-        ['/admin/overview', '/admin/users', '/admin/subjects'].map((p) =>
+      const [overview, users, subjects, sessions, me] = await Promise.all(
+        ['/admin/overview', '/admin/users', '/admin/subjects', '/admin/sessions', '/me'].map((p) =>
           fetch(API + p, {
             headers: {
               'Content-Type': 'application/json',
@@ -52,12 +69,15 @@ function App() {
           })
         )
       );
-      setData({ overview, users, subjects });
+      setData({ overview, users, subjects, sessions });
+      if (me?.user) initProfileFromUser(me.user);
     } catch (e) {
       setError(e.message);
       if (e.message.toLowerCase().includes('auth') || e.message.toLowerCase().includes('forbidden')) {
         handleSignOut();
       }
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -66,6 +86,39 @@ function App() {
       load(token);
     }
   }, [token]);
+
+  // Session check on every page load/refresh: a stored token is only trusted if the
+  // existing backend (GET /api/me) accepts it AND the user is an admin. Otherwise it is
+  // discarded and the Sign In page is shown (fail closed, including when the API is down).
+  useEffect(() => {
+    let cancelled = false;
+    async function verifySession() {
+      const stored = localStorage.getItem('abhyas_admin_token');
+      if (!stored) {
+        setChecking(false);
+        return;
+      }
+      try {
+        const r = await fetch(API + '/me', { headers: { Authorization: 'Bearer ' + stored } });
+        const j = await r.json();
+        if (!r.ok || j.user?.role !== 'admin') throw new Error('Invalid session');
+        if (!cancelled) {
+          initProfileFromUser(j.user);
+          setToken(stored);
+        }
+      } catch {
+        localStorage.removeItem('abhyas_admin_token');
+        signOutProfile();
+        if (!cancelled) setToken('');
+      } finally {
+        if (!cancelled) setChecking(false);
+      }
+    }
+    verifySession();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function handleLogin(e) {
     e.preventDefault();
@@ -97,9 +150,9 @@ function App() {
 
   function handleSignOut() {
     localStorage.removeItem('abhyas_admin_token');
-    localStorage.removeItem('abhyas_admin_profile');
+    signOutProfile();
     setToken('');
-    setData({ overview: null, users: [], subjects: [] });
+    setData({ overview: null, users: [], subjects: [], sessions: [] });
     setError('');
     toast.success('Signed out');
   }
@@ -159,10 +212,20 @@ function App() {
       });
       setForm({ ...form, title: '', message: '' });
       toast.success('Announcement broadcast to all students');
+      window.dispatchEvent(new Event('abhyas:notifications_updated'));
     } catch (e) {
       setError(e.message);
       toast.error(e.message);
     }
+  }
+
+  // While a stored token is being verified, render nothing protected (and no login flash).
+  if (checking) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center bg-background text-sm text-muted-foreground">
+        Checking session…
+      </div>
+    );
   }
 
   // Unauthenticated: Existing Login Flow with clean styling
@@ -231,45 +294,54 @@ function App() {
         {/* ASSIGNED SCOPE: Dashboard with real backend API metrics */}
         <Route
           path="/"
-          element={<Dashboard overview={data.overview} subjects={data.subjects} onSignOut={handleSignOut} />}
+          element={
+            <Dashboard
+              overview={data.overview}
+              users={data.users}
+              subjects={data.subjects}
+              sessions={data.sessions}
+              loading={loading}
+              error={error}
+              onSignOut={handleSignOut}
+            />
+          }
         />
 
-        {/* Existing Management Screen: Students */}
+        {/* Destination for Card 1: Students Directory */}
         <Route
           path="/students"
           element={
-            <AppShell title="Students" onSignOut={handleSignOut}>
-              <section className="card-surface p-6">
-                <div className="mb-4 flex items-center justify-between">
-                  <h2 className="text-lg font-bold">Registered Accounts</h2>
-                  <span className="text-xs text-muted-foreground">{data.users?.length || 0} total</span>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm">
-                    <thead>
-                      <tr className="border-b text-xs uppercase tracking-wider text-muted-foreground">
-                        <th className="py-3 px-4">Name</th>
-                        <th className="py-3 px-4">Email</th>
-                        <th className="py-3 px-4">Role</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                      {data.users?.map((u) => (
-                        <tr key={u.id} className="hover:bg-muted/40 transition-colors">
-                          <td className="py-3 px-4 font-semibold">{u.name}</td>
-                          <td className="py-3 px-4 text-muted-foreground">{u.email}</td>
-                          <td className="py-3 px-4">
-                            <span className="inline-block px-2 py-0.5 rounded-md text-xs font-semibold bg-accent text-accent-foreground capitalize">
-                              {u.role}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </section>
-            </AppShell>
+            <Students
+              data={data}
+              loading={loading}
+              load={load}
+              onSignOut={handleSignOut}
+            />
+          }
+        />
+        {/* Dedicated Student Inspection / Details Page */}
+        <Route
+          path="/students/:studentId"
+          element={
+            <StudentDetails
+              data={data}
+              loading={loading}
+              load={load}
+              onSignOut={handleSignOut}
+            />
+          }
+        />
+
+        {/* Destination for Card 3 (Focus Sessions) and Card 4 (Total Study Hours) & Rankings */}
+        <Route
+          path="/sessions"
+          element={
+            <Sessions
+              data={data}
+              loading={loading}
+              load={load}
+              onSignOut={handleSignOut}
+            />
           }
         />
 
@@ -360,71 +432,19 @@ function App() {
           }
         />
 
-        {/* Existing Management Screen: Notifications Broadcast */}
+        {/* Management Screen: Announcements & Broadcast */}
         <Route
-          path="/notifications"
-          element={
-            <AppShell title="Notifications" onSignOut={handleSignOut}>
-              <section className="card-surface p-6 max-w-xl">
-                <h2 className="text-lg font-bold mb-2">Broadcast Announcement</h2>
-                <p className="text-xs text-muted-foreground mb-5">
-                  Send a platform-wide notification to all registered student accounts.
-                </p>
-                <form onSubmit={sendNotification} className="flex flex-col gap-4">
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Announcement Title
-                    </label>
-                    <input
-                      value={form.title}
-                      onChange={(e) => setForm({ ...form, title: e.target.value })}
-                      required
-                      placeholder="e.g. Daily Revision Alert"
-                      className="px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Message
-                    </label>
-                    <textarea
-                      rows={5}
-                      value={form.message}
-                      onChange={(e) => setForm({ ...form, message: e.target.value })}
-                      required
-                      placeholder="Enter the broadcast message for students..."
-                      className="px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition-opacity"
-                  >
-                    <Bell size={16} /> Send to Students
-                  </button>
-                </form>
-              </section>
-            </AppShell>
-          }
+          path="/announcements"
+          element={<Announcements onSignOut={handleSignOut} />}
         />
+        {/* Backward-compatibility redirect from /notifications to /announcements */}
+        <Route path="/notifications" element={<Navigate to="/announcements" replace />} />
 
-        {/* Profile Placeholder (Deferred until user reviews Dashboard) */}
-        <Route
-          path="/profile"
-          element={
-            <AppShell title="Profile" onSignOut={handleSignOut}>
-              <section className="card-surface p-8 max-w-lg text-center space-y-4">
-                <div className="h-16 w-16 mx-auto grid place-items-center rounded-2xl bg-primary/10 text-primary text-2xl font-bold">
-                  👤
-                </div>
-                <h2 className="text-xl font-bold">Profile Screen</h2>
-                <p className="text-sm text-muted-foreground">
-                  Dashboard has been integrated successfully. Profile UI is staged and ready to be integrated upon your review.
-                </p>
-              </section>
-            </AppShell>
-          }
-        />
+        {/* Profile: identity from GET /api/me; edits & preferences are localStorage-only */}
+        <Route path="/profile" element={<Profile onSignOut={handleSignOut} />} />
+
+        {/* Settings: appearance, share, support, rate, privacy, and account management */}
+        <Route path="/settings" element={<Settings onSignOut={handleSignOut} />} />
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
