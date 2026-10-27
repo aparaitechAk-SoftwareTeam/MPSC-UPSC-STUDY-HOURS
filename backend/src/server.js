@@ -325,24 +325,49 @@ app.post('/api/auth/send-otp', async (req, res) => {
   `;
 
   let deliveryStatus = { sent: false };
+  let recipientEmail = cleanTarget;
 
-  if (method === 'mobile') {
-    deliveryStatus = await sendRealSMS(cleanTarget, code);
+  if (method === 'mobile' || !cleanTarget.includes('@')) {
+    const cleanMobile = cleanTarget.replace(/\D/g, '').slice(-10);
+    const db = read();
+    const user = db.users.find(u =>
+      String(u.mobile || '').replace(/\D/g, '').slice(-10) === cleanMobile
+    );
+
+    if (user && user.email) {
+      recipientEmail = user.email;
+      deliveryStatus = await sendRealEmail(
+        user.email,
+        `Your Abhyas Verification Code: ${code}`,
+        emailHtml
+      );
+      // Register OTP for user's email as well
+      otpStore.set(user.email.toLowerCase(), {
+        code,
+        type,
+        method,
+        expiresAt
+      });
+    } else {
+      return res.status(404).json({
+        error: `No registered student account found for mobile ${cleanMobile}. Please click 'Sign Up' below to register with your email and mobile number!`
+      });
+    }
   } else {
     deliveryStatus = await sendRealEmail(cleanTarget, `Your Abhyas Verification Code: ${code}`, emailHtml);
   }
 
   console.log(`\n=============================================================`);
-  console.log(`📨 [OTP DISPATCH] Target: ${cleanTarget} (${method}) | OTP: ${code}`);
-  console.log(`   Delivery status: ${deliveryStatus.sent ? '✅ SENT TO INBOX / SMS' : '⚠️ ' + (deliveryStatus.reason || deliveryStatus.error)}`);
+  console.log(`📨 [OTP DISPATCH] Target: ${cleanTarget} (${method}) -> ${recipientEmail} | OTP: ${code}`);
+  console.log(`   Delivery status: ${deliveryStatus.sent ? '✅ SENT TO INBOX' : '⚠️ ' + (deliveryStatus.reason || deliveryStatus.error)}`);
   console.log(`=============================================================\n`);
 
   res.json({
     success: true,
     delivered: deliveryStatus.sent,
-    message: deliveryStatus.sent
-      ? `Verification code sent to ${cleanTarget}. Please check your ${method === 'mobile' ? 'SMS messages' : 'inbox & spam folder'}.`
-      : `Unable to dispatch verification code to ${cleanTarget}. ${deliveryStatus.reason || deliveryStatus.error || 'Please check contact details.'}`,
+    message: (method === 'mobile' || !cleanTarget.includes('@'))
+      ? `Verification code dispatched to your registered email (${recipientEmail}). Check your notifications and inbox!`
+      : `Verification code sent to ${cleanTarget}. Please check your inbox & spam folder.`,
     target: cleanTarget,
     method,
     expiresIn: 300
@@ -389,9 +414,10 @@ app.post('/api/auth/login-otp', (req, res) => {
   }
 
   const db = read();
+  const cleanMobileTarget = cleanTarget.replace(/\D/g, '').slice(-10);
   let user = db.users.find(u =>
     String(u.email || '').trim().toLowerCase() === cleanTarget ||
-    String(u.mobile || '').trim() === cleanTarget
+    (cleanMobileTarget.length === 10 && String(u.mobile || '').replace(/\D/g, '').slice(-10) === cleanMobileTarget)
   );
 
   // Auto-provision if logging in via phone/email for the first time
@@ -438,9 +464,10 @@ app.post('/api/auth/reset-password', (req, res) => {
   }
 
   const db = read();
-  const user = db.users.find(u =>
+  const cleanMobileTarget = cleanTarget.replace(/\D/g, '').slice(-10);
+  let user = db.users.find(u =>
     String(u.email || '').trim().toLowerCase() === cleanTarget ||
-    String(u.mobile || '').trim() === cleanTarget
+    (cleanMobileTarget.length === 10 && String(u.mobile || '').replace(/\D/g, '').slice(-10) === cleanMobileTarget)
   );
 
   if (!user) {
@@ -489,7 +516,7 @@ app.post('/api/auth/register', (req, res) => {
     id: Date.now().toString(),
     name: String(name).trim(),
     email: normalizedEmail,
-    mobile: mobile ? String(mobile).trim() : undefined,
+    mobile: mobile ? String(mobile).replace(/\D/g, '').slice(-10) : undefined,
     role: 'student',
     passwordHash: bcrypt.hashSync(cleanPassword, 10)
   };
