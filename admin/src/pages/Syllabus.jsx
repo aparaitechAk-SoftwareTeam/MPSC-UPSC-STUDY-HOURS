@@ -44,7 +44,8 @@ export default function Syllabus({ subjects = [], onAddSubject, onEditSubject, o
     name: '',
     exam: 'UPSC',
     paper: 'UPSC GS Paper II',
-    topics: 45
+    topics: 6,
+    imageUrl: ''
   });
   const [submitting, setSubmitting] = useState(false);
 
@@ -76,10 +77,11 @@ export default function Syllabus({ subjects = [], onAddSubject, onEditSubject, o
         name: form.name.trim(),
         exam: form.exam,
         paper: form.paper,
-        topics: Number(form.topics) || 0
+        topics: Number(form.topics) || 0,
+        imageUrl: form.imageUrl?.trim() || null
       });
       toast.success(`Subject "${form.name}" added to ${form.exam} syllabus`);
-      setForm({ name: '', exam: 'UPSC', paper: 'UPSC GS Paper II', topics: 45 });
+      setForm({ name: '', exam: 'UPSC', paper: 'UPSC GS Paper II', topics: 6, imageUrl: '' });
       setShowAddModal(false);
     } catch (err) {
       toast.error(err.message || 'Failed to add subject');
@@ -97,7 +99,8 @@ export default function Syllabus({ subjects = [], onAddSubject, onEditSubject, o
         name: editTarget.name.trim(),
         exam: editTarget.exam || 'UPSC',
         paper: editTarget.paper,
-        topics: Number(editTarget.topics) || 0
+        topics: Number(editTarget.topics) || 0,
+        imageUrl: editTarget.imageUrl?.trim() || null
       });
       toast.success(`Subject "${editTarget.name}" updated`);
       setEditTarget(null);
@@ -312,7 +315,21 @@ export default function Syllabus({ subjects = [], onAddSubject, onEditSubject, o
                         </button>
                       </div>
                     </div>
-                    <h3 className="font-bold text-base text-foreground tracking-tight">{s.name}</h3>
+                    <div className="flex items-center gap-3 mt-1">
+                      {s.imageUrl ? (
+                        <img
+                          src={s.imageUrl}
+                          alt={s.name}
+                          className="h-10 w-10 rounded-lg object-cover border border-border shadow-xs shrink-0"
+                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        />
+                      ) : (
+                        <div className={`h-10 w-10 rounded-lg flex items-center justify-center shrink-0 border ${isMp ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' : 'bg-blue-500/10 text-blue-500 border-blue-500/20'}`}>
+                          <BookOpen className="h-5 w-5" />
+                        </div>
+                      )}
+                      <h3 className="font-bold text-base text-foreground tracking-tight leading-snug">{s.name}</h3>
+                    </div>
                   </div>
 
                   <div className="space-y-2 pt-2 border-t border-border">
@@ -428,6 +445,19 @@ export default function Syllabus({ subjects = [], onAddSubject, onEditSubject, o
                 />
               </div>
 
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-muted-foreground uppercase">
+                  Subject Cover Image URL (Optional)
+                </label>
+                <input
+                  type="url"
+                  value={form.imageUrl || ''}
+                  onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
+                  placeholder="https://images.unsplash.com/photo-..."
+                  className="px-3 py-2 text-sm rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+
               <div className="mt-3 flex items-center justify-end gap-2">
                 <button
                   type="button"
@@ -523,6 +553,19 @@ export default function Syllabus({ subjects = [], onAddSubject, onEditSubject, o
                   required
                   value={editTarget.topics}
                   onChange={(e) => setEditTarget({ ...editTarget, topics: e.target.value })}
+                  className="px-3 py-2 text-sm rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-muted-foreground uppercase">
+                  Subject Cover Image URL (Optional)
+                </label>
+                <input
+                  type="url"
+                  value={editTarget.imageUrl || ''}
+                  onChange={(e) => setEditTarget({ ...editTarget, imageUrl: e.target.value })}
+                  placeholder="https://images.unsplash.com/photo-..."
                   className="px-3 py-2 text-sm rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>

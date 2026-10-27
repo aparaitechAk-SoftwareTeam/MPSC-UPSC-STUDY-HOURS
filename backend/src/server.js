@@ -38,21 +38,27 @@ function initDb() {
       }
     ],
     subjects: [
-      // UPSC Civil Services
-      { id: 'upsc-polity', exam: 'UPSC', name: 'Indian Polity & Governance', paper: 'UPSC GS Paper II', topics: 95, completed: 48 },
-      { id: 'upsc-history', exam: 'UPSC', name: 'Modern Indian History & Culture', paper: 'UPSC GS Paper I', topics: 76, completed: 35 },
-      { id: 'upsc-economy', exam: 'UPSC', name: 'Indian Economy & Agriculture', paper: 'UPSC GS Paper III', topics: 64, completed: 29 },
-      { id: 'upsc-geography', exam: 'UPSC', name: 'Geography, Environment & Climate', paper: 'UPSC GS Paper I & III', topics: 80, completed: 40 },
-      { id: 'upsc-ethics', exam: 'UPSC', name: 'Ethics, Integrity & Aptitude', paper: 'UPSC GS Paper IV', topics: 45, completed: 18 },
-      { id: 'upsc-security-ir', exam: 'UPSC', name: 'International Relations & Security', paper: 'UPSC GS Paper II & III', topics: 40, completed: 15 },
+      // UPSC Civil Services (9 Core Subjects)
+      { id: 'upsc-history-culture', exam: 'UPSC', name: 'History and Culture', paper: 'UPSC GS Paper I', topics: 6, completed: 3, imageUrl: 'https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=160&q=80' },
+      { id: 'upsc-geography', exam: 'UPSC', name: 'Geography', paper: 'UPSC GS Paper I', topics: 6, completed: 2, imageUrl: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=160&q=80' },
+      { id: 'upsc-polity', exam: 'UPSC', name: 'Indian Polity and Governance', paper: 'UPSC GS Paper II', topics: 6, completed: 4, imageUrl: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=160&q=80' },
+      { id: 'upsc-economy', exam: 'UPSC', name: 'Indian Economy', paper: 'UPSC GS Paper III', topics: 6, completed: 2, imageUrl: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=160&q=80' },
+      { id: 'upsc-environment', exam: 'UPSC', name: 'Environment and Ecology', paper: 'UPSC GS Paper III', topics: 5, completed: 3, imageUrl: 'https://images.unsplash.com/photo-1473448912268-2022ce9509d8?auto=format&fit=crop&w=160&q=80' },
+      { id: 'upsc-science-tech', exam: 'UPSC', name: 'Science and Technology', paper: 'UPSC GS Paper III', topics: 5, completed: 2, imageUrl: 'https://images.unsplash.com/photo-1507668077129-56e32842fceb?auto=format&fit=crop&w=160&q=80' },
+      { id: 'upsc-current-affairs', exam: 'UPSC', name: 'Current Affairs', paper: 'UPSC Prelims & Mains', topics: 5, completed: 3, imageUrl: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=160&q=80' },
+      { id: 'upsc-csat', exam: 'UPSC', name: 'CSAT (Prelims Paper II)', paper: 'UPSC Prelims Paper II', topics: 6, completed: 4, imageUrl: 'https://images.unsplash.com/photo-1509228468518-180dd4864904?auto=format&fit=crop&w=160&q=80' },
+      { id: 'upsc-ethics', exam: 'UPSC', name: 'Ethics, Integrity and Aptitude (Mains)', paper: 'UPSC GS Paper IV', topics: 5, completed: 2, imageUrl: 'https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=160&q=80' },
 
-      // MPSC Maharashtra State Services
-      { id: 'mpsc-history', exam: 'MPSC', name: 'History of Modern Maharashtra & Reformers', paper: 'MPSC GS Paper I', topics: 65, completed: 32 },
-      { id: 'mpsc-geography', exam: 'MPSC', name: 'Geography & Agriculture of Maharashtra', paper: 'MPSC GS Paper I', topics: 58, completed: 28 },
-      { id: 'mpsc-polity', exam: 'MPSC', name: 'Maharashtra Polity & District Administration', paper: 'MPSC GS Paper II', topics: 72, completed: 36 },
-      { id: 'mpsc-economy', exam: 'MPSC', name: 'Economy of Maharashtra & Rural Development', paper: 'MPSC GS Paper III', topics: 60, completed: 24 },
-      { id: 'mpsc-marathi-english', exam: 'MPSC', name: 'Marathi & English Language Skills', paper: 'MPSC Language Paper', topics: 50, completed: 30 },
-      { id: 'mpsc-science-agri', exam: 'MPSC', name: 'Science, Tech & Agriculture Ecology', paper: 'MPSC GS Paper IV', topics: 54, completed: 20 }
+      // MPSC Maharashtra State Services (9 Core Subjects)
+      { id: 'mpsc-history', exam: 'MPSC', name: 'Maharashtra and Indian History', paper: 'MPSC GS Paper I', topics: 6, completed: 3, imageUrl: 'https://images.unsplash.com/photo-1578328819058-b69f3a3b0f6b?auto=format&fit=crop&w=160&q=80' },
+      { id: 'mpsc-geography', exam: 'MPSC', name: 'Maharashtra and Indian Geography', paper: 'MPSC GS Paper I', topics: 6, completed: 3, imageUrl: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=160&q=80' },
+      { id: 'mpsc-polity', exam: 'MPSC', name: 'Indian Constitution and Maharashtra Administration', paper: 'MPSC GS Paper II', topics: 6, completed: 4, imageUrl: 'https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=160&q=80' },
+      { id: 'mpsc-economy', exam: 'MPSC', name: 'Indian and Maharashtra Economy', paper: 'MPSC GS Paper III', topics: 6, completed: 2, imageUrl: 'https://images.unsplash.com/photo-1570126618953-d437176e8c79?auto=format&fit=crop&w=160&q=80' },
+      { id: 'mpsc-marathi', exam: 'MPSC', name: 'Marathi Language', paper: 'MPSC Language Paper 1', topics: 5, completed: 3, imageUrl: 'https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=160&q=80' },
+      { id: 'mpsc-english', exam: 'MPSC', name: 'English Language', paper: 'MPSC Language Paper 2', topics: 5, completed: 3, imageUrl: 'https://images.unsplash.com/photo-1457369804613-52c61a468e7d?auto=format&fit=crop&w=160&q=80' },
+      { id: 'mpsc-aptitude', exam: 'MPSC', name: 'Aptitude and Reasoning', paper: 'MPSC CSAT / Paper II', topics: 6, completed: 4, imageUrl: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&w=160&q=80' },
+      { id: 'mpsc-environment-science', exam: 'MPSC', name: 'Environment and Science', paper: 'MPSC GS Paper IV', topics: 5, completed: 2, imageUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=160&q=80' },
+      { id: 'mpsc-current-affairs', exam: 'MPSC', name: 'Current Affairs', paper: 'MPSC Prelims & Mains', topics: 5, completed: 3, imageUrl: 'https://images.unsplash.com/photo-1495020689067-958852a7765e?auto=format&fit=crop&w=160&q=80' }
     ],
     topicProgress: [],
     plans: [
@@ -234,7 +240,7 @@ app.get('/api/topic-progress', auth(), (req, res) => {
 });
 
 // Syllabus: save or update an individual topic's status
-app.patch('/api/topic-progress/:topicId', auth(), (req, res) => {
+const handleTopicProgressUpdate = (req, res) => {
   const allowedStatuses = [
     'Not Started',
     'In Progress',
@@ -242,7 +248,14 @@ app.patch('/api/topic-progress/:topicId', auth(), (req, res) => {
     'To Revise'
   ];
 
-  const { status, subjectId } = req.body;
+  const {
+    status,
+    subjectId,
+    targetDate,
+    timeSpentMinutes,
+    revisionCount,
+    completionPercentage
+  } = req.body;
 
   if (!allowedStatuses.includes(status)) {
     return res.status(400).json({ error: 'Invalid topic status' });
@@ -259,13 +272,27 @@ app.patch('/api/topic-progress/:topicId', auth(), (req, res) => {
   if (item) {
     item.status = status;
     if (subjectId) item.subjectId = subjectId;
+    if (targetDate !== undefined) item.targetDate = targetDate;
+    if (timeSpentMinutes !== undefined) item.timeSpentMinutes = Number(timeSpentMinutes) || 0;
+    if (revisionCount !== undefined) item.revisionCount = Number(revisionCount) || 0;
+    if (completionPercentage !== undefined) {
+      item.completionPercentage = Math.max(0, Math.min(100, Number(completionPercentage) || 0));
+    } else {
+      item.completionPercentage = status === 'Completed' ? 100 : status === 'In Progress' ? 50 : status === 'To Revise' ? 75 : 0;
+    }
   } else {
     item = {
       id: Date.now().toString(),
       userId: req.user.id,
       topicId: req.params.topicId,
       subjectId: subjectId || null,
-      status
+      status,
+      targetDate: targetDate || null,
+      timeSpentMinutes: Number(timeSpentMinutes) || 0,
+      revisionCount: Number(revisionCount) || 0,
+      completionPercentage: completionPercentage !== undefined
+        ? Math.max(0, Math.min(100, Number(completionPercentage) || 0))
+        : (status === 'Completed' ? 100 : status === 'In Progress' ? 50 : status === 'To Revise' ? 75 : 0)
     };
 
     db.topicProgress.push(item);
@@ -284,7 +311,12 @@ app.patch('/api/topic-progress/:topicId', auth(), (req, res) => {
 
   save(db);
   res.json(item);
-});
+};
+
+app.patch('/api/topic-progress/:topicId', auth(), handleTopicProgressUpdate);
+app.post('/api/topic-progress/:topicId', auth(), handleTopicProgressUpdate);
+app.patch('/api/topics/progress/:topicId', auth(), handleTopicProgressUpdate);
+app.post('/api/topics/progress/:topicId', auth(), handleTopicProgressUpdate);
 
 // Planner: get plans belonging to logged-in student
 app.get('/api/plan', auth(), (req, res) => {
@@ -539,7 +571,7 @@ app.get('/api/admin/subjects', auth('admin'), (req, res) => {
 });
 
 app.post('/api/admin/subjects', auth('admin'), (req, res) => {
-  const { name, paper, topics, exam } = req.body;
+  const { name, paper, topics, exam, imageUrl } = req.body;
 
   if (!name || !name.trim()) {
     return res.status(400).json({ error: 'Name required' });
@@ -553,7 +585,8 @@ app.post('/api/admin/subjects', auth('admin'), (req, res) => {
     exam: (exam || (paper && paper.includes('MPSC') ? 'MPSC' : 'UPSC')).toUpperCase(),
     paper: paper || 'GS Paper II',
     topics: Math.max(0, Number(topics) || 0),
-    completed: 0
+    completed: 0,
+    imageUrl: imageUrl ? imageUrl.trim() : null
   };
 
   db.subjects.push(subject);
@@ -563,7 +596,7 @@ app.post('/api/admin/subjects', auth('admin'), (req, res) => {
 });
 
 app.put('/api/admin/subjects/:id', auth('admin'), (req, res) => {
-  const { name, paper, topics, exam } = req.body;
+  const { name, paper, topics, exam, imageUrl } = req.body;
   const db = read();
   const subject = db.subjects.find(s => s.id === req.params.id);
 
@@ -575,6 +608,7 @@ app.put('/api/admin/subjects/:id', auth('admin'), (req, res) => {
   if (paper && paper.trim()) subject.paper = paper.trim();
   if (exam) subject.exam = exam.toUpperCase();
   if (topics !== undefined) subject.topics = Math.max(0, Number(topics) || 0);
+  if (imageUrl !== undefined) subject.imageUrl = imageUrl ? imageUrl.trim() : null;
 
   save(db);
   res.json(subject);

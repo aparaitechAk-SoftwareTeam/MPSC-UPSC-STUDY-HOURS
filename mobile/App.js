@@ -11,7 +11,8 @@ import {
   Alert,
   Platform,
   StyleSheet,
-  NativeModules
+  NativeModules,
+  Image
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Svg, { Circle } from 'react-native-svg';
@@ -74,140 +75,175 @@ const tomorrow = () => {
 };
 
 const SYLLABUS_TOPICS = {
-  // ==================== UPSC CIVIL SERVICES ====================
-  'upsc-polity': [
-    { id: 'up-1', name: 'Preamble, Salient Features & Constitutionalism', chapter: 'Basics of Constitution' },
-    { id: 'up-2', name: 'Fundamental Rights & Judicial Remedies (Art 12–35)', chapter: 'Part III' },
-    { id: 'up-3', name: 'Directive Principles (DPSP) & Fundamental Duties', chapter: 'Part IV & IV-A' },
-    { id: 'up-4', name: 'Union Executive, President & Prime Minister', chapter: 'Union Executive' },
-    { id: 'up-5', name: 'Parliament Structure, Law Making & Committees', chapter: 'Union Legislature' },
-    { id: 'up-6', name: 'Supreme Court, High Courts & Judicial Review', chapter: 'Judiciary' },
-    { id: 'up-7', name: 'Federalism, Center-State Relations & Emergency', chapter: 'Federal System' },
-    { id: 'up-8', name: 'Panchayati Raj & Urban Local Bodies (73rd/74th Act)', chapter: 'Local Governance' },
-    { id: 'up-9', name: 'Constitutional & Statutory Bodies (EC, CAG, UPSC, Finance Comm)', chapter: 'Institutions' },
-    { id: 'up-10', name: 'Governance, Citizen Charters, e-Gov & Transparency', chapter: 'Governance' }
-  ],
-  'upsc-history': [
-    { id: 'uh-1', name: 'Decline of Mughals & Rise of Regional Powers', chapter: '18th Century India' },
-    { id: 'uh-2', name: 'British Expansion & Administrative Policies', chapter: 'Colonial Rule' },
-    { id: 'uh-3', name: 'Revolt of 1857: Causes, Leaders & Consequences', chapter: 'Early Resistance' },
-    { id: 'uh-4', name: 'Socio-Religious Reform Movements & Awakening', chapter: 'Renaissance' },
-    { id: 'uh-5', name: 'INC Foundation, Moderates & Swadeshi Movement', chapter: 'Early Nationalism' },
-    { id: 'uh-6', name: 'Gandhian Era: Non-Cooperation & Civil Disobedience', chapter: 'Mass Movements' },
-    { id: 'uh-7', name: 'Revolutionary Nationalism & Subhas Chandra Bose', chapter: 'Armed Struggle' },
-    { id: 'uh-8', name: 'Quit India Movement, INA Trials & Cabinet Mission', chapter: 'Towards Freedom' },
-    { id: 'uh-9', name: 'Partition & Post-Independence State Reorganization', chapter: 'Modern India' },
-    { id: 'uh-10', name: 'Indian Classical Arts, Architecture & UNESCO Heritage', chapter: 'Art & Culture' }
-  ],
-  'upsc-economy': [
-    { id: 'ue-1', name: 'National Income Accounting & GDP Deflator', chapter: 'Macro Fundamentals' },
-    { id: 'ue-2', name: 'Inflation (CPI/WPI) & RBI Monetary Policy Framework', chapter: 'Monetary Economics' },
-    { id: 'ue-3', name: 'Fiscal Policy, Union Budget & Fiscal Deficit Targets', chapter: 'Public Finance' },
-    { id: 'ue-4', name: 'Banking Sector, NPAs, IBC 2016 & Digital Rupee', chapter: 'Financial System' },
-    { id: 'ue-5', name: 'Agriculture: Cropping Patterns, MSP, PDS & Subsidies', chapter: 'Primary Sector' },
-    { id: 'ue-6', name: 'External Sector: BoP, Forex Reserves & Foreign Trade', chapter: 'International Trade' },
-    { id: 'ue-7', name: 'Inclusive Growth, Poverty Indices & Human Development', chapter: 'Social Sector' },
-    { id: 'ue-8', name: 'Industrial Corridors, PLI Schemes & Logistics Policy', chapter: 'Secondary Sector' }
+  // ==================== UPSC CIVIL SERVICES (9 SUBJECTS) ====================
+  'upsc-history-culture': [
+    { id: 'uh-1', name: 'Ancient Indian history', chapter: 'History and Culture' },
+    { id: 'uh-2', name: 'Medieval Indian history', chapter: 'History and Culture' },
+    { id: 'uh-3', name: 'Modern Indian history', chapter: 'History and Culture' },
+    { id: 'uh-4', name: 'Indian freedom struggle', chapter: 'History and Culture' },
+    { id: 'uh-5', name: 'Art, architecture and culture', chapter: 'History and Culture' },
+    { id: 'uh-6', name: 'World history (Mains)', chapter: 'History and Culture' }
   ],
   'upsc-geography': [
-    { id: 'ug-1', name: 'Plate Tectonics, Earthquakes & Volcanism', chapter: 'Physical Geology' },
-    { id: 'ug-2', name: 'Atmosphere, Planetary Winds & Tropical Cyclones', chapter: 'Climatology' },
-    { id: 'ug-3', name: 'Ocean Currents, Tides & Marine Mineral Resources', chapter: 'Oceanography' },
-    { id: 'ug-4', name: 'Physiography of India: Himalayas & Peninsular Plateau', chapter: 'Indian Geography' },
-    { id: 'ug-5', name: 'Himalayan & Peninsular River Systems of India', chapter: 'Drainage' },
-    { id: 'ug-6', name: 'Monsoon Dynamics, El Niño/La Niña & IOD', chapter: 'Indian Climate' },
-    { id: 'ug-7', name: 'Biodiversity Hotspots, National Parks & Biosphere Reserves', chapter: 'Ecology' },
-    { id: 'ug-8', name: 'Climate Change, COP Conferences & Renewable Energy', chapter: 'Environment' }
+    { id: 'ug-1', name: 'Physical geography', chapter: 'Geography' },
+    { id: 'ug-2', name: 'Indian geography', chapter: 'Geography' },
+    { id: 'ug-3', name: 'World geography', chapter: 'Geography' },
+    { id: 'ug-4', name: 'Climate, rivers and monsoons', chapter: 'Geography' },
+    { id: 'ug-5', name: 'Agriculture and natural resources', chapter: 'Geography' },
+    { id: 'ug-6', name: 'Human and economic geography', chapter: 'Geography' }
+  ],
+  'upsc-polity': [
+    { id: 'up-1', name: 'Constitution of India', chapter: 'Indian Polity and Governance' },
+    { id: 'up-2', name: 'Fundamental Rights and Duties', chapter: 'Indian Polity and Governance' },
+    { id: 'up-3', name: 'Parliament and state legislatures', chapter: 'Indian Polity and Governance' },
+    { id: 'up-4', name: 'President, Prime Minister and judiciary', chapter: 'Indian Polity and Governance' },
+    { id: 'up-5', name: 'Panchayati Raj and local government', chapter: 'Indian Polity and Governance' },
+    { id: 'up-6', name: 'Constitutional and statutory bodies', chapter: 'Indian Polity and Governance' }
+  ],
+  'upsc-economy': [
+    { id: 'ue-1', name: 'GDP, inflation and national income', chapter: 'Indian Economy' },
+    { id: 'ue-2', name: 'Banking and monetary policy', chapter: 'Indian Economy' },
+    { id: 'ue-3', name: 'Budget and taxation', chapter: 'Indian Economy' },
+    { id: 'ue-4', name: 'Poverty, unemployment and development', chapter: 'Indian Economy' },
+    { id: 'ue-5', name: 'Agriculture and industry', chapter: 'Indian Economy' },
+    { id: 'ue-6', name: 'Government economic schemes', chapter: 'Indian Economy' }
+  ],
+  'upsc-environment': [
+    { id: 'uen-1', name: 'Ecosystems and food chains', chapter: 'Environment and Ecology' },
+    { id: 'uen-2', name: 'Biodiversity and conservation', chapter: 'Environment and Ecology' },
+    { id: 'uen-3', name: 'National parks and wildlife sanctuaries', chapter: 'Environment and Ecology' },
+    { id: 'uen-4', name: 'Climate change and global warming', chapter: 'Environment and Ecology' },
+    { id: 'uen-5', name: 'Pollution and environmental laws', chapter: 'Environment and Ecology' }
+  ],
+  'upsc-science-tech': [
+    { id: 'ust-1', name: 'Physics, chemistry and biology basics', chapter: 'Science and Technology' },
+    { id: 'ust-2', name: 'Space technology and satellites', chapter: 'Science and Technology' },
+    { id: 'ust-3', name: 'Biotechnology', chapter: 'Science and Technology' },
+    { id: 'ust-4', name: 'Artificial intelligence and emerging technologies', chapter: 'Science and Technology' },
+    { id: 'ust-5', name: 'Health and scientific developments', chapter: 'Science and Technology' }
+  ],
+  'upsc-current-affairs': [
+    { id: 'uca-1', name: 'National and international news', chapter: 'Current Affairs' },
+    { id: 'uca-2', name: 'Government policies and schemes', chapter: 'Current Affairs' },
+    { id: 'uca-3', name: 'Important reports and indices', chapter: 'Current Affairs' },
+    { id: 'uca-4', name: 'International organisations', chapter: 'Current Affairs' },
+    { id: 'uca-5', name: 'Awards, appointments and major events', chapter: 'Current Affairs' }
+  ],
+  'upsc-csat': [
+    { id: 'ucs-1', name: 'Reading comprehension', chapter: 'CSAT (Prelims Paper II)' },
+    { id: 'ucs-2', name: 'Logical reasoning', chapter: 'CSAT (Prelims Paper II)' },
+    { id: 'ucs-3', name: 'Analytical ability', chapter: 'CSAT (Prelims Paper II)' },
+    { id: 'ucs-4', name: 'Basic mathematics', chapter: 'CSAT (Prelims Paper II)' },
+    { id: 'ucs-5', name: 'Data interpretation', chapter: 'CSAT (Prelims Paper II)' },
+    { id: 'ucs-6', name: 'Decision-making and problem-solving', chapter: 'CSAT (Prelims Paper II)' }
   ],
   'upsc-ethics': [
-    { id: 'uet-1', name: 'Ethics & Human Interface: Essence & Consequences', chapter: 'Ethical Philosophy' },
-    { id: 'uet-2', name: 'Human Values: Lessons from Leaders & Reformers', chapter: 'Values' },
-    { id: 'uet-3', name: 'Attitude: Content, Functions & Moral Influence', chapter: 'Psychology' },
-    { id: 'uet-4', name: 'Emotional Intelligence in Governance & Leadership', chapter: 'Aptitude' },
-    { id: 'uet-5', name: 'Civil Service Values & Ethics in Administration', chapter: 'Public Service' },
-    { id: 'uet-6', name: 'Probity in Governance, Citizen Charters & RTI', chapter: 'Anti-Corruption' },
-    { id: 'uet-7', name: 'Ethical Case Studies on Administrative Dilemmas', chapter: 'Case Studies' }
-  ],
-  'upsc-security-ir': [
-    { id: 'usr-1', name: 'India and its Neighborhood: Act East & SAGAR', chapter: 'Foreign Policy' },
-    { id: 'usr-2', name: 'Multilateral Groups: Quad, BRICS, SCO, G20 & UN', chapter: 'International Fora' },
-    { id: 'usr-3', name: 'Bilateral Ties: USA, Russia, EU, China & Middle East', chapter: 'Major Powers' },
-    { id: 'usr-4', name: 'Border Management & Internal Security Challenges', chapter: 'Security' },
-    { id: 'usr-5', name: 'Cyber Threats, AI Warfare & Critical Infrastructure', chapter: 'Modern Warfare' }
+    { id: 'uet-1', name: 'Ethics and human values', chapter: 'Ethics, Integrity and Aptitude' },
+    { id: 'uet-2', name: 'Integrity and impartiality', chapter: 'Ethics, Integrity and Aptitude' },
+    { id: 'uet-3', name: 'Emotional intelligence', chapter: 'Ethics, Integrity and Aptitude' },
+    { id: 'uet-4', name: 'Public service values', chapter: 'Ethics, Integrity and Aptitude' },
+    { id: 'uet-5', name: 'Case studies and ethical dilemmas', chapter: 'Ethics, Integrity and Aptitude' }
   ],
 
-  // ==================== MPSC MAHARASHTRA ====================
+  // ==================== MPSC MAHARASHTRA (9 SUBJECTS) ====================
   'mpsc-history': [
-    { id: 'mh-1', name: 'Chhatrapati Shivaji Maharaj & Maratha Administration', chapter: 'Medieval Legacy' },
-    { id: 'mh-2', name: 'Mahatma Jyotirao Phule & Satyashodhak Samaj', chapter: 'Social Reformers' },
-    { id: 'mh-3', name: 'Rajarshi Chhatrapati Shahu Maharaj & Social Democracy', chapter: 'Social Justice' },
-    { id: 'mh-4', name: 'Dr. B. R. Ambedkar: Social Justice & Dalit Movement', chapter: 'Mass Emancipation' },
-    { id: 'mh-5', name: 'Savitribai Phule, Tarabai Shinde & Women Education', chapter: 'Women Reformers' },
-    { id: 'mh-6', name: 'Freedom Struggle in Maharashtra & Revolutionary Groups', chapter: 'National Movement' },
-    { id: 'mh-7', name: 'Sanyukta Maharashtra Movement & Formation of 1960', chapter: 'State Formation' },
-    { id: 'mh-8', name: 'Varkari Tradition, Saint Poets & Folk Culture of Maharashtra', chapter: 'Cultural Heritage' }
+    { id: 'mh-1', name: 'Ancient and medieval Indian history', chapter: 'Maharashtra and Indian History' },
+    { id: 'mh-2', name: 'Modern India and freedom struggle', chapter: 'Maharashtra and Indian History' },
+    { id: 'mh-3', name: 'Chhatrapati Shivaji Maharaj', chapter: 'Maharashtra and Indian History' },
+    { id: 'mh-4', name: 'Maratha Empire and Peshwa period', chapter: 'Maharashtra and Indian History' },
+    { id: 'mh-5', name: 'Social reformers of Maharashtra', chapter: 'Maharashtra and Indian History' },
+    { id: 'mh-6', name: "Maharashtra's formation in 1960", chapter: 'Maharashtra and Indian History' }
   ],
   'mpsc-geography': [
-    { id: 'mg-1', name: 'Physiography of Maharashtra: Konkan, Sahyadri & Desh', chapter: 'Maharashtra Geology' },
-    { id: 'mg-2', name: 'Drainage Systems: Godavari, Krishna, Bhima & Tapi', chapter: 'River Basins' },
-    { id: 'mg-3', name: 'Climate, Monsoon Variations & Drought Prone Zones', chapter: 'Maharashtra Climate' },
-    { id: 'mg-4', name: 'Soils & Agro-Climatic Zones of Maharashtra', chapter: 'Agriculture Ecology' },
-    { id: 'mg-5', name: 'Major Crops: Sugarcane, Cotton, Jowar, Onion & Grapes', chapter: 'Cash Crops' },
-    { id: 'mg-6', name: 'Forest Types, Wildlife Sanctuaries (Tadoba, Radhanagari)', chapter: 'Flora & Fauna' },
-    { id: 'mg-7', name: 'Minerals & Industrial Centers of Maharashtra', chapter: 'Economic Geography' }
+    { id: 'mg-1', name: 'Sahyadri and Western Ghats', chapter: 'Maharashtra and Indian Geography' },
+    { id: 'mg-2', name: "Maharashtra's districts and divisions", chapter: 'Maharashtra and Indian Geography' },
+    { id: 'mg-3', name: 'Godavari, Krishna and other river systems', chapter: 'Maharashtra and Indian Geography' },
+    { id: 'mg-4', name: 'Climate, rainfall and soils', chapter: 'Maharashtra and Indian Geography' },
+    { id: 'mg-5', name: 'Agriculture and irrigation', chapter: 'Maharashtra and Indian Geography' },
+    { id: 'mg-6', name: 'Minerals, industries and population', chapter: 'Maharashtra and Indian Geography' }
   ],
   'mpsc-polity': [
-    { id: 'mp-1', name: 'Maharashtra State Legislature: Assembly & Council', chapter: 'State Legislature' },
-    { id: 'mp-2', name: 'Governor, Chief Minister & State Council of Ministers', chapter: 'State Executive' },
-    { id: 'mp-3', name: 'Bombay High Court, Bench Setup & Subordinate Courts', chapter: 'State Judiciary' },
-    { id: 'mp-4', name: 'District Administration: Collector, SDO, Tehsildar & Talathi', chapter: 'District Setup' },
-    { id: 'mp-5', name: 'Panchayati Raj in Maharashtra: ZP, PS & Gram Panchayat', chapter: 'Rural Self-Govt' },
-    { id: 'mp-6', name: 'Urban Governance: Municipal Corporations (BMC, PMC, etc.)', chapter: 'Urban Self-Govt' },
-    { id: 'mp-7', name: 'Maharashtra Public Service Commission (MPSC) Structure', chapter: 'State Commissions' },
-    { id: 'mp-8', name: 'Maharashtra Right to Public Services Act (RTS 2015)', chapter: 'Citizen Services' }
+    { id: 'mp-1', name: 'Indian Constitution and fundamental rights', chapter: 'Constitution & Administration' },
+    { id: 'mp-2', name: 'Parliament and state legislature', chapter: 'Constitution & Administration' },
+    { id: 'mp-3', name: 'Governor and Chief Minister', chapter: 'Constitution & Administration' },
+    { id: 'mp-4', name: 'Maharashtra government structure', chapter: 'Constitution & Administration' },
+    { id: 'mp-5', name: 'Local self-government', chapter: 'Constitution & Administration' },
+    { id: 'mp-6', name: 'Panchayati Raj and urban administration', chapter: 'Constitution & Administration' }
   ],
   'mpsc-economy': [
-    { id: 'me-1', name: 'Maharashtra GSDP Trends & Regional Disparities', chapter: 'State Economy' },
-    { id: 'me-2', name: 'Agriculture & Irrigation in Maharashtra: Krishna Valley Projects', chapter: 'Irrigation & Farming' },
-    { id: 'me-3', name: 'Cooperative Movement in Maharashtra (Sugar, Milk & Banking)', chapter: 'Cooperatives' },
-    { id: 'me-4', name: 'MIDC, SEZs, IT Parks & Industrial corridors (DMIC)', chapter: 'Industrial Hubs' },
-    { id: 'me-5', name: 'Infrastructure: Samruddhi Highway, Metro Rail & Ports', chapter: 'Connectivity' },
-    { id: 'me-6', name: 'Key Welfare Schemes: Ladki Bahin & Rural Employment', chapter: 'Social Welfare' }
+    { id: 'me-1', name: 'Basic economic concepts', chapter: 'Indian and Maharashtra Economy' },
+    { id: 'me-2', name: 'State budget and economic survey', chapter: 'Indian and Maharashtra Economy' },
+    { id: 'me-3', name: 'Maharashtra agriculture and industries', chapter: 'Indian and Maharashtra Economy' },
+    { id: 'me-4', name: 'Banking, inflation and taxation', chapter: 'Indian and Maharashtra Economy' },
+    { id: 'me-5', name: 'Poverty and unemployment', chapter: 'Indian and Maharashtra Economy' },
+    { id: 'me-6', name: 'State and central government schemes', chapter: 'Indian and Maharashtra Economy' }
   ],
-  'mpsc-marathi-english': [
-    { id: 'mme-1', name: 'Marathi Grammar: Vyakaran, Sandhi, Samas & Vakya-Rupantar', chapter: 'Marathi Grammar' },
-    { id: 'mme-2', name: 'Marathi Vocabulary, Mhani (Proverbs) & Vakprachar', chapter: 'Marathi Idioms' },
-    { id: 'mme-3', name: 'Marathi Essay Writing & Précis (Sankshiptikaran)', chapter: 'Marathi Writing' },
-    { id: 'mme-4', name: 'English Grammar: Tenses, Voice, Narration & Modals', chapter: 'English Grammar' },
-    { id: 'mme-5', name: 'English Vocabulary, Synonyms, Antonyms & Idioms', chapter: 'English Lexicon' },
-    { id: 'mme-6', name: 'Translation: English to Marathi & Marathi to English', chapter: 'Translation Skills' }
+  'mpsc-marathi': [
+    { id: 'mm-1', name: 'Grammar and sentence structure', chapter: 'Marathi Language' },
+    { id: 'mm-2', name: 'Vocabulary and synonyms', chapter: 'Marathi Language' },
+    { id: 'mm-3', name: 'Antonyms and idioms', chapter: 'Marathi Language' },
+    { id: 'mm-4', name: 'Reading comprehension', chapter: 'Marathi Language' },
+    { id: 'mm-5', name: 'Sentence correction and usage', chapter: 'Marathi Language' }
   ],
-  'mpsc-science-agri': [
-    { id: 'msa-1', name: 'General Science: Physics & Everyday Mechanics', chapter: 'Physics' },
-    { id: 'msa-2', name: 'Chemistry: Compounds, Polymers & Environmental Chemistry', chapter: 'Chemistry' },
-    { id: 'msa-3', name: 'Biology: Human Physiology, Diseases & Immunity', chapter: 'Life Sciences' },
-    { id: 'msa-4', name: 'Agriculture Science: Soil Fertility & Micro-Irrigation', chapter: 'Agronomy' },
-    { id: 'msa-5', name: 'Biotechnology in Crop Improvement & Horticulture', chapter: 'Agri-Tech' },
-    { id: 'msa-6', name: 'ICT, Artificial Intelligence & Cyber Law in India', chapter: 'Information Tech' }
+  'mpsc-english': [
+    { id: 'men-1', name: 'Grammar and vocabulary', chapter: 'English Language' },
+    { id: 'men-2', name: 'Synonyms and antonyms', chapter: 'English Language' },
+    { id: 'men-3', name: 'Sentence correction', chapter: 'English Language' },
+    { id: 'men-4', name: 'Comprehension', chapter: 'English Language' },
+    { id: 'men-5', name: 'Basic usage and writing skills', chapter: 'English Language' }
+  ],
+  'mpsc-aptitude': [
+    { id: 'ma-1', name: 'Number systems and percentages', chapter: 'Aptitude and Reasoning' },
+    { id: 'ma-2', name: 'Ratio and proportion', chapter: 'Aptitude and Reasoning' },
+    { id: 'ma-3', name: 'Time, speed and distance', chapter: 'Aptitude and Reasoning' },
+    { id: 'ma-4', name: 'Logical reasoning', chapter: 'Aptitude and Reasoning' },
+    { id: 'ma-5', name: 'Data interpretation', chapter: 'Aptitude and Reasoning' },
+    { id: 'ma-6', name: 'Mental ability', chapter: 'Aptitude and Reasoning' }
+  ],
+  'mpsc-environment-science': [
+    { id: 'mes-1', name: 'Ecology and biodiversity', chapter: 'Environment and Science' },
+    { id: 'mes-2', name: 'Pollution and climate change', chapter: 'Environment and Science' },
+    { id: 'mes-3', name: 'General science', chapter: 'Environment and Science' },
+    { id: 'mes-4', name: 'Health and technology', chapter: 'Environment and Science' },
+    { id: 'mes-5', name: 'Maharashtra forests and wildlife', chapter: 'Environment and Science' }
+  ],
+  'mpsc-current-affairs': [
+    { id: 'mca-1', name: 'Maharashtra government decisions', chapter: 'Current Affairs' },
+    { id: 'mca-2', name: 'State and national schemes', chapter: 'Current Affairs' },
+    { id: 'mca-3', name: 'National and international events', chapter: 'Current Affairs' },
+    { id: 'mca-4', name: 'Important appointments and awards', chapter: 'Current Affairs' },
+    { id: 'mca-5', name: 'Maharashtra economic and social developments', chapter: 'Current Affairs' }
   ],
 
-  // Legacy mappings for backwards compatibility
-  polity: [
-    { id: 'up-1', name: 'Preamble, Salient Features & Constitutionalism', chapter: 'Basics of Constitution' },
-    { id: 'up-2', name: 'Fundamental Rights & Judicial Remedies (Art 12–35)', chapter: 'Part III' },
-    { id: 'up-3', name: 'Directive Principles (DPSP) & Fundamental Duties', chapter: 'Part IV & IV-A' }
+  // Backward compatibility aliases
+  'upsc-history': [
+    { id: 'uh-1', name: 'Ancient Indian history', chapter: 'History and Culture' },
+    { id: 'uh-2', name: 'Medieval Indian history', chapter: 'History and Culture' },
+    { id: 'uh-3', name: 'Modern Indian history', chapter: 'History and Culture' },
+    { id: 'uh-4', name: 'Indian freedom struggle', chapter: 'History and Culture' },
+    { id: 'uh-5', name: 'Art, architecture and culture', chapter: 'History and Culture' },
+    { id: 'uh-6', name: 'World history (Mains)', chapter: 'History and Culture' }
   ],
-  history: [
-    { id: 'uh-3', name: 'Revolt of 1857: Causes, Leaders & Consequences', chapter: 'Early Resistance' },
-    { id: 'uh-4', name: 'Socio-Religious Reform Movements & Awakening', chapter: 'Renaissance' }
+  'mpsc-marathi-english': [
+    { id: 'mm-1', name: 'Grammar and sentence structure', chapter: 'Marathi Language' },
+    { id: 'mm-2', name: 'Vocabulary and synonyms', chapter: 'Marathi Language' },
+    { id: 'men-1', name: 'Grammar and vocabulary', chapter: 'English Language' }
   ],
-  economy: [
-    { id: 'ue-1', name: 'National Income Accounting & GDP Deflator', chapter: 'Macro Fundamentals' },
-    { id: 'ue-2', name: 'Inflation (CPI/WPI) & RBI Monetary Policy Framework', chapter: 'Monetary Economics' }
+  'mpsc-science-agri': [
+    { id: 'mes-1', name: 'Ecology and biodiversity', chapter: 'Environment and Science' },
+    { id: 'mes-2', name: 'Pollution and climate change', chapter: 'Environment and Science' }
   ],
-  geography: [
-    { id: 'ug-4', name: 'Physiography of India: Himalayas & Peninsular Plateau', chapter: 'Indian Geography' },
-    { id: 'ug-6', name: 'Monsoon Dynamics, El Niño/La Niña & IOD', chapter: 'Indian Climate' }
+  'history': [
+    { id: 'uh-3', name: 'Modern Indian history', chapter: 'History and Culture' }
+  ],
+  'polity': [
+    { id: 'up-1', name: 'Constitution of India', chapter: 'Indian Polity and Governance' }
+  ],
+  'economy': [
+    { id: 'ue-1', name: 'GDP, inflation and national income', chapter: 'Indian Economy' }
+  ],
+  'geography': [
+    { id: 'ug-1', name: 'Physical geography', chapter: 'Geography' }
   ]
 };
 
@@ -568,7 +604,7 @@ export default function App() {
 
       Object.entries(SYLLABUS_TOPICS).forEach(([sId, topics]) => {
         // Exclude legacy alias keys from double counting
-        if (sId === 'polity' || sId === 'history' || sId === 'economy' || sId === 'geography') return;
+        if (sId === 'polity' || sId === 'history' || sId === 'economy' || sId === 'geography' || sId === 'upsc-history' || sId === 'mpsc-marathi-english' || sId === 'mpsc-science-agri') return;
         if (filterFn && !filterFn(sId)) return;
 
         topics.forEach(t => {
@@ -999,8 +1035,39 @@ export default function App() {
             <Card key={s.id} style={{ paddingBottom: isExpanded ? 12 : 16 }}>
               <TouchableOpacity
                 onPress={() => setExpandedSubject(isExpanded ? null : s.id)}
-                style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}
               >
+                {/* Small Subject Thumbnail Image (User-friendly, 46x46) */}
+                {s.imageUrl ? (
+                  <Image
+                    source={{ uri: s.imageUrl }}
+                    style={{
+                      width: 46,
+                      height: 46,
+                      borderRadius: 12,
+                      backgroundColor: isMp ? '#fef3c7' : '#dbeafe',
+                      borderWidth: 1,
+                      borderColor: isMp ? '#fde68a' : '#bfdbfe'
+                    }}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View
+                    style={{
+                      width: 46,
+                      height: 46,
+                      borderRadius: 12,
+                      backgroundColor: isMp ? '#fef3c7' : '#dbeafe',
+                      borderWidth: 1,
+                      borderColor: isMp ? '#fde68a' : '#bfdbfe',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <Ionicons name={isMp ? 'flag' : 'school'} size={22} color={isMp ? '#b45309' : '#1e40af'} />
+                  </View>
+                )}
+
                 <View style={{ flex: 1 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                     <Text
@@ -1059,6 +1126,12 @@ export default function App() {
                 {topicsList.map((t, idx) => {
                   const prog = topicProgress.find(p => p.topicId === t.id);
                   const status = prog?.status || 'Not Started';
+                  const targetDate = prog?.targetDate;
+                  const timeSpent = prog?.timeSpentMinutes || 0;
+                  const revisions = prog?.revisionCount || 0;
+                  const pct = prog?.completionPercentage !== undefined
+                    ? prog.completionPercentage
+                    : (status === 'Completed' ? 100 : status === 'In Progress' ? 50 : status === 'To Revise' ? 75 : 0);
 
                   // Badge colors
                   const statusColors = {
@@ -1073,12 +1146,12 @@ export default function App() {
                     <View
                       key={t.id}
                       style={{
-                        paddingVertical: 10,
+                        paddingVertical: 11,
                         borderBottomWidth: idx === topicsList.length - 1 ? 0 : 1,
                         borderColor: '#f1f5f9'
                       }}
                     >
-                      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
                         <View style={{ flex: 1, marginRight: 8 }}>
                           <Text style={txt(10, false, C.muted)}>{t.chapter}</Text>
                           <Text
@@ -1089,6 +1162,33 @@ export default function App() {
                           >
                             {t.name}
                           </Text>
+
+                          {/* Metadata row: Target Date, Time Spent, Revisions, Completion % */}
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4, flexWrap: 'wrap' }}>
+                            {targetDate && (
+                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                                <Ionicons name="calendar-outline" size={11} color={C.muted} />
+                                <Text style={txt(10, false, C.muted)}>Due {targetDate}</Text>
+                              </View>
+                            )}
+                            {timeSpent > 0 && (
+                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                                <Ionicons name="time-outline" size={11} color={C.muted} />
+                                <Text style={txt(10, false, C.muted)}>{timeSpent}m spent</Text>
+                              </View>
+                            )}
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                              <Ionicons name="repeat-outline" size={11} color={revisions > 0 ? C.purple : C.muted} />
+                              <Text style={txt(10, false, revisions > 0 ? C.purple : C.muted)}>
+                                {revisions} rev{revisions === 1 ? '' : 's'}
+                              </Text>
+                            </View>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                              <Text style={{ fontSize: 10, fontWeight: '700', color: pct === 100 ? C.green : C.blue }}>
+                                {pct}% done
+                              </Text>
+                            </View>
+                          </View>
                         </View>
 
                         {/* Interactive Status Button */}
@@ -1111,11 +1211,37 @@ export default function App() {
                         </TouchableOpacity>
                       </View>
 
-                      {/* Quick Action: Schedule for today */}
-                      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 6, gap: 10 }}>
+                      {/* Mini Topic Progress Line */}
+                      <View style={{ height: 3, backgroundColor: '#f1f5f9', borderRadius: 2, marginTop: 8 }}>
+                        <View
+                          style={{
+                            height: '100%',
+                            width: `${pct}%`,
+                            backgroundColor: status === 'Completed' ? C.green : status === 'To Revise' ? C.purple : C.blue,
+                            borderRadius: 2
+                          }}
+                        />
+                      </View>
+
+                      {/* Topic Action Buttons (+1 Revise, Plan for Today) */}
+                      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', marginTop: 6, gap: 14 }}>
+                        <TouchableOpacity
+                          onPress={() => {
+                            const nextRev = revisions + 1;
+                            updateTopicStatus(t, status, s.id, {
+                              revisionCount: nextRev,
+                              status: 'To Revise'
+                            });
+                          }}
+                          style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}
+                        >
+                          <Ionicons name="add-circle-outline" size={13} color={C.purple} />
+                          <Text style={txt(11, true, C.purple)}>+1 Revise</Text>
+                        </TouchableOpacity>
+
                         <TouchableOpacity
                           onPress={() => quickScheduleTopic(t, s.name, s.id)}
-                          style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+                          style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}
                         >
                           <Ionicons name="calendar-outline" size={13} color={C.blue} />
                           <Text style={txt(11, true, C.blue)}>Plan for Today</Text>
