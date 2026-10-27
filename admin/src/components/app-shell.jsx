@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "@/components/router-link";
 import { useEffect, useState, useRef, useCallback } from "react";
-import { LayoutDashboard, Users, BookOpen, Timer, Megaphone, Bell, UserRound, Settings, LogOut, GraduationCap, CalendarDays, Menu, X, RefreshCw } from "lucide-react";
+import { LayoutDashboard, Users, BookOpen, Timer, Megaphone, Bell, UserRound, Settings, LogOut, GraduationCap, CalendarDays, Menu, X, RefreshCw, Ticket } from "lucide-react";
 import { toast } from "sonner";
 import { initials, useProfile, signOutProfile } from "@/lib/profile-store";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, } from "@/components/ui/alert-dialog";
@@ -11,6 +11,7 @@ const nav = [
     { to: "/syllabus", label: "Syllabus", icon: BookOpen },
     { to: "/sessions", label: "Sessions", icon: Timer },
     { to: "/announcements", label: "Announcements", icon: Megaphone },
+    { to: "/tickets", label: "Ticket Management", icon: Ticket },
     { to: "/profile", label: "Profile", icon: UserRound },
 ];
 export function useToday() {

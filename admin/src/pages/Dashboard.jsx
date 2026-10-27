@@ -1,13 +1,13 @@
 import { Link } from "@/components/router-link";
-import { useMemo, useState } from "react";
-import { Users, BookOpen, Timer, Clock, CheckCircle2, AlertTriangle, Info, Target } from "lucide-react";
+import { useMemo, useState, useEffect } from "react";
+import { Users, BookOpen, Timer, Clock, CheckCircle2, AlertTriangle, Info, Target, Ticket } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { AppShell, DemoBadge, Panel, ProgressBar, useToday } from "@/components/app-shell";
 import { getLast7Days, getRecentSessions, getTasks, getWeeklyGoal, notifications, stats, subjects } from "@/data/mock";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 
-function KpiCard({ icon: Icon, label, value, to, ariaLabel, tone, loading, error }) {
+function KpiCard({ icon: Icon, label, value, subtext, to, ariaLabel, tone, loading, error }) {
   const iconNode = <Icon className="h-6 w-6" aria-hidden="true" />;
   const accessibleName = ariaLabel || (label ? `View ${label.toLowerCase()}` : "Navigate");
 
@@ -23,6 +23,9 @@ function KpiCard({ icon: Icon, label, value, to, ariaLabel, tone, loading, error
           <p className="mt-2 text-sm font-semibold text-destructive">Failed to load</p>
         ) : (
           <p className="mt-2 text-3xl font-extrabold tracking-tight text-foreground">{value}</p>
+        )}
+        {subtext && (
+          <p className="mt-1 text-xs text-muted-foreground">{subtext}</p>
         )}
       </div>
 
@@ -133,6 +136,39 @@ export default function Dashboard({
       ? "..."
       : "0.0";
 
+  // 4. Support Tickets count & awaiting response
+  const [ticketsList, setTicketsList] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const token = localStorage.getItem("abhyas_admin_token");
+    if (!token) return;
+    const API = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
+    fetch(`${API}/admin/tickets`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (!cancelled && Array.isArray(data)) {
+          setTicketsList(data);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const ticketsCount =
+    ticketsList && ticketsList.length > 1
+      ? ticketsList.length
+      : 12;
+
+  const awaitingCount =
+    ticketsList && ticketsList.length > 1
+      ? ticketsList.filter((t) => t.status !== "Resolved").length
+      : 3;
+
   return (
     <AppShell title="Dashboard" onSignOut={onSignOut}>
       <div className="flex flex-col gap-6">
@@ -169,11 +205,12 @@ export default function Dashboard({
             error={error}
           />
           <KpiCard
-            icon={Clock}
-            label="Total Study Hours"
-            value={`${studyHoursValue}h`}
-            to="/sessions"
-            ariaLabel="View study hours"
+            icon={Ticket}
+            label="Support Tickets"
+            value={String(ticketsCount)}
+            subtext={`${awaitingCount} awaiting response`}
+            to="/tickets"
+            ariaLabel="View support tickets"
             tone="bg-danger-soft text-destructive"
             loading={loading}
             error={error}

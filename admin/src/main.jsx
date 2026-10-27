@@ -13,6 +13,8 @@ import Announcements from '@/pages/Announcements';
 import Sessions from '@/pages/Sessions';
 import Students from '@/pages/Students';
 import StudentDetails from '@/pages/StudentDetails';
+import Tickets from '@/pages/Tickets';
+import SignIn from '@/pages/SignIn';
 import { initProfileFromUser, signOutProfile } from '@/lib/profile-store';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
@@ -25,9 +27,6 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState({ overview: null, users: [], subjects: [], sessions: [] });
   const [form, setForm] = useState({ name: '', paper: 'GS Paper II', topics: 40, title: '', message: '' });
-  const [email, setEmail] = useState('admin@abhyas.local');
-  const [password, setPassword] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Destination screen filters and student inspector
   const [studentSearch, setStudentSearch] = useState('');
@@ -120,32 +119,11 @@ function App() {
     };
   }, []);
 
-  async function handleLogin(e) {
-    e.preventDefault();
-    setError('');
-    setIsSubmitting(true);
-    try {
-      const res = await fetch(API + '/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-      const d = await res.json();
-      if (!res.ok) throw new Error(d.error || 'Invalid credentials');
-      if (d.user?.role !== 'admin') throw new Error('Admin privileges required');
-
-      localStorage.setItem('abhyas_admin_token', d.token);
-      initProfileFromUser(d.user);
-      setToken(d.token);
-      setPassword('');
-      toast.success('Signed in successfully');
-      load(d.token);
-    } catch (err) {
-      setError(err.message);
-      toast.error(err.message);
-    } finally {
-      setIsSubmitting(false);
-    }
+  function handleLoginSuccess(newToken, user) {
+    localStorage.setItem('abhyas_admin_token', newToken);
+    initProfileFromUser(user);
+    setToken(newToken);
+    load(newToken);
   }
 
   function handleSignOut() {
@@ -228,63 +206,9 @@ function App() {
     );
   }
 
-  // Unauthenticated: Existing Login Flow with clean styling
+  // Unauthenticated: Modern Admin Sign-In page
   if (!token) {
-    return (
-      <div className="min-h-screen w-full flex items-center justify-center bg-[#0d1527] p-4 font-sans text-slate-100">
-        <form
-          onSubmit={handleLogin}
-          className="w-full max-w-md bg-[#131d35] border border-slate-800 rounded-2xl p-8 shadow-2xl flex flex-col gap-5"
-        >
-          <div className="text-center space-y-1">
-            <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600/20 text-blue-400 font-bold text-2xl mb-2">
-              📘
-            </div>
-            <h1 className="text-2xl font-extrabold text-white">Abhyas Tracker</h1>
-            <p className="text-sm text-slate-400">Admin Control Panel</p>
-          </div>
-
-          {error && (
-            <div className="p-3 text-xs font-semibold rounded-lg bg-red-500/10 border border-red-500/30 text-red-400">
-              {error}
-            </div>
-          )}
-
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">Email Address</label>
-            <input
-              type="email"
-              value={email}
-              placeholder="admin@abhyas.local"
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-lg bg-[#0d1527] border border-slate-700 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500"
-              required
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">Password</label>
-            <input
-              type="password"
-              value={password}
-              placeholder="••••••••••••"
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-lg bg-[#0d1527] border border-slate-700 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500"
-              required
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full mt-2 py-2.5 px-4 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm transition-colors disabled:opacity-50"
-          >
-            {isSubmitting ? 'Signing in...' : 'Sign In'}
-          </button>
-        </form>
-        <Toaster />
-      </div>
-    );
+    return <SignIn onLoginSuccess={handleLoginSuccess} />;
   }
 
   // Authenticated: Dashboard (Scope) + Existing Management Screens
@@ -439,6 +363,9 @@ function App() {
         />
         {/* Backward-compatibility redirect from /notifications to /announcements */}
         <Route path="/notifications" element={<Navigate to="/announcements" replace />} />
+
+        {/* Management Screen: Ticket Management */}
+        <Route path="/tickets" element={<Tickets onSignOut={handleSignOut} />} />
 
         {/* Profile: identity from GET /api/me; edits & preferences are localStorage-only */}
         <Route path="/profile" element={<Profile onSignOut={handleSignOut} />} />

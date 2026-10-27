@@ -16,6 +16,7 @@ import Svg, { Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import Timer from './Timer';
 import SettingsScreen from './SettingsScreen';
+import TicketSupportScreen from './TicketSupportScreen';
 
 const LIGHT_THEME = {
   bg: '#f7f9fe',
@@ -824,99 +825,474 @@ export default function App() {
     )
     : 0;
 
-  const Dashboard = () => (
-    <>
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 12
-        }}
-      >
-        <Chip label="🔥 14-Day Streak" active />
-        <Chip label="UPSC / MPSC 2026" />
-      </View>
+  const Dashboard = () => {
+    // Real calculation of today's study progress from recorded sessions
+    const todayDateStr = today();
+    const todaySessions = sessions.filter(
+      s => s.startedAt && s.startedAt.slice(0, 10) === todayDateStr
+    );
+    const todayMinutes = todaySessions.reduce(
+      (sum, s) => sum + (Number(s.minutes) || 0),
+      0
+    );
+    const dailyGoalMinutes = 480; // Standard 8h 00m daily target
+    const progressPercent = Math.min(
+      100,
+      Math.round((todayMinutes / dailyGoalMinutes) * 100)
+    );
+    const todayHours = Math.floor(todayMinutes / 60);
+    const todayMinsRemainder = todayMinutes % 60;
+    const remainingMinutes = Math.max(0, dailyGoalMinutes - todayMinutes);
+    const remainingHours = Math.floor(remainingMinutes / 60);
+    const remainingMinsRemainder = remainingMinutes % 60;
 
-      <Title sub="Your study sanctuary • One session at a time">
-        Good morning, {user?.name?.split(' ')[0]}!
-      </Title>
+    // Time-based greeting & student name
+    const currentHour = new Date().getHours();
+    const greetingText =
+      currentHour < 12
+        ? 'Good morning'
+        : currentHour < 17
+          ? 'Good afternoon'
+          : 'Good evening';
+    const studentFirstName = user?.name ? user.name.trim().split(' ')[0] : 'Aspirant';
 
-      <Card>
-        <Text style={txt(14, true)}>Today's Study Progress</Text>
+    // Upcoming or active study plan
+    const activePlan =
+      plans.find(p => !p.done && p.date === todayDateStr) ||
+      plans.find(p => !p.done);
+    const selectedSubjectObj = subjects.find(
+      s => s.id === (activePlan?.subjectId || selected)
+    );
 
-        <View style={{ alignItems: 'center', paddingVertical: 12 }}>
-          <Ring
-            value={Math.min(100, Math.round((total / 480) * 100))}
-            size={172}
-            label={`${Math.floor(total / 60)}h ${total % 60}m logged`}
-          />
-        </View>
+    // Quick actions connecting directly to existing working app features
+    const quickActions = [
+      {
+        id: 'timer',
+        title: 'Focus Timer',
+        subtitle: 'Start Session',
+        icon: 'stopwatch-outline',
+        onPress: () => setTab('Timer')
+      },
+      {
+        id: 'planner',
+        title: 'Study Plan',
+        subtitle:
+          plans.filter(p => !p.done).length > 0
+            ? `${plans.filter(p => !p.done).length} active`
+            : 'Schedule',
+        icon: 'calendar-outline',
+        onPress: () => setTab('Planner')
+      },
+      {
+        id: 'syllabus',
+        title: 'Syllabus',
+        subtitle: `${completion}% done`,
+        icon: 'book-outline',
+        onPress: () => setTab('Syllabus')
+      },
+      {
+        id: 'analytics',
+        title: 'Reports',
+        subtitle: `${Math.floor(total / 60)}h logged`,
+        icon: 'analytics-outline',
+        onPress: () => setTab('Analytics')
+      },
+      {
+        id: 'attendance',
+        title: 'Attendance',
+        subtitle:
+          todaySessions.length > 0
+            ? 'Present today'
+            : '14-Day streak',
+        icon: 'calendar-number-outline',
+        onPress: () =>
+          Alert.alert(
+            'Study Attendance',
+            todaySessions.length > 0
+              ? `Status: Present\n\nYou have logged ${todayHours}h ${todayMinsRemainder}m across ${todaySessions.length} session(s) today.`
+              : `Status: Not yet marked today\n\nStart a focus session from the timer to record today's attendance.`,
+            todaySessions.length > 0
+              ? [{ text: 'OK' }]
+              : [
+                  { text: 'Start Session', onPress: () => setTab('Timer') },
+                  { text: 'Cancel', style: 'cancel' }
+                ]
+          )
+      },
+      {
+        id: 'quiz',
+        title: 'Quiz',
+        subtitle: 'Coming Soon',
+        icon: 'help-circle-outline',
+        onPress: () =>
+          Alert.alert(
+            'Daily Quiz & MCQs',
+            'Prelims practice questions and topic-wise mock tests are coming in the next update. Keep completing your syllabus topics in the meantime.',
+            [
+              { text: 'View Syllabus', onPress: () => setTab('Syllabus') },
+              { text: 'OK' }
+            ]
+          )
+      }
+    ];
 
-        <Text style={txt(12, false, C.muted)}>Daily goal: 8h 00m</Text>
-
-        <Button
-          label="▶ Start Studying Now"
-          onPress={() => setTab('Timer')}
-        />
-      </Card>
-
-      <Card>
-        <Text style={txt(15, true)}>Study Briefing & Prep</Text>
-        <Text style={[txt(12, false, C.muted), { marginTop: 8 }]}>
-          Chapter 7 • Fundamental Rights
-        </Text>
-        <Text style={[txt(20, true), { marginTop: 8 }]}>
-          Target Focus Block: 1h 30m
-        </Text>
-
-        <Button
-          label="Open Focus Timer"
-          subtle
-          onPress={() => setTab('Timer')}
-        />
-      </Card>
-
-      <Card>
-        <Text style={txt(15, true)}>Chapter Milestone</Text>
-
+    return (
+      <>
+        {/* Top Badges */}
         <View
           style={{
             flexDirection: 'row',
+            justifyContent: 'space-between',
             alignItems: 'center',
-            justifyContent: 'space-around'
+            marginBottom: 12
           }}
         >
-          <Ring value={completion} size={130} />
+          <Chip label="🔥 14-Day Streak" active />
+          <Chip label="UPSC / MPSC 2026" />
+        </View>
 
-          <View>
-            <Text style={txt(12)}>Target Today: 90 min</Text>
+        {/* Personalized Welcome Header */}
+        <Title sub="Your study sanctuary • One session at a time">
+          {greetingText}, {studentFirstName}!
+        </Title>
+
+        {/* Revision Alert Banner (Shown when unread reminders exist) */}
+        {unread.length > 0 && (
+          <TouchableOpacity
+            onPress={() => setNotifOpen(true)}
+            activeOpacity={0.8}
+            style={[
+              card,
+              {
+                flexDirection: 'row',
+                alignItems: 'center',
+                paddingVertical: 12,
+                paddingHorizontal: 14,
+                borderColor: C.blue,
+                borderLeftWidth: 4,
+                borderLeftColor: C.blue,
+                marginBottom: 14
+              }
+            ]}
+            accessibilityLabel="Unread revision alerts"
+          >
+            <View
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 10,
+                backgroundColor: C.soft,
+                justifyContent: 'center',
+                alignItems: 'center',
+                marginRight: 12
+              }}
+            >
+              <Ionicons name="notifications" size={19} color={C.blue} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={txt(14, true, C.ink)}>
+                {unread.length} Revision Alert{unread.length > 1 ? 's' : ''}
+              </Text>
+              <Text
+                numberOfLines={1}
+                style={[txt(12, false, C.muted), { marginTop: 2 }]}
+              >
+                {unread[0].title || unread[0].message}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={C.muted} />
+          </TouchableOpacity>
+        )}
+
+        {/* Today's Study Progress Card */}
+        <Card>
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 4
+            }}
+          >
+            <Text style={txt(15, true, C.ink)}>Today's Study Progress</Text>
+            <View
+              style={{
+                paddingHorizontal: 8,
+                paddingVertical: 3,
+                borderRadius: 12,
+                backgroundColor: C.soft
+              }}
+            >
+              <Text style={txt(11, true, C.blue)}>
+                {todaySessions.length}{' '}
+                {todaySessions.length === 1 ? 'session' : 'sessions'}
+              </Text>
+            </View>
+          </View>
+
+          <View style={{ alignItems: 'center', paddingVertical: 12 }}>
+            <Ring
+              value={progressPercent}
+              size={168}
+              label={
+                todayMinutes > 0
+                  ? `${todayHours}h ${todayMinsRemainder}m logged`
+                  : '0h 00m logged'
+              }
+            />
+          </View>
+
+          {/* 3-Column Metrics Breakdown */}
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-around',
+              alignItems: 'center',
+              paddingVertical: 10,
+              borderTopWidth: 1,
+              borderBottomWidth: 1,
+              borderColor: C.line,
+              marginBottom: 12
+            }}
+          >
+            <View style={{ alignItems: 'center', flex: 1 }}>
+              <Text style={txt(11, false, C.muted)}>Logged Today</Text>
+              <Text style={[txt(14, true, C.ink), { marginTop: 3 }]}>
+                {todayHours}h {todayMinsRemainder}m
+              </Text>
+            </View>
+            <View style={{ width: 1, height: 26, backgroundColor: C.line }} />
+            <View style={{ alignItems: 'center', flex: 1 }}>
+              <Text style={txt(11, false, C.muted)}>Daily Goal</Text>
+              <Text style={[txt(14, true, C.ink), { marginTop: 3 }]}>
+                8h 00m
+              </Text>
+            </View>
+            <View style={{ width: 1, height: 26, backgroundColor: C.line }} />
+            <View style={{ alignItems: 'center', flex: 1 }}>
+              <Text style={txt(11, false, C.muted)}>Remaining</Text>
+              <Text
+                style={[
+                  txt(
+                    14,
+                    true,
+                    remainingMinutes === 0 ? C.blue : C.ink
+                  ),
+                  { marginTop: 3 }
+                ]}
+              >
+                {remainingMinutes === 0
+                  ? 'Goal Met! 🎉'
+                  : `${remainingHours}h ${remainingMinsRemainder}m`}
+              </Text>
+            </View>
+          </View>
+
+          {todayMinutes === 0 && (
             <Text
               style={[
                 txt(12, false, C.muted),
-                { marginTop: 12 }
+                { textAlign: 'center', marginBottom: 10, lineHeight: 17 }
               ]}
             >
-              Retention: 84% • SRS T2
+              No sessions logged today yet. Ready to start your preparation?
             </Text>
+          )}
+
+          <Button
+            label="▶ Start Studying Now"
+            onPress={() => setTab('Timer')}
+          />
+        </Card>
+
+        {/* Study Motivation / Daily Encouragement */}
+        <Card style={{ paddingVertical: 14, paddingHorizontal: 16 }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              marginBottom: 8,
+              gap: 6
+            }}
+          >
+            <Ionicons name="bulb-outline" size={16} color={C.blue} />
+            <Text style={txt(11, true, C.blue)}>DAILY STUDY ENCOURAGEMENT</Text>
+          </View>
+          <Text
+            style={[
+              txt(13, false, C.ink),
+              { fontStyle: 'italic', lineHeight: 19 }
+            ]}
+          >
+            "Discipline is choosing between what you want now and what you want most. Every focused hour brings you closer to the civil services list."
+          </Text>
+          <Text style={[txt(11, false, C.muted), { marginTop: 6 }]}>
+            Abhyas Discipline • MPSC & UPSC Aspirants
+          </Text>
+        </Card>
+
+        {/* Quick Actions (Direct access to working app features) */}
+        <View style={{ marginBottom: 14 }}>
+          <Text style={[txt(14, true, C.ink), { marginBottom: 10 }]}>
+            Quick Actions
+          </Text>
+          <View
+            style={{
+              flexDirection: 'row',
+              flexWrap: 'wrap',
+              justifyContent: 'space-between'
+            }}
+          >
+            {quickActions.map(action => (
+              <TouchableOpacity
+                key={action.id}
+                onPress={action.onPress}
+                activeOpacity={0.75}
+                style={{
+                  width: '31%',
+                  backgroundColor: C.card || C.white,
+                  borderRadius: 14,
+                  paddingVertical: 12,
+                  paddingHorizontal: 8,
+                  alignItems: 'center',
+                  marginBottom: 10,
+                  borderWidth: 1,
+                  borderColor: C.border || C.line
+                }}
+                accessibilityLabel={action.title}
+              >
+                <View
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 11,
+                    backgroundColor: C.soft,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    marginBottom: 6
+                  }}
+                >
+                  <Ionicons name={action.icon} size={20} color={C.blue} />
+                </View>
+                <Text
+                  numberOfLines={1}
+                  style={[txt(12, true, C.ink), { textAlign: 'center' }]}
+                >
+                  {action.title}
+                </Text>
+                <Text
+                  numberOfLines={1}
+                  style={[
+                    txt(10, false, C.muted),
+                    { marginTop: 2, textAlign: 'center' }
+                  ]}
+                >
+                  {action.subtitle}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
-      </Card>
 
-      <Card>
-        <Text style={txt(15, true)}>Revision Queue</Text>
-        <Text style={[txt(12, false, C.muted), { marginTop: 7 }]}>
-          {unread.length} notification(s) need your attention.
-        </Text>
+        {/* Study Briefing & Prep */}
+        <Card>
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 6
+            }}
+          >
+            <Text style={txt(15, true, C.ink)}>Study Briefing & Prep</Text>
+            <Ionicons name="flag-outline" size={17} color={C.blue} />
+          </View>
 
-        <Button
-          label="Review Now"
-          subtle
-          onPress={() => setNotifOpen(true)}
-        />
-      </Card>
-    </>
-  );
+          <Text style={[txt(12, false, C.muted), { marginTop: 4 }]}>
+            {activePlan
+              ? `${selectedSubjectObj?.name || 'General Studies'} • Target Task`
+              : `${selectedSubjectObj?.name || 'Indian Polity'} • Standard Session`}
+          </Text>
+
+          <Text style={[txt(18, true, C.ink), { marginTop: 6 }]}>
+            {activePlan?.title || 'Chapter 7 • Fundamental Rights'}
+          </Text>
+
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              marginTop: 8,
+              marginBottom: 4,
+              gap: 16
+            }}
+          >
+            <Text style={txt(12, false, C.muted)}>
+              Target Focus Block:{' '}
+              <Text style={{ fontWeight: '700', color: C.ink }}>
+                {activePlan ? `${activePlan.minutes}m` : '1h 30m'}
+              </Text>
+            </Text>
+          </View>
+
+          <Button
+            label="Open Focus Timer"
+            subtle
+            onPress={() => setTab('Timer')}
+          />
+        </Card>
+
+        {/* Chapter Milestone & Syllabus Mastery */}
+        <Card>
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 10
+            }}
+          >
+            <Text style={txt(15, true, C.ink)}>Syllabus Milestone</Text>
+            <TouchableOpacity onPress={() => setTab('Syllabus')}>
+              <Text style={txt(11, true, C.blue)}>View All →</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-around',
+              paddingVertical: 6
+            }}
+          >
+            <Ring value={completion} size={130} label="Mastered" />
+
+            <View style={{ flex: 1, marginLeft: 16 }}>
+              <Text style={txt(13, true, C.ink)}>
+                {subjects.reduce(
+                  (sum, subject) => sum + (subject.completed || 0),
+                  0
+                )}{' '}
+                of{' '}
+                {subjects.reduce(
+                  (sum, subject) => sum + (subject.topics || 0),
+                  0
+                )}{' '}
+                Topics
+              </Text>
+              <Text style={[txt(12, false, C.muted), { marginTop: 6 }]}>
+                Average Focus: {focus}%
+              </Text>
+              <Text style={[txt(12, false, C.muted), { marginTop: 4 }]}>
+                {subjects.length} active syllabus subjects
+              </Text>
+            </View>
+          </View>
+        </Card>
+      </>
+    );
+  };
 
 
   const Syllabus = () => (
@@ -1165,7 +1541,7 @@ export default function App() {
     ['Syllabus', 'book-outline'],
     ['Planner', 'calendar-outline'],
     ['Analytics', 'analytics-outline'],
-    ['Settings', 'settings-outline']
+    ['Ticket Support', 'headset-outline']
   ];
 
   return (
@@ -1354,6 +1730,14 @@ export default function App() {
             <Planner />
           ) : tab === 'Analytics' ? (
             <Analytics />
+          ) : tab === 'Ticket Support' ? (
+            <TicketSupportScreen
+              user={user}
+              theme={C}
+              isDarkMode={isDarkMode}
+              onBack={() => setTab('Dashboard')}
+              req={req}
+            />
           ) : tab === 'Settings' ? (
             <SettingsScreen
               user={user}
@@ -1396,6 +1780,7 @@ export default function App() {
                 />
 
                 <Text
+                  numberOfLines={1}
                   style={txt(
                     10,
                     tab === tabName,

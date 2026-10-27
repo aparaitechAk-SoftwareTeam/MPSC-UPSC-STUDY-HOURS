@@ -1,4 +1,5 @@
 require('dotenv').config();
+const { connectDB } = require('./db');
 const express=require('express'), cors=require('cors'),fs=require('fs'),path=require('path'),jwt=require('jsonwebtoken'),bcrypt=require('bcryptjs');
 const app=express(); app.use(cors());app.use(express.json({limit:'1mb'}));
 const file=path.join(__dirname,'../data/db.json');
@@ -19,12 +20,31 @@ app.get('/api/sessions',auth(),(req,res)=>res.json(read().sessions.filter(x=>x.u
 app.post('/api/sessions',auth(),(req,res)=>{const {subjectId,minutes,mode,focusScore}=req.body;const m=Number(minutes);if(!Number.isFinite(m)||m<=0||m>1440)return res.status(400).json({error:'Minutes must be 1–1440'});const db=read();const obj={id:Date.now().toString(),userId:req.user.id,subjectId:subjectId||null,minutes:m,mode:mode||'Pomodoro',focusScore:Math.min(100,Math.max(0,Number(focusScore)||90)),startedAt:new Date().toISOString()};db.sessions.push(obj);save(db);res.status(201).json(obj)});
 app.get('/api/notifications',auth(),(req,res)=>res.json(read().notifications.filter(x=>x.userId===req.user.id||x.userId==='all')));
 app.patch('/api/notifications/:id/read',auth(),(req,res)=>{const db=read(),n=db.notifications.find(x=>x.id===req.params.id&&(x.userId===req.user.id||x.userId==='all'));if(!n)return res.status(404).json({error:'Not found'});n.readBy=n.readBy||[];if(!n.readBy.includes(req.user.id))n.readBy.push(req.user.id);save(db);res.json(n)});
+app.get('/api/tickets',auth(),(req,res)=>{const db=read();const tickets=(db.tickets||[]).filter(t=>t.userId===req.user.id).sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));res.json(tickets);});
+app.post('/api/tickets',auth(),(req,res)=>{const {type,subject,message}=req.body;if(!type||!message||!message.trim())return res.status(400).json({error:'Category and message are required'});const db=read();db.tickets=db.tickets||[];const obj={id:Date.now().toString(),userId:req.user.id,type,subject:(subject&&subject.trim())?subject.trim():`${type} Request`,message:message.trim(),status:'Open',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};db.tickets.unshift(obj);save(db);res.status(201).json(obj);});
+app.get('/api/tickets/:id',auth(),(req,res)=>{const db=read();const x=(db.tickets||[]).find(t=>t.id===req.params.id&&t.userId===req.user.id);if(!x)return res.status(404).json({error:'Ticket not found'});res.json(x);});
+app.patch('/api/tickets/:id',auth(),(req,res)=>{const db=read();const x=(db.tickets||[]).find(t=>t.id===req.params.id&&t.userId===req.user.id);if(!x)return res.status(404).json({error:'Ticket not found'});if(x.status==='Resolved')return res.status(400).json({error:'Resolved tickets cannot be edited'});const {type,subject,message}=req.body;if(type)x.type=type;if(subject!==undefined)x.subject=subject.trim();if(message&&message.trim())x.message=message.trim();x.updatedAt=new Date().toISOString();save(db);res.json(x);});
+app.delete('/api/tickets/:id',auth(),(req,res)=>{const db=read();db.tickets=db.tickets||[];const idx=db.tickets.findIndex(t=>t.id===req.params.id&&t.userId===req.user.id);if(idx===-1)return res.status(404).json({error:'Ticket not found'});const [removed]=db.tickets.splice(idx,1);save(db);res.json({ok:true,id:removed.id});});
 app.get('/api/analytics',auth(),(req,res)=>{const sessions=read().sessions.filter(s=>s.userId===req.user.id),minutes=sessions.reduce((a,x)=>a+x.minutes,0),focus=sessions.length?Math.round(sessions.reduce((a,x)=>a+x.focusScore,0)/sessions.length):0;res.json({sessionCount:sessions.length,totalMinutes:minutes,averageFocus:focus,weekly:sessions.slice(-7).map(s=>({date:s.startedAt.slice(0,10),minutes:s.minutes}))})});
-app.get('/api/admin/overview',auth('admin'),(req,res)=>{const db=read();res.json({users:db.users.length,subjects:db.subjects.length,sessions:db.sessions.length,minutes:db.sessions.reduce((a,s)=>a+s.minutes,0)})});
+app.get('/api/admin/overview',auth('admin'),(req,res)=>{const db=read(),students=db.users.filter(u=>u.role==='student');res.json({users:students.length,totalAccounts:db.users.length,subjects:db.subjects.length,sessions:db.sessions.length,minutes:db.sessions.reduce((a,s)=>a+s.minutes,0)})});
 app.get('/api/admin/users',auth('admin'),(req,res)=>res.json(read().users.map(publicUser)));
 app.get('/api/admin/subjects',auth('admin'),(req,res)=>res.json(read().subjects));
+app.get('/api/admin/sessions',auth('admin'),(req,res)=>{const db=read();res.json((db.sessions||[]).sort((a,b)=>b.startedAt.localeCompare(a.startedAt)))});
+app.get('/api/admin/tickets',auth('admin'),(req,res)=>{const db=read(),users=db.users||[];const tickets=(db.tickets||[]).map(t=>{const u=users.find(u=>u.id===t.userId);return {...t,studentName:u?.name||'Unknown Student',studentEmail:u?.email||'N/A'}}).sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));res.json(tickets);});
+app.patch('/api/admin/tickets/:id',auth('admin'),(req,res)=>{const db=read();const x=(db.tickets||[]).find(t=>t.id===req.params.id);if(!x)return res.status(404).json({error:'Ticket not found'});const {status,reply}=req.body;if(status)x.status=status;if(reply&&String(reply).trim()){x.replies=x.replies||[];const adminUser=(db.users||[]).find(u=>u.id===req.user.id);x.replies.push({id:Date.now().toString(),sender:'admin',adminId:req.user.id,adminName:adminUser?.name||'Admin Support',message:String(reply).trim(),createdAt:new Date().toISOString()});}x.updatedAt=new Date().toISOString();save(db);const u=(db.users||[]).find(u=>u.id===x.userId);res.json({...x,studentName:u?.name||'Unknown Student',studentEmail:u?.email||'N/A'});});
 app.post('/api/admin/subjects',auth('admin'),(req,res)=>{const {name,paper,topics}=req.body;if(!name)return res.status(400).json({error:'Name required'});const db=read(),x={id:Date.now().toString(),name,paper:paper||'GS Paper II',topics:Number(topics)||0,completed:0};db.subjects.push(x);save(db);res.status(201).json(x)});
 app.delete('/api/admin/subjects/:id',auth('admin'),(req,res)=>{const db=read();db.subjects=db.subjects.filter(s=>s.id!==req.params.id);save(db);res.json({ok:true})});
 app.post('/api/admin/notifications',auth('admin'),(req,res)=>{if(!req.body.title||!req.body.message)return res.status(400).json({error:'Title and message required'});const db=read(),x={id:Date.now().toString(),userId:'all',title:req.body.title,message:req.body.message,readBy:[],createdAt:new Date().toISOString()};db.notifications.unshift(x);save(db);res.status(201).json(x)});
-app.use((err,req,res,next)=>{console.error(err);res.status(500).json({error:'Server error'})});
-const port=process.env.PORT||4000;app.listen(port,()=>console.log(`Abhyas API http://localhost:${port}`));
+const port=process.env.PORT||4000;
+
+async function startServer() {
+  try {
+    await connectDB();
+    app.listen(port, () => console.log(`Abhyas API http://localhost:${port}`));
+  } catch (err) {
+    console.error(`[Server] Failed to connect to database. Server not started: ${err.message}`);
+    process.exit(1);
+  }
+}
+
+startServer();
