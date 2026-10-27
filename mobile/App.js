@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   AppState,
   View,
@@ -1176,6 +1176,7 @@ async function req(route, method = 'GET', body, t = token) {
 
   
   const Analytics = () => {
+    const [analyticsTab, setAnalyticsTab] = useState('Overview');
     const allDaily = Array.isArray(analytics.daily) ? analytics.daily : [];
     const chartDays = allDaily.slice(analyticsRange === '7' ? -7 : -30);
 
@@ -1310,6 +1311,29 @@ async function req(route, method = 'GET', body, t = token) {
           </View>
         </View>
 
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 8,
+            paddingBottom: 12,
+            paddingRight: 4
+          }}
+        >
+          {['Overview', 'Activity', 'Subjects', 'Sessions'].map(tab => (
+            <Chip
+              key={tab}
+              label={tab}
+              active={analyticsTab === tab}
+              onPress={() => setAnalyticsTab(tab)}
+            />
+          ))}
+        </ScrollView>
+
+        {analyticsTab === 'Overview' && (
+          <>
         <Card>
           <View
             style={{
@@ -1497,7 +1521,49 @@ borderColor: [
             </View>
           ))}
         </View>
+                  <Card>
+          <Text style={sectionHeading}>Focus Quality</Text>
+          <Text
+            style={[
+              txt(12, false, C.muted),
+              sectionSubtitle
+            ]}
+          >
+            Average focus score from recorded sessions.
+          </Text>
 
+          <View
+            style={{
+              alignItems: 'center',
+              paddingVertical: 12
+            }}
+          >
+            <Ring
+              value={rangeFocus}
+              size={155}
+              label="Average focus"
+            />
+          </View>
+
+          <Text
+            style={[
+              txt(12, false, C.muted),
+              { textAlign: 'center', lineHeight: 19 }
+            ]}
+          >
+            {rangeSessions.length
+              ? `Based on ${rangeSessions.length} recorded ${
+                  rangeSessions.length === 1 ? 'session' : 'sessions'
+                } in this period.`
+              : 'Complete a study session to begin tracking focus quality.'}
+          </Text>
+        </Card>
+</>
+        )}
+
+
+        {analyticsTab === 'Activity' && (
+          <>
         <Card>
           <Text style={sectionHeading}>Daily Study Activity</Text>
           <Text
@@ -1720,8 +1786,12 @@ borderColor: [
             </>
           )}
         </Card>
+          </>
+        )}
+
 
         
+        {analyticsTab === 'Subjects' && (
         <Card>
           <Text style={txt(17, true)}>Subject Breakdown</Text>
           <Text
@@ -2005,46 +2075,8 @@ borderColor: [
             </>
           )}
         </Card>
-
-
-        <Card>
-          <Text style={sectionHeading}>Focus Quality</Text>
-          <Text
-            style={[
-              txt(12, false, C.muted),
-              sectionSubtitle
-            ]}
-          >
-            Average focus score from recorded sessions.
-          </Text>
-
-          <View
-            style={{
-              alignItems: 'center',
-              paddingVertical: 12
-            }}
-          >
-            <Ring
-              value={rangeFocus}
-              size={155}
-              label="Average focus"
-            />
-          </View>
-
-          <Text
-            style={[
-              txt(12, false, C.muted),
-              { textAlign: 'center', lineHeight: 19 }
-            ]}
-          >
-            {rangeSessions.length
-              ? `Based on ${rangeSessions.length} recorded ${
-                  rangeSessions.length === 1 ? 'session' : 'sessions'
-                } in this period.`
-              : 'Complete a study session to begin tracking focus quality.'}
-          </Text>
-        </Card>
-
+        )}
+{analyticsTab === 'Sessions' && (
         <Card>
           <View
             style={{
@@ -2153,6 +2185,8 @@ borderColor: [
             })
           )}
         </Card>
+        )}
+
       </>
     );
   };
@@ -2565,4 +2599,5 @@ borderColor: [
     </SafeAreaView>
   );
 }
+
 
