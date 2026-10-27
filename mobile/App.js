@@ -75,6 +75,24 @@ const tomorrow = () => {
   return d.toISOString().slice(0, 10);
 };
 
+const getNext7Days = () => {
+  const days = [];
+  const curr = new Date();
+  for (let i = 0; i < 7; i++) {
+    const d = new Date();
+    d.setDate(curr.getDate() + i);
+    days.push({
+      dateStr: d.toISOString().slice(0, 10),
+      dayName: d.toLocaleDateString('en-US', { weekday: 'short' }),
+      dayNum: d.getDate(),
+      month: d.toLocaleDateString('en-US', { month: 'short' }),
+      isToday: i === 0,
+      isTomorrow: i === 1
+    });
+  }
+  return days;
+};
+
 const SYLLABUS_TOPICS = {
   // ==================== UPSC CIVIL SERVICES (9 SUBJECTS) ====================
   'upsc-history-culture': [
@@ -380,6 +398,7 @@ export default function App() {
   const [planSubject, setPlanSubject] = useState('upsc-polity');
   const [planPriority, setPlanPriority] = useState('Medium');
   const [planDateType, setPlanDateType] = useState('today');
+  const [selectedWeekDate, setSelectedWeekDate] = useState(today());
   const [plannerExamFilter, setPlannerExamFilter] = useState('ALL');
   const [planExamTarget, setPlanExamTarget] = useState('UPSC');
 
@@ -541,7 +560,13 @@ export default function App() {
       Alert.alert('Input needed', 'Please enter a topic or chapter title.');
       return;
     }
-    const targetDate = planDateType === 'tomorrow' ? tomorrow() : today();
+    const targetDate =
+      planDateType === 'tomorrow'
+        ? tomorrow()
+        : planDateType === 'selected'
+        ? (selectedWeekDate || today())
+        : today();
+
     try {
       await req('/plan', 'POST', {
         title: planTitle.trim(),
@@ -553,7 +578,41 @@ export default function App() {
       });
       setPlanTitle('');
       await refresh();
-      Alert.alert('Task Planned', `Scheduled for ${planDateType === 'tomorrow' ? 'Tomorrow' : 'Today'} (${planExamTarget})!`);
+      if (planDateType === 'tomorrow') {
+        setPlannerView("Tomorrow's Plan");
+      } else if (planDateType === 'selected') {
+        setPlannerView('Weekly View');
+      } else {
+        setPlannerView("Today's Plan");
+      }
+    } catch (e) {
+      Alert.alert('Error', e.message);
+    }
+  }
+
+  async function generateBlueprint(targetDate = today()) {
+    try {
+      const blueprintItems = [
+        { title: `${planExamTarget} GS Core & Theory (Deep Work)`, minutes: 120, priority: 'High' },
+        { title: `${planExamTarget} PYQ Practice & MCQs`, minutes: 90, priority: 'High' },
+        { title: 'Current Affairs & Editorial Analysis', minutes: 60, priority: 'Medium' }
+      ];
+      for (const item of blueprintItems) {
+        await req('/plan', 'POST', {
+          title: item.title,
+          minutes: item.minutes,
+          date: targetDate,
+          subjectId: planSubject,
+          exam: planExamTarget,
+          priority: item.priority
+        });
+      }
+      await refresh();
+      if (targetDate === tomorrow()) {
+        setPlannerView("Tomorrow's Plan");
+      } else {
+        setPlannerView("Today's Plan");
+      }
     } catch (e) {
       Alert.alert('Error', e.message);
     }
@@ -1268,11 +1327,17 @@ export default function App() {
 
   // ---------------- PLANNER TAB ----------------
   const Planner = () => {
+    const next7Days = useMemo(() => getNext7Days(), []);
+
     // Filter plans according to view and exam section
     const filteredPlans = useMemo(() => {
       let list = plans;
       if (plannerView === "Today's Plan") {
         list = list.filter(p => p.date === today() || !p.date);
+      } else if (plannerView === "Tomorrow's Plan") {
+        list = list.filter(p => p.date === tomorrow());
+      } else if (plannerView === 'Weekly View') {
+        list = list.filter(p => (p.date || today()) === selectedWeekDate);
       }
       if (plannerExamFilter !== 'ALL') {
         list = list.filter(p => {
@@ -1281,17 +1346,56 @@ export default function App() {
         });
       }
       return list;
-    }, [plans, plannerView, plannerExamFilter]);
+    }, [plans, plannerView, plannerExamFilter, selectedWeekDate]);
 
+    // Metrics for Today
     const todayPlans = plans.filter(p => (p.date === today() || !p.date) && !p.done);
     const todayPlannedMinutes = todayPlans.reduce((a, p) => a + Number(p.minutes || 0), 0);
-    const upscPlannedMinutes = todayPlans
+    const todayCapacityPct = Math.min(100, Math.round((todayPlannedMinutes / 480) * 100));
+
+    // Metrics for Tomorrow
+    const tomorrowPlans = plans.filter(p => p.date === tomorrow() && !p.done);
+    const tomorrowPlannedMinutes = tomorrowPlans.reduce((a, p) => a + Number(p.minutes || 0), 0);
+    const tomorrowCapacityPct = Math.min(100, Math.round((tomorrowPlannedMinutes / 480) * 100));
+
+    // Metrics for Next 7 Days (Weekly View)
+    const weeklyPlans = plans.filter(p => next7Days.some(d => d.dateStr === p.date));
+    const weeklyPlannedMinutes = weeklyPlans.reduce((a, p) => a + Number(p.minutes || 0), 0);
+    const weeklyDoneMinutes = weeklyPlans.filter(p => p.done).reduce((a, p) => a + Number(p.minutes || 0), 0);
+    const weeklyTargetMinutes = 40 * 60;
+    const weeklyCapacityPct = Math.min(100, Math.round((weeklyPlannedMinutes / weeklyTargetMinutes) * 100));
+
+    // UPSC vs MPSC Planned Breakdown
+    const upscPlannedMinutes = plans
       .filter(p => (p.exam || (String(p.subjectId || '').startsWith('mpsc') ? 'MPSC' : 'UPSC')) === 'UPSC')
       .reduce((a, p) => a + Number(p.minutes || 0), 0);
-    const mpscPlannedMinutes = todayPlans
+    const mpscPlannedMinutes = plans
       .filter(p => (p.exam || (String(p.subjectId || '').startsWith('mpsc') ? 'MPSC' : 'UPSC')) === 'MPSC')
       .reduce((a, p) => a + Number(p.minutes || 0), 0);
-    const capacityPct = Math.min(100, Math.round((todayPlannedMinutes / 480) * 100));
+    const totalExamMinutes = upscPlannedMinutes + mpscPlannedMinutes || 1;
+    const upscPct = Math.round((upscPlannedMinutes / totalExamMinutes) * 100);
+    const mpscPct = 100 - upscPct;
+
+    // Subject breakdown for Workload view
+    const subjectBreakdown = useMemo(() => {
+      const map = {};
+      plans.forEach(p => {
+        const sid = p.subjectId || 'general';
+        if (!map[sid]) {
+          const sObj = subjects.find(s => s.id === sid);
+          map[sid] = {
+            id: sid,
+            name: sObj?.name || sid,
+            exam: p.exam || (sid.startsWith('mpsc') ? 'MPSC' : 'UPSC'),
+            minutes: 0,
+            tasks: 0
+          };
+        }
+        map[sid].minutes += Number(p.minutes || 0);
+        map[sid].tasks += 1;
+      });
+      return Object.values(map).sort((a, b) => b.minutes - a.minutes);
+    }, [plans, subjects]);
 
     // Suggested unfinished topics for the selected plan subject
     const suggestedTopics = useMemo(() => {
@@ -1308,6 +1412,113 @@ export default function App() {
       s => (s.exam || (s.id.startsWith('mpsc') ? 'MPSC' : 'UPSC')) === planExamTarget
     );
 
+    const renderTaskCard = (p) => {
+      const priorityColors = {
+        High: { bg: C.redSoft, fg: C.red },
+        Medium: { bg: C.amberSoft, fg: C.amber },
+        Low: { bg: C.soft, fg: C.blue }
+      };
+      const pStyle = priorityColors[p.priority || 'Medium'] || priorityColors.Medium;
+      const pExam = p.exam || (String(p.subjectId || '').startsWith('mpsc') ? 'MPSC' : 'UPSC');
+      const isMp = pExam === 'MPSC';
+      const subName = subjects.find(s => s.id === p.subjectId)?.name || p.subjectId || 'General';
+
+      return (
+        <Card key={p.id} style={{ paddingVertical: 14 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
+            <TouchableOpacity onPress={() => markPlan(p)} style={{ marginTop: 2 }}>
+              <Ionicons
+                name={p.done ? 'checkmark-circle' : 'ellipse-outline'}
+                size={24}
+                color={p.done ? C.green : C.blue}
+              />
+            </TouchableOpacity>
+
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4, flexWrap: 'wrap' }}>
+                <Text
+                  style={{
+                    fontSize: 10,
+                    fontWeight: '700',
+                    color: isMp ? '#b45309' : '#1e40af',
+                    backgroundColor: isMp ? '#fef3c7' : '#dbeafe',
+                    paddingHorizontal: 6,
+                    paddingVertical: 2,
+                    borderRadius: 6
+                  }}
+                >
+                  {isMp ? '🚩 MPSC' : '🏛️ UPSC'}
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 10,
+                    fontWeight: '700',
+                    color: pStyle.fg,
+                    backgroundColor: pStyle.bg,
+                    paddingHorizontal: 7,
+                    paddingVertical: 2,
+                    borderRadius: 6
+                  }}
+                >
+                  {p.priority || 'Medium'}
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 10,
+                    fontWeight: '600',
+                    color: C.blue,
+                    backgroundColor: C.soft,
+                    paddingHorizontal: 7,
+                    paddingVertical: 2,
+                    borderRadius: 6
+                  }}
+                >
+                  {subName}
+                </Text>
+                {p.date && (
+                  <Text style={txt(10, false, C.muted)}>
+                    {p.date === today() ? 'Today' : p.date === tomorrow() ? 'Tomorrow' : p.date}
+                  </Text>
+                )}
+              </View>
+
+              <Text
+                style={[
+                  txt(14, true),
+                  p.done ? { textDecorationLine: 'line-through', color: C.muted } : null
+                ]}
+              >
+                {p.title}
+              </Text>
+
+              <Text style={[txt(11, false, C.muted), { marginTop: 4 }]}>
+                ⏱ {p.minutes} mins • {p.done ? '✓ Completed' : 'Pending'}
+              </Text>
+            </View>
+
+            <View style={{ alignItems: 'flex-end', gap: 6 }}>
+              {!p.done && (
+                <TouchableOpacity
+                  onPress={() => startPlanFocus(p)}
+                  style={{
+                    backgroundColor: C.blue,
+                    paddingHorizontal: 11,
+                    paddingVertical: 6,
+                    borderRadius: 8
+                  }}
+                >
+                  <Text style={txt(11, true, C.white)}>▶ Focus</Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity onPress={() => deletePlan(p)} style={{ padding: 4 }}>
+                <Ionicons name="trash-outline" size={17} color={C.muted} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Card>
+      );
+    };
+
     return (
       <>
         <Title sub="Target scheduling, task execution & daily workload balance">
@@ -1317,9 +1528,19 @@ export default function App() {
         {/* View Switcher Chips */}
         <Card style={{ paddingVertical: 12 }}>
           <Text style={[txt(11, true, C.muted), { marginBottom: 8 }]}>PLANNER TIMEFRAME</Text>
-          <View style={{ flexDirection: 'row' }}>
-            {["Today's Plan", 'Weekly View', 'Workload & Routine'].map(v => (
-              <Chip key={v} label={v} active={plannerView === v} onPress={() => setPlannerView(v)} />
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+            {["Today's Plan", "Tomorrow's Plan", 'Weekly View', 'Workload View'].map(v => (
+              <Chip
+                key={v}
+                label={v}
+                active={plannerView === v}
+                onPress={() => {
+                  setPlannerView(v);
+                  if (v === "Today's Plan") setPlanDateType('today');
+                  else if (v === "Tomorrow's Plan") setPlanDateType('tomorrow');
+                  else if (v === 'Weekly View') setPlanDateType('selected');
+                }}
+              />
             ))}
           </View>
         </Card>
@@ -1327,7 +1548,7 @@ export default function App() {
         {/* Exam Section Filter Chips */}
         <Card style={{ paddingVertical: 12 }}>
           <Text style={[txt(11, true, C.muted), { marginBottom: 8 }]}>EXAM FILTER</Text>
-          <View style={{ flexDirection: 'row' }}>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
             <Chip
               label="All Exam Tasks"
               active={plannerExamFilter === 'ALL'}
@@ -1346,154 +1567,336 @@ export default function App() {
           </View>
         </Card>
 
-        {/* Workload Capacity Meter */}
-        <Card>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Text style={txt(15, true)}>Daily Workload vs. 8h Target</Text>
-            <Text style={txt(13, true, C.blue)}>{capacityPct}% Capacity</Text>
-          </View>
-          <View style={{ height: 8, backgroundColor: C.soft, borderRadius: 6, marginVertical: 10 }}>
-            <View
-              style={{
-                backgroundColor: capacityPct > 90 ? C.amber : C.blue,
-                height: 8,
-                borderRadius: 6,
-                width: `${capacityPct}%`
-              }}
-            />
-          </View>
-          <Text style={txt(12, false, C.muted)}>
-            {todayPlannedMinutes} min total • 🏛️ UPSC: {upscPlannedMinutes}m • 🚩 MPSC: {mpscPlannedMinutes}m
-          </Text>
-        </Card>
+        {/* ---------------- VIEW 1: TODAY'S PLAN ---------------- */}
+        {plannerView === "Today's Plan" && (
+          <>
+            <Card>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text style={txt(15, true)}>Today's Workload vs. 8h Target</Text>
+                <Text style={txt(13, true, C.blue)}>{todayCapacityPct}% Capacity</Text>
+              </View>
+              <View style={{ height: 8, backgroundColor: C.soft, borderRadius: 6, marginVertical: 10 }}>
+                <View
+                  style={{
+                    backgroundColor: todayCapacityPct > 90 ? C.amber : C.blue,
+                    height: 8,
+                    borderRadius: 6,
+                    width: `${todayCapacityPct}%`
+                  }}
+                />
+              </View>
+              <Text style={txt(12, false, C.muted)}>
+                {todayPlannedMinutes} min planned ({Math.floor(todayPlannedMinutes / 60)}h {todayPlannedMinutes % 60}m) • Target: 480m (8 hours)
+              </Text>
+            </Card>
 
-        {/* Tasks List */}
-        <View style={{ marginBottom: 6 }}>
-          <Text style={[txt(14, true), { marginBottom: 8 }]}>
-            {plannerView === "Today's Plan" ? `Today's Tasks (${today()})` : 'All Scheduled Tasks'}
-          </Text>
-        </View>
+            <View style={{ marginBottom: 6 }}>
+              <Text style={[txt(14, true), { marginBottom: 8 }]}>
+                Today's Tasks ({today()})
+              </Text>
+            </View>
 
-        {filteredPlans.length === 0 ? (
-          <Card>
-            <Text style={[txt(13, false, C.muted), { textAlign: 'center', paddingVertical: 12 }]}>
-              No study tasks found for this view. Add a study block below to get started!
-            </Text>
-          </Card>
-        ) : (
-          filteredPlans.map(p => {
-            const priorityColors = {
-              'High': { bg: C.redSoft, fg: C.red },
-              'Medium': { bg: C.amberSoft, fg: C.amber },
-              'Low': { bg: C.soft, fg: C.blue }
-            };
-            const pStyle = priorityColors[p.priority || 'Medium'] || priorityColors['Medium'];
-            const pExam = p.exam || (String(p.subjectId || '').startsWith('mpsc') ? 'MPSC' : 'UPSC');
-            const isMp = pExam === 'MPSC';
-            const subName = subjects.find(s => s.id === p.subjectId)?.name || p.subjectId || 'General';
-
-            return (
-              <Card key={p.id} style={{ paddingVertical: 14 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
-                  {/* Complete Checkbox */}
-                  <TouchableOpacity onPress={() => markPlan(p)} style={{ marginTop: 2 }}>
-                    <Ionicons
-                      name={p.done ? 'checkmark-circle' : 'ellipse-outline'}
-                      size={24}
-                      color={p.done ? C.green : C.blue}
-                    />
-                  </TouchableOpacity>
-
-                  <View style={{ flex: 1 }}>
-                    {/* Header tags */}
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4, flexWrap: 'wrap' }}>
-                      <Text
-                        style={{
-                          fontSize: 10,
-                          fontWeight: '700',
-                          color: isMp ? '#b45309' : '#1e40af',
-                          backgroundColor: isMp ? '#fef3c7' : '#dbeafe',
-                          paddingHorizontal: 6,
-                          paddingVertical: 2,
-                          borderRadius: 6
-                        }}
-                      >
-                        {isMp ? '🚩 MPSC' : '🏛️ UPSC'}
-                      </Text>
-                      <Text
-                        style={{
-                          fontSize: 10,
-                          fontWeight: '700',
-                          color: pStyle.fg,
-                          backgroundColor: pStyle.bg,
-                          paddingHorizontal: 7,
-                          paddingVertical: 2,
-                          borderRadius: 6
-                        }}
-                      >
-                        {p.priority || 'Medium'}
-                      </Text>
-                      <Text
-                        style={{
-                          fontSize: 10,
-                          fontWeight: '600',
-                          color: C.blue,
-                          backgroundColor: C.soft,
-                          paddingHorizontal: 7,
-                          paddingVertical: 2,
-                          borderRadius: 6
-                        }}
-                      >
-                        {subName}
-                      </Text>
-                      {p.date && (
-                        <Text style={txt(10, false, C.muted)}>
-                          {p.date === today() ? 'Today' : p.date}
-                        </Text>
-                      )}
-                    </View>
-
-                    {/* Title */}
-                    <Text
-                      style={[
-                        txt(14, true),
-                        p.done ? { textDecorationLine: 'line-through', color: C.muted } : null
-                      ]}
-                    >
-                      {p.title}
-                    </Text>
-
-                    <Text style={[txt(11, false, C.muted), { marginTop: 4 }]}>
-                      ⏱ {p.minutes} mins • {p.done ? '✓ Completed' : 'Pending'}
-                    </Text>
-                  </View>
-
-                  {/* Actions */}
-                  <View style={{ alignItems: 'flex-end', gap: 6 }}>
-                    {!p.done && (
-                      <TouchableOpacity
-                        onPress={() => startPlanFocus(p)}
-                        style={{
-                          backgroundColor: C.blue,
-                          paddingHorizontal: 11,
-                          paddingVertical: 6,
-                          borderRadius: 8
-                        }}
-                      >
-                        <Text style={txt(11, true, C.white)}>▶ Focus</Text>
-                      </TouchableOpacity>
-                    )}
-                    <TouchableOpacity onPress={() => deletePlan(p)} style={{ padding: 4 }}>
-                      <Ionicons name="trash-outline" size={17} color={C.muted} />
-                    </TouchableOpacity>
-                  </View>
-                </View>
+            {filteredPlans.length === 0 ? (
+              <Card>
+                <Text style={[txt(13, false, C.muted), { textAlign: 'center', paddingVertical: 12 }]}>
+                  No study tasks found for Today. Use "+ Add Study Block" below or generate a routine blueprint!
+                </Text>
               </Card>
-            );
-          })
+            ) : (
+              filteredPlans.map(renderTaskCard)
+            )}
+          </>
         )}
 
-        {/* Add Study Block Form */}
+        {/* ---------------- VIEW 2: TOMORROW'S PLAN ---------------- */}
+        {plannerView === "Tomorrow's Plan" && (
+          <>
+            <Card>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text style={txt(15, true)}>Tomorrow's Workload vs. 8h Target</Text>
+                <Text style={txt(13, true, C.blue)}>{tomorrowCapacityPct}% Capacity</Text>
+              </View>
+              <View style={{ height: 8, backgroundColor: C.soft, borderRadius: 6, marginVertical: 10 }}>
+                <View
+                  style={{
+                    backgroundColor: tomorrowCapacityPct > 90 ? C.amber : C.blue,
+                    height: 8,
+                    borderRadius: 6,
+                    width: `${tomorrowCapacityPct}%`
+                  }}
+                />
+              </View>
+              <Text style={txt(12, false, C.muted)}>
+                {tomorrowPlannedMinutes} min planned ({Math.floor(tomorrowPlannedMinutes / 60)}h {tomorrowPlannedMinutes % 60}m) • Scheduled for {tomorrow()}
+              </Text>
+            </Card>
+
+            <Card style={{ backgroundColor: '#f0fdf4', borderColor: '#bbf7d0', paddingVertical: 12 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Ionicons name="sparkles" size={18} color="#15803d" />
+                <Text style={txt(12, true, '#15803d')}>Advance Planning Routine</Text>
+              </View>
+              <Text style={[txt(11, false, '#166534'), { marginTop: 4, lineHeight: 16 }]}>
+                Planning tasks for tomorrow tonight eliminates morning decision fatigue. Wake up knowing exactly what chapters and MCQs to tackle first.
+              </Text>
+            </Card>
+
+            <View style={{ marginBottom: 6 }}>
+              <Text style={[txt(14, true), { marginBottom: 8 }]}>
+                Tomorrow's Tasks ({tomorrow()})
+              </Text>
+            </View>
+
+            {filteredPlans.length === 0 ? (
+              <Card>
+                <Text style={[txt(13, false, C.muted), { textAlign: 'center', paddingVertical: 8 }]}>
+                  No tasks scheduled for Tomorrow yet.
+                </Text>
+                <View style={{ marginTop: 10, alignItems: 'center' }}>
+                  <Button
+                    label="⚡ Auto-Generate Tomorrow's Routine Blueprint"
+                    onPress={() => generateBlueprint(tomorrow())}
+                  />
+                </View>
+              </Card>
+            ) : (
+              filteredPlans.map(renderTaskCard)
+            )}
+          </>
+        )}
+
+        {/* ---------------- VIEW 3: WEEKLY VIEW ---------------- */}
+        {plannerView === 'Weekly View' && (
+          <>
+            {/* 7-Day Interactive Strip */}
+            <Card style={{ paddingVertical: 12 }}>
+              <Text style={[txt(11, true, C.muted), { marginBottom: 10 }]}>SELECT DAY (NEXT 7 DAYS)</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  {next7Days.map(d => {
+                    const isSelected = selectedWeekDate === d.dateStr;
+                    const dayPlans = plans.filter(p => p.date === d.dateStr);
+                    const count = dayPlans.length;
+                    return (
+                      <TouchableOpacity
+                        key={d.dateStr}
+                        onPress={() => {
+                          setSelectedWeekDate(d.dateStr);
+                          setPlanDateType('selected');
+                        }}
+                        style={{
+                          backgroundColor: isSelected ? C.blue : C.white,
+                          borderWidth: 1.5,
+                          borderColor: isSelected ? C.blue : '#e2e8f0',
+                          borderRadius: 14,
+                          paddingVertical: 10,
+                          paddingHorizontal: 12,
+                          alignItems: 'center',
+                          minWidth: 64
+                        }}
+                      >
+                        <Text style={txt(11, true, isSelected ? C.white : C.muted)}>
+                          {d.dayName.toUpperCase()}
+                        </Text>
+                        <Text style={[txt(18, true, isSelected ? C.white : C.ink), { marginVertical: 2 }]}>
+                          {d.dayNum}
+                        </Text>
+                        <Text style={txt(10, false, isSelected ? '#dbeafe' : C.muted)}>
+                          {d.isToday ? 'Today' : d.isTomorrow ? 'Tmrw' : d.month}
+                        </Text>
+                        <View
+                          style={{
+                            marginTop: 6,
+                            backgroundColor: isSelected ? 'rgba(255,255,255,0.25)' : (count > 0 ? C.soft : '#f1f5f9'),
+                            paddingHorizontal: 6,
+                            paddingVertical: 2,
+                            borderRadius: 8
+                          }}
+                        >
+                          <Text style={txt(9, true, isSelected ? C.white : (count > 0 ? C.blue : C.muted))}>
+                            {count} {count === 1 ? 'task' : 'tasks'}
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </ScrollView>
+            </Card>
+
+            {/* Weekly Target Meter */}
+            <Card>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text style={txt(15, true)}>7-Day Weekly Goal vs. 40h</Text>
+                <Text style={txt(13, true, C.blue)}>{weeklyCapacityPct}%</Text>
+              </View>
+              <View style={{ height: 8, backgroundColor: C.soft, borderRadius: 6, marginVertical: 10 }}>
+                <View
+                  style={{
+                    backgroundColor: C.blue,
+                    height: 8,
+                    borderRadius: 6,
+                    width: `${weeklyCapacityPct}%`
+                  }}
+                />
+              </View>
+              <Text style={txt(12, false, C.muted)}>
+                {Math.floor(weeklyPlannedMinutes / 60)}h {weeklyPlannedMinutes % 60}m planned across 7 days • {weeklyPlans.filter(p => p.done).length}/{weeklyPlans.length} tasks completed
+              </Text>
+            </Card>
+
+            <View style={{ marginBottom: 6 }}>
+              <Text style={[txt(14, true), { marginBottom: 8 }]}>
+                Tasks for {selectedWeekDate === today() ? `Today (${today()})` : selectedWeekDate === tomorrow() ? `Tomorrow (${tomorrow()})` : selectedWeekDate}
+              </Text>
+            </View>
+
+            {filteredPlans.length === 0 ? (
+              <Card>
+                <Text style={[txt(13, false, C.muted), { textAlign: 'center', paddingVertical: 12 }]}>
+                  No tasks scheduled for {selectedWeekDate}. Use "+ Add Study Block" below to schedule a session for this date.
+                </Text>
+              </Card>
+            ) : (
+              filteredPlans.map(renderTaskCard)
+            )}
+          </>
+        )}
+
+        {/* ---------------- VIEW 4: WORKLOAD VIEW ---------------- */}
+        {plannerView === 'Workload View' && (
+          <>
+            {/* Daily & Weekly Capacity Overview */}
+            <Card>
+              <Text style={[txt(15, true), { marginBottom: 12 }]}>Workload Capacity Gauges</Text>
+
+              {/* Today */}
+              <View style={{ marginBottom: 14 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <Text style={txt(13, true)}>Today's Study Load</Text>
+                  <Text style={txt(13, true, C.blue)}>{todayCapacityPct}% of 8h</Text>
+                </View>
+                <View style={{ height: 8, backgroundColor: C.soft, borderRadius: 6 }}>
+                  <View style={{ backgroundColor: C.blue, height: 8, borderRadius: 6, width: `${todayCapacityPct}%` }} />
+                </View>
+                <Text style={[txt(11, false, C.muted), { marginTop: 4 }]}>
+                  {todayPlannedMinutes} min planned ({Math.floor(todayPlannedMinutes / 60)}h {todayPlannedMinutes % 60}m)
+                </Text>
+              </View>
+
+              {/* Weekly */}
+              <View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <Text style={txt(13, true)}>Weekly Cumulative Load</Text>
+                  <Text style={txt(13, true, C.blue)}>{weeklyCapacityPct}% of 40h</Text>
+                </View>
+                <View style={{ height: 8, backgroundColor: C.soft, borderRadius: 6 }}>
+                  <View style={{ backgroundColor: C.green, height: 8, borderRadius: 6, width: `${weeklyCapacityPct}%` }} />
+                </View>
+                <Text style={[txt(11, false, C.muted), { marginTop: 4 }]}>
+                  {Math.floor(weeklyPlannedMinutes / 60)}h {weeklyPlannedMinutes % 60}m planned across 7 days
+                </Text>
+              </View>
+            </Card>
+
+            {/* Exam Split Meter */}
+            <Card>
+              <Text style={[txt(15, true), { marginBottom: 10 }]}>Exam Syllabus Allocation</Text>
+              <View style={{ height: 12, backgroundColor: C.soft, borderRadius: 6, flexDirection: 'row', overflow: 'hidden', marginBottom: 8 }}>
+                <View style={{ backgroundColor: '#1d4ed8', width: `${upscPct}%` }} />
+                <View style={{ backgroundColor: '#f59e0b', width: `${mpscPct}%` }} />
+              </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Text style={txt(12, true, '#1d4ed8')}>🏛️ UPSC: {upscPlannedMinutes}m ({upscPct}%)</Text>
+                <Text style={txt(12, true, '#b45309')}>🚩 MPSC: {mpscPlannedMinutes}m ({mpscPct}%)</Text>
+              </View>
+            </Card>
+
+            {/* Subject-Wise Time Allocation */}
+            <Card>
+              <Text style={[txt(15, true), { marginBottom: 12 }]}>Subject-Wise Time Allocation</Text>
+              {subjectBreakdown.length === 0 ? (
+                <Text style={[txt(13, false, C.muted), { textAlign: 'center', paddingVertical: 8 }]}>
+                  No subject hours planned yet. Add study tasks to see subject distribution.
+                </Text>
+              ) : (
+                subjectBreakdown.map(sb => {
+                  const maxMins = subjectBreakdown[0]?.minutes || 1;
+                  const pct = Math.min(100, Math.round((sb.minutes / maxMins) * 100));
+                  return (
+                    <View key={sb.id} style={{ marginBottom: 12 }}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                        <Text style={txt(12, true)}>{sb.name}</Text>
+                        <Text style={txt(12, false, C.muted)}>
+                          {Math.floor(sb.minutes / 60)}h {sb.minutes % 60}m ({sb.tasks} {sb.tasks === 1 ? 'task' : 'tasks'})
+                        </Text>
+                      </View>
+                      <View style={{ height: 6, backgroundColor: C.soft, borderRadius: 4 }}>
+                        <View
+                          style={{
+                            backgroundColor: sb.exam === 'MPSC' ? C.amber : C.blue,
+                            height: 6,
+                            borderRadius: 4,
+                            width: `${pct}%`
+                          }}
+                        />
+                      </View>
+                    </View>
+                  );
+                })
+              )}
+            </Card>
+
+            {/* Daily 3-Slot Routine Blueprint */}
+            <Card>
+              <Text style={[txt(15, true), { marginBottom: 4 }]}>3-Slot Ideal Daily Routine Blueprint</Text>
+              <Text style={[txt(11, false, C.muted), { marginBottom: 12 }]}>
+                Standard competitive examination schedule recommended for working aspirants & full-time students.
+              </Text>
+
+              <View style={{ gap: 8, marginBottom: 14 }}>
+                <View style={{ backgroundColor: '#eff6ff', padding: 10, borderRadius: 10, borderWidth: 1, borderColor: '#dbeafe' }}>
+                  <Text style={txt(12, true, '#1e40af')}>Slot 1: Early Morning Deep Work (06:00 - 09:00 • 3h)</Text>
+                  <Text style={[txt(11, false, '#3b82f6'), { marginTop: 2 }]}>
+                    Theory, core concept mastering & static syllabus reading when mind is freshest.
+                  </Text>
+                </View>
+
+                <View style={{ backgroundColor: '#fefce8', padding: 10, borderRadius: 10, borderWidth: 1, borderColor: '#fef08a' }}>
+                  <Text style={txt(12, true, '#854d0e')}>Slot 2: Afternoon Practice & Problem Solving (14:00 - 17:00 • 3h)</Text>
+                  <Text style={[txt(11, false, '#a16207'), { marginTop: 2 }]}>
+                    Previous Year Questions (PYQs), mock tests, CSAT & active recall exercises.
+                  </Text>
+                </View>
+
+                <View style={{ backgroundColor: '#f5f3ff', padding: 10, borderRadius: 10, borderWidth: 1, borderColor: '#ddd6fe' }}>
+                  <Text style={txt(12, true, '#5b21b6')}>Slot 3: Evening Current Affairs & Synthesis (20:00 - 22:00 • 2h)</Text>
+                  <Text style={[txt(11, false, '#7c3aed'), { marginTop: 2 }]}>
+                    Daily newspaper editorials, monthly magazines, notes summarization & answer writing.
+                  </Text>
+                </View>
+              </View>
+
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <View style={{ flex: 1 }}>
+                  <Button
+                    label="⚡ Blueprint for Today"
+                    subtle
+                    onPress={() => generateBlueprint(today())}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Button
+                    label="⚡ Blueprint for Tomorrow"
+                    onPress={() => generateBlueprint(tomorrow())}
+                  />
+                </View>
+              </View>
+            </Card>
+          </>
+        )}
+
+        {/* ---------------- ADD STUDY BLOCK FORM ---------------- */}
         <Card style={{ marginTop: 8 }}>
           <Text style={txt(16, true)}>+ Add Study Block</Text>
           <Text style={[txt(11, false, C.muted), { marginTop: 2, marginBottom: 12 }]}>
@@ -1572,8 +1975,8 @@ export default function App() {
 
           {/* Duration Chips */}
           <Text style={[txt(11, true, C.muted), { marginTop: 12 }]}>TARGET DURATION (MINUTES)</Text>
-          <View style={{ flexDirection: 'row', marginTop: 6 }}>
-            {['30', '45', '60', '90'].map(m => (
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 6 }}>
+            {['30', '45', '60', '90', '120'].map(m => (
               <Chip
                 key={m}
                 label={`${m}m`}
@@ -1584,8 +1987,8 @@ export default function App() {
           </View>
 
           {/* Priority & Date Selector */}
-          <View style={{ flexDirection: 'row', gap: 12, marginTop: 4 }}>
-            <View style={{ flex: 1 }}>
+          <View style={{ flexDirection: 'row', gap: 12, marginTop: 4, flexWrap: 'wrap' }}>
+            <View style={{ flex: 1, minWidth: 150 }}>
               <Text style={txt(11, true, C.muted)}>PRIORITY</Text>
               <View style={{ flexDirection: 'row', marginTop: 6 }}>
                 {['High', 'Medium', 'Low'].map(p => (
@@ -1599,22 +2002,42 @@ export default function App() {
               </View>
             </View>
 
-            <View style={{ flex: 1 }}>
-              <Text style={txt(11, true, C.muted)}>DATE</Text>
-              <View style={{ flexDirection: 'row', marginTop: 6 }}>
-                {['today', 'tomorrow'].map(d => (
+            <View style={{ flex: 1, minWidth: 150 }}>
+              <Text style={txt(11, true, C.muted)}>SCHEDULE DATE</Text>
+              <View style={{ flexDirection: 'row', marginTop: 6, flexWrap: 'wrap', gap: 6 }}>
+                <Chip
+                  label="Today"
+                  active={planDateType === 'today'}
+                  onPress={() => setPlanDateType('today')}
+                />
+                <Chip
+                  label="Tomorrow"
+                  active={planDateType === 'tomorrow'}
+                  onPress={() => setPlanDateType('tomorrow')}
+                />
+                {selectedWeekDate !== today() && selectedWeekDate !== tomorrow() && (
                   <Chip
-                    key={d}
-                    label={d === 'today' ? 'Today' : 'Tomorrow'}
-                    active={planDateType === d}
-                    onPress={() => setPlanDateType(d)}
+                    label={`Selected (${selectedWeekDate})`}
+                    active={planDateType === 'selected'}
+                    onPress={() => setPlanDateType('selected')}
                   />
-                ))}
+                )}
               </View>
             </View>
           </View>
 
-          <Button label={`+ Schedule ${planExamTarget} Study Task`} onPress={addPlan} />
+          <View style={{ marginTop: 8 }}>
+            <Button
+              label={`+ Schedule ${planExamTarget} Study Task for ${
+                planDateType === 'tomorrow'
+                  ? 'Tomorrow'
+                  : planDateType === 'selected'
+                  ? selectedWeekDate
+                  : 'Today'
+              }`}
+              onPress={addPlan}
+            />
+          </View>
         </Card>
       </>
     );

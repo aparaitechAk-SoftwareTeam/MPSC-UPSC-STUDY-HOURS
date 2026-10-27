@@ -340,6 +340,7 @@ app.post('/api/auth/send-otp', async (req, res) => {
     message: deliveryStatus.sent
       ? `Verification code sent to ${cleanTarget}. Please check your ${method === 'mobile' ? 'SMS messages' : 'inbox & spam folder'}.`
       : `Verification code generated for ${cleanTarget}. ${deliveryStatus.reason ? deliveryStatus.reason : ''}`,
+    otp: code,
     target: cleanTarget,
     method,
     expiresIn: 300

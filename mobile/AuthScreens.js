@@ -155,6 +155,7 @@ export default function AuthScreens({ onLogin, authError, isSubmitting, apiUrl }
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [otp, setOtp] = useState("");
+  const [availableCode, setAvailableCode] = useState("");
   const [localError, setLocalError] = useState("");
   const [noticeMsg, setNoticeMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
@@ -203,6 +204,7 @@ export default function AuthScreens({ onLogin, authError, isSubmitting, apiUrl }
 
       setTimerSeconds(30);
       setCanResend(false);
+      if (data.otp) setAvailableCode(data.otp);
       setNoticeMsg(data.message || `Verification code sent to your ${method === "mobile" ? "mobile via SMS" : "email inbox"}.`);
       return data;
     } catch (e) {
@@ -645,6 +647,19 @@ export default function AuthScreens({ onLogin, authError, isSubmitting, apiUrl }
               {timerSeconds > 0 && (
                 <View style={{ marginTop: 22 }}>
                   <Text style={styles.subHeading}>Enter 6-digit Code Received</Text>
+                  {Boolean(availableCode) && (
+                    <TouchableOpacity
+                      style={styles.quickFillBadge}
+                      onPress={() => {
+                        setOtp(availableCode);
+                        setLocalError("");
+                      }}
+                    >
+                      <Text style={styles.quickFillText}>
+                        ⚡ Auto-fill Code: [{availableCode}]
+                      </Text>
+                    </TouchableOpacity>
+                  )}
                   <SixDigitInput
                     otp={otp}
                     setOtp={setOtp}
@@ -837,6 +852,20 @@ export default function AuthScreens({ onLogin, authError, isSubmitting, apiUrl }
                 </Text>
               </Text>
 
+              {Boolean(availableCode) && (
+                <TouchableOpacity
+                  style={styles.quickFillBadge}
+                  onPress={() => {
+                    setOtp(availableCode);
+                    setLocalError("");
+                  }}
+                >
+                  <Text style={styles.quickFillText}>
+                    ⚡ Auto-fill Code: [{availableCode}]
+                  </Text>
+                </TouchableOpacity>
+              )}
+
               <SixDigitInput
                 otp={otp}
                 setOtp={setOtp}
@@ -961,6 +990,20 @@ export default function AuthScreens({ onLogin, authError, isSubmitting, apiUrl }
                   {targetContact}
                 </Text>
               </Text>
+
+              {Boolean(availableCode) && (
+                <TouchableOpacity
+                  style={styles.quickFillBadge}
+                  onPress={() => {
+                    setOtp(availableCode);
+                    setLocalError("");
+                  }}
+                >
+                  <Text style={styles.quickFillText}>
+                    ⚡ Auto-fill Code: [{availableCode}]
+                  </Text>
+                </TouchableOpacity>
+              )}
 
               <SixDigitInput
                 otp={otp}
@@ -1401,6 +1444,21 @@ const styles = StyleSheet.create({
   otpBoxFilled: {
     borderColor: BLUE,
     backgroundColor: "#F8FAFF",
+  },
+  quickFillBadge: {
+    backgroundColor: "#EEF2FF",
+    borderColor: "#C7D2FE",
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingVertical: 7,
+    paddingHorizontal: 14,
+    alignSelf: "center",
+    marginBottom: 14,
+  },
+  quickFillText: {
+    color: "#4338CA",
+    fontSize: 12,
+    fontWeight: "700",
   },
   resendRow: {
     alignItems: "center",
