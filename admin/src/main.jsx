@@ -12,7 +12,7 @@ import Notifications from '@/pages/Notifications';
 import Profile from '@/pages/Profile';
 import { initProfileFromUser } from '@/lib/profile-store';
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+const API = import.meta.env.VITE_API_URL || (typeof window !== 'undefined' && window.location.hostname ? `http://${window.location.hostname}:4000/api` : 'http://localhost:4000/api');
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem('abhyas_admin_token') || '');
@@ -121,7 +121,9 @@ function App() {
       }
 
       if (!res.ok) throw new Error(d.error || 'Invalid credentials');
-      if (d.user?.role !== 'admin') throw new Error('Administrator privileges required');
+      if (d.user?.role !== 'admin') {
+        throw new Error('This account has Student role. Please use the Student App at http://localhost:8083 or sign in with admin@abhyas.local');
+      }
 
       localStorage.setItem('abhyas_admin_token', d.token);
       initProfileFromUser(d.user);

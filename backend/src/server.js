@@ -741,6 +741,6 @@ app.use((err, req, res, next) => {
 
 const port = process.env.PORT || 4000;
 
-app.listen(port, () => {
-  console.log(`Abhyas API http://localhost:${port}`);
+app.listen(port, '0.0.0.0', () => {
+  console.log(`Abhyas API listening on 0.0.0.0:${port} (http://localhost:${port})`);
 });

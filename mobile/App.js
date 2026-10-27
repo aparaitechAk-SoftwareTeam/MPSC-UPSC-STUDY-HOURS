@@ -351,6 +351,8 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [loginEmail, setEmail] = useState('student@abhyas.local');
   const [password, setPassword] = useState('Student123!');
+  const [authError, setAuthError] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [register, setRegister] = useState(false);
   const [name, setName] = useState('');
   const [tab, setTab] = useState('Dashboard');
@@ -447,6 +449,8 @@ export default function App() {
   }, [running]);
 
   async function login(overrideEmail, overridePassword) {
+    setAuthError('');
+    setIsLoggingIn(true);
     try {
       const emailToUse = (overrideEmail || loginEmail || '').trim();
       const passwordToUse = (overridePassword || password || '').trim();
@@ -471,7 +475,10 @@ export default function App() {
       const msg = isNetwork
         ? `Cannot connect to server at ${API}.\nPlease ensure the backend is running.`
         : e.message;
+      setAuthError(msg);
       Alert.alert('Sign in error', msg);
+    } finally {
+      setIsLoggingIn(false);
     }
   }
 
@@ -677,9 +684,19 @@ export default function App() {
             <Ionicons name="book-outline" size={38} color={C.blue} />
           </View>
           <Text style={[txt(28, true), { textAlign: 'center', marginTop: 18 }]}>Abhyas Tracker</Text>
-          <Text style={[txt(13, false, C.muted), { textAlign: 'center', marginBottom: 28 }]}>
+          <Text style={[txt(13, false, C.muted), { textAlign: 'center', marginBottom: 24 }]}>
             Focused study • Dynamic syllabus • Smart planner
           </Text>
+
+          {/* Prominent Visual Error Banner */}
+          {Boolean(authError) && (
+            <View style={{ backgroundColor: '#fee2e2', borderColor: '#fca5a5', borderWidth: 1, padding: 12, borderRadius: 12, marginBottom: 16 }}>
+              <Text style={{ color: '#b91c1c', fontSize: 13, fontWeight: '600', textAlign: 'center' }}>
+                ⚠️ {authError}
+              </Text>
+            </View>
+          )}
+
           {register && (
             <TextInput placeholder="Full Name" value={name} onChangeText={setName} style={input} />
           )}
@@ -687,22 +704,25 @@ export default function App() {
             placeholder="Email"
             autoCapitalize="none"
             value={loginEmail}
-            onChangeText={setEmail}
+            onChangeText={(t) => { setAuthError(''); setEmail(t); }}
             style={input}
           />
           <TextInput
             placeholder="Password"
             secureTextEntry
             value={password}
-            onChangeText={setPassword}
+            onChangeText={(t) => { setAuthError(''); setPassword(t); }}
             style={input}
           />
-          <Button label={register ? 'Create Account' : 'Sign In'} onPress={() => login()} />
+          <Button
+            label={isLoggingIn ? 'Signing In...' : register ? 'Create Account' : 'Sign In'}
+            onPress={() => login()}
+          />
 
           {!register && (
             <View style={{ marginTop: 8 }}>
               <Button
-                label="🚀 1-Tap Instant Sign In"
+                label={isLoggingIn ? 'Connecting...' : '🚀 1-Tap Instant Sign In'}
                 subtle
                 onPress={() => quickDemoFill('student')}
               />
@@ -712,24 +732,54 @@ export default function App() {
           <Button
             label={register ? 'Already registered? Sign in' : 'Create a student account'}
             subtle
-            onPress={() => setRegister(!register)}
+            onPress={() => { setAuthError(''); setRegister(!register); }}
           />
 
-          <View style={{ marginTop: 18, alignItems: 'center' }}>
+          <View style={{ marginTop: 16, alignItems: 'center', gap: 8 }}>
             <TouchableOpacity
               onPress={() => quickDemoFill('student')}
               style={{
                 backgroundColor: C.soft,
-                paddingHorizontal: 12,
-                paddingVertical: 6,
+                paddingHorizontal: 14,
+                paddingVertical: 7,
                 borderRadius: 14,
                 borderWidth: 1,
                 borderColor: C.line
               }}
             >
               <Text style={txt(11, true, C.blue)}>
-                👉 Tap to auto-login: student@abhyas.local / Student123!
+                👉 Tap to auto-fill Student: student@abhyas.local / Student123!
               </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => quickDemoFill('admin')}
+              style={{
+                backgroundColor: '#f1f5f9',
+                paddingHorizontal: 14,
+                paddingVertical: 7,
+                borderRadius: 14,
+                borderWidth: 1,
+                borderColor: '#e2e8f0'
+              }}
+            >
+              <Text style={txt(11, true, '#334155')}>
+                🔑 Sign in with Admin: admin@abhyas.local / ChangeMe123!
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Admin Portal Redirection Link */}
+          <View style={{ marginTop: 20, paddingTop: 14, borderTopWidth: 1, borderColor: C.line, alignItems: 'center' }}>
+            <Text style={[txt(11, false, C.muted), { marginBottom: 6 }]}>Looking for Admin Control Panel?</Text>
+            <TouchableOpacity
+              onPress={() => {
+                if (Platform.OS === 'web' && typeof window !== 'undefined') {
+                  window.location.href = 'http://localhost:5173';
+                }
+              }}
+            >
+              <Text style={txt(11, true, C.blue)}>Open Admin Portal (http://localhost:5173) ↗</Text>
             </TouchableOpacity>
           </View>
         </View>
