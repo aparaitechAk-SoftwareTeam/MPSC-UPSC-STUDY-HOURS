@@ -12,10 +12,15 @@ import Notifications from '@/pages/Notifications';
 import Profile from '@/pages/Profile';
 import { initProfileFromUser } from '@/lib/profile-store';
 
-const API = import.meta.env.VITE_API_URL || (typeof window !== 'undefined' && window.location.hostname ? `http://${window.location.hostname}:4000/api` : 'http://localhost:4000/api');
+const API = (typeof window !== 'undefined' && window.location?.hostname)
+  ? (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+      ? 'http://localhost:4000/api'
+      : `http://${window.location.hostname}:4000/api`)
+  : (import.meta.env.VITE_API_URL || 'http://localhost:4000/api');
 
 function App() {
-  const [token, setToken] = useState(localStorage.getItem('abhyas_admin_token') || '');
+  const queryToken = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('token') : null;
+  const [token, setToken] = useState(queryToken || localStorage.getItem('abhyas_admin_token') || '');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);

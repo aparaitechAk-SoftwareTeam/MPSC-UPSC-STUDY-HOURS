@@ -1,4 +1,3 @@
-
 require('dotenv').config();
 
 const express = require('express');
@@ -8,10 +7,123 @@ const path = require('path');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 
 const app = express();
-app.use(cors());
+
+// Security: Disable Express fingerprinting
+app.disable('x-powered-by');
+
+// Security: HTTP Security Headers via Helmet
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
+
+// Security: Whitelist CORS origins & permit local development / mobile apps
+const allowedOrigins = [
+  'http://localhost:8082',
+  'http://127.0.0.1:8082',
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://localhost:19006',
+  'http://127.0.0.1:19006'
+];
+if (process.env.FRONTEND_URL) {
+  allowedOrigins.push(process.env.FRONTEND_URL);
+}
+
+const isLocalOrigin = (origin) => {
+  try {
+    const url = new URL(origin);
+    return (
+      url.hostname === 'localhost' ||
+      url.hostname === '127.0.0.1' ||
+      /^192\.168\.\d+\.\d+$/.test(url.hostname) ||
+      /^10\.\d+\.\d+\.\d+$/.test(url.hostname)
+    );
+  } catch {
+    return false;
+  }
+};
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile native apps, curl, Postman, server-to-server)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin) || isLocalOrigin(origin) || process.env.NODE_ENV !== 'production') {
+      return callback(null, true);
+    }
+    return callback(new Error('Blocked by CORS policy: Origin not permitted'));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With']
+}));
+
+// Body parser with size limits to prevent Denial of Service
 app.use(express.json({ limit: '1mb' }));
+
+// Security: Rate Limiting
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 400, // max 400 requests per 15 mins per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please try again after 15 minutes.' }
+});
+app.use('/api', apiLimiter);
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 30, // max 30 attempts per 15 mins per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many authentication attempts. Please wait 15 minutes before trying again.' }
+});
+app.use('/api/auth/', authLimiter);
+
+// Security: Input Sanitization against XSS
+function sanitizeText(val) {
+  if (typeof val !== 'string') return val;
+  return val
+    .replace(/<[^>]*>?/gm, '') // Strip HTML tags
+    .replace(/javascript:/gi, '')
+    .replace(/vbscript:/gi, '')
+    .replace(/data:text\/html/gi, '')
+    .replace(/onload\s*=/gi, '')
+    .replace(/onerror\s*=/gi, '')
+    .replace(/onclick\s*=/gi, '')
+    .trim();
+}
+
+function sanitizePayload(obj) {
+  if (!obj || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(sanitizePayload);
+  const clean = {};
+  for (const [k, v] of Object.entries(obj)) {
+    // Preserve raw password and OTP strings during authentication
+    if (k === 'password' || k === 'newPassword' || k === 'otp') {
+      clean[k] = typeof v === 'string' ? v.trim() : v;
+    } else if (typeof v === 'string') {
+      clean[k] = sanitizeText(v);
+    } else if (typeof v === 'object') {
+      clean[k] = sanitizePayload(v);
+    } else {
+      clean[k] = v;
+    }
+  }
+  return clean;
+}
+
+app.use((req, res, next) => {
+  if (req.body && typeof req.body === 'object') {
+    req.body = sanitizePayload(req.body);
+  }
+  next();
+});
 
 const file = path.join(__dirname, '../data/db.json');
 const secret = process.env.JWT_SECRET || 'development-only-change-this-secret';
@@ -28,14 +140,14 @@ function initDb() {
         name: 'Admin',
         email: email.toLowerCase(),
         role: 'admin',
-        passwordHash: bcrypt.hashSync(password, 10)
+        passwordHash: bcrypt.hashSync(password, 12)
       },
       {
         id: 'student1',
         name: 'Demo Aspirant',
         email: 'student@abhyas.local',
         role: 'student',
-        passwordHash: bcrypt.hashSync('Student123!', 10)
+        passwordHash: bcrypt.hashSync('Student123!', 12)
       }
     ],
     subjects: [
@@ -119,7 +231,7 @@ function read() {
         name: 'Admin',
         email: 'admin@abhyas.local',
         role: 'admin',
-        passwordHash: bcrypt.hashSync('ChangeMe123!', 10)
+        passwordHash: bcrypt.hashSync('ChangeMe123!', 12)
       });
     }
     if (!users.some(u => String(u.email || '').toLowerCase() === 'student@abhyas.local')) {
@@ -128,7 +240,7 @@ function read() {
         name: 'Demo Aspirant',
         email: 'student@abhyas.local',
         role: 'student',
-        passwordHash: bcrypt.hashSync('Student123!', 10)
+        passwordHash: bcrypt.hashSync('Student123!', 12)
       });
     }
 
@@ -154,28 +266,32 @@ function save(db) {
 function auth(role) {
   return (req, res, next) => {
     try {
-      const token = (req.headers.authorization || '').replace(/^Bearer /, '');
+      const token = (req.headers.authorization || '').replace(/^Bearer /, '').trim();
+      if (!token) {
+        return res.status(401).json({ error: 'Authentication required. No token provided.' });
+      }
+
       const user = jwt.verify(token, secret);
 
       if (role && user.role !== role) {
-        return res.status(403).json({ error: 'Forbidden' });
+        return res.status(403).json({ error: 'Forbidden: Insufficient permissions.' });
       }
 
       req.user = user;
       next();
     } catch {
-      return res.status(401).json({ error: 'Authentication required' });
+      return res.status(401).json({ error: 'Authentication required or token expired.' });
     }
   };
 }
 
 function publicUser(user) {
-  const { passwordHash, ...safe } = user;
+  const { password, passwordHash, ...safe } = user;
   return safe;
 }
 
 app.get('/api/health', (req, res) => {
-  res.json({ ok: true, service: 'Abhyas Tracker API' });
+  res.json({ ok: true, service: 'Abhyas Tracker API', status: 'healthy' });
 });
 
 // Real Email & SMS Transporters
@@ -200,11 +316,10 @@ function getMailer() {
 async function sendRealEmail(to, subject, htmlContent) {
   const transporter = getMailer();
   if (!transporter) {
-    console.warn(`\n[EMAIL DISPATCH NOTICE] Real email delivery requires SMTP_USER and SMTP_PASS in backend/.env.`);
-    console.warn(`Recipient: ${to} | Subject: ${subject}\n`);
+    console.warn(`[EMAIL DISPATCH NOTICE] Real email delivery requires SMTP_USER and SMTP_PASS in backend/.env.`);
     return {
       sent: false,
-      reason: 'SMTP email credentials not yet configured in backend/.env. Please add your Gmail App Password to send directly to inboxes.'
+      reason: 'SMTP email credentials not yet configured in backend/.env.'
     };
   }
 
@@ -222,61 +337,6 @@ async function sendRealEmail(to, subject, htmlContent) {
     console.error(`[EMAIL DISPATCH ERROR] Failed to send email to ${to}:`, err.message);
     return { sent: false, error: err.message };
   }
-}
-
-async function sendRealSMS(phoneNumber, otpCode) {
-  const cleanNumber = phoneNumber.replace(/\D/g, '').slice(-10);
-  const fast2smsKey = process.env.FAST2SMS_API_KEY;
-  const twilioSid = process.env.TWILIO_ACCOUNT_SID;
-  const twilioToken = process.env.TWILIO_AUTH_TOKEN;
-  const twilioPhone = process.env.TWILIO_PHONE_NUMBER;
-
-  if (fast2smsKey && cleanNumber.length === 10) {
-    try {
-      const url = `https://www.fast2sms.com/dev/bulkV2?authorization=${fast2smsKey}&variables_values=${otpCode}&route=otp&numbers=${cleanNumber}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      console.log(`[SMS DISPATCH] Fast2SMS response for ${cleanNumber}:`, data);
-      if (data.return === true || data.status_code === 200) {
-        return { sent: true, provider: 'fast2sms' };
-      }
-      return { sent: false, error: data.message || 'Fast2SMS API verification required' };
-    } catch (e) {
-      console.error('[SMS DISPATCH ERROR] Fast2SMS error:', e.message);
-      return { sent: false, error: e.message };
-    }
-  }
-
-  if (twilioSid && twilioToken && twilioPhone) {
-    try {
-      const auth = Buffer.from(`${twilioSid}:${twilioToken}`).toString('base64');
-      const body = new URLSearchParams({
-        To: cleanNumber.startsWith('+') ? cleanNumber : `+91${cleanNumber}`,
-        From: twilioPhone,
-        Body: `Your Abhyas Study Hours verification code is ${otpCode}. Valid for 5 minutes.`
-      });
-      const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Messages.json`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Basic ${auth}`,
-          'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: body.toString()
-      });
-      const data = await res.json();
-      console.log(`[SMS DISPATCH SUCCESS] Twilio dispatched to ${cleanNumber}:`, data.sid);
-      return { sent: true, provider: 'twilio' };
-    } catch (e) {
-      console.error('[SMS DISPATCH ERROR] Twilio error:', e.message);
-      return { sent: false, error: e.message };
-    }
-  }
-
-  console.warn(`[SMS DISPATCH NOTICE] Real SMS requires FAST2SMS_API_KEY or Twilio credentials in backend/.env for ${cleanNumber}`);
-  return {
-    sent: false,
-    reason: 'SMS provider API key not configured in backend/.env.'
-  };
 }
 
 // In-memory OTP Store for Login, Signup & Password Reset
@@ -341,7 +401,6 @@ app.post('/api/auth/send-otp', async (req, res) => {
         `Your Abhyas Verification Code: ${code}`,
         emailHtml
       );
-      // Register OTP for user's email as well
       otpStore.set(user.email.toLowerCase(), {
         code,
         type,
@@ -357,16 +416,11 @@ app.post('/api/auth/send-otp', async (req, res) => {
     deliveryStatus = await sendRealEmail(cleanTarget, `Your Abhyas Verification Code: ${code}`, emailHtml);
   }
 
-  console.log(`\n=============================================================`);
-  console.log(`📨 [OTP DISPATCH] Target: ${cleanTarget} (${method}) -> ${recipientEmail} | OTP: ${code}`);
-  console.log(`   Delivery status: ${deliveryStatus.sent ? '✅ SENT TO INBOX' : '⚠️ ' + (deliveryStatus.reason || deliveryStatus.error)}`);
-  console.log(`=============================================================\n`);
-
   res.json({
     success: true,
     delivered: deliveryStatus.sent,
     message: (method === 'mobile' || !cleanTarget.includes('@'))
-      ? `Verification code dispatched to your registered email (${recipientEmail}). Check your notifications and inbox!`
+      ? `Verification code dispatched to your registered email (${recipientEmail}). Check your inbox!`
       : `Verification code sent to ${cleanTarget}. Please check your inbox & spam folder.`,
     target: cleanTarget,
     method,
@@ -374,17 +428,18 @@ app.post('/api/auth/send-otp', async (req, res) => {
   });
 });
 
-// Verify OTP
+// Verify OTP (Secure - Backdoor Removed)
 app.post('/api/auth/verify-otp', (req, res) => {
   const { target, otp } = req.body;
   const cleanTarget = String(target || '').trim().toLowerCase();
   const cleanOtp = String(otp || '').trim();
 
+  if (!cleanTarget || !cleanOtp) {
+    return res.status(400).json({ error: 'Target contact and OTP code are required.' });
+  }
+
   const record = otpStore.get(cleanTarget);
   if (!record) {
-    if (cleanOtp === '123456') {
-      return res.json({ success: true, verified: true });
-    }
     return res.status(400).json({ error: 'No OTP requested for this contact or it has expired.' });
   }
 
@@ -393,21 +448,25 @@ app.post('/api/auth/verify-otp', (req, res) => {
     return res.status(400).json({ error: 'OTP has expired. Please request a new one.' });
   }
 
-  if (record.code !== cleanOtp && cleanOtp !== '123456') {
+  if (record.code !== cleanOtp) {
     return res.status(400).json({ error: 'Incorrect 6-digit OTP code. Please try again.' });
   }
 
   res.json({ success: true, verified: true });
 });
 
-// Login via OTP
+// Login via OTP (Secure - Backdoor Removed)
 app.post('/api/auth/login-otp', (req, res) => {
   const { target, otp } = req.body;
   const cleanTarget = String(target || '').trim().toLowerCase();
   const cleanOtp = String(otp || '').trim();
 
+  if (!cleanTarget || !cleanOtp) {
+    return res.status(400).json({ error: 'Target and OTP are required.' });
+  }
+
   const record = otpStore.get(cleanTarget);
-  const isValidOtp = (record && record.code === cleanOtp && Date.now() <= record.expiresAt) || cleanOtp === '123456';
+  const isValidOtp = record && record.code === cleanOtp && Date.now() <= record.expiresAt;
 
   if (!isValidOtp) {
     return res.status(400).json({ error: 'Invalid or expired OTP code.' });
@@ -420,7 +479,6 @@ app.post('/api/auth/login-otp', (req, res) => {
     (cleanMobileTarget.length === 10 && String(u.mobile || '').replace(/\D/g, '').slice(-10) === cleanMobileTarget)
   );
 
-  // Auto-provision if logging in via phone/email for the first time
   if (!user) {
     user = {
       id: Date.now().toString(),
@@ -428,7 +486,7 @@ app.post('/api/auth/login-otp', (req, res) => {
       email: cleanTarget.includes('@') ? cleanTarget : `${cleanTarget}@abhyas.local`,
       mobile: !cleanTarget.includes('@') ? cleanTarget : undefined,
       role: 'student',
-      passwordHash: bcrypt.hashSync('Student123!', 10)
+      passwordHash: bcrypt.hashSync(Math.random().toString(36), 12)
     };
     db.users.push(user);
     save(db);
@@ -445,7 +503,7 @@ app.post('/api/auth/login-otp', (req, res) => {
   res.json({ token, user: publicUser(user) });
 });
 
-// Reset Password with OTP
+// Reset Password with OTP (Secure - Backdoor Removed, Plaintext Scrubbed)
 app.post('/api/auth/reset-password', (req, res) => {
   const { target, otp, newPassword } = req.body;
   const cleanTarget = String(target || '').trim().toLowerCase();
@@ -457,7 +515,7 @@ app.post('/api/auth/reset-password', (req, res) => {
   }
 
   const record = otpStore.get(cleanTarget);
-  const isValidOtp = (record && record.code === cleanOtp && Date.now() <= record.expiresAt) || cleanOtp === '123456';
+  const isValidOtp = record && record.code === cleanOtp && Date.now() <= record.expiresAt;
 
   if (!isValidOtp) {
     return res.status(400).json({ error: 'Invalid or expired verification code' });
@@ -477,8 +535,7 @@ app.post('/api/auth/reset-password', (req, res) => {
       email: cleanTarget.includes('@') ? cleanTarget : `${cleanTarget}@abhyas.local`,
       mobile: !cleanTarget.includes('@') ? cleanTarget : undefined,
       role: 'student',
-      passwordHash: bcrypt.hashSync(cleanPassword, 10),
-      password: cleanPassword
+      passwordHash: bcrypt.hashSync(cleanPassword, 12)
     };
     db.users.push(user);
     save(db);
@@ -486,15 +543,15 @@ app.post('/api/auth/reset-password', (req, res) => {
     return res.json({ success: true, message: 'Password updated successfully! You can now sign in.' });
   }
 
-  user.passwordHash = bcrypt.hashSync(cleanPassword, 10);
-  user.password = cleanPassword;
+  user.passwordHash = bcrypt.hashSync(cleanPassword, 12);
+  if ('password' in user) delete user.password;
   save(db);
   otpStore.delete(cleanTarget);
 
   res.json({ success: true, message: 'Password updated successfully! You can now sign in.' });
 });
 
-// Authentication
+// Authentication: Register
 app.post('/api/auth/register', (req, res) => {
   const { name, email, mobile, password } = req.body;
   const normalizedEmail = String(email || '').trim().toLowerCase();
@@ -518,7 +575,7 @@ app.post('/api/auth/register', (req, res) => {
     email: normalizedEmail,
     mobile: mobile ? String(mobile).replace(/\D/g, '').slice(-10) : undefined,
     role: 'student',
-    passwordHash: bcrypt.hashSync(cleanPassword, 10)
+    passwordHash: bcrypt.hashSync(cleanPassword, 12)
   };
 
   db.users.push(user);
@@ -533,53 +590,33 @@ app.post('/api/auth/register', (req, res) => {
   res.status(201).json({ token, user: publicUser(user) });
 });
 
+// Authentication: Login (Strict Bcrypt, No Plaintext Backdoors)
 app.post('/api/auth/login', (req, res) => {
   const { email, password } = req.body;
   const normalizedEmail = String(email || '').trim().toLowerCase();
   const cleanPassword = String(password || '').trim();
 
+  if (!normalizedEmail || !cleanPassword) {
+    return res.status(400).json({ error: 'Email and password are required.' });
+  }
+
   const user = read().users.find(
     item => String(item.email || '').trim().toLowerCase() === normalizedEmail
   );
 
-  if (!user) {
-    return res.status(401).json({ error: 'Invalid credentials. User not found.' });
+  if (!user || !user.passwordHash) {
+    return res.status(401).json({ error: 'Invalid credentials. Please verify your email and password.' });
   }
 
-  // Robust, permanent password verification
   let isValid = false;
-
-  // 1. Verify bcrypt hash safely inside try-catch
-  if (user.passwordHash) {
-    try {
-      isValid = bcrypt.compareSync(cleanPassword, user.passwordHash);
-    } catch (e) {
-      console.warn('bcrypt compare warning:', e.message);
-    }
-  }
-
-  // 2. Direct string match fallback if plain password is stored
-  if (!isValid && user.password && user.password === cleanPassword) {
-    isValid = true;
-  }
-
-  // 3. Forgiving demo account fallbacks so demo student & admin NEVER get locked out:
-  if (!isValid) {
-    if (normalizedEmail === 'student@abhyas.local') {
-      const allowedStudent = ['student123!', 'student123', 'student', 'password123', 'student@123', 'changeme123!'];
-      if (allowedStudent.includes(cleanPassword.toLowerCase())) {
-        isValid = true;
-      }
-    } else if (normalizedEmail === 'admin@abhyas.local') {
-      const allowedAdmin = ['changeme123!', 'admin123', 'admin', 'admin@123', 'password123'];
-      if (allowedAdmin.includes(cleanPassword.toLowerCase())) {
-        isValid = true;
-      }
-    }
+  try {
+    isValid = bcrypt.compareSync(cleanPassword, user.passwordHash);
+  } catch (e) {
+    console.warn('bcrypt compare warning:', e.message);
   }
 
   if (!isValid) {
-    return res.status(401).json({ error: 'Invalid credentials. Please verify your password.' });
+    return res.status(401).json({ error: 'Invalid credentials. Please verify your email and password.' });
   }
 
   const token = jwt.sign(
@@ -591,11 +628,10 @@ app.post('/api/auth/login', (req, res) => {
   res.json({ token, user: publicUser(user) });
 });
 
+// Current User Profile
 app.get('/api/me', auth(), (req, res) => {
   const user = read().users.find(item => item.id === req.user.id);
-
   if (!user) return res.status(404).json({ error: 'User not found' });
-
   res.json({ user: publicUser(user) });
 });
 
@@ -607,7 +643,6 @@ app.get('/api/subjects', auth(), (req, res) => {
 // Syllabus: fetch individual topic progress for logged-in student
 app.get('/api/topic-progress', auth(), (req, res) => {
   const db = read();
-
   res.json(
     db.topicProgress.filter(item => item.userId === req.user.id)
   );
@@ -692,10 +727,9 @@ app.post('/api/topic-progress/:topicId', auth(), handleTopicProgressUpdate);
 app.patch('/api/topics/progress/:topicId', auth(), handleTopicProgressUpdate);
 app.post('/api/topics/progress/:topicId', auth(), handleTopicProgressUpdate);
 
-// Planner: get plans belonging to logged-in student
+// Planner: get plans belonging to logged-in student (IDOR Safe)
 app.get('/api/plan', auth(), (req, res) => {
   const db = read();
-
   res.json(
     db.plans.filter(item => item.userId === req.user.id)
   );
@@ -728,7 +762,7 @@ app.post('/api/plan', auth(), (req, res) => {
   const plan = {
     id: Date.now().toString(),
     userId: req.user.id,
-    title: title.trim(),
+    title: sanitizeText(title),
     minutes: duration,
     date: date || new Date().toISOString().slice(0, 10),
     subjectId: subjectId || null,
@@ -743,7 +777,7 @@ app.post('/api/plan', auth(), (req, res) => {
   res.status(201).json(plan);
 });
 
-// Planner: update completion and priority
+// Planner: update completion and priority (IDOR Safe)
 app.patch('/api/plan/:id', auth(), (req, res) => {
   const db = read();
 
@@ -769,7 +803,7 @@ app.patch('/api/plan/:id', auth(), (req, res) => {
   res.json(plan);
 });
 
-// Planner: delete a plan
+// Planner: delete a plan (IDOR Safe)
 app.delete('/api/plan/:id', auth(), (req, res) => {
   const db = read();
   const initialLength = db.plans.length;
@@ -785,7 +819,7 @@ app.delete('/api/plan/:id', auth(), (req, res) => {
   res.json({ success: true, id: req.params.id });
 });
 
-// Study sessions
+// Study sessions (IDOR Safe)
 app.get('/api/sessions', auth(), (req, res) => {
   res.json(
     read().sessions
@@ -795,7 +829,7 @@ app.get('/api/sessions', auth(), (req, res) => {
 });
 
 app.post('/api/sessions', auth(), (req, res) => {
-  const { subjectId, minutes, mode, focusScore } = req.body;
+  const { subjectId, minutes, mode, focusScore, startedAt, topic, note, activity } = req.body;
   const duration = Number(minutes);
 
   if (!Number.isFinite(duration) || duration <= 0 || duration > 1440) {
@@ -809,9 +843,14 @@ app.post('/api/sessions', auth(), (req, res) => {
     userId: req.user.id,
     subjectId: subjectId || null,
     minutes: duration,
-    mode: mode || 'Pomodoro',
-    focusScore: Math.min(100, Math.max(0, Number(focusScore) || 90)),
-    startedAt: new Date().toISOString()
+    mode: mode ? sanitizeText(mode) : 'Pomodoro',
+    activity: activity ? sanitizeText(activity) : 'Theory & Reading',
+    topic: sanitizeText(topic || note || ''),
+    note: sanitizeText(note || topic || ''),
+    focusScore: Math.min(100, Math.max(0, Number(focusScore) || 92)),
+    startedAt: startedAt && !isNaN(new Date(startedAt).getTime())
+      ? new Date(startedAt).toISOString()
+      : new Date().toISOString()
   };
 
   db.sessions.push(session);
@@ -820,7 +859,7 @@ app.post('/api/sessions', auth(), (req, res) => {
   res.status(201).json(session);
 });
 
-// Notifications
+// Notifications (IDOR Safe)
 app.get('/api/notifications', auth(), (req, res) => {
   res.json(
     read().notifications.filter(
@@ -852,7 +891,7 @@ app.patch('/api/notifications/:id/read', auth(), (req, res) => {
   res.json(notification);
 });
 
-// Analytics
+// Analytics (IDOR Safe)
 app.get('/api/analytics', auth(), (req, res) => {
   const sessions = read().sessions.filter(
     item => item.userId === req.user.id
@@ -881,7 +920,7 @@ app.get('/api/analytics', auth(), (req, res) => {
   });
 });
 
-// Admin routes
+// Admin routes (Protected by auth('admin'))
 app.get('/api/admin/overview', auth('admin'), (req, res) => {
   const db = read();
 
@@ -913,10 +952,10 @@ app.post('/api/admin/users', auth('admin'), (req, res) => {
 
   const user = {
     id: Date.now().toString(),
-    name: String(name).trim(),
+    name: sanitizeText(name),
     email: normalizedEmail,
     role: role === 'admin' ? 'admin' : 'student',
-    passwordHash: bcrypt.hashSync(cleanPassword, 10)
+    passwordHash: bcrypt.hashSync(cleanPassword, 12)
   };
 
   db.users.push(user);
@@ -955,12 +994,12 @@ app.post('/api/admin/subjects', auth('admin'), (req, res) => {
 
   const subject = {
     id: Date.now().toString(),
-    name: name.trim(),
+    name: sanitizeText(name),
     exam: (exam || (paper && paper.includes('MPSC') ? 'MPSC' : 'UPSC')).toUpperCase(),
-    paper: paper || 'GS Paper II',
+    paper: paper ? sanitizeText(paper) : 'GS Paper II',
     topics: Math.max(0, Number(topics) || 0),
     completed: 0,
-    imageUrl: imageUrl ? imageUrl.trim() : null
+    imageUrl: imageUrl ? sanitizeText(imageUrl) : null
   };
 
   db.subjects.push(subject);
@@ -978,11 +1017,11 @@ app.put('/api/admin/subjects/:id', auth('admin'), (req, res) => {
     return res.status(404).json({ error: 'Subject not found' });
   }
 
-  if (name && name.trim()) subject.name = name.trim();
-  if (paper && paper.trim()) subject.paper = paper.trim();
+  if (name && name.trim()) subject.name = sanitizeText(name);
+  if (paper && paper.trim()) subject.paper = sanitizeText(paper);
   if (exam) subject.exam = exam.toUpperCase();
   if (topics !== undefined) subject.topics = Math.max(0, Number(topics) || 0);
-  if (imageUrl !== undefined) subject.imageUrl = imageUrl ? imageUrl.trim() : null;
+  if (imageUrl !== undefined) subject.imageUrl = imageUrl ? sanitizeText(imageUrl) : null;
 
   save(db);
   res.json(subject);
@@ -1018,8 +1057,8 @@ app.post('/api/admin/notifications', auth('admin'), (req, res) => {
   const notification = {
     id: Date.now().toString(),
     userId: 'all',
-    title: title.trim(),
-    message: message.trim(),
+    title: sanitizeText(title),
+    message: sanitizeText(message),
     readBy: [],
     createdAt: new Date().toISOString()
   };
@@ -1052,13 +1091,17 @@ app.get('/api/admin/sessions', auth('admin'), (req, res) => {
   res.json(enriched.sort((a, b) => (b.startedAt || '').localeCompare(a.startedAt || '')));
 });
 
+// Secure Error Handler: Never leak stack traces or internal errors to client
 app.use((err, req, res, next) => {
-  console.error(err);
-  res.status(500).json({ error: 'Server error' });
+  if (err && err.message && err.message.includes('CORS')) {
+    return res.status(403).json({ error: 'Request blocked by CORS policy' });
+  }
+  console.error('[SERVER ERROR]', err.message || err);
+  res.status(500).json({ error: 'Internal server error' });
 });
 
 const port = process.env.PORT || 4000;
 
 app.listen(port, '0.0.0.0', () => {
-  console.log(`Abhyas API listening on 0.0.0.0:${port} (http://localhost:${port})`);
+  console.log(`Abhyas API listening on 0.0.0.0:${port} (http://localhost:${port} & http://127.0.0.1:${port})`);
 });
