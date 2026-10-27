@@ -10,7 +10,8 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
-  StyleSheet
+  StyleSheet,
+  NativeModules
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Svg, { Circle } from 'react-native-svg';
@@ -37,7 +38,27 @@ const C = {
   redSoft: '#fef2f2'
 };
 
-const API = process.env.EXPO_PUBLIC_API_URL || (Platform.OS === 'android' ? 'http://10.0.2.2:4000/api' : 'http://localhost:4000/api');
+const resolveApiUrl = () => {
+  if (process.env.EXPO_PUBLIC_API_URL) {
+    return process.env.EXPO_PUBLIC_API_URL;
+  }
+  if (Platform.OS === 'web') {
+    if (typeof window !== 'undefined' && window.location?.hostname) {
+      return `http://${window.location.hostname}:4000/api`;
+    }
+    return 'http://localhost:4000/api';
+  }
+  const scriptURL = NativeModules?.SourceCode?.scriptURL;
+  if (scriptURL) {
+    const host = scriptURL.split('://')[1]?.split('/')[0]?.split(':')[0];
+    if (host && host !== 'localhost' && host !== '127.0.0.1') {
+      return `http://${host}:4000/api`;
+    }
+  }
+  return Platform.OS === 'android' ? 'http://10.0.2.2:4000/api' : 'http://localhost:4000/api';
+};
+
+const API = resolveApiUrl();
 
 const txt = (size = 14, bold = false, color = C.ink) => ({
   fontSize: size,
@@ -290,20 +311,29 @@ export default function App() {
 
   async function login() {
     try {
-      const res = await fetch(API + '/auth/' + (register ? 'register' : 'login'), {
+      const endpoint = API + '/auth/' + (register ? 'register' : 'login');
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email: loginEmail, password })
+        body: JSON.stringify({
+          name: (name || '').trim(),
+          email: (loginEmail || '').trim(),
+          password: (password || '').trim()
+        })
       });
-      const d = await res.json();
-      if (!res.ok) throw Error(d.error || 'Unable to sign in');
-      if (d.user.role !== 'student') throw Error('Use a student account');
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw Error(d.error || `Unable to sign in (Status ${res.status})`);
+      if (d.user?.role !== 'student') throw Error('Use a student account');
       setToken(d.token);
       setUser(d.user);
       await AsyncStorage.setItem('abhyasToken', d.token);
       await refresh(d.token);
     } catch (e) {
-      Alert.alert('Sign in error', e.message);
+      const isNetwork = e.message === 'Network request failed' || (e.message && e.message.toLowerCase().includes('failed to fetch'));
+      const msg = isNetwork
+        ? `Cannot connect to server at ${API}.\nPlease ensure the backend is running.`
+        : e.message;
+      Alert.alert('Sign in error', msg);
     }
   }
 

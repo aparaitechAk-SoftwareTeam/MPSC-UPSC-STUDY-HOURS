@@ -1,30 +1,555 @@
+
 require('dotenv').config();
-const express=require('express'), cors=require('cors'),fs=require('fs'),path=require('path'),jwt=require('jsonwebtoken'),bcrypt=require('bcryptjs');
-const app=express(); app.use(cors());app.use(express.json({limit:'1mb'}));
-const file=path.join(__dirname,'../data/db.json');
-const secret=process.env.JWT_SECRET||'development-only-change-this-secret';
-function read(){return JSON.parse(fs.readFileSync(file,'utf8'))}
-function save(x){fs.writeFileSync(file+'.tmp',JSON.stringify(x,null,2));fs.renameSync(file+'.tmp',file)}
-function auth(role){return(req,res,next)=>{try{const t=(req.headers.authorization||'').replace(/^Bearer /,'');const u=jwt.verify(t,secret);if(role&&u.role!==role)return res.status(403).json({error:'Forbidden'});req.user=u;next()}catch{return res.status(401).json({error:'Authentication required'})}}}
-function publicUser(u){const {passwordHash,...safe}=u;return safe}
-app.get('/api/health',(req,res)=>res.json({ok:true,service:'Abhyas Tracker API'}));
-app.post('/api/auth/register',(req,res)=>{const {name,email,password}=req.body;if(!name||!email||!password||password.length<8)return res.status(400).json({error:'Name, email, and password (8+ characters) required'});const db=read();if(db.users.some(u=>u.email===email.toLowerCase()))return res.status(409).json({error:'Email already registered'});const user={id:Date.now().toString(),name,email:email.toLowerCase(),role:'student',passwordHash:bcrypt.hashSync(password,10)};db.users.push(user);save(db);const token=jwt.sign({id:user.id,role:user.role},secret,{expiresIn:'7d'});res.status(201).json({token,user:publicUser(user)})});
-app.post('/api/auth/login',(req,res)=>{const {email,password}=req.body;const user=read().users.find(x=>x.email===String(email||'').toLowerCase());if(!user||!bcrypt.compareSync(String(password||''),user.passwordHash))return res.status(401).json({error:'Invalid credentials'});res.json({token:jwt.sign({id:user.id,role:user.role},secret,{expiresIn:'7d'}),user:publicUser(user)})});
-app.get('/api/me',auth(),(req,res)=>{const u=read().users.find(x=>x.id===req.user.id);res.json({user:publicUser(u)})});
-app.get('/api/subjects',auth(),(req,res)=>res.json(read().subjects));
-app.get('/api/plan',auth(),(req,res)=>res.json(read().plans.filter(x=>x.userId===req.user.id)));
-app.post('/api/plan',auth(),(req,res)=>{const {title,minutes,date,subjectId}=req.body;if(!title||!Number.isFinite(Number(minutes))||Number(minutes)<=0)return res.status(400).json({error:'Title and positive minutes required'});const db=read();const obj={id:Date.now().toString(),userId:req.user.id,title,minutes:Number(minutes),date:date||new Date().toISOString().slice(0,10),subjectId:subjectId||null,done:false};db.plans.push(obj);save(db);res.status(201).json(obj)});
-app.patch('/api/plan/:id',auth(),(req,res)=>{const db=read(),x=db.plans.find(x=>x.id===req.params.id&&x.userId===req.user.id);if(!x)return res.status(404).json({error:'Not found'});x.done=!!req.body.done;save(db);res.json(x)});
-app.get('/api/sessions',auth(),(req,res)=>res.json(read().sessions.filter(x=>x.userId===req.user.id).sort((a,b)=>b.startedAt.localeCompare(a.startedAt))));
-app.post('/api/sessions',auth(),(req,res)=>{const {subjectId,minutes,mode,focusScore}=req.body;const m=Number(minutes);if(!Number.isFinite(m)||m<=0||m>1440)return res.status(400).json({error:'Minutes must be 1–1440'});const db=read();const obj={id:Date.now().toString(),userId:req.user.id,subjectId:subjectId||null,minutes:m,mode:mode||'Pomodoro',focusScore:Math.min(100,Math.max(0,Number(focusScore)||90)),startedAt:new Date().toISOString()};db.sessions.push(obj);save(db);res.status(201).json(obj)});
-app.get('/api/notifications',auth(),(req,res)=>res.json(read().notifications.filter(x=>x.userId===req.user.id||x.userId==='all')));
-app.patch('/api/notifications/:id/read',auth(),(req,res)=>{const db=read(),n=db.notifications.find(x=>x.id===req.params.id&&(x.userId===req.user.id||x.userId==='all'));if(!n)return res.status(404).json({error:'Not found'});n.readBy=n.readBy||[];if(!n.readBy.includes(req.user.id))n.readBy.push(req.user.id);save(db);res.json(n)});
-app.get('/api/analytics',auth(),(req,res)=>{const sessions=read().sessions.filter(s=>s.userId===req.user.id),minutes=sessions.reduce((a,x)=>a+x.minutes,0),focus=sessions.length?Math.round(sessions.reduce((a,x)=>a+x.focusScore,0)/sessions.length):0;res.json({sessionCount:sessions.length,totalMinutes:minutes,averageFocus:focus,weekly:sessions.slice(-7).map(s=>({date:s.startedAt.slice(0,10),minutes:s.minutes}))})});
-app.get('/api/admin/overview',auth('admin'),(req,res)=>{const db=read();res.json({users:db.users.length,subjects:db.subjects.length,sessions:db.sessions.length,minutes:db.sessions.reduce((a,s)=>a+s.minutes,0)})});
-app.get('/api/admin/users',auth('admin'),(req,res)=>res.json(read().users.map(publicUser)));
-app.get('/api/admin/subjects',auth('admin'),(req,res)=>res.json(read().subjects));
-app.post('/api/admin/subjects',auth('admin'),(req,res)=>{const {name,paper,topics}=req.body;if(!name)return res.status(400).json({error:'Name required'});const db=read(),x={id:Date.now().toString(),name,paper:paper||'GS Paper II',topics:Number(topics)||0,completed:0};db.subjects.push(x);save(db);res.status(201).json(x)});
-app.delete('/api/admin/subjects/:id',auth('admin'),(req,res)=>{const db=read();db.subjects=db.subjects.filter(s=>s.id!==req.params.id);save(db);res.json({ok:true})});
-app.post('/api/admin/notifications',auth('admin'),(req,res)=>{if(!req.body.title||!req.body.message)return res.status(400).json({error:'Title and message required'});const db=read(),x={id:Date.now().toString(),userId:'all',title:req.body.title,message:req.body.message,readBy:[],createdAt:new Date().toISOString()};db.notifications.unshift(x);save(db);res.status(201).json(x)});
-app.use((err,req,res,next)=>{console.error(err);res.status(500).json({error:'Server error'})});
-const port=process.env.PORT||4000;app.listen(port,()=>console.log(`Abhyas API http://localhost:${port}`));
+
+const express = require('express');
+const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+
+const app = express();
+app.use(cors());
+app.use(express.json({ limit: '1mb' }));
+
+const file = path.join(__dirname, '../data/db.json');
+const secret = process.env.JWT_SECRET || 'development-only-change-this-secret';
+
+function initDb() {
+  const email = process.env.ADMIN_EMAIL || 'admin@abhyas.local';
+  const password = process.env.ADMIN_PASSWORD || 'ChangeMe123!';
+  const now = new Date().toISOString();
+
+  const initial = {
+    users: [
+      {
+        id: 'admin1',
+        name: 'Admin',
+        email: email.toLowerCase(),
+        role: 'admin',
+        passwordHash: bcrypt.hashSync(password, 10)
+      },
+      {
+        id: 'student1',
+        name: 'Demo Aspirant',
+        email: 'student@abhyas.local',
+        role: 'student',
+        passwordHash: bcrypt.hashSync('Student123!', 10)
+      }
+    ],
+    subjects: [
+      { id: 'polity', name: 'Indian Polity', paper: 'GS Paper II', topics: 95, completed: 48 },
+      { id: 'history', name: 'Modern Indian History', paper: 'GS Paper I', topics: 76, completed: 35 },
+      { id: 'economy', name: 'Indian Economy', paper: 'GS Paper III', topics: 64, completed: 29 },
+      { id: 'geography', name: 'Geography', paper: 'GS Paper I', topics: 60, completed: 30 }
+    ],
+    topicProgress: [],
+    plans: [
+      {
+        id: 'plan1',
+        userId: 'student1',
+        title: 'Chapter 7: Fundamental Rights',
+        minutes: 90,
+        date: new Date().toISOString().slice(0, 10),
+        subjectId: 'polity',
+        priority: 'High',
+        done: false
+      }
+    ],
+    sessions: [
+      {
+        id: 'sess1',
+        userId: 'student1',
+        subjectId: 'polity',
+        minutes: 45,
+        mode: 'Pomodoro',
+        focusScore: 94,
+        startedAt: now
+      }
+    ],
+    notifications: [
+      {
+        id: 'notice1',
+        userId: 'all',
+        title: 'Spaced Repetition Due',
+        message: 'Review Fundamental Rights (Articles 14–32)',
+        readBy: [],
+        createdAt: now
+      }
+    ]
+  };
+
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, JSON.stringify(initial, null, 2));
+  return initial;
+}
+
+function read() {
+  try {
+    if (!fs.existsSync(file)) return initDb();
+
+    const parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
+
+    if (!parsed || !Array.isArray(parsed.users) || parsed.users.length === 0) {
+      return initDb();
+    }
+
+    return {
+      users: parsed.users || [],
+      subjects: parsed.subjects || [],
+      topicProgress: parsed.topicProgress || [],
+      plans: parsed.plans || [],
+      sessions: parsed.sessions || [],
+      notifications: parsed.notifications || []
+    };
+  } catch (err) {
+    console.error('Error reading db.json:', err);
+    throw err;
+  }
+}
+
+function save(db) {
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, JSON.stringify(db, null, 2));
+}
+
+function auth(role) {
+  return (req, res, next) => {
+    try {
+      const token = (req.headers.authorization || '').replace(/^Bearer /, '');
+      const user = jwt.verify(token, secret);
+
+      if (role && user.role !== role) {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
+
+      req.user = user;
+      next();
+    } catch {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+  };
+}
+
+function publicUser(user) {
+  const { passwordHash, ...safe } = user;
+  return safe;
+}
+
+app.get('/api/health', (req, res) => {
+  res.json({ ok: true, service: 'Abhyas Tracker API' });
+});
+
+// Authentication
+app.post('/api/auth/register', (req, res) => {
+  const { name, email, password } = req.body;
+  const normalizedEmail = String(email || '').trim().toLowerCase();
+  const cleanPassword = String(password || '').trim();
+
+  if (!name || !normalizedEmail || !cleanPassword || cleanPassword.length < 8) {
+    return res.status(400).json({
+      error: 'Name, email, and password (8+ characters) required'
+    });
+  }
+
+  const db = read();
+
+  if (db.users.some(user => user.email === normalizedEmail)) {
+    return res.status(409).json({ error: 'Email already registered' });
+  }
+
+  const user = {
+    id: Date.now().toString(),
+    name: String(name).trim(),
+    email: normalizedEmail,
+    role: 'student',
+    passwordHash: bcrypt.hashSync(cleanPassword, 10)
+  };
+
+  db.users.push(user);
+  save(db);
+
+  const token = jwt.sign(
+    { id: user.id, role: user.role },
+    secret,
+    { expiresIn: '7d' }
+  );
+
+  res.status(201).json({ token, user: publicUser(user) });
+});
+
+app.post('/api/auth/login', (req, res) => {
+  const { email, password } = req.body;
+  const normalizedEmail = String(email || '').trim().toLowerCase();
+  const cleanPassword = String(password || '').trim();
+
+  const user = read().users.find(
+    item => item.email === normalizedEmail
+  );
+
+  if (!user || !bcrypt.compareSync(cleanPassword, user.passwordHash)) {
+    return res.status(401).json({ error: 'Invalid credentials' });
+  }
+
+  const token = jwt.sign(
+    { id: user.id, role: user.role },
+    secret,
+    { expiresIn: '7d' }
+  );
+
+  res.json({ token, user: publicUser(user) });
+});
+
+app.get('/api/me', auth(), (req, res) => {
+  const user = read().users.find(item => item.id === req.user.id);
+
+  if (!user) return res.status(404).json({ error: 'User not found' });
+
+  res.json({ user: publicUser(user) });
+});
+
+// Syllabus: subjects
+app.get('/api/subjects', auth(), (req, res) => {
+  res.json(read().subjects);
+});
+
+// Syllabus: fetch individual topic progress for logged-in student
+app.get('/api/topic-progress', auth(), (req, res) => {
+  const db = read();
+
+  res.json(
+    db.topicProgress.filter(item => item.userId === req.user.id)
+  );
+});
+
+// Syllabus: save or update an individual topic's status
+app.patch('/api/topic-progress/:topicId', auth(), (req, res) => {
+  const allowedStatuses = [
+    'Not Started',
+    'In Progress',
+    'Completed',
+    'To Revise'
+  ];
+
+  const { status, subjectId } = req.body;
+
+  if (!allowedStatuses.includes(status)) {
+    return res.status(400).json({ error: 'Invalid topic status' });
+  }
+
+  const db = read();
+
+  let item = db.topicProgress.find(
+    entry =>
+      entry.userId === req.user.id &&
+      entry.topicId === req.params.topicId
+  );
+
+  if (item) {
+    item.status = status;
+    if (subjectId) item.subjectId = subjectId;
+  } else {
+    item = {
+      id: Date.now().toString(),
+      userId: req.user.id,
+      topicId: req.params.topicId,
+      subjectId: subjectId || null,
+      status
+    };
+
+    db.topicProgress.push(item);
+  }
+
+  const sId = subjectId || item.subjectId;
+  if (sId) {
+    const sub = db.subjects.find(s => s.id === sId);
+    if (sub) {
+      const completedCount = db.topicProgress.filter(
+        tp => tp.userId === req.user.id && tp.subjectId === sId && tp.status === 'Completed'
+      ).length;
+      sub.completed = completedCount;
+    }
+  }
+
+  save(db);
+  res.json(item);
+});
+
+// Planner: get plans belonging to logged-in student
+app.get('/api/plan', auth(), (req, res) => {
+  const db = read();
+
+  res.json(
+    db.plans.filter(item => item.userId === req.user.id)
+  );
+});
+
+// Planner: create a plan
+app.post('/api/plan', auth(), (req, res) => {
+  const { title, minutes, date, subjectId, priority } = req.body;
+  const duration = Number(minutes);
+
+  if (
+    typeof title !== 'string' ||
+    !title.trim() ||
+    !Number.isFinite(duration) ||
+    duration <= 0 ||
+    duration > 1440
+  ) {
+    return res.status(400).json({
+      error: 'Enter a title and a duration between 1 and 1440 minutes'
+    });
+  }
+
+  const validPriority = ['Low', 'Medium', 'High'];
+  const selectedPriority = validPriority.includes(priority)
+    ? priority
+    : 'Medium';
+
+  const db = read();
+
+  const plan = {
+    id: Date.now().toString(),
+    userId: req.user.id,
+    title: title.trim(),
+    minutes: duration,
+    date: date || new Date().toISOString().slice(0, 10),
+    subjectId: subjectId || null,
+    priority: selectedPriority,
+    done: false
+  };
+
+  db.plans.push(plan);
+  save(db);
+
+  res.status(201).json(plan);
+});
+
+// Planner: update completion and priority
+app.patch('/api/plan/:id', auth(), (req, res) => {
+  const db = read();
+
+  const plan = db.plans.find(
+    item => item.id === req.params.id && item.userId === req.user.id
+  );
+
+  if (!plan) return res.status(404).json({ error: 'Plan not found' });
+
+  if (typeof req.body.done === 'boolean') {
+    plan.done = req.body.done;
+  }
+
+  if (req.body.priority !== undefined) {
+    if (!['Low', 'Medium', 'High'].includes(req.body.priority)) {
+      return res.status(400).json({ error: 'Invalid priority' });
+    }
+
+    plan.priority = req.body.priority;
+  }
+
+  save(db);
+  res.json(plan);
+});
+
+// Planner: delete a plan
+app.delete('/api/plan/:id', auth(), (req, res) => {
+  const db = read();
+  const initialLength = db.plans.length;
+  db.plans = db.plans.filter(
+    item => !(item.id === req.params.id && item.userId === req.user.id)
+  );
+
+  if (db.plans.length === initialLength) {
+    return res.status(404).json({ error: 'Plan not found' });
+  }
+
+  save(db);
+  res.json({ success: true, id: req.params.id });
+});
+
+// Study sessions
+app.get('/api/sessions', auth(), (req, res) => {
+  res.json(
+    read().sessions
+      .filter(item => item.userId === req.user.id)
+      .sort((a, b) => b.startedAt.localeCompare(a.startedAt))
+  );
+});
+
+app.post('/api/sessions', auth(), (req, res) => {
+  const { subjectId, minutes, mode, focusScore } = req.body;
+  const duration = Number(minutes);
+
+  if (!Number.isFinite(duration) || duration <= 0 || duration > 1440) {
+    return res.status(400).json({ error: 'Minutes must be 1–1440' });
+  }
+
+  const db = read();
+
+  const session = {
+    id: Date.now().toString(),
+    userId: req.user.id,
+    subjectId: subjectId || null,
+    minutes: duration,
+    mode: mode || 'Pomodoro',
+    focusScore: Math.min(100, Math.max(0, Number(focusScore) || 90)),
+    startedAt: new Date().toISOString()
+  };
+
+  db.sessions.push(session);
+  save(db);
+
+  res.status(201).json(session);
+});
+
+// Notifications
+app.get('/api/notifications', auth(), (req, res) => {
+  res.json(
+    read().notifications.filter(
+      item => item.userId === req.user.id || item.userId === 'all'
+    )
+  );
+});
+
+app.patch('/api/notifications/:id/read', auth(), (req, res) => {
+  const db = read();
+
+  const notification = db.notifications.find(
+    item =>
+      item.id === req.params.id &&
+      (item.userId === req.user.id || item.userId === 'all')
+  );
+
+  if (!notification) {
+    return res.status(404).json({ error: 'Notification not found' });
+  }
+
+  notification.readBy = notification.readBy || [];
+
+  if (!notification.readBy.includes(req.user.id)) {
+    notification.readBy.push(req.user.id);
+  }
+
+  save(db);
+  res.json(notification);
+});
+
+// Analytics
+app.get('/api/analytics', auth(), (req, res) => {
+  const sessions = read().sessions.filter(
+    item => item.userId === req.user.id
+  );
+
+  const totalMinutes = sessions.reduce(
+    (sum, item) => sum + item.minutes,
+    0
+  );
+
+  const averageFocus = sessions.length
+    ? Math.round(
+        sessions.reduce((sum, item) => sum + item.focusScore, 0) /
+        sessions.length
+      )
+    : 0;
+
+  res.json({
+    sessionCount: sessions.length,
+    totalMinutes,
+    averageFocus,
+    weekly: sessions.slice(-7).map(item => ({
+      date: item.startedAt.slice(0, 10),
+      minutes: item.minutes
+    }))
+  });
+});
+
+// Admin routes
+app.get('/api/admin/overview', auth('admin'), (req, res) => {
+  const db = read();
+
+  res.json({
+    users: db.users.length,
+    subjects: db.subjects.length,
+    sessions: db.sessions.length,
+    minutes: db.sessions.reduce((sum, item) => sum + item.minutes, 0)
+  });
+});
+
+app.get('/api/admin/users', auth('admin'), (req, res) => {
+  res.json(read().users.map(publicUser));
+});
+
+app.get('/api/admin/subjects', auth('admin'), (req, res) => {
+  res.json(read().subjects);
+});
+
+app.post('/api/admin/subjects', auth('admin'), (req, res) => {
+  const { name, paper, topics } = req.body;
+
+  if (!name || !name.trim()) {
+    return res.status(400).json({ error: 'Name required' });
+  }
+
+  const db = read();
+
+  const subject = {
+    id: Date.now().toString(),
+    name: name.trim(),
+    paper: paper || 'GS Paper II',
+    topics: Math.max(0, Number(topics) || 0),
+    completed: 0
+  };
+
+  db.subjects.push(subject);
+  save(db);
+
+  res.status(201).json(subject);
+});
+
+app.delete('/api/admin/subjects/:id', auth('admin'), (req, res) => {
+  const db = read();
+
+  db.subjects = db.subjects.filter(
+    subject => subject.id !== req.params.id
+  );
+
+  save(db);
+  res.json({ ok: true });
+});
+
+app.post('/api/admin/notifications', auth('admin'), (req, res) => {
+  const { title, message } = req.body;
+
+  if (!title || !message) {
+    return res.status(400).json({
+      error: 'Title and message required'
+    });
+  }
+
+  const db = read();
+
+  const notification = {
+    id: Date.now().toString(),
+    userId: 'all',
+    title,
+    message,
+    readBy: [],
+    createdAt: new Date().toISOString()
+  };
+
+  db.notifications.unshift(notification);
+  save(db);
+
+  res.status(201).json(notification);
+});
+
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(500).json({ error: 'Server error' });
+});
+
+const port = process.env.PORT || 4000;
+
+app.listen(port, () => {
+  console.log(`Abhyas API http://localhost:${port}`);
+});
