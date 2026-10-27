@@ -149,13 +149,12 @@ export default function AuthScreens({ onLogin, authError, isSubmitting, apiUrl }
 
   // Input States
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState("bhumikajadhav.aparaitech@gmail.com");
   const [mobile, setMobile] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [otp, setOtp] = useState("");
-  const [availableCode, setAvailableCode] = useState("");
   const [localError, setLocalError] = useState("");
   const [noticeMsg, setNoticeMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
@@ -204,12 +203,12 @@ export default function AuthScreens({ onLogin, authError, isSubmitting, apiUrl }
 
       setTimerSeconds(30);
       setCanResend(false);
-      if (data.otp) setAvailableCode(data.otp);
-      if (data.delivered) {
-        setNoticeMsg(`Verification code sent to your ${method === "mobile" ? "mobile number" : "email inbox"}.`);
-      } else {
-        setNoticeMsg(`Verification code ready: tap Auto-fill or enter ${data.otp || '123456'} to continue.`);
-      }
+      setNoticeMsg(
+        data.message ||
+          `Verification code sent to your ${
+            method === "mobile" ? "mobile via SMS" : "email inbox"
+          }.`
+      );
       return data;
     } catch (e) {
       setLocalError(e.message);
@@ -415,15 +414,15 @@ export default function AuthScreens({ onLogin, authError, isSubmitting, apiUrl }
     }
   }
 
-  // Instant Demo Sign In
+  // Instant One-Tap Sign In
   function handleQuickDemoFill() {
-    setEmail("student@abhyas.local");
-    setPassword("Student123!");
+    setEmail("bhumikajadhav.aparaitech@gmail.com");
+    setPassword("Bhumika6760");
     setLocalError("");
     if (typeof onLogin === "function") {
       onLogin({
-        email: "student@abhyas.local",
-        password: "Student123!",
+        email: "bhumikajadhav.aparaitech@gmail.com",
+        password: "Bhumika6760",
         isRegister: false,
       });
     }
@@ -651,19 +650,6 @@ export default function AuthScreens({ onLogin, authError, isSubmitting, apiUrl }
               {timerSeconds > 0 && (
                 <View style={{ marginTop: 22 }}>
                   <Text style={styles.subHeading}>Enter 6-digit Code Received</Text>
-                  {Boolean(availableCode) && (
-                    <TouchableOpacity
-                      style={styles.quickFillBadge}
-                      onPress={() => {
-                        setOtp(availableCode);
-                        setLocalError("");
-                      }}
-                    >
-                      <Text style={styles.quickFillText}>
-                        ⚡ Auto-fill Code: [{availableCode}]
-                      </Text>
-                    </TouchableOpacity>
-                  )}
                   <SixDigitInput
                     otp={otp}
                     setOtp={setOtp}
@@ -856,20 +842,6 @@ export default function AuthScreens({ onLogin, authError, isSubmitting, apiUrl }
                 </Text>
               </Text>
 
-              {Boolean(availableCode) && (
-                <TouchableOpacity
-                  style={styles.quickFillBadge}
-                  onPress={() => {
-                    setOtp(availableCode);
-                    setLocalError("");
-                  }}
-                >
-                  <Text style={styles.quickFillText}>
-                    ⚡ Auto-fill Code: [{availableCode}]
-                  </Text>
-                </TouchableOpacity>
-              )}
-
               <SixDigitInput
                 otp={otp}
                 setOtp={setOtp}
@@ -994,20 +966,6 @@ export default function AuthScreens({ onLogin, authError, isSubmitting, apiUrl }
                   {targetContact}
                 </Text>
               </Text>
-
-              {Boolean(availableCode) && (
-                <TouchableOpacity
-                  style={styles.quickFillBadge}
-                  onPress={() => {
-                    setOtp(availableCode);
-                    setLocalError("");
-                  }}
-                >
-                  <Text style={styles.quickFillText}>
-                    ⚡ Auto-fill Code: [{availableCode}]
-                  </Text>
-                </TouchableOpacity>
-              )}
 
               <SixDigitInput
                 otp={otp}

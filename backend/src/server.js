@@ -236,8 +236,11 @@ async function sendRealSMS(phoneNumber, otpCode) {
       const url = `https://www.fast2sms.com/dev/bulkV2?authorization=${fast2smsKey}&variables_values=${otpCode}&route=otp&numbers=${cleanNumber}`;
       const res = await fetch(url);
       const data = await res.json();
-      console.log(`[SMS DISPATCH SUCCESS] Fast2SMS dispatched to ${cleanNumber}:`, data);
-      return { sent: true, provider: 'fast2sms' };
+      console.log(`[SMS DISPATCH] Fast2SMS response for ${cleanNumber}:`, data);
+      if (data.return === true || data.status_code === 200) {
+        return { sent: true, provider: 'fast2sms' };
+      }
+      return { sent: false, error: data.message || 'Fast2SMS API verification required' };
     } catch (e) {
       console.error('[SMS DISPATCH ERROR] Fast2SMS error:', e.message);
       return { sent: false, error: e.message };
@@ -339,8 +342,7 @@ app.post('/api/auth/send-otp', async (req, res) => {
     delivered: deliveryStatus.sent,
     message: deliveryStatus.sent
       ? `Verification code sent to ${cleanTarget}. Please check your ${method === 'mobile' ? 'SMS messages' : 'inbox & spam folder'}.`
-      : `Verification code generated for ${cleanTarget}. ${deliveryStatus.reason ? deliveryStatus.reason : ''}`,
-    otp: code,
+      : `Unable to dispatch verification code to ${cleanTarget}. ${deliveryStatus.reason || deliveryStatus.error || 'Please check contact details.'}`,
     target: cleanTarget,
     method,
     expiresIn: 300
