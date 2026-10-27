@@ -1131,6 +1131,7 @@ export default function App() {
       })}
     </>
   );
+  };
 
   // ---------------- PLANNER TAB ----------------
   const Planner = () => {
