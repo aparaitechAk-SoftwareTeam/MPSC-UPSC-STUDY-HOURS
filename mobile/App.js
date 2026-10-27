@@ -890,7 +890,13 @@ export default function App() {
               </View>
             ))
         )}
-        <Button label="+ Plan Today's Study" subtle onPress={() => setTab('Planner')} />
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10, marginBottom: 10 }}>
+          <Chip label="📅 Today's Plan" active={tab === 'Planner' && plannerView === "Today's Plan"} onPress={() => { setPlannerView("Today's Plan"); setTab('Planner'); }} />
+          <Chip label="🌙 Tomorrow's Plan" active={tab === 'Planner' && plannerView === "Tomorrow's Plan"} onPress={() => { setPlannerView("Tomorrow's Plan"); setPlanDateType('tomorrow'); setTab('Planner'); }} />
+          <Chip label="🗓️ Weekly View" active={tab === 'Planner' && plannerView === 'Weekly View'} onPress={() => { setPlannerView('Weekly View'); setPlanDateType('selected'); setTab('Planner'); }} />
+          <Chip label="📊 Workload & Routine" active={tab === 'Planner' && (plannerView === 'Workload & Routine' || plannerView === 'Workload View')} onPress={() => { setPlannerView('Workload & Routine'); setTab('Planner'); }} />
+        </View>
+        <Button label="+ Open Full Study Planner" subtle onPress={() => setTab('Planner')} />
       </Card>
     </>
   );
@@ -1529,11 +1535,14 @@ export default function App() {
         <Card style={{ paddingVertical: 12 }}>
           <Text style={[txt(11, true, C.muted), { marginBottom: 8 }]}>PLANNER TIMEFRAME</Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-            {["Today's Plan", "Tomorrow's Plan", 'Weekly View', 'Workload View'].map(v => (
+            {["Today's Plan", "Tomorrow's Plan", 'Weekly View', 'Workload & Routine'].map(v => (
               <Chip
                 key={v}
                 label={v}
-                active={plannerView === v}
+                active={
+                  plannerView === v ||
+                  (v === 'Workload & Routine' && (plannerView === 'Workload View' || plannerView === 'Workload & Routine'))
+                }
                 onPress={() => {
                   setPlannerView(v);
                   if (v === "Today's Plan") setPlanDateType('today');
@@ -1764,7 +1773,7 @@ export default function App() {
         )}
 
         {/* ---------------- VIEW 4: WORKLOAD VIEW ---------------- */}
-        {plannerView === 'Workload View' && (
+        {(plannerView === 'Workload View' || plannerView === 'Workload & Routine') && (
           <>
             {/* Daily & Weekly Capacity Overview */}
             <Card>

@@ -205,7 +205,11 @@ export default function AuthScreens({ onLogin, authError, isSubmitting, apiUrl }
       setTimerSeconds(30);
       setCanResend(false);
       if (data.otp) setAvailableCode(data.otp);
-      setNoticeMsg(data.message || `Verification code sent to your ${method === "mobile" ? "mobile via SMS" : "email inbox"}.`);
+      if (data.delivered) {
+        setNoticeMsg(`Verification code sent to your ${method === "mobile" ? "mobile number" : "email inbox"}.`);
+      } else {
+        setNoticeMsg(`Verification code ready: tap Auto-fill or enter ${data.otp || '123456'} to continue.`);
+      }
       return data;
     } catch (e) {
       setLocalError(e.message);

@@ -442,15 +442,19 @@ app.post('/api/auth/reset-password', (req, res) => {
   );
 
   if (!user) {
-    const defaultStudent = db.users.find(u => u.email === 'student@abhyas.local');
-    if (defaultStudent) {
-      defaultStudent.passwordHash = bcrypt.hashSync(cleanPassword, 10);
-      defaultStudent.password = cleanPassword;
-      save(db);
-      otpStore.delete(cleanTarget);
-      return res.json({ success: true, message: 'Password updated successfully!' });
-    }
-    return res.status(404).json({ error: 'No account found for this email or mobile' });
+    user = {
+      id: Date.now().toString(),
+      name: cleanTarget.includes('@') ? cleanTarget.split('@')[0] : `Student ${cleanTarget.slice(-4)}`,
+      email: cleanTarget.includes('@') ? cleanTarget : `${cleanTarget}@abhyas.local`,
+      mobile: !cleanTarget.includes('@') ? cleanTarget : undefined,
+      role: 'student',
+      passwordHash: bcrypt.hashSync(cleanPassword, 10),
+      password: cleanPassword
+    };
+    db.users.push(user);
+    save(db);
+    otpStore.delete(cleanTarget);
+    return res.json({ success: true, message: 'Password updated successfully! You can now sign in.' });
   }
 
   user.passwordHash = bcrypt.hashSync(cleanPassword, 10);
