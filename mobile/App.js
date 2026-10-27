@@ -459,6 +459,13 @@ export default function App() {
       let nameToUse = name;
 
       if (typeof credentialsOrEmail === 'object' && credentialsOrEmail !== null) {
+        if (credentialsOrEmail.token) {
+          setToken(credentialsOrEmail.token);
+          setUser(credentialsOrEmail.user || { role: 'student', name: 'Demo Aspirant' });
+          await AsyncStorage.setItem('abhyasToken', credentialsOrEmail.token);
+          await refresh(credentialsOrEmail.token);
+          return;
+        }
         emailToUse = (credentialsOrEmail.email || '').trim();
         passwordToUse = (credentialsOrEmail.password || '').trim();
         isReg = credentialsOrEmail.isRegister ?? register;
@@ -693,6 +700,7 @@ export default function App() {
         onLogin={login}
         authError={authError}
         isSubmitting={isLoggingIn}
+        apiUrl={API}
       />
     );
   }
