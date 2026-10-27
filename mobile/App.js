@@ -62,6 +62,30 @@ const resolveApiUrl = () => {
 
 const API = resolveApiUrl();
 
+if (Platform.OS === 'web' && typeof document !== 'undefined') {
+  try {
+    const styleId = 'custom-cursor-style';
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement('style');
+      style.id = styleId;
+      style.textContent = `
+        * {
+          cursor: default !important;
+        }
+        button, [role="button"], a, input[type="button"], input[type="submit"], [tabindex="0"] {
+          cursor: pointer !important;
+        }
+        input, textarea {
+          cursor: text !important;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+  } catch (e) {
+    // ignore
+  }
+}
+
 const txt = (size = 14, bold = false, color = C.ink) => ({
   fontSize: size,
   fontWeight: bold ? '700' : '400',
