@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
+import AuthScreens from './AuthScreens';
 import {
   View,
   Text,
@@ -448,18 +449,31 @@ export default function App() {
     return () => clearInterval(interval.current);
   }, [running]);
 
-  async function login(overrideEmail, overridePassword) {
+  async function login(credentialsOrEmail, overridePassword) {
     setAuthError('');
     setIsLoggingIn(true);
     try {
-      const emailToUse = (overrideEmail || loginEmail || '').trim();
-      const passwordToUse = (overridePassword || password || '').trim();
-      const endpoint = API + '/auth/' + (register ? 'register' : 'login');
+      let emailToUse = '';
+      let passwordToUse = '';
+      let isReg = register;
+      let nameToUse = name;
+
+      if (typeof credentialsOrEmail === 'object' && credentialsOrEmail !== null) {
+        emailToUse = (credentialsOrEmail.email || '').trim();
+        passwordToUse = (credentialsOrEmail.password || '').trim();
+        isReg = credentialsOrEmail.isRegister ?? register;
+        nameToUse = (credentialsOrEmail.name || name || '').trim();
+      } else {
+        emailToUse = (credentialsOrEmail || loginEmail || '').trim();
+        passwordToUse = (overridePassword || password || '').trim();
+      }
+
+      const endpoint = API + '/auth/' + (isReg ? 'register' : 'login');
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: (name || '').trim(),
+          name: nameToUse,
           email: emailToUse,
           password: passwordToUse
         })
@@ -467,7 +481,7 @@ export default function App() {
       const d = await res.json().catch(() => ({}));
       if (!res.ok) throw Error(d.error || `Unable to sign in (Status ${res.status})`);
       setToken(d.token);
-      setUser(d.user || { role: 'student', name: 'Demo Aspirant' });
+      setUser(d.user || { role: 'student', name: nameToUse || 'Demo Aspirant' });
       await AsyncStorage.setItem('abhyasToken', d.token);
       await refresh(d.token);
     } catch (e) {
@@ -480,6 +494,13 @@ export default function App() {
     } finally {
       setIsLoggingIn(false);
     }
+  }
+
+  async function handleSignOut() {
+    setRunning(false);
+    await AsyncStorage.removeItem('abhyasToken');
+    setToken('');
+    setUser(null);
   }
 
   function quickDemoFill(demoType = 'student') {
@@ -668,122 +689,11 @@ export default function App() {
 
   if (!token) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
-        <View style={{ flex: 1, justifyContent: 'center', padding: 28 }}>
-          <View
-            style={{
-              alignSelf: 'center',
-              width: 74,
-              height: 74,
-              borderRadius: 22,
-              backgroundColor: C.soft,
-              justifyContent: 'center',
-              alignItems: 'center'
-            }}
-          >
-            <Ionicons name="book-outline" size={38} color={C.blue} />
-          </View>
-          <Text style={[txt(28, true), { textAlign: 'center', marginTop: 18 }]}>Abhyas Tracker</Text>
-          <Text style={[txt(13, false, C.muted), { textAlign: 'center', marginBottom: 24 }]}>
-            Focused study • Dynamic syllabus • Smart planner
-          </Text>
-
-          {/* Prominent Visual Error Banner */}
-          {Boolean(authError) && (
-            <View style={{ backgroundColor: '#fee2e2', borderColor: '#fca5a5', borderWidth: 1, padding: 12, borderRadius: 12, marginBottom: 16 }}>
-              <Text style={{ color: '#b91c1c', fontSize: 13, fontWeight: '600', textAlign: 'center' }}>
-                ⚠️ {authError}
-              </Text>
-            </View>
-          )}
-
-          {register && (
-            <TextInput placeholder="Full Name" value={name} onChangeText={setName} style={input} />
-          )}
-          <TextInput
-            placeholder="Email"
-            autoCapitalize="none"
-            value={loginEmail}
-            onChangeText={(t) => { setAuthError(''); setEmail(t); }}
-            style={input}
-          />
-          <TextInput
-            placeholder="Password"
-            secureTextEntry
-            value={password}
-            onChangeText={(t) => { setAuthError(''); setPassword(t); }}
-            style={input}
-          />
-          <Button
-            label={isLoggingIn ? 'Signing In...' : register ? 'Create Account' : 'Sign In'}
-            onPress={() => login()}
-          />
-
-          {!register && (
-            <View style={{ marginTop: 8 }}>
-              <Button
-                label={isLoggingIn ? 'Connecting...' : '🚀 1-Tap Instant Sign In'}
-                subtle
-                onPress={() => quickDemoFill('student')}
-              />
-            </View>
-          )}
-
-          <Button
-            label={register ? 'Already registered? Sign in' : 'Create a student account'}
-            subtle
-            onPress={() => { setAuthError(''); setRegister(!register); }}
-          />
-
-          <View style={{ marginTop: 16, alignItems: 'center', gap: 8 }}>
-            <TouchableOpacity
-              onPress={() => quickDemoFill('student')}
-              style={{
-                backgroundColor: C.soft,
-                paddingHorizontal: 14,
-                paddingVertical: 7,
-                borderRadius: 14,
-                borderWidth: 1,
-                borderColor: C.line
-              }}
-            >
-              <Text style={txt(11, true, C.blue)}>
-                👉 Tap to auto-fill Student: student@abhyas.local / Student123!
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => quickDemoFill('admin')}
-              style={{
-                backgroundColor: '#f1f5f9',
-                paddingHorizontal: 14,
-                paddingVertical: 7,
-                borderRadius: 14,
-                borderWidth: 1,
-                borderColor: '#e2e8f0'
-              }}
-            >
-              <Text style={txt(11, true, '#334155')}>
-                🔑 Sign in with Admin: admin@abhyas.local / ChangeMe123!
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Admin Portal Redirection Link */}
-          <View style={{ marginTop: 20, paddingTop: 14, borderTopWidth: 1, borderColor: C.line, alignItems: 'center' }}>
-            <Text style={[txt(11, false, C.muted), { marginBottom: 6 }]}>Looking for Admin Control Panel?</Text>
-            <TouchableOpacity
-              onPress={() => {
-                if (Platform.OS === 'web' && typeof window !== 'undefined') {
-                  window.location.href = 'http://localhost:5173';
-                }
-              }}
-            >
-              <Text style={txt(11, true, C.blue)}>Open Admin Portal (http://localhost:5173) ↗</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </SafeAreaView>
+      <AuthScreens
+        onLogin={login}
+        authError={authError}
+        isSubmitting={isLoggingIn}
+      />
     );
   }
 
@@ -1818,23 +1728,36 @@ export default function App() {
           )}
         </TouchableOpacity>
         <TouchableOpacity
-          onPress={() =>
-            Alert.alert('Account', `${user?.name}\n${user?.email}`, [
-              {
-                text: 'Sign Out',
-                onPress: async () => {
-                  setRunning(false);
-                  await AsyncStorage.removeItem('abhyasToken');
-                  setToken('');
-                  setUser(null);
-                }
-              },
-              { text: 'Cancel' }
-            ])
-          }
-          style={{ padding: 6, marginLeft: 4 }}
+          onPress={async () => {
+            if (Platform.OS === 'web' && typeof window !== 'undefined') {
+              if (window.confirm(`Signed in as: ${user?.name || 'Student'} (${user?.email || ''})\n\nDo you want to sign out and return to the sign-in page?`)) {
+                await handleSignOut();
+              }
+            } else {
+              Alert.alert('Account', `${user?.name}\n${user?.email}`, [
+                {
+                  text: 'Sign Out',
+                  onPress: async () => {
+                    await handleSignOut();
+                  }
+                },
+                { text: 'Cancel' }
+              ]);
+            }
+          }}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: C.soft,
+            paddingHorizontal: 10,
+            paddingVertical: 6,
+            borderRadius: 14,
+            marginLeft: 6,
+            gap: 4
+          }}
         >
-          <Ionicons name="person-circle-outline" size={26} color={C.blue} />
+          <Ionicons name="log-out-outline" size={17} color={C.blue} />
+          <Text style={txt(12, true, C.blue)}>Sign Out</Text>
         </TouchableOpacity>
       </View>
 
