@@ -16,29 +16,7 @@ import {
 const BLUE = "#2457C5";
 const BLUE_LIGHT = "#EAF1FF";
 
-// Sound synthesizer for realistic laptop/mobile incoming notification
-function playDing() {
-  if (Platform.OS === "web" && typeof window !== "undefined" && window.AudioContext) {
-    try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
-      osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15); // A5
-      gain.gain.setValueAtTime(0.18, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.35);
-    } catch {
-      // Audio auto-play might be restricted before interaction
-    }
-  }
-}
-
-// Top-level subcomponents to prevent focus loss
+// Subcomponents declared at module-level to prevent focus loss during typing
 function Field({
   label,
   value,
@@ -100,7 +78,7 @@ function SwitchLink({ text, link, onPress }) {
   );
 }
 
-// 6-Digit OTP Box Group with Auto-Advance & Pasting
+// 6-Digit OTP Box Group with Auto-Advance
 function SixDigitInput({ otp, setOtp, onComplete }) {
   const inputRefs = useRef([]);
 
@@ -164,46 +142,6 @@ function SixDigitInput({ otp, setOtp, onComplete }) {
   );
 }
 
-// Simulated Incoming Notification Toast on Laptop/Mobile Screen
-function DeviceNotificationBanner({ notification, onAutoFill, onDismiss }) {
-  if (!notification || !notification.visible) return null;
-
-  return (
-    <View style={styles.bannerContainer}>
-      <View style={styles.bannerHeader}>
-        <View style={styles.bannerAppInfo}>
-          <View style={styles.bannerIconBadge}>
-            <Text style={styles.bannerIconText}>📩</Text>
-          </View>
-          <View>
-            <Text style={styles.bannerAppName}>MESSAGES • SECURITY NOTIFICATION</Text>
-            <Text style={styles.bannerTime}>Just now • Mobile / Laptop Alert</Text>
-          </View>
-        </View>
-        <TouchableOpacity onPress={onDismiss} style={styles.dismissBtn}>
-          <Text style={styles.dismissText}>✕</Text>
-        </TouchableOpacity>
-      </View>
-
-      <Text style={styles.bannerBody}>
-        Your Abhyas study verification code is{" "}
-        <Text style={styles.bannerOtpHighlight}>{notification.otp}</Text>. Valid for 5 minutes.
-      </Text>
-
-      <View style={styles.bannerActionRow}>
-        <TouchableOpacity
-          style={styles.bannerAutoFillBtn}
-          onPress={() => onAutoFill(notification.otp)}
-        >
-          <Text style={styles.bannerAutoFillText}>
-            ⚡ Tap to Auto-Fill [{notification.otp}]
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-}
-
 export default function AuthScreens({ onLogin, authError, isSubmitting, apiUrl }) {
   // Screens: 'login' | 'signup' | 'login-otp' | 'verify-otp' | 'forgot-contact' | 'forgot-otp' | 'forgot-reset' | 'forgot-success'
   const [screen, setScreen] = useState("login");
@@ -218,18 +156,12 @@ export default function AuthScreens({ onLogin, authError, isSubmitting, apiUrl }
   const [showPassword, setShowPassword] = useState(false);
   const [otp, setOtp] = useState("");
   const [localError, setLocalError] = useState("");
+  const [noticeMsg, setNoticeMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
   // Countdown timer for OTP resend
   const [timerSeconds, setTimerSeconds] = useState(30);
   const [canResend, setCanResend] = useState(false);
-
-  // Incoming Live Device Notification Toast
-  const [notification, setNotification] = useState({
-    visible: false,
-    otp: "",
-    target: "",
-  });
 
   const targetContact = method === "email" ? email : mobile;
   const effectiveError = authError || localError;
@@ -252,26 +184,10 @@ export default function AuthScreens({ onLogin, authError, isSubmitting, apiUrl }
     return () => clearInterval(interval);
   }, [timerSeconds, screen]);
 
-  // Trigger simulated incoming push notification banner with sound
-  function triggerIncomingOtpToast(code, target) {
-    playDing();
-    setNotification({
-      visible: true,
-      otp: code,
-      target,
-    });
-  }
-
-  // Auto-fill OTP from notification
-  function handleAutoFill(code) {
-    setOtp(code);
-    setLocalError("");
-    setNotification((prev) => ({ ...prev, visible: false }));
-  }
-
-  // --- API Call: Send OTP ---
+  // --- API Call: Send OTP (Dispatches real email via SMTP / SMS) ---
   async function requestOtp(target, type = "general") {
     setLocalError("");
+    setNoticeMsg("");
     try {
       const res = await fetch(resolvedApi + "/auth/send-otp", {
         method: "POST",
@@ -287,7 +203,7 @@ export default function AuthScreens({ onLogin, authError, isSubmitting, apiUrl }
 
       setTimerSeconds(30);
       setCanResend(false);
-      triggerIncomingOtpToast(data.otp, target);
+      setNoticeMsg(data.message || `Verification code sent to your ${method === "mobile" ? "mobile via SMS" : "email inbox"}.`);
       return data;
     } catch (e) {
       setLocalError(e.message);
@@ -353,16 +269,14 @@ export default function AuthScreens({ onLogin, authError, isSubmitting, apiUrl }
 
     try {
       const target = method === "email" ? email.trim() : mobile.trim();
-      // 1. Verify OTP with backend
       const vRes = await fetch(resolvedApi + "/auth/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ target, otp: otpCode }),
       });
       const vData = await vRes.json();
-      if (!vRes.ok) throw new Error(vData.error || "Invalid OTP code");
+      if (!vRes.ok) throw new Error(vData.error || "Invalid verification code");
 
-      // 2. Register User
       if (typeof onLogin === "function") {
         onLogin({
           name: name.trim(),
@@ -534,13 +448,6 @@ export default function AuthScreens({ onLogin, authError, isSubmitting, apiUrl }
           contentContainerStyle={styles.container}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Top Incoming Push Notification Toast */}
-          <DeviceNotificationBanner
-            notification={notification}
-            onAutoFill={handleAutoFill}
-            onDismiss={() => setNotification((prev) => ({ ...prev, visible: false }))}
-          />
-
           {/* Logo & Header */}
           <View style={styles.logo}>
             <Text style={styles.logoText}>S</Text>
@@ -550,10 +457,17 @@ export default function AuthScreens({ onLogin, authError, isSubmitting, apiUrl }
             Your journey to UPSC &amp; MPSC success
           </Text>
 
-          {/* Error Message Alert */}
+          {/* Error Alert Banner */}
           {Boolean(effectiveError) && (
             <View style={styles.errorBanner}>
               <Text style={styles.errorText}>⚠️ {effectiveError}</Text>
+            </View>
+          )}
+
+          {/* Dispatch Notice Banner */}
+          {Boolean(noticeMsg) && (
+            <View style={styles.noticeBanner}>
+              <Text style={styles.noticeText}>📬 {noticeMsg}</Text>
             </View>
           )}
 
@@ -581,6 +495,7 @@ export default function AuthScreens({ onLogin, authError, isSubmitting, apiUrl }
                   style={styles.tabPill}
                   onPress={() => {
                     setLocalError("");
+                    setNoticeMsg("");
                     setScreen("login-otp");
                   }}
                 >
@@ -620,6 +535,7 @@ export default function AuthScreens({ onLogin, authError, isSubmitting, apiUrl }
                 <TouchableOpacity
                   onPress={() => {
                     setLocalError("");
+                    setNoticeMsg("");
                     setOtp("");
                     setScreen("forgot-contact");
                   }}
@@ -650,6 +566,7 @@ export default function AuthScreens({ onLogin, authError, isSubmitting, apiUrl }
                 link="Sign Up"
                 onPress={() => {
                   setLocalError("");
+                  setNoticeMsg("");
                   setScreen("signup");
                 }}
               />
@@ -663,7 +580,7 @@ export default function AuthScreens({ onLogin, authError, isSubmitting, apiUrl }
             <View style={styles.card}>
               <Text style={styles.heading}>Fast OTP Sign In</Text>
               <Text style={styles.subtitle}>
-                We will send an instant verification code to your device.
+                We will dispatch an OTP verification code to your email or mobile.
               </Text>
 
               {/* Channel Selector */}
@@ -681,7 +598,7 @@ export default function AuthScreens({ onLogin, authError, isSubmitting, apiUrl }
                       method === "email" && styles.methodTextSelected,
                     ]}
                   >
-                    ✉️ Email OTP
+                    ✉️ Via Email
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -697,7 +614,7 @@ export default function AuthScreens({ onLogin, authError, isSubmitting, apiUrl }
                       method === "mobile" && styles.methodTextSelected,
                     ]}
                   >
-                    📱 Mobile SMS
+                    📱 Via Mobile SMS
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -712,7 +629,7 @@ export default function AuthScreens({ onLogin, authError, isSubmitting, apiUrl }
                 }}
                 placeholder={
                   method === "email"
-                    ? "student@abhyas.local"
+                    ? "Enter your email"
                     : "10-digit mobile number"
                 }
                 keyboardType={method === "email" ? "email-address" : "phone-pad"}
@@ -724,10 +641,10 @@ export default function AuthScreens({ onLogin, authError, isSubmitting, apiUrl }
                 onPress={handleRequestLoginOtp}
               />
 
-              {/* OTP Input Section if code requested */}
+              {/* OTP Input Section once requested */}
               {timerSeconds > 0 && (
                 <View style={{ marginTop: 22 }}>
-                  <Text style={styles.subHeading}>Enter 6-digit Code</Text>
+                  <Text style={styles.subHeading}>Enter 6-digit Code Received</Text>
                   <SixDigitInput
                     otp={otp}
                     setOtp={setOtp}
@@ -758,6 +675,7 @@ export default function AuthScreens({ onLogin, authError, isSubmitting, apiUrl }
                 link="Sign In with Password"
                 onPress={() => {
                   setLocalError("");
+                  setNoticeMsg("");
                   setScreen("login");
                 }}
               />
@@ -818,7 +736,7 @@ export default function AuthScreens({ onLogin, authError, isSubmitting, apiUrl }
                 secureTextEntry={!showPassword}
               />
 
-              {/* Live Password Strength Meter */}
+              {/* Password Strength Meter */}
               {Boolean(password) && (
                 <View style={styles.strengthContainer}>
                   <View style={styles.strengthBarBg}>
@@ -852,25 +770,9 @@ export default function AuthScreens({ onLogin, authError, isSubmitting, apiUrl }
                 </Text>
               </TouchableOpacity>
 
-              {/* Delivery method preference for OTP verification */}
+              {/* Channel Selector */}
               <View style={styles.methodChoiceRow}>
-                <Text style={styles.methodChoiceLabel}>Send OTP via:</Text>
-                <TouchableOpacity
-                  style={[
-                    styles.smallChoicePill,
-                    method === "mobile" && styles.smallChoicePillActive,
-                  ]}
-                  onPress={() => setMethod("mobile")}
-                >
-                  <Text
-                    style={[
-                      styles.smallChoiceText,
-                      method === "mobile" && styles.smallChoiceTextActive,
-                    ]}
-                  >
-                    SMS (Mobile)
-                  </Text>
-                </TouchableOpacity>
+                <Text style={styles.methodChoiceLabel}>Send OTP to:</Text>
                 <TouchableOpacity
                   style={[
                     styles.smallChoicePill,
@@ -884,13 +786,29 @@ export default function AuthScreens({ onLogin, authError, isSubmitting, apiUrl }
                       method === "email" && styles.smallChoiceTextActive,
                     ]}
                   >
-                    Email
+                    Email Inbox
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.smallChoicePill,
+                    method === "mobile" && styles.smallChoicePillActive,
+                  ]}
+                  onPress={() => setMethod("mobile")}
+                >
+                  <Text
+                    style={[
+                      styles.smallChoiceText,
+                      method === "mobile" && styles.smallChoiceTextActive,
+                    ]}
+                  >
+                    Mobile SMS
                   </Text>
                 </TouchableOpacity>
               </View>
 
               <PrimaryButton
-                title="Verify Mobile & Create Account"
+                title="Send Verification Code & Continue"
                 onPress={handleStartSignUp}
               />
 
@@ -899,6 +817,7 @@ export default function AuthScreens({ onLogin, authError, isSubmitting, apiUrl }
                 link="Sign In"
                 onPress={() => {
                   setLocalError("");
+                  setNoticeMsg("");
                   setScreen("login");
                 }}
               />
@@ -910,9 +829,9 @@ export default function AuthScreens({ onLogin, authError, isSubmitting, apiUrl }
           {/* ============================================================== */}
           {screen === "verify-otp" && (
             <View style={styles.card}>
-              <Text style={styles.heading}>Verify Your Device</Text>
+              <Text style={styles.heading}>Verify Your Code</Text>
               <Text style={styles.subtitle}>
-                We sent a 6-digit code to{" "}
+                Please enter the 6-digit verification code sent to{" "}
                 <Text style={{ fontWeight: "700", color: "#1E293B" }}>
                   {targetContact}
                 </Text>
@@ -957,7 +876,7 @@ export default function AuthScreens({ onLogin, authError, isSubmitting, apiUrl }
             <View style={styles.card}>
               <Text style={styles.heading}>Forgot Password</Text>
               <Text style={styles.subtitle}>
-                Select how you want to receive your password reset verification code.
+                Choose how you want to receive your password reset OTP.
               </Text>
 
               {/* Delivery method pills */}
@@ -975,7 +894,7 @@ export default function AuthScreens({ onLogin, authError, isSubmitting, apiUrl }
                       method === "email" && styles.methodTextSelected,
                     ]}
                   >
-                    ✉️ Via Email OTP
+                    ✉️ Via Email
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -991,13 +910,13 @@ export default function AuthScreens({ onLogin, authError, isSubmitting, apiUrl }
                       method === "mobile" && styles.methodTextSelected,
                     ]}
                   >
-                    📱 Via SMS OTP
+                    📱 Via Mobile SMS
                   </Text>
                 </TouchableOpacity>
               </View>
 
               <Field
-                label={method === "email" ? "Registered Email" : "Registered Mobile"}
+                label={method === "email" ? "Registered Email Address" : "Registered Mobile Number"}
                 value={method === "email" ? email : mobile}
                 onChangeText={(val) => {
                   setLocalError("");
@@ -1006,8 +925,8 @@ export default function AuthScreens({ onLogin, authError, isSubmitting, apiUrl }
                 }}
                 placeholder={
                   method === "email"
-                    ? "e.g. student@abhyas.local"
-                    : "e.g. 9876543210"
+                    ? "Enter your email (e.g. bhumikajadhav007@gmail.com)"
+                    : "10-digit mobile number"
                 }
                 keyboardType={method === "email" ? "email-address" : "phone-pad"}
                 maxLength={method === "mobile" ? 10 : undefined}
@@ -1023,6 +942,7 @@ export default function AuthScreens({ onLogin, authError, isSubmitting, apiUrl }
                 link="Back to Sign In"
                 onPress={() => {
                   setLocalError("");
+                  setNoticeMsg("");
                   setScreen("login");
                 }}
               />
@@ -1034,9 +954,9 @@ export default function AuthScreens({ onLogin, authError, isSubmitting, apiUrl }
           {/* ============================================================== */}
           {screen === "forgot-otp" && (
             <View style={styles.card}>
-              <Text style={styles.heading}>Enter Reset Code</Text>
+              <Text style={styles.heading}>Enter Verification Code</Text>
               <Text style={styles.subtitle}>
-                Enter the 6-digit verification code sent to{" "}
+                Enter the 6-digit code received on{" "}
                 <Text style={{ fontWeight: "700", color: "#1E293B" }}>
                   {targetContact}
                 </Text>
@@ -1067,7 +987,7 @@ export default function AuthScreens({ onLogin, authError, isSubmitting, apiUrl }
               </View>
 
               <SwitchLink
-                text="Want to try another method?"
+                text="Want to try another email or mobile?"
                 link="Change Contact"
                 onPress={() => setScreen("forgot-contact")}
               />
@@ -1166,6 +1086,7 @@ export default function AuthScreens({ onLogin, authError, isSubmitting, apiUrl }
                 title="Sign In Now"
                 onPress={() => {
                   setLocalError("");
+                  setNoticeMsg("");
                   setScreen("login");
                 }}
               />
@@ -1225,89 +1146,25 @@ const styles = StyleSheet.create({
     marginTop: 6,
     marginBottom: 18,
   },
-  bannerContainer: {
-    backgroundColor: "#0F172A",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 20,
+  noticeBanner: {
+    backgroundColor: "#F0FDF4",
+    borderColor: "#BBF7D0",
     borderWidth: 1,
-    borderColor: "#334155",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 14,
-    elevation: 8,
+    borderRadius: 12,
+    paddingVertical: 11,
+    paddingHorizontal: 14,
+    marginBottom: 16,
   },
-  bannerHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  bannerAppInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  bannerIconBadge: {
-    width: 32,
-    height: 32,
-    borderRadius: 9,
-    backgroundColor: "#1E293B",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  bannerIconText: {
-    fontSize: 16,
-  },
-  bannerAppName: {
-    color: "#94A3B8",
-    fontSize: 10,
-    fontWeight: "800",
-    letterSpacing: 0.8,
-  },
-  bannerTime: {
-    color: "#64748B",
-    fontSize: 10,
-  },
-  dismissBtn: {
-    padding: 4,
-  },
-  dismissText: {
-    color: "#94A3B8",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  bannerBody: {
-    color: "#F1F5F9",
+  noticeText: {
+    color: "#166534",
     fontSize: 13,
+    fontWeight: "600",
+    textAlign: "center",
     lineHeight: 18,
-    marginBottom: 10,
-  },
-  bannerOtpHighlight: {
-    color: "#38BDF8",
-    fontWeight: "900",
-    fontSize: 16,
-    letterSpacing: 1.5,
-  },
-  bannerActionRow: {
-    flexDirection: "row",
-  },
-  bannerAutoFillBtn: {
-    backgroundColor: BLUE,
-    paddingVertical: 7,
-    paddingHorizontal: 12,
-    borderRadius: 9,
-    alignSelf: "flex-start",
-  },
-  bannerAutoFillText: {
-    color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "800",
   },
   errorBanner: {
-    backgroundColor: "#fee2e2",
-    borderColor: "#fca5a5",
+    backgroundColor: "#FEE2E2",
+    borderColor: "#FCA5A5",
     borderWidth: 1,
     borderRadius: 12,
     paddingVertical: 10,
@@ -1315,7 +1172,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   errorText: {
-    color: "#b91c1c",
+    color: "#B91C1C",
     fontSize: 13,
     fontWeight: "600",
     textAlign: "center",

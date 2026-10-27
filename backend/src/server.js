@@ -7,6 +7,7 @@ const fs = require('fs');
 const path = require('path');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const nodemailer = require('nodemailer');
 
 const app = express();
 app.use(cors());
@@ -177,11 +178,109 @@ app.get('/api/health', (req, res) => {
   res.json({ ok: true, service: 'Abhyas Tracker API' });
 });
 
+// Real Email & SMS Transporters
+function getMailer() {
+  const host = process.env.SMTP_HOST || 'smtp.gmail.com';
+  const port = Number(process.env.SMTP_PORT) || 465;
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+
+  if (!user || !pass) {
+    return null;
+  }
+
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    auth: { user, pass }
+  });
+}
+
+async function sendRealEmail(to, subject, htmlContent) {
+  const transporter = getMailer();
+  if (!transporter) {
+    console.warn(`\n[EMAIL DISPATCH NOTICE] Real email delivery requires SMTP_USER and SMTP_PASS in backend/.env.`);
+    console.warn(`Recipient: ${to} | Subject: ${subject}\n`);
+    return {
+      sent: false,
+      reason: 'SMTP email credentials not yet configured in backend/.env. Please add your Gmail App Password to send directly to inboxes.'
+    };
+  }
+
+  try {
+    const from = process.env.SMTP_FROM || `"Abhyas Study Hours" <${process.env.SMTP_USER}>`;
+    const info = await transporter.sendMail({
+      from,
+      to,
+      subject,
+      html: htmlContent
+    });
+    console.log(`[EMAIL DISPATCH SUCCESS] Real email sent to ${to} (MessageId: ${info.messageId})`);
+    return { sent: true, messageId: info.messageId };
+  } catch (err) {
+    console.error(`[EMAIL DISPATCH ERROR] Failed to send email to ${to}:`, err.message);
+    return { sent: false, error: err.message };
+  }
+}
+
+async function sendRealSMS(phoneNumber, otpCode) {
+  const cleanNumber = phoneNumber.replace(/\D/g, '').slice(-10);
+  const fast2smsKey = process.env.FAST2SMS_API_KEY;
+  const twilioSid = process.env.TWILIO_ACCOUNT_SID;
+  const twilioToken = process.env.TWILIO_AUTH_TOKEN;
+  const twilioPhone = process.env.TWILIO_PHONE_NUMBER;
+
+  if (fast2smsKey && cleanNumber.length === 10) {
+    try {
+      const url = `https://www.fast2sms.com/dev/bulkV2?authorization=${fast2smsKey}&variables_values=${otpCode}&route=otp&numbers=${cleanNumber}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      console.log(`[SMS DISPATCH SUCCESS] Fast2SMS dispatched to ${cleanNumber}:`, data);
+      return { sent: true, provider: 'fast2sms' };
+    } catch (e) {
+      console.error('[SMS DISPATCH ERROR] Fast2SMS error:', e.message);
+      return { sent: false, error: e.message };
+    }
+  }
+
+  if (twilioSid && twilioToken && twilioPhone) {
+    try {
+      const auth = Buffer.from(`${twilioSid}:${twilioToken}`).toString('base64');
+      const body = new URLSearchParams({
+        To: cleanNumber.startsWith('+') ? cleanNumber : `+91${cleanNumber}`,
+        From: twilioPhone,
+        Body: `Your Abhyas Study Hours verification code is ${otpCode}. Valid for 5 minutes.`
+      });
+      const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Messages.json`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Basic ${auth}`,
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: body.toString()
+      });
+      const data = await res.json();
+      console.log(`[SMS DISPATCH SUCCESS] Twilio dispatched to ${cleanNumber}:`, data.sid);
+      return { sent: true, provider: 'twilio' };
+    } catch (e) {
+      console.error('[SMS DISPATCH ERROR] Twilio error:', e.message);
+      return { sent: false, error: e.message };
+    }
+  }
+
+  console.warn(`[SMS DISPATCH NOTICE] Real SMS requires FAST2SMS_API_KEY or Twilio credentials in backend/.env for ${cleanNumber}`);
+  return {
+    sent: false,
+    reason: 'SMS provider API key not configured in backend/.env.'
+  };
+}
+
 // In-memory OTP Store for Login, Signup & Password Reset
 const otpStore = new Map();
 
-// Send OTP
-app.post('/api/auth/send-otp', (req, res) => {
+// Send OTP via Real Email / SMS
+app.post('/api/auth/send-otp', async (req, res) => {
   const { target, type = 'general', method = 'email' } = req.body;
   const cleanTarget = String(target || '').trim().toLowerCase();
 
@@ -200,12 +299,47 @@ app.post('/api/auth/send-otp', (req, res) => {
     expiresAt
   });
 
-  console.log(`[OTP Service] Generated OTP ${code} for ${cleanTarget} (${method}, type: ${type})`);
+  const emailHtml = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 540px; margin: 0 auto; padding: 28px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <div style="display: inline-block; width: 48px; height: 48px; line-height: 48px; border-radius: 14px; background-color: #2457C5; color: #ffffff; font-size: 26px; font-weight: bold; text-align: center;">S</div>
+        <h2 style="color: #18356B; margin: 12px 0 4px 0; font-size: 22px;">Study Hours - Abhyas Tracker</h2>
+        <p style="color: #64748B; font-size: 13px; margin: 0;">Your journey to UPSC &amp; MPSC success</p>
+      </div>
+
+      <div style="background-color: #f8faff; border-radius: 12px; padding: 22px; border: 1px solid #dce8fb; text-align: center;">
+        <p style="color: #334155; font-size: 14px; margin-top: 0; font-weight: 600;">Here is your One-Time Password (OTP) for account verification:</p>
+        <div style="font-size: 34px; font-weight: 800; letter-spacing: 7px; color: #2457C5; padding: 14px 24px; background-color: #ffffff; border: 2px dashed #80a9e5; border-radius: 10px; display: inline-block; margin: 12px 0;">
+          ${code}
+        </div>
+        <p style="color: #64748B; font-size: 12px; margin-bottom: 0;">This code is valid for <strong>5 minutes</strong>. Do not share this code with anyone.</p>
+      </div>
+
+      <p style="color: #94a3b8; font-size: 12px; text-align: center; margin-top: 24px; border-top: 1px solid #f1f5f9; padding-top: 16px;">
+        If you did not request this verification code, please ignore this email.
+      </p>
+    </div>
+  `;
+
+  let deliveryStatus = { sent: false };
+
+  if (method === 'mobile') {
+    deliveryStatus = await sendRealSMS(cleanTarget, code);
+  } else {
+    deliveryStatus = await sendRealEmail(cleanTarget, `Your Abhyas Verification Code: ${code}`, emailHtml);
+  }
+
+  console.log(`\n=============================================================`);
+  console.log(`📨 [OTP DISPATCH] Target: ${cleanTarget} (${method}) | OTP: ${code}`);
+  console.log(`   Delivery status: ${deliveryStatus.sent ? '✅ SENT TO INBOX / SMS' : '⚠️ ' + (deliveryStatus.reason || deliveryStatus.error)}`);
+  console.log(`=============================================================\n`);
 
   res.json({
     success: true,
-    message: `Verification code sent to your ${method === 'mobile' ? 'mobile via SMS' : 'email'}`,
-    otp: code, // Delivered so frontend can simulate OS/Push notification banner on laptop & phone
+    delivered: deliveryStatus.sent,
+    message: deliveryStatus.sent
+      ? `Verification code sent to ${cleanTarget}. Please check your ${method === 'mobile' ? 'SMS messages' : 'inbox & spam folder'}.`
+      : `Verification code generated for ${cleanTarget}. ${deliveryStatus.reason ? deliveryStatus.reason : ''}`,
     target: cleanTarget,
     method,
     expiresIn: 300
