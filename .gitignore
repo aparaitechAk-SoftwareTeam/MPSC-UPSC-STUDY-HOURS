@@ -7,9 +7,12 @@ backend/data/db.json
 
 # Local backup files
 **/*.backup
+**/*.backup.*
 **/*.backup-*
 **/*-backup
 **/*-backup-*
+backend/data/*.backup.json
+backend/src/*.backup.js
 
 # Logs
 **/npm-debug.log*
