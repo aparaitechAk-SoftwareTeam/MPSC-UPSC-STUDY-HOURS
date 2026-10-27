@@ -38,10 +38,21 @@ function initDb() {
       }
     ],
     subjects: [
-      { id: 'polity', name: 'Indian Polity', paper: 'GS Paper II', topics: 95, completed: 48 },
-      { id: 'history', name: 'Modern Indian History', paper: 'GS Paper I', topics: 76, completed: 35 },
-      { id: 'economy', name: 'Indian Economy', paper: 'GS Paper III', topics: 64, completed: 29 },
-      { id: 'geography', name: 'Geography', paper: 'GS Paper I', topics: 60, completed: 30 }
+      // UPSC Civil Services
+      { id: 'upsc-polity', exam: 'UPSC', name: 'Indian Polity & Governance', paper: 'UPSC GS Paper II', topics: 95, completed: 48 },
+      { id: 'upsc-history', exam: 'UPSC', name: 'Modern Indian History & Culture', paper: 'UPSC GS Paper I', topics: 76, completed: 35 },
+      { id: 'upsc-economy', exam: 'UPSC', name: 'Indian Economy & Agriculture', paper: 'UPSC GS Paper III', topics: 64, completed: 29 },
+      { id: 'upsc-geography', exam: 'UPSC', name: 'Geography, Environment & Climate', paper: 'UPSC GS Paper I & III', topics: 80, completed: 40 },
+      { id: 'upsc-ethics', exam: 'UPSC', name: 'Ethics, Integrity & Aptitude', paper: 'UPSC GS Paper IV', topics: 45, completed: 18 },
+      { id: 'upsc-security-ir', exam: 'UPSC', name: 'International Relations & Security', paper: 'UPSC GS Paper II & III', topics: 40, completed: 15 },
+
+      // MPSC Maharashtra State Services
+      { id: 'mpsc-history', exam: 'MPSC', name: 'History of Modern Maharashtra & Reformers', paper: 'MPSC GS Paper I', topics: 65, completed: 32 },
+      { id: 'mpsc-geography', exam: 'MPSC', name: 'Geography & Agriculture of Maharashtra', paper: 'MPSC GS Paper I', topics: 58, completed: 28 },
+      { id: 'mpsc-polity', exam: 'MPSC', name: 'Maharashtra Polity & District Administration', paper: 'MPSC GS Paper II', topics: 72, completed: 36 },
+      { id: 'mpsc-economy', exam: 'MPSC', name: 'Economy of Maharashtra & Rural Development', paper: 'MPSC GS Paper III', topics: 60, completed: 24 },
+      { id: 'mpsc-marathi-english', exam: 'MPSC', name: 'Marathi & English Language Skills', paper: 'MPSC Language Paper', topics: 50, completed: 30 },
+      { id: 'mpsc-science-agri', exam: 'MPSC', name: 'Science, Tech & Agriculture Ecology', paper: 'MPSC GS Paper IV', topics: 54, completed: 20 }
     ],
     topicProgress: [],
     plans: [
@@ -315,6 +326,7 @@ app.post('/api/plan', auth(), (req, res) => {
     minutes: duration,
     date: date || new Date().toISOString().slice(0, 10),
     subjectId: subjectId || null,
+    exam: req.body.exam || (String(subjectId || '').startsWith('mpsc') ? 'MPSC' : 'UPSC'),
     priority: selectedPriority,
     done: false
   };
@@ -527,7 +539,7 @@ app.get('/api/admin/subjects', auth('admin'), (req, res) => {
 });
 
 app.post('/api/admin/subjects', auth('admin'), (req, res) => {
-  const { name, paper, topics } = req.body;
+  const { name, paper, topics, exam } = req.body;
 
   if (!name || !name.trim()) {
     return res.status(400).json({ error: 'Name required' });
@@ -538,6 +550,7 @@ app.post('/api/admin/subjects', auth('admin'), (req, res) => {
   const subject = {
     id: Date.now().toString(),
     name: name.trim(),
+    exam: (exam || (paper && paper.includes('MPSC') ? 'MPSC' : 'UPSC')).toUpperCase(),
     paper: paper || 'GS Paper II',
     topics: Math.max(0, Number(topics) || 0),
     completed: 0
@@ -550,7 +563,7 @@ app.post('/api/admin/subjects', auth('admin'), (req, res) => {
 });
 
 app.put('/api/admin/subjects/:id', auth('admin'), (req, res) => {
-  const { name, paper, topics } = req.body;
+  const { name, paper, topics, exam } = req.body;
   const db = read();
   const subject = db.subjects.find(s => s.id === req.params.id);
 
@@ -560,6 +573,7 @@ app.put('/api/admin/subjects/:id', auth('admin'), (req, res) => {
 
   if (name && name.trim()) subject.name = name.trim();
   if (paper && paper.trim()) subject.paper = paper.trim();
+  if (exam) subject.exam = exam.toUpperCase();
   if (topics !== undefined) subject.topics = Math.max(0, Number(topics) || 0);
 
   save(db);

@@ -15,19 +15,26 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-const PAPERS = [
-  'All',
-  'GS Paper I',
-  'GS Paper II',
-  'GS Paper III',
-  'GS Paper IV',
-  'CSAT',
-  'Optional Subject'
+const UPSC_PAPERS = [
+  'UPSC GS Paper I',
+  'UPSC GS Paper II',
+  'UPSC GS Paper III',
+  'UPSC GS Paper IV',
+  'UPSC CSAT',
+  'UPSC Optional'
+];
+
+const MPSC_PAPERS = [
+  'MPSC GS Paper I',
+  'MPSC GS Paper II',
+  'MPSC GS Paper III',
+  'MPSC GS Paper IV',
+  'MPSC Language Paper'
 ];
 
 export default function Syllabus({ subjects = [], onAddSubject, onEditSubject, onDeleteSubject, onSignOut }) {
   const [search, setSearch] = useState('');
-  const [paperFilter, setPaperFilter] = useState('All');
+  const [examFilter, setExamFilter] = useState('ALL'); // 'ALL' | 'UPSC' | 'MPSC'
   const [showAddModal, setShowAddModal] = useState(false);
   const [editTarget, setEditTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -35,7 +42,8 @@ export default function Syllabus({ subjects = [], onAddSubject, onEditSubject, o
   // Form State
   const [form, setForm] = useState({
     name: '',
-    paper: 'GS Paper II',
+    exam: 'UPSC',
+    paper: 'UPSC GS Paper II',
     topics: 45
   });
   const [submitting, setSubmitting] = useState(false);
@@ -43,12 +51,15 @@ export default function Syllabus({ subjects = [], onAddSubject, onEditSubject, o
   // Filtered Subjects
   const filteredSubjects = useMemo(() => {
     return subjects.filter((s) => {
+      const sExam = s.exam || (s.id?.startsWith('mpsc') || s.name?.toLowerCase().includes('maharashtra') ? 'MPSC' : 'UPSC');
+      const matchExam = examFilter === 'ALL' || sExam === examFilter;
       const matchSearch = (s.name || '').toLowerCase().includes(search.toLowerCase());
-      const matchPaper = paperFilter === 'All' || s.paper === paperFilter;
-      return matchSearch && matchPaper;
+      return matchExam && matchSearch;
     });
-  }, [subjects, search, paperFilter]);
+  }, [subjects, search, examFilter]);
 
+  const upscCount = subjects.filter(s => (s.exam || (s.id?.startsWith('mpsc') ? 'MPSC' : 'UPSC')) === 'UPSC').length;
+  const mpscCount = subjects.filter(s => (s.exam || (s.id?.startsWith('mpsc') ? 'MPSC' : 'UPSC')) === 'MPSC').length;
   const totalTopics = subjects.reduce((sum, s) => sum + (Number(s.topics) || 0), 0);
   const totalCompleted = subjects.reduce((sum, s) => sum + (Number(s.completed) || 0), 0);
   const avgCompletion = totalTopics > 0 ? Math.round((totalCompleted / totalTopics) * 100) : 0;
@@ -63,11 +74,12 @@ export default function Syllabus({ subjects = [], onAddSubject, onEditSubject, o
     try {
       await onAddSubject({
         name: form.name.trim(),
+        exam: form.exam,
         paper: form.paper,
         topics: Number(form.topics) || 0
       });
-      toast.success(`Subject "${form.name}" added successfully`);
-      setForm({ name: '', paper: 'GS Paper II', topics: 45 });
+      toast.success(`Subject "${form.name}" added to ${form.exam} syllabus`);
+      setForm({ name: '', exam: 'UPSC', paper: 'UPSC GS Paper II', topics: 45 });
       setShowAddModal(false);
     } catch (err) {
       toast.error(err.message || 'Failed to add subject');
@@ -83,6 +95,7 @@ export default function Syllabus({ subjects = [], onAddSubject, onEditSubject, o
     try {
       await onEditSubject(editTarget.id, {
         name: editTarget.name.trim(),
+        exam: editTarget.exam || 'UPSC',
         paper: editTarget.paper,
         topics: Number(editTarget.topics) || 0
       });
@@ -110,14 +123,14 @@ export default function Syllabus({ subjects = [], onAddSubject, onEditSubject, o
     <AppShell title="Syllabus" onSignOut={onSignOut}>
       <div className="flex flex-col gap-6">
         {/* KPI Stat Cards */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
           <div className="card-surface p-5 flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Total Subjects
+                Total Modules
               </p>
               <p className="mt-1 text-3xl font-extrabold">{subjects.length}</p>
-              <p className="text-xs text-muted-foreground mt-1">Syllabus modules configured</p>
+              <p className="text-xs text-muted-foreground mt-1">Both Exam Curricula</p>
             </div>
             <div className="h-12 w-12 rounded-xl bg-primary/10 text-primary grid place-items-center">
               <BookOpen className="h-6 w-6" />
@@ -127,10 +140,10 @@ export default function Syllabus({ subjects = [], onAddSubject, onEditSubject, o
           <div className="card-surface p-5 flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Total Topics
+                🏛️ UPSC Modules
               </p>
-              <p className="mt-1 text-3xl font-extrabold text-blue-500">{totalTopics}</p>
-              <p className="text-xs text-muted-foreground mt-1">Syllabus curriculum chapters</p>
+              <p className="mt-1 text-3xl font-extrabold text-blue-500">{upscCount}</p>
+              <p className="text-xs text-muted-foreground mt-1">Civil Services subjects</p>
             </div>
             <div className="h-12 w-12 rounded-xl bg-blue-500/10 text-blue-500 grid place-items-center">
               <Layers className="h-6 w-6" />
@@ -140,12 +153,25 @@ export default function Syllabus({ subjects = [], onAddSubject, onEditSubject, o
           <div className="card-surface p-5 flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Topics Mastered
+                🚩 MPSC Modules
+              </p>
+              <p className="mt-1 text-3xl font-extrabold text-amber-500">{mpscCount}</p>
+              <p className="text-xs text-muted-foreground mt-1">Maharashtra State subjects</p>
+            </div>
+            <div className="h-12 w-12 rounded-xl bg-amber-500/10 text-amber-500 grid place-items-center">
+              <BookMarked className="h-6 w-6" />
+            </div>
+          </div>
+
+          <div className="card-surface p-5 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Mastery Rate
               </p>
               <p className="mt-1 text-3xl font-extrabold text-emerald-500">
-                {totalCompleted} <span className="text-sm font-normal text-muted-foreground">({avgCompletion}%)</span>
+                {avgCompletion}%
               </p>
-              <p className="text-xs text-muted-foreground mt-1">Student completions logged</p>
+              <p className="text-xs text-muted-foreground mt-1">{totalCompleted}/{totalTopics} topics</p>
             </div>
             <div className="h-12 w-12 rounded-xl bg-emerald-500/10 text-emerald-500 grid place-items-center">
               <CheckCircle2 className="h-6 w-6" />
@@ -153,7 +179,7 @@ export default function Syllabus({ subjects = [], onAddSubject, onEditSubject, o
           </div>
         </div>
 
-        {/* Action Bar & Filter */}
+        {/* Action Bar & Exam Switcher */}
         <div className="card-surface p-5 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto flex-1">
             {/* Search Input */}
@@ -177,20 +203,41 @@ export default function Syllabus({ subjects = [], onAddSubject, onEditSubject, o
               )}
             </div>
 
-            {/* Paper Filter Selector */}
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <Filter className="h-4 w-4 text-muted-foreground shrink-0 hidden sm:block" />
-              <select
-                value={paperFilter}
-                onChange={(e) => setPaperFilter(e.target.value)}
-                className="px-3 py-2 text-xs font-semibold rounded-lg border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary w-full sm:w-auto"
+            {/* Exam Segment Filter */}
+            <div className="flex items-center rounded-lg border bg-muted/40 p-1 text-xs font-semibold w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={() => setExamFilter('ALL')}
+                className={`px-3 py-1.5 rounded-md transition-all ${
+                  examFilter === 'ALL'
+                    ? 'bg-background shadow-sm text-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
               >
-                {PAPERS.map((p) => (
-                  <option key={p} value={p}>
-                    {p === 'All' ? 'All Papers' : p}
-                  </option>
-                ))}
-              </select>
+                All Curricula ({subjects.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setExamFilter('UPSC')}
+                className={`px-3 py-1.5 rounded-md transition-all ${
+                  examFilter === 'UPSC'
+                    ? 'bg-background shadow-sm text-blue-500 font-bold'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                🏛️ UPSC ({upscCount})
+              </button>
+              <button
+                type="button"
+                onClick={() => setExamFilter('MPSC')}
+                className={`px-3 py-1.5 rounded-md transition-all ${
+                  examFilter === 'MPSC'
+                    ? 'bg-background shadow-sm text-amber-500 font-bold'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                🚩 MPSC ({mpscCount})
+              </button>
             </div>
           </div>
 
@@ -212,13 +259,15 @@ export default function Syllabus({ subjects = [], onAddSubject, onEditSubject, o
               <BookMarked className="h-10 w-10 mx-auto text-muted-foreground/60 mb-2" />
               <p className="font-semibold text-foreground">No syllabus subjects found</p>
               <p className="text-xs text-muted-foreground mt-1">
-                {search || paperFilter !== 'All'
-                  ? 'Try clearing the search or paper filters.'
+                {search || examFilter !== 'ALL'
+                  ? 'Try adjusting your search query or exam filter.'
                   : 'Click "+ Add New Subject" to configure the syllabus.'}
               </p>
             </div>
           ) : (
             filteredSubjects.map((s) => {
+              const sExam = s.exam || (s.id?.startsWith('mpsc') || s.name?.toLowerCase().includes('maharashtra') ? 'MPSC' : 'UPSC');
+              const isMp = sExam === 'MPSC';
               const completed = Number(s.completed) || 0;
               const topics = Number(s.topics) || 1;
               const percent = Math.min(100, Math.round((completed / topics) * 100));
@@ -230,9 +279,20 @@ export default function Syllabus({ subjects = [], onAddSubject, onEditSubject, o
                 >
                   <div>
                     <div className="flex items-start justify-between gap-2 mb-2">
-                      <span className="inline-block px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-accent text-accent-foreground border border-border">
-                        {s.paper}
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className={`inline-block px-2.5 py-0.5 rounded-md text-[11px] font-bold ${
+                            isMp
+                              ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
+                              : 'bg-blue-500/10 text-blue-500 border border-blue-500/20'
+                          }`}
+                        >
+                          {isMp ? '🚩 MPSC' : '🏛️ UPSC'}
+                        </span>
+                        <span className="inline-block px-2 py-0.5 rounded-md text-[11px] font-semibold bg-accent text-accent-foreground border border-border">
+                          {s.paper}
+                        </span>
+                      </div>
                       <div className="flex items-center gap-1">
                         <button
                           type="button"
@@ -252,7 +312,7 @@ export default function Syllabus({ subjects = [], onAddSubject, onEditSubject, o
                         </button>
                       </div>
                     </div>
-                    <h3 className="font-bold text-lg text-foreground tracking-tight">{s.name}</h3>
+                    <h3 className="font-bold text-base text-foreground tracking-tight">{s.name}</h3>
                   </div>
 
                   <div className="space-y-2 pt-2 border-t border-border">
@@ -296,6 +356,36 @@ export default function Syllabus({ subjects = [], onAddSubject, onEditSubject, o
             <form onSubmit={handleAddSubject} className="flex flex-col gap-3.5">
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-semibold text-muted-foreground uppercase">
+                  Exam Target
+                </label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, exam: 'UPSC', paper: 'UPSC GS Paper II' })}
+                    className={`flex-1 py-2 rounded-lg text-xs font-bold border transition-all ${
+                      form.exam === 'UPSC'
+                        ? 'bg-blue-500 text-white border-blue-500'
+                        : 'border-border bg-background text-muted-foreground'
+                    }`}
+                  >
+                    🏛️ UPSC Civil Services
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, exam: 'MPSC', paper: 'MPSC GS Paper I' })}
+                    className={`flex-1 py-2 rounded-lg text-xs font-bold border transition-all ${
+                      form.exam === 'MPSC'
+                        ? 'bg-amber-500 text-white border-amber-500'
+                        : 'border-border bg-background text-muted-foreground'
+                    }`}
+                  >
+                    🚩 MPSC Maharashtra
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-muted-foreground uppercase">
                   Subject Title
                 </label>
                 <input
@@ -303,7 +393,7 @@ export default function Syllabus({ subjects = [], onAddSubject, onEditSubject, o
                   required
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="e.g. Indian Polity & Governance"
+                  placeholder={form.exam === 'MPSC' ? 'e.g. Geography of Maharashtra' : 'e.g. Indian Polity & Governance'}
                   className="px-3 py-2 text-sm rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
@@ -317,12 +407,9 @@ export default function Syllabus({ subjects = [], onAddSubject, onEditSubject, o
                   onChange={(e) => setForm({ ...form, paper: e.target.value })}
                   className="px-3 py-2 text-sm rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-primary"
                 >
-                  <option value="GS Paper I">GS Paper I (History, Art, Geography)</option>
-                  <option value="GS Paper II">GS Paper II (Polity, Governance, IR)</option>
-                  <option value="GS Paper III">GS Paper III (Economy, Environment, Tech)</option>
-                  <option value="GS Paper IV">GS Paper IV (Ethics, Integrity, Aptitude)</option>
-                  <option value="CSAT">CSAT (Paper II Prelims)</option>
-                  <option value="Optional Subject">Optional Subject</option>
+                  {(form.exam === 'MPSC' ? MPSC_PAPERS : UPSC_PAPERS).map(p => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
                 </select>
               </div>
 
@@ -387,6 +474,20 @@ export default function Syllabus({ subjects = [], onAddSubject, onEditSubject, o
             <form onSubmit={handleUpdateSubject} className="flex flex-col gap-3.5">
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-semibold text-muted-foreground uppercase">
+                  Exam Target
+                </label>
+                <select
+                  value={editTarget.exam || 'UPSC'}
+                  onChange={(e) => setEditTarget({ ...editTarget, exam: e.target.value })}
+                  className="px-3 py-2 text-sm rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="UPSC">🏛️ UPSC Civil Services</option>
+                  <option value="MPSC">🚩 MPSC Maharashtra</option>
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-muted-foreground uppercase">
                   Subject Title
                 </label>
                 <input
@@ -402,18 +503,13 @@ export default function Syllabus({ subjects = [], onAddSubject, onEditSubject, o
                 <label className="text-xs font-semibold text-muted-foreground uppercase">
                   Exam Paper
                 </label>
-                <select
+                <input
+                  type="text"
+                  required
                   value={editTarget.paper}
                   onChange={(e) => setEditTarget({ ...editTarget, paper: e.target.value })}
                   className="px-3 py-2 text-sm rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-                >
-                  <option value="GS Paper I">GS Paper I (History, Art, Geography)</option>
-                  <option value="GS Paper II">GS Paper II (Polity, Governance, IR)</option>
-                  <option value="GS Paper III">GS Paper III (Economy, Environment, Tech)</option>
-                  <option value="GS Paper IV">GS Paper IV (Ethics, Integrity, Aptitude)</option>
-                  <option value="CSAT">CSAT (Paper II Prelims)</option>
-                  <option value="Optional Subject">Optional Subject</option>
-                </select>
+                />
               </div>
 
               <div className="flex flex-col gap-1.5">

@@ -74,45 +74,140 @@ const tomorrow = () => {
 };
 
 const SYLLABUS_TOPICS = {
+  // ==================== UPSC CIVIL SERVICES ====================
+  'upsc-polity': [
+    { id: 'up-1', name: 'Preamble, Salient Features & Constitutionalism', chapter: 'Basics of Constitution' },
+    { id: 'up-2', name: 'Fundamental Rights & Judicial Remedies (Art 12–35)', chapter: 'Part III' },
+    { id: 'up-3', name: 'Directive Principles (DPSP) & Fundamental Duties', chapter: 'Part IV & IV-A' },
+    { id: 'up-4', name: 'Union Executive, President & Prime Minister', chapter: 'Union Executive' },
+    { id: 'up-5', name: 'Parliament Structure, Law Making & Committees', chapter: 'Union Legislature' },
+    { id: 'up-6', name: 'Supreme Court, High Courts & Judicial Review', chapter: 'Judiciary' },
+    { id: 'up-7', name: 'Federalism, Center-State Relations & Emergency', chapter: 'Federal System' },
+    { id: 'up-8', name: 'Panchayati Raj & Urban Local Bodies (73rd/74th Act)', chapter: 'Local Governance' },
+    { id: 'up-9', name: 'Constitutional & Statutory Bodies (EC, CAG, UPSC, Finance Comm)', chapter: 'Institutions' },
+    { id: 'up-10', name: 'Governance, Citizen Charters, e-Gov & Transparency', chapter: 'Governance' }
+  ],
+  'upsc-history': [
+    { id: 'uh-1', name: 'Decline of Mughals & Rise of Regional Powers', chapter: '18th Century India' },
+    { id: 'uh-2', name: 'British Expansion & Administrative Policies', chapter: 'Colonial Rule' },
+    { id: 'uh-3', name: 'Revolt of 1857: Causes, Leaders & Consequences', chapter: 'Early Resistance' },
+    { id: 'uh-4', name: 'Socio-Religious Reform Movements & Awakening', chapter: 'Renaissance' },
+    { id: 'uh-5', name: 'INC Foundation, Moderates & Swadeshi Movement', chapter: 'Early Nationalism' },
+    { id: 'uh-6', name: 'Gandhian Era: Non-Cooperation & Civil Disobedience', chapter: 'Mass Movements' },
+    { id: 'uh-7', name: 'Revolutionary Nationalism & Subhas Chandra Bose', chapter: 'Armed Struggle' },
+    { id: 'uh-8', name: 'Quit India Movement, INA Trials & Cabinet Mission', chapter: 'Towards Freedom' },
+    { id: 'uh-9', name: 'Partition & Post-Independence State Reorganization', chapter: 'Modern India' },
+    { id: 'uh-10', name: 'Indian Classical Arts, Architecture & UNESCO Heritage', chapter: 'Art & Culture' }
+  ],
+  'upsc-economy': [
+    { id: 'ue-1', name: 'National Income Accounting & GDP Deflator', chapter: 'Macro Fundamentals' },
+    { id: 'ue-2', name: 'Inflation (CPI/WPI) & RBI Monetary Policy Framework', chapter: 'Monetary Economics' },
+    { id: 'ue-3', name: 'Fiscal Policy, Union Budget & Fiscal Deficit Targets', chapter: 'Public Finance' },
+    { id: 'ue-4', name: 'Banking Sector, NPAs, IBC 2016 & Digital Rupee', chapter: 'Financial System' },
+    { id: 'ue-5', name: 'Agriculture: Cropping Patterns, MSP, PDS & Subsidies', chapter: 'Primary Sector' },
+    { id: 'ue-6', name: 'External Sector: BoP, Forex Reserves & Foreign Trade', chapter: 'International Trade' },
+    { id: 'ue-7', name: 'Inclusive Growth, Poverty Indices & Human Development', chapter: 'Social Sector' },
+    { id: 'ue-8', name: 'Industrial Corridors, PLI Schemes & Logistics Policy', chapter: 'Secondary Sector' }
+  ],
+  'upsc-geography': [
+    { id: 'ug-1', name: 'Plate Tectonics, Earthquakes & Volcanism', chapter: 'Physical Geology' },
+    { id: 'ug-2', name: 'Atmosphere, Planetary Winds & Tropical Cyclones', chapter: 'Climatology' },
+    { id: 'ug-3', name: 'Ocean Currents, Tides & Marine Mineral Resources', chapter: 'Oceanography' },
+    { id: 'ug-4', name: 'Physiography of India: Himalayas & Peninsular Plateau', chapter: 'Indian Geography' },
+    { id: 'ug-5', name: 'Himalayan & Peninsular River Systems of India', chapter: 'Drainage' },
+    { id: 'ug-6', name: 'Monsoon Dynamics, El Niño/La Niña & IOD', chapter: 'Indian Climate' },
+    { id: 'ug-7', name: 'Biodiversity Hotspots, National Parks & Biosphere Reserves', chapter: 'Ecology' },
+    { id: 'ug-8', name: 'Climate Change, COP Conferences & Renewable Energy', chapter: 'Environment' }
+  ],
+  'upsc-ethics': [
+    { id: 'uet-1', name: 'Ethics & Human Interface: Essence & Consequences', chapter: 'Ethical Philosophy' },
+    { id: 'uet-2', name: 'Human Values: Lessons from Leaders & Reformers', chapter: 'Values' },
+    { id: 'uet-3', name: 'Attitude: Content, Functions & Moral Influence', chapter: 'Psychology' },
+    { id: 'uet-4', name: 'Emotional Intelligence in Governance & Leadership', chapter: 'Aptitude' },
+    { id: 'uet-5', name: 'Civil Service Values & Ethics in Administration', chapter: 'Public Service' },
+    { id: 'uet-6', name: 'Probity in Governance, Citizen Charters & RTI', chapter: 'Anti-Corruption' },
+    { id: 'uet-7', name: 'Ethical Case Studies on Administrative Dilemmas', chapter: 'Case Studies' }
+  ],
+  'upsc-security-ir': [
+    { id: 'usr-1', name: 'India and its Neighborhood: Act East & SAGAR', chapter: 'Foreign Policy' },
+    { id: 'usr-2', name: 'Multilateral Groups: Quad, BRICS, SCO, G20 & UN', chapter: 'International Fora' },
+    { id: 'usr-3', name: 'Bilateral Ties: USA, Russia, EU, China & Middle East', chapter: 'Major Powers' },
+    { id: 'usr-4', name: 'Border Management & Internal Security Challenges', chapter: 'Security' },
+    { id: 'usr-5', name: 'Cyber Threats, AI Warfare & Critical Infrastructure', chapter: 'Modern Warfare' }
+  ],
+
+  // ==================== MPSC MAHARASHTRA ====================
+  'mpsc-history': [
+    { id: 'mh-1', name: 'Chhatrapati Shivaji Maharaj & Maratha Administration', chapter: 'Medieval Legacy' },
+    { id: 'mh-2', name: 'Mahatma Jyotirao Phule & Satyashodhak Samaj', chapter: 'Social Reformers' },
+    { id: 'mh-3', name: 'Rajarshi Chhatrapati Shahu Maharaj & Social Democracy', chapter: 'Social Justice' },
+    { id: 'mh-4', name: 'Dr. B. R. Ambedkar: Social Justice & Dalit Movement', chapter: 'Mass Emancipation' },
+    { id: 'mh-5', name: 'Savitribai Phule, Tarabai Shinde & Women Education', chapter: 'Women Reformers' },
+    { id: 'mh-6', name: 'Freedom Struggle in Maharashtra & Revolutionary Groups', chapter: 'National Movement' },
+    { id: 'mh-7', name: 'Sanyukta Maharashtra Movement & Formation of 1960', chapter: 'State Formation' },
+    { id: 'mh-8', name: 'Varkari Tradition, Saint Poets & Folk Culture of Maharashtra', chapter: 'Cultural Heritage' }
+  ],
+  'mpsc-geography': [
+    { id: 'mg-1', name: 'Physiography of Maharashtra: Konkan, Sahyadri & Desh', chapter: 'Maharashtra Geology' },
+    { id: 'mg-2', name: 'Drainage Systems: Godavari, Krishna, Bhima & Tapi', chapter: 'River Basins' },
+    { id: 'mg-3', name: 'Climate, Monsoon Variations & Drought Prone Zones', chapter: 'Maharashtra Climate' },
+    { id: 'mg-4', name: 'Soils & Agro-Climatic Zones of Maharashtra', chapter: 'Agriculture Ecology' },
+    { id: 'mg-5', name: 'Major Crops: Sugarcane, Cotton, Jowar, Onion & Grapes', chapter: 'Cash Crops' },
+    { id: 'mg-6', name: 'Forest Types, Wildlife Sanctuaries (Tadoba, Radhanagari)', chapter: 'Flora & Fauna' },
+    { id: 'mg-7', name: 'Minerals & Industrial Centers of Maharashtra', chapter: 'Economic Geography' }
+  ],
+  'mpsc-polity': [
+    { id: 'mp-1', name: 'Maharashtra State Legislature: Assembly & Council', chapter: 'State Legislature' },
+    { id: 'mp-2', name: 'Governor, Chief Minister & State Council of Ministers', chapter: 'State Executive' },
+    { id: 'mp-3', name: 'Bombay High Court, Bench Setup & Subordinate Courts', chapter: 'State Judiciary' },
+    { id: 'mp-4', name: 'District Administration: Collector, SDO, Tehsildar & Talathi', chapter: 'District Setup' },
+    { id: 'mp-5', name: 'Panchayati Raj in Maharashtra: ZP, PS & Gram Panchayat', chapter: 'Rural Self-Govt' },
+    { id: 'mp-6', name: 'Urban Governance: Municipal Corporations (BMC, PMC, etc.)', chapter: 'Urban Self-Govt' },
+    { id: 'mp-7', name: 'Maharashtra Public Service Commission (MPSC) Structure', chapter: 'State Commissions' },
+    { id: 'mp-8', name: 'Maharashtra Right to Public Services Act (RTS 2015)', chapter: 'Citizen Services' }
+  ],
+  'mpsc-economy': [
+    { id: 'me-1', name: 'Maharashtra GSDP Trends & Regional Disparities', chapter: 'State Economy' },
+    { id: 'me-2', name: 'Agriculture & Irrigation in Maharashtra: Krishna Valley Projects', chapter: 'Irrigation & Farming' },
+    { id: 'me-3', name: 'Cooperative Movement in Maharashtra (Sugar, Milk & Banking)', chapter: 'Cooperatives' },
+    { id: 'me-4', name: 'MIDC, SEZs, IT Parks & Industrial corridors (DMIC)', chapter: 'Industrial Hubs' },
+    { id: 'me-5', name: 'Infrastructure: Samruddhi Highway, Metro Rail & Ports', chapter: 'Connectivity' },
+    { id: 'me-6', name: 'Key Welfare Schemes: Ladki Bahin & Rural Employment', chapter: 'Social Welfare' }
+  ],
+  'mpsc-marathi-english': [
+    { id: 'mme-1', name: 'Marathi Grammar: Vyakaran, Sandhi, Samas & Vakya-Rupantar', chapter: 'Marathi Grammar' },
+    { id: 'mme-2', name: 'Marathi Vocabulary, Mhani (Proverbs) & Vakprachar', chapter: 'Marathi Idioms' },
+    { id: 'mme-3', name: 'Marathi Essay Writing & Précis (Sankshiptikaran)', chapter: 'Marathi Writing' },
+    { id: 'mme-4', name: 'English Grammar: Tenses, Voice, Narration & Modals', chapter: 'English Grammar' },
+    { id: 'mme-5', name: 'English Vocabulary, Synonyms, Antonyms & Idioms', chapter: 'English Lexicon' },
+    { id: 'mme-6', name: 'Translation: English to Marathi & Marathi to English', chapter: 'Translation Skills' }
+  ],
+  'mpsc-science-agri': [
+    { id: 'msa-1', name: 'General Science: Physics & Everyday Mechanics', chapter: 'Physics' },
+    { id: 'msa-2', name: 'Chemistry: Compounds, Polymers & Environmental Chemistry', chapter: 'Chemistry' },
+    { id: 'msa-3', name: 'Biology: Human Physiology, Diseases & Immunity', chapter: 'Life Sciences' },
+    { id: 'msa-4', name: 'Agriculture Science: Soil Fertility & Micro-Irrigation', chapter: 'Agronomy' },
+    { id: 'msa-5', name: 'Biotechnology in Crop Improvement & Horticulture', chapter: 'Agri-Tech' },
+    { id: 'msa-6', name: 'ICT, Artificial Intelligence & Cyber Law in India', chapter: 'Information Tech' }
+  ],
+
+  // Legacy mappings for backwards compatibility
   polity: [
-    { id: 'polity-1', name: 'Preamble & Salient Features', chapter: 'Basics of Constitution' },
-    { id: 'polity-2', name: 'Fundamental Rights (Articles 12–35)', chapter: 'Part III' },
-    { id: 'polity-3', name: 'Directive Principles & Fundamental Duties', chapter: 'Part IV & IV-A' },
-    { id: 'polity-4', name: 'Union Executive & Parliament', chapter: 'Union Government' },
-    { id: 'polity-5', name: 'Supreme Court & Judicial Review', chapter: 'Judiciary' },
-    { id: 'polity-6', name: 'Center-State Relations & Federalism', chapter: 'Federal System' },
-    { id: 'polity-7', name: 'Panchayati Raj & Urban Local Bodies', chapter: 'Local Self-Govt' },
-    { id: 'polity-8', name: 'Constitutional Bodies (Election Comm, UPSC, CAG)', chapter: 'Institutions' }
+    { id: 'up-1', name: 'Preamble, Salient Features & Constitutionalism', chapter: 'Basics of Constitution' },
+    { id: 'up-2', name: 'Fundamental Rights & Judicial Remedies (Art 12–35)', chapter: 'Part III' },
+    { id: 'up-3', name: 'Directive Principles (DPSP) & Fundamental Duties', chapter: 'Part IV & IV-A' }
   ],
   history: [
-    { id: 'history-1', name: 'Revolt of 1857 & Early Resistance', chapter: 'British Expansion' },
-    { id: 'history-2', name: 'Socio-Religious Reform Movements', chapter: 'Social Awakening' },
-    { id: 'history-3', name: 'INC Foundation & Moderate-Extremist Era', chapter: 'Early Nationalism' },
-    { id: 'history-4', name: 'Swadeshi & Home Rule Movements', chapter: 'Mass Struggle' },
-    { id: 'history-5', name: 'Gandhian Era (Non-Cooperation & Salt March)', chapter: 'Gandhian Phase' },
-    { id: 'history-6', name: 'Quit India Movement & INA Trials', chapter: 'Towards Freedom' },
-    { id: 'history-7', name: 'Peasant, Tribal & Working Class Struggles', chapter: 'People’s Movements' },
-    { id: 'history-8', name: 'Partition & Post-Independence Consolidation', chapter: 'Integration' }
+    { id: 'uh-3', name: 'Revolt of 1857: Causes, Leaders & Consequences', chapter: 'Early Resistance' },
+    { id: 'uh-4', name: 'Socio-Religious Reform Movements & Awakening', chapter: 'Renaissance' }
   ],
   economy: [
-    { id: 'economy-1', name: 'National Income Accounting & GDP Metrics', chapter: 'Macro Fundamentals' },
-    { id: 'economy-2', name: 'Inflation Indices (CPI/WPI) & Monetary Policy', chapter: 'Prices & RBI' },
-    { id: 'economy-3', name: 'Fiscal Policy, Union Budget & Deficits', chapter: 'Public Finance' },
-    { id: 'economy-4', name: 'Banking Structure, IBC & NPA Resolution', chapter: 'Financial System' },
-    { id: 'economy-5', name: 'Agriculture, MSP, Subsidies & Food Security', chapter: 'Primary Sector' },
-    { id: 'economy-6', name: 'External Sector, Balance of Payments & Forex', chapter: 'Foreign Trade' },
-    { id: 'economy-7', name: 'Poverty Measurement & Inclusive Growth', chapter: 'Human Development' },
-    { id: 'economy-8', name: 'Infrastructure, Industrial Policy & FDI', chapter: 'Economic Reforms' }
+    { id: 'ue-1', name: 'National Income Accounting & GDP Deflator', chapter: 'Macro Fundamentals' },
+    { id: 'ue-2', name: 'Inflation (CPI/WPI) & RBI Monetary Policy Framework', chapter: 'Monetary Economics' }
   ],
   geography: [
-    { id: 'geography-1', name: 'Geomorphology & Plate Tectonics', chapter: 'Physical Geology' },
-    { id: 'geography-2', name: 'Climatology, Wind Belts & Cyclones', chapter: 'Atmosphere' },
-    { id: 'geography-3', name: 'Ocean Currents & Marine Resources', chapter: 'Oceanography' },
-    { id: 'geography-4', name: 'Physiographic Divisions of India', chapter: 'Indian Geography' },
-    { id: 'geography-5', name: 'Himalayan & Peninsular River Systems', chapter: 'Drainage' },
-    { id: 'geography-6', name: 'Indian Monsoon Dynamics & Rainfall Patterns', chapter: 'Indian Climate' },
-    { id: 'geography-7', name: 'Soils, Natural Vegetation & Wildlife Parks', chapter: 'Biogeography' },
-    { id: 'geography-8', name: 'Mineral Belts & Energy Resources of India', chapter: 'Economic Resources' }
+    { id: 'ug-4', name: 'Physiography of India: Himalayas & Peninsular Plateau', chapter: 'Indian Geography' },
+    { id: 'ug-6', name: 'Monsoon Dynamics, El Niño/La Niña & IOD', chapter: 'Indian Climate' }
   ]
 };
 
@@ -243,12 +338,18 @@ export default function App() {
   const [plannerView, setPlannerView] = useState("Today's Plan");
   const [planTitle, setPlanTitle] = useState('');
   const [planMinutes, setPlanMinutes] = useState('45');
-  const [planSubject, setPlanSubject] = useState('polity');
+  const [planSubject, setPlanSubject] = useState('upsc-polity');
   const [planPriority, setPlanPriority] = useState('Medium');
   const [planDateType, setPlanDateType] = useState('today');
+  const [plannerExamFilter, setPlannerExamFilter] = useState('ALL');
+  const [planExamTarget, setPlanExamTarget] = useState('UPSC');
 
   // Syllabus State
-  const [expandedSubject, setExpandedSubject] = useState('polity');
+  const [expandedSubject, setExpandedSubject] = useState('upsc-polity');
+  const [syllabusExamFilter, setSyllabusExamFilter] = useState('ALL');
+
+  // Timer Focus State
+  const [focusExamFilter, setFocusExamFilter] = useState('ALL');
 
   const [notifOpen, setNotifOpen] = useState(false);
   const interval = useRef(null);
@@ -363,11 +464,12 @@ export default function App() {
         minutes: Number(planMinutes) || 45,
         date: targetDate,
         subjectId: planSubject,
+        exam: planExamTarget,
         priority: planPriority
       });
       setPlanTitle('');
       await refresh();
-      Alert.alert('Task Planned', `Scheduled for ${planDateType === 'tomorrow' ? 'Tomorrow' : 'Today'}!`);
+      Alert.alert('Task Planned', `Scheduled for ${planDateType === 'tomorrow' ? 'Tomorrow' : 'Today'} (${planExamTarget})!`);
     } catch (e) {
       Alert.alert('Error', e.message);
     }
@@ -428,15 +530,18 @@ export default function App() {
   }
 
   async function quickScheduleTopic(topic, subName, subId) {
+    const isMpsc = String(subId).startsWith('mpsc') || String(subName).toLowerCase().includes('mpsc') || String(subName).toLowerCase().includes('maharashtra');
+    const exam = isMpsc ? 'MPSC' : 'UPSC';
     try {
       await req('/plan', 'POST', {
         title: `${subName}: ${topic.name}`,
         minutes: 45,
         date: today(),
         subjectId: subId,
+        exam,
         priority: 'High'
       });
-      Alert.alert('Scheduled!', `"${topic.name}" added to today's study planner.`);
+      Alert.alert('Scheduled!', `"${topic.name}" added to today's ${exam} study planner.`);
       await refresh();
       setTab('Planner');
     } catch (e) {
@@ -453,27 +558,48 @@ export default function App() {
     }
   }
 
-  // Dynamic syllabus calculations
+  // Dynamic syllabus calculations with UPSC and MPSC separation
   const syllabusStats = useMemo(() => {
-    let totalTopicsCount = 0;
-    let completedTopicsCount = 0;
-    let inProgressCount = 0;
-    let toReviseCount = 0;
+    const calc = (filterFn) => {
+      let total = 0;
+      let completed = 0;
+      let inProgress = 0;
+      let toRevise = 0;
 
-    Object.entries(SYLLABUS_TOPICS).forEach(([sId, topics]) => {
-      topics.forEach(t => {
-        totalTopicsCount++;
-        const prog = topicProgress.find(p => p.topicId === t.id);
-        if (prog) {
-          if (prog.status === 'Completed') completedTopicsCount++;
-          else if (prog.status === 'In Progress') inProgressCount++;
-          else if (prog.status === 'To Revise') toReviseCount++;
-        }
+      Object.entries(SYLLABUS_TOPICS).forEach(([sId, topics]) => {
+        // Exclude legacy alias keys from double counting
+        if (sId === 'polity' || sId === 'history' || sId === 'economy' || sId === 'geography') return;
+        if (filterFn && !filterFn(sId)) return;
+
+        topics.forEach(t => {
+          total++;
+          const prog = topicProgress.find(p => p.topicId === t.id);
+          if (prog) {
+            if (prog.status === 'Completed') completed++;
+            else if (prog.status === 'In Progress') inProgress++;
+            else if (prog.status === 'To Revise') toRevise++;
+          }
+        });
       });
-    });
 
-    const overallPct = totalTopicsCount > 0 ? Math.round((completedTopicsCount / totalTopicsCount) * 100) : 0;
-    return { totalTopicsCount, completedTopicsCount, inProgressCount, toReviseCount, overallPct };
+      const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+      return { total, completed, inProgress, toRevise, pct };
+    };
+
+    const overall = calc(() => true);
+    const upsc = calc(id => id.startsWith('upsc'));
+    const mpsc = calc(id => id.startsWith('mpsc'));
+
+    return {
+      totalTopicsCount: overall.total,
+      completedTopicsCount: overall.completed,
+      inProgressCount: overall.inProgress,
+      toReviseCount: overall.toRevise,
+      overallPct: overall.pct,
+      overall,
+      upsc,
+      mpsc
+    };
   }, [topicProgress]);
 
   if (loading) {
@@ -572,22 +698,36 @@ export default function App() {
       <Card>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <Text style={txt(15, true)}>Curriculum Completion</Text>
-          <Text style={txt(13, true, C.blue)}>{syllabusStats.overallPct}%</Text>
+          <Text style={txt(13, true, C.blue)}>{syllabusStats.overallPct}% Overall</Text>
         </View>
-        <View style={{ height: 8, backgroundColor: C.soft, borderRadius: 6, marginVertical: 10 }}>
-          <View
-            style={{
-              backgroundColor: C.blue,
-              width: `${syllabusStats.overallPct}%`,
-              height: 8,
-              borderRadius: 6
-            }}
-          />
+
+        {/* Dual Progress: UPSC vs MPSC */}
+        <View style={{ marginTop: 12, paddingBottom: 10, borderBottomWidth: 1, borderColor: C.line }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+            <Text style={txt(12, true, '#1e40af')}>🏛️ UPSC Civil Services</Text>
+            <Text style={txt(12, true, '#1e40af')}>{syllabusStats.upsc.pct}%</Text>
+          </View>
+          <View style={{ height: 6, backgroundColor: C.soft, borderRadius: 6, overflow: 'hidden' }}>
+            <View style={{ backgroundColor: '#1e40af', width: `${syllabusStats.upsc.pct}%`, height: 6, borderRadius: 6 }} />
+          </View>
+          <Text style={[txt(10, false, C.muted), { marginTop: 3 }]}>
+            {syllabusStats.upsc.completed} of {syllabusStats.upsc.total} UPSC topics mastered
+          </Text>
         </View>
-        <Text style={txt(12, false, C.muted)}>
-          {syllabusStats.completedTopicsCount} of {syllabusStats.totalTopicsCount} topics mastered •{' '}
-          {syllabusStats.toReviseCount} to revise
-        </Text>
+
+        <View style={{ marginTop: 10, marginBottom: 8 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+            <Text style={txt(12, true, '#b45309')}>🚩 MPSC Maharashtra</Text>
+            <Text style={txt(12, true, '#b45309')}>{syllabusStats.mpsc.pct}%</Text>
+          </View>
+          <View style={{ height: 6, backgroundColor: '#fef3c7', borderRadius: 6, overflow: 'hidden' }}>
+            <View style={{ backgroundColor: '#b45309', width: `${syllabusStats.mpsc.pct}%`, height: 6, borderRadius: 6 }} />
+          </View>
+          <Text style={[txt(10, false, C.muted), { marginTop: 3 }]}>
+            {syllabusStats.mpsc.completed} of {syllabusStats.mpsc.total} MPSC topics mastered
+          </Text>
+        </View>
+
         <Button label="Open Syllabus & Checklist →" subtle onPress={() => setTab('Syllabus')} />
       </Card>
 
@@ -668,10 +808,29 @@ export default function App() {
 
       <Card>
         <Text style={txt(12, false, C.muted)}>FOCUS SUBJECT</Text>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 10 }}>
-          {subjects.map(s => (
-            <Chip key={s.id} label={s.name} active={selected === s.id} onPress={() => setSelected(s.id)} />
-          ))}
+        <View style={{ flexDirection: 'row', marginTop: 8, marginBottom: 8 }}>
+          <Chip label="All Subjects" active={focusExamFilter === 'ALL'} onPress={() => setFocusExamFilter('ALL')} />
+          <Chip label="🏛️ UPSC" active={focusExamFilter === 'UPSC'} onPress={() => setFocusExamFilter('UPSC')} />
+          <Chip label="🚩 MPSC" active={focusExamFilter === 'MPSC'} onPress={() => setFocusExamFilter('MPSC')} />
+        </View>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 4 }}>
+          {subjects
+            .filter(s => {
+              if (focusExamFilter === 'ALL') return true;
+              const sExam = s.exam || (s.id.startsWith('mpsc') ? 'MPSC' : 'UPSC');
+              return sExam === focusExamFilter;
+            })
+            .map(s => {
+              const isMp = (s.exam || (s.id.startsWith('mpsc') ? 'MPSC' : 'UPSC')) === 'MPSC';
+              return (
+                <Chip
+                  key={s.id}
+                  label={`${isMp ? '🚩 ' : '🏛️ '}${s.name}`}
+                  active={selected === s.id}
+                  onPress={() => setSelected(s.id)}
+                />
+              );
+            })}
         </View>
         <Text style={[txt(12, false, C.muted), { marginTop: 12 }]}>SESSION FOCUS TOPIC</Text>
         <TextInput
@@ -722,109 +881,162 @@ export default function App() {
   );
 
   // ---------------- SYLLABUS TAB ----------------
-  const Syllabus = () => (
-    <>
-      <Title sub="Interactive topic checklist, revision markers & mastery tracking">
-        Subjects & Syllabus
-      </Title>
+  const Syllabus = () => {
+    const isUPSC = syllabusExamFilter === 'UPSC';
+    const isMPSC = syllabusExamFilter === 'MPSC';
+    const currentScope = isUPSC ? syllabusStats.upsc : isMPSC ? syllabusStats.mpsc : syllabusStats.overall;
 
-      {/* Overview Card */}
-      <Card>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <View>
-            <Text style={txt(13, true)}>Overall Completion</Text>
-            <Text style={[txt(26, true), { marginVertical: 6 }]}>{syllabusStats.overallPct}%</Text>
-            <Text style={txt(11, false, C.muted)}>
-              {syllabusStats.completedTopicsCount} of {syllabusStats.totalTopicsCount} topics completed
-            </Text>
-          </View>
-          <Ring value={syllabusStats.overallPct} size={110} label="Completed" />
-        </View>
+    const displayedSubjects = subjects.filter(s => {
+      if (syllabusExamFilter === 'ALL') return true;
+      const sExam = s.exam || (s.id.startsWith('mpsc') ? 'MPSC' : 'UPSC');
+      return sExam === syllabusExamFilter;
+    });
 
-        {/* Status Legends / Breakdown */}
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            marginTop: 14,
-            paddingTop: 12,
-            borderTopWidth: 1,
-            borderColor: C.line
-          }}
-        >
-          <View style={{ alignItems: 'center' }}>
-            <Text style={txt(14, true, C.green)}>{syllabusStats.completedTopicsCount}</Text>
-            <Text style={txt(10, false, C.muted)}>Mastered</Text>
-          </View>
-          <View style={{ alignItems: 'center' }}>
-            <Text style={txt(14, true, C.amber)}>{syllabusStats.inProgressCount}</Text>
-            <Text style={txt(10, false, C.muted)}>In Progress</Text>
-          </View>
-          <View style={{ alignItems: 'center' }}>
-            <Text style={txt(14, true, C.purple)}>{syllabusStats.toReviseCount}</Text>
-            <Text style={txt(10, false, C.muted)}>To Revise</Text>
-          </View>
-          <View style={{ alignItems: 'center' }}>
-            <Text style={txt(14, true, C.muted)}>
-              {syllabusStats.totalTopicsCount - syllabusStats.completedTopicsCount - syllabusStats.inProgressCount - syllabusStats.toReviseCount}
-            </Text>
-            <Text style={txt(10, false, C.muted)}>Remaining</Text>
-          </View>
-        </View>
-      </Card>
+    const upscCount = subjects.filter(s => (s.exam || (s.id.startsWith('mpsc') ? 'MPSC' : 'UPSC')) === 'UPSC').length;
+    const mpscCount = subjects.filter(s => (s.exam || (s.id.startsWith('mpsc') ? 'MPSC' : 'UPSC')) === 'MPSC').length;
 
-      {/* Revision Queue Notice */}
-      {syllabusStats.toReviseCount > 0 && (
-        <Card style={{ backgroundColor: C.purpleSoft, borderColor: '#ddd6fe' }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <Ionicons name="refresh-circle-outline" size={24} color={C.purple} />
-            <Text style={txt(14, true, C.purple)}>Spaced Repetition Queue</Text>
+    return (
+      <>
+        <Title sub="Interactive topic checklist, revision markers & mastery tracking">
+          Subjects & Syllabus
+        </Title>
+
+        {/* Exam Section Switcher */}
+        <Card style={{ paddingVertical: 12 }}>
+          <Text style={[txt(11, true, C.muted), { marginBottom: 8 }]}>EXAM CURRICULUM SECTION</Text>
+          <View style={{ flexDirection: 'row' }}>
+            <Chip
+              label={`All Modules (${subjects.length})`}
+              active={syllabusExamFilter === 'ALL'}
+              onPress={() => setSyllabusExamFilter('ALL')}
+            />
+            <Chip
+              label={`🏛️ UPSC (${upscCount})`}
+              active={syllabusExamFilter === 'UPSC'}
+              onPress={() => setSyllabusExamFilter('UPSC')}
+            />
+            <Chip
+              label={`🚩 MPSC (${mpscCount})`}
+              active={syllabusExamFilter === 'MPSC'}
+              onPress={() => setSyllabusExamFilter('MPSC')}
+            />
           </View>
-          <Text style={[txt(12, false, C.ink), { marginTop: 6 }]}>
-            You have {syllabusStats.toReviseCount} topic(s) flagged for revision. Schedule a revision block today!
-          </Text>
         </Card>
-      )}
 
-      {/* Subject Cards with Interactive Topics */}
-      {subjects.map(s => {
-        const topicsList = SYLLABUS_TOPICS[s.id] || [];
-        const isExpanded = expandedSubject === s.id;
-        const sCompleted = topicsList.filter(t => {
-          const prog = topicProgress.find(p => p.topicId === t.id);
-          return prog && prog.status === 'Completed';
-        }).length;
-        const sPct = topicsList.length ? Math.round((sCompleted / topicsList.length) * 100) : 0;
+        {/* Overview Card */}
+        <Card>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <View style={{ flex: 1 }}>
+              <Text style={txt(13, true)}>
+                {isUPSC ? '🏛️ UPSC Civil Services Completion' : isMPSC ? '🚩 MPSC Maharashtra Completion' : 'Overall Curriculum Completion'}
+              </Text>
+              <Text style={[txt(26, true), { marginVertical: 6 }]}>{currentScope.pct}%</Text>
+              <Text style={txt(11, false, C.muted)}>
+                {currentScope.completed} of {currentScope.total} topics mastered
+              </Text>
+            </View>
+            <Ring value={currentScope.pct} size={110} label="Completed" />
+          </View>
 
-        return (
-          <Card key={s.id} style={{ paddingBottom: isExpanded ? 12 : 16 }}>
-            <TouchableOpacity
-              onPress={() => setExpandedSubject(isExpanded ? null : s.id)}
-              style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
-            >
-              <View style={{ flex: 1 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <Text style={txt(16, true)}>{s.name}</Text>
-                  <Text
-                    style={{
-                      fontSize: 10,
-                      fontWeight: '700',
-                      color: C.blue,
-                      backgroundColor: C.soft,
-                      paddingHorizontal: 7,
-                      paddingVertical: 2,
-                      borderRadius: 6
-                    }}
-                  >
-                    {s.paper}
+          {/* Status Legends / Breakdown */}
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              marginTop: 14,
+              paddingTop: 12,
+              borderTopWidth: 1,
+              borderColor: C.line
+            }}
+          >
+            <View style={{ alignItems: 'center' }}>
+              <Text style={txt(14, true, C.green)}>{currentScope.completed}</Text>
+              <Text style={txt(10, false, C.muted)}>Mastered</Text>
+            </View>
+            <View style={{ alignItems: 'center' }}>
+              <Text style={txt(14, true, C.amber)}>{currentScope.inProgress}</Text>
+              <Text style={txt(10, false, C.muted)}>In Progress</Text>
+            </View>
+            <View style={{ alignItems: 'center' }}>
+              <Text style={txt(14, true, C.purple)}>{currentScope.toRevise}</Text>
+              <Text style={txt(10, false, C.muted)}>To Revise</Text>
+            </View>
+            <View style={{ alignItems: 'center' }}>
+              <Text style={txt(14, true, C.muted)}>
+                {Math.max(0, currentScope.total - currentScope.completed - currentScope.inProgress - currentScope.toRevise)}
+              </Text>
+              <Text style={txt(10, false, C.muted)}>Remaining</Text>
+            </View>
+          </View>
+        </Card>
+
+        {/* Revision Queue Notice */}
+        {currentScope.toRevise > 0 && (
+          <Card style={{ backgroundColor: C.purpleSoft, borderColor: '#ddd6fe' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Ionicons name="refresh-circle-outline" size={24} color={C.purple} />
+              <Text style={txt(14, true, C.purple)}>Spaced Repetition Queue</Text>
+            </View>
+            <Text style={[txt(12, false, C.ink), { marginTop: 6 }]}>
+              You have {currentScope.toRevise} topic(s) flagged for revision. Schedule a revision block today!
+            </Text>
+          </Card>
+        )}
+
+        {/* Subject Cards with Interactive Topics */}
+        {displayedSubjects.map(s => {
+          const sExam = s.exam || (s.id.startsWith('mpsc') ? 'MPSC' : 'UPSC');
+          const isMp = sExam === 'MPSC';
+          const topicsList = SYLLABUS_TOPICS[s.id] || [];
+          const isExpanded = expandedSubject === s.id;
+          const sCompleted = topicsList.filter(t => {
+            const prog = topicProgress.find(p => p.topicId === t.id);
+            return prog && prog.status === 'Completed';
+          }).length;
+          const sPct = topicsList.length ? Math.round((sCompleted / topicsList.length) * 100) : 0;
+
+          return (
+            <Card key={s.id} style={{ paddingBottom: isExpanded ? 12 : 16 }}>
+              <TouchableOpacity
+                onPress={() => setExpandedSubject(isExpanded ? null : s.id)}
+                style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
+              >
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    <Text
+                      style={{
+                        fontSize: 10,
+                        fontWeight: '700',
+                        color: isMp ? '#b45309' : '#1e40af',
+                        backgroundColor: isMp ? '#fef3c7' : '#dbeafe',
+                        paddingHorizontal: 7,
+                        paddingVertical: 2,
+                        borderRadius: 6
+                      }}
+                    >
+                      {isMp ? '🚩 MPSC' : '🏛️ UPSC'}
+                    </Text>
+                    <Text style={txt(15, true)}>{s.name}</Text>
+                    <Text
+                      style={{
+                        fontSize: 10,
+                        fontWeight: '600',
+                        color: C.muted,
+                        backgroundColor: C.soft,
+                        paddingHorizontal: 6,
+                        paddingVertical: 2,
+                        borderRadius: 6
+                      }}
+                    >
+                      {s.paper}
+                    </Text>
+                  </View>
+                  <Text style={[txt(12, false, C.muted), { marginTop: 4 }]}>
+                    {sCompleted} / {topicsList.length} topics mastered • {sPct}%
                   </Text>
                 </View>
-                <Text style={[txt(12, false, C.muted), { marginTop: 4 }]}>
-                  {sCompleted} / {topicsList.length} topics mastered • {sPct}%
-                </Text>
-              </View>
-              <Ionicons name={isExpanded ? 'chevron-up' : 'chevron-down'} size={22} color={C.blue} />
-            </TouchableOpacity>
+                <Ionicons name={isExpanded ? 'chevron-up' : 'chevron-down'} size={22} color={C.blue} />
+              </TouchableOpacity>
 
             {/* Progress Bar */}
             <View style={{ height: 7, backgroundColor: C.soft, borderRadius: 6, marginTop: 12 }}>
@@ -922,19 +1134,28 @@ export default function App() {
 
   // ---------------- PLANNER TAB ----------------
   const Planner = () => {
-    // Filter plans according to view
+    // Filter plans according to view and exam section
     const filteredPlans = useMemo(() => {
+      let list = plans;
       if (plannerView === "Today's Plan") {
-        return plans.filter(p => p.date === today() || !p.date);
+        list = list.filter(p => p.date === today() || !p.date);
       }
-      if (plannerView === 'Weekly View') {
-        return plans;
+      if (plannerExamFilter !== 'ALL') {
+        list = list.filter(p => {
+          const pExam = p.exam || (String(p.subjectId || '').startsWith('mpsc') ? 'MPSC' : 'UPSC');
+          return pExam === plannerExamFilter;
+        });
       }
-      return plans;
-    }, [plans, plannerView]);
+      return list;
+    }, [plans, plannerView, plannerExamFilter]);
 
-    const todayPlannedMinutes = plans
-      .filter(p => p.date === today() && !p.done)
+    const todayPlans = plans.filter(p => (p.date === today() || !p.date) && !p.done);
+    const todayPlannedMinutes = todayPlans.reduce((a, p) => a + Number(p.minutes || 0), 0);
+    const upscPlannedMinutes = todayPlans
+      .filter(p => (p.exam || (String(p.subjectId || '').startsWith('mpsc') ? 'MPSC' : 'UPSC')) === 'UPSC')
+      .reduce((a, p) => a + Number(p.minutes || 0), 0);
+    const mpscPlannedMinutes = todayPlans
+      .filter(p => (p.exam || (String(p.subjectId || '').startsWith('mpsc') ? 'MPSC' : 'UPSC')) === 'MPSC')
       .reduce((a, p) => a + Number(p.minutes || 0), 0);
     const capacityPct = Math.min(100, Math.round((todayPlannedMinutes / 480) * 100));
 
@@ -949,6 +1170,10 @@ export default function App() {
         .slice(0, 3);
     }, [planSubject, topicProgress]);
 
+    const targetSubjects = subjects.filter(
+      s => (s.exam || (s.id.startsWith('mpsc') ? 'MPSC' : 'UPSC')) === planExamTarget
+    );
+
     return (
       <>
         <Title sub="Target scheduling, task execution & daily workload balance">
@@ -957,11 +1182,33 @@ export default function App() {
 
         {/* View Switcher Chips */}
         <Card style={{ paddingVertical: 12 }}>
-          <Text style={[txt(12, true, C.muted), { marginBottom: 8 }]}>PLANNER VIEW</Text>
+          <Text style={[txt(11, true, C.muted), { marginBottom: 8 }]}>PLANNER TIMEFRAME</Text>
           <View style={{ flexDirection: 'row' }}>
             {["Today's Plan", 'Weekly View', 'Workload & Routine'].map(v => (
               <Chip key={v} label={v} active={plannerView === v} onPress={() => setPlannerView(v)} />
             ))}
+          </View>
+        </Card>
+
+        {/* Exam Section Filter Chips */}
+        <Card style={{ paddingVertical: 12 }}>
+          <Text style={[txt(11, true, C.muted), { marginBottom: 8 }]}>EXAM FILTER</Text>
+          <View style={{ flexDirection: 'row' }}>
+            <Chip
+              label="All Exam Tasks"
+              active={plannerExamFilter === 'ALL'}
+              onPress={() => setPlannerExamFilter('ALL')}
+            />
+            <Chip
+              label="🏛️ UPSC Plans"
+              active={plannerExamFilter === 'UPSC'}
+              onPress={() => setPlannerExamFilter('UPSC')}
+            />
+            <Chip
+              label="🚩 MPSC Plans"
+              active={plannerExamFilter === 'MPSC'}
+              onPress={() => setPlannerExamFilter('MPSC')}
+            />
           </View>
         </Card>
 
@@ -982,7 +1229,7 @@ export default function App() {
             />
           </View>
           <Text style={txt(12, false, C.muted)}>
-            {todayPlannedMinutes} min scheduled today • {Math.max(0, 480 - todayPlannedMinutes)} min available capacity
+            {todayPlannedMinutes} min total • 🏛️ UPSC: {upscPlannedMinutes}m • 🚩 MPSC: {mpscPlannedMinutes}m
           </Text>
         </Card>
 
@@ -1007,6 +1254,8 @@ export default function App() {
               'Low': { bg: C.soft, fg: C.blue }
             };
             const pStyle = priorityColors[p.priority || 'Medium'] || priorityColors['Medium'];
+            const pExam = p.exam || (String(p.subjectId || '').startsWith('mpsc') ? 'MPSC' : 'UPSC');
+            const isMp = pExam === 'MPSC';
             const subName = subjects.find(s => s.id === p.subjectId)?.name || p.subjectId || 'General';
 
             return (
@@ -1023,7 +1272,20 @@ export default function App() {
 
                   <View style={{ flex: 1 }}>
                     {/* Header tags */}
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4, flexWrap: 'wrap' }}>
+                      <Text
+                        style={{
+                          fontSize: 10,
+                          fontWeight: '700',
+                          color: isMp ? '#b45309' : '#1e40af',
+                          backgroundColor: isMp ? '#fef3c7' : '#dbeafe',
+                          paddingHorizontal: 6,
+                          paddingVertical: 2,
+                          borderRadius: 6
+                        }}
+                      >
+                        {isMp ? '🚩 MPSC' : '🏛️ UPSC'}
+                      </Text>
                       <Text
                         style={{
                           fontSize: 10,
@@ -1101,13 +1363,36 @@ export default function App() {
         <Card style={{ marginTop: 8 }}>
           <Text style={txt(16, true)}>+ Add Study Block</Text>
           <Text style={[txt(11, false, C.muted), { marginTop: 2, marginBottom: 12 }]}>
-            Schedule focus intervals aligned with your syllabus.
+            Schedule focus intervals aligned with your MPSC or UPSC syllabus.
           </Text>
 
+          {/* Exam Section Selector */}
+          <Text style={txt(11, true, C.muted)}>TARGET EXAM SECTION</Text>
+          <View style={{ flexDirection: 'row', marginTop: 6, marginBottom: 10 }}>
+            <Chip
+              label="🏛️ UPSC Civil Services"
+              active={planExamTarget === 'UPSC'}
+              onPress={() => {
+                setPlanExamTarget('UPSC');
+                const upSubs = subjects.filter(s => (s.exam || (s.id.startsWith('mpsc') ? 'MPSC' : 'UPSC')) === 'UPSC');
+                if (upSubs.length) setPlanSubject(upSubs[0].id);
+              }}
+            />
+            <Chip
+              label="🚩 MPSC Maharashtra"
+              active={planExamTarget === 'MPSC'}
+              onPress={() => {
+                setPlanExamTarget('MPSC');
+                const mpSubs = subjects.filter(s => (s.exam || (s.id.startsWith('mpsc') ? 'MPSC' : 'UPSC')) === 'MPSC');
+                if (mpSubs.length) setPlanSubject(mpSubs[0].id);
+              }}
+            />
+          </View>
+
           {/* Subject Selector */}
-          <Text style={txt(11, true, C.muted)}>SELECT SUBJECT</Text>
+          <Text style={txt(11, true, C.muted)}>SELECT {planExamTarget} SUBJECT</Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 6, marginBottom: 8 }}>
-            {subjects.map(s => (
+            {(targetSubjects.length ? targetSubjects : subjects).map(s => (
               <Chip
                 key={s.id}
                 label={s.name}
@@ -1195,7 +1480,7 @@ export default function App() {
             </View>
           </View>
 
-          <Button label="+ Schedule Study Task" onPress={addPlan} />
+          <Button label={`+ Schedule ${planExamTarget} Study Task`} onPress={addPlan} />
         </Card>
       </>
     );
