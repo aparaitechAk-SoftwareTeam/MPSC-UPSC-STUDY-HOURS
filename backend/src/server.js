@@ -118,4 +118,10 @@ app.post('/api/admin/subjects',auth('admin'),(req,res)=>{const {name,paper,topic
 app.delete('/api/admin/subjects/:id',auth('admin'),(req,res)=>{const db=read();db.subjects=db.subjects.filter(s=>s.id!==req.params.id);save(db);res.json({ok:true})});
 app.post('/api/admin/notifications',auth('admin'),(req,res)=>{if(!req.body.title||!req.body.message)return res.status(400).json({error:'Title and message required'});const db=read(),x={id:Date.now().toString(),userId:'all',title:req.body.title,message:req.body.message,readBy:[],createdAt:new Date().toISOString()};db.notifications.unshift(x);save(db);res.status(201).json(x)});
 app.use((err,req,res,next)=>{console.error(err);res.status(500).json({error:'Server error'})});
-const port=process.env.PORT||4000;app.listen(port,()=>console.log(`Abhyas API http://localhost:${port}`));
+
+const port = process.env.PORT || 4000;
+
+app.listen(port, '0.0.0.0', () => {
+  console.log(`Abhyas API listening on port ${port}`);
+});
+
