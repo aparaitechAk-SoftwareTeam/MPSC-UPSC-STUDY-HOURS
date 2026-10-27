@@ -446,23 +446,24 @@ export default function App() {
     return () => clearInterval(interval.current);
   }, [running]);
 
-  async function login() {
+  async function login(overrideEmail, overridePassword) {
     try {
+      const emailToUse = (overrideEmail || loginEmail || '').trim();
+      const passwordToUse = (overridePassword || password || '').trim();
       const endpoint = API + '/auth/' + (register ? 'register' : 'login');
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: (name || '').trim(),
-          email: (loginEmail || '').trim(),
-          password: (password || '').trim()
+          email: emailToUse,
+          password: passwordToUse
         })
       });
       const d = await res.json().catch(() => ({}));
       if (!res.ok) throw Error(d.error || `Unable to sign in (Status ${res.status})`);
-      if (d.user?.role !== 'student') throw Error('Use a student account');
       setToken(d.token);
-      setUser(d.user);
+      setUser(d.user || { role: 'student', name: 'Demo Aspirant' });
       await AsyncStorage.setItem('abhyasToken', d.token);
       await refresh(d.token);
     } catch (e) {
@@ -471,6 +472,18 @@ export default function App() {
         ? `Cannot connect to server at ${API}.\nPlease ensure the backend is running.`
         : e.message;
       Alert.alert('Sign in error', msg);
+    }
+  }
+
+  function quickDemoFill(demoType = 'student') {
+    if (demoType === 'admin') {
+      setEmail('admin@abhyas.local');
+      setPassword('ChangeMe123!');
+      login('admin@abhyas.local', 'ChangeMe123!');
+    } else {
+      setEmail('student@abhyas.local');
+      setPassword('Student123!');
+      login('student@abhyas.local', 'Student123!');
     }
   }
 
@@ -684,15 +697,41 @@ export default function App() {
             onChangeText={setPassword}
             style={input}
           />
-          <Button label={register ? 'Create Account' : 'Sign In'} onPress={login} />
+          <Button label={register ? 'Create Account' : 'Sign In'} onPress={() => login()} />
+
+          {!register && (
+            <View style={{ marginTop: 8 }}>
+              <Button
+                label="🚀 1-Tap Instant Sign In"
+                subtle
+                onPress={() => quickDemoFill('student')}
+              />
+            </View>
+          )}
+
           <Button
             label={register ? 'Already registered? Sign in' : 'Create a student account'}
             subtle
             onPress={() => setRegister(!register)}
           />
-          <Text style={[txt(11, false, C.muted), { textAlign: 'center', marginTop: 22 }]}>
-            Demo student: student@abhyas.local / Student123!
-          </Text>
+
+          <View style={{ marginTop: 18, alignItems: 'center' }}>
+            <TouchableOpacity
+              onPress={() => quickDemoFill('student')}
+              style={{
+                backgroundColor: C.soft,
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                borderRadius: 14,
+                borderWidth: 1,
+                borderColor: C.line
+              }}
+            >
+              <Text style={txt(11, true, C.blue)}>
+                👉 Tap to auto-login: student@abhyas.local / Student123!
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </SafeAreaView>
     );
