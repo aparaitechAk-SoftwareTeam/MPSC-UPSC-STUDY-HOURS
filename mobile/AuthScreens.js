@@ -15,6 +15,64 @@ import {
 
 const BLUE = "#2457C5";
 
+// Moved OUTSIDE component so React does not unmount & re-mount the input on every keystroke
+function Field({
+  label,
+  value,
+  onChangeText,
+  placeholder,
+  secureTextEntry,
+  keyboardType,
+  maxLength,
+}) {
+  return (
+    <View style={styles.field}>
+      <Text style={styles.label}>{label}</Text>
+      <TextInput
+        style={styles.input}
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor="#94A3B8"
+        secureTextEntry={secureTextEntry}
+        keyboardType={keyboardType || "default"}
+        autoCapitalize={
+          keyboardType === "email-address" ? "none" : "sentences"
+        }
+        maxLength={maxLength}
+      />
+    </View>
+  );
+}
+
+function PrimaryButton({ title, onPress, disabled, isSubmitting }) {
+  return (
+    <TouchableOpacity
+      style={[styles.primaryButton, disabled && { opacity: 0.7 }]}
+      onPress={onPress}
+      activeOpacity={0.85}
+      disabled={disabled}
+    >
+      {isSubmitting ? (
+        <ActivityIndicator color="#FFFFFF" size="small" />
+      ) : (
+        <Text style={styles.primaryButtonText}>{title}</Text>
+      )}
+    </TouchableOpacity>
+  );
+}
+
+function SwitchLink({ text, link, onPress }) {
+  return (
+    <View style={styles.switchRow}>
+      <Text style={styles.switchText}>{text} </Text>
+      <TouchableOpacity onPress={onPress}>
+        <Text style={styles.link}>{link}</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
 export default function AuthScreens({ onLogin, authError, isSubmitting }) {
   const [screen, setScreen] = useState("login");
   const [method, setMethod] = useState("email");
@@ -114,66 +172,6 @@ export default function AuthScreens({ onLogin, authError, isSubmitting }) {
     }
   }
 
-  function Field({
-    label,
-    value,
-    onChangeText,
-    placeholder,
-    secureTextEntry,
-    keyboardType,
-    maxLength,
-  }) {
-    return (
-      <View style={styles.field}>
-        <Text style={styles.label}>{label}</Text>
-        <TextInput
-          style={styles.input}
-          value={value}
-          onChangeText={(val) => {
-            setLocalError("");
-            onChangeText(val);
-          }}
-          placeholder={placeholder}
-          placeholderTextColor="#94A3B8"
-          secureTextEntry={secureTextEntry}
-          keyboardType={keyboardType || "default"}
-          autoCapitalize={
-            keyboardType === "email-address" ? "none" : "sentences"
-          }
-          maxLength={maxLength}
-        />
-      </View>
-    );
-  }
-
-  function PrimaryButton({ title, onPress, disabled }) {
-    return (
-      <TouchableOpacity
-        style={[styles.primaryButton, disabled && { opacity: 0.7 }]}
-        onPress={onPress}
-        activeOpacity={0.85}
-        disabled={disabled}
-      >
-        {isSubmitting ? (
-          <ActivityIndicator color="#FFFFFF" size="small" />
-        ) : (
-          <Text style={styles.primaryButtonText}>{title}</Text>
-        )}
-      </TouchableOpacity>
-    );
-  }
-
-  function SwitchLink({ text, link, onPress }) {
-    return (
-      <View style={styles.switchRow}>
-        <Text style={styles.switchText}>{text} </Text>
-        <TouchableOpacity onPress={onPress}>
-          <Text style={styles.link}>{link}</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
   function openOTP() {
     if (!email.trim()) {
       Alert.alert("Required", "Enter your email address first to reset password.");
@@ -223,7 +221,10 @@ export default function AuthScreens({ onLogin, authError, isSubmitting }) {
                 <Field
                   label="Email address"
                   value={email}
-                  onChangeText={setEmail}
+                  onChangeText={(val) => {
+                    setLocalError("");
+                    setEmail(val);
+                  }}
                   placeholder="Enter your email (e.g. student@abhyas.local)"
                   keyboardType="email-address"
                 />
@@ -231,7 +232,10 @@ export default function AuthScreens({ onLogin, authError, isSubmitting }) {
                 <Field
                   label="Password"
                   value={password}
-                  onChangeText={setPassword}
+                  onChangeText={(val) => {
+                    setLocalError("");
+                    setPassword(val);
+                  }}
                   placeholder="Enter your password"
                   secureTextEntry={!showPassword}
                 />
@@ -253,6 +257,7 @@ export default function AuthScreens({ onLogin, authError, isSubmitting }) {
                   title="Sign In"
                   onPress={handleLogin}
                   disabled={isSubmitting}
+                  isSubmitting={isSubmitting}
                 />
 
                 {/* 1-Tap Quick Demo Sign In */}
@@ -286,14 +291,20 @@ export default function AuthScreens({ onLogin, authError, isSubmitting }) {
                 <Field
                   label="Full name"
                   value={name}
-                  onChangeText={setName}
+                  onChangeText={(val) => {
+                    setLocalError("");
+                    setName(val);
+                  }}
                   placeholder="Enter your full name"
                 />
 
                 <Field
                   label="Email address"
                   value={email}
-                  onChangeText={setEmail}
+                  onChangeText={(val) => {
+                    setLocalError("");
+                    setEmail(val);
+                  }}
                   placeholder="you@example.com"
                   keyboardType="email-address"
                 />
@@ -301,7 +312,10 @@ export default function AuthScreens({ onLogin, authError, isSubmitting }) {
                 <Field
                   label="Mobile number"
                   value={mobile}
-                  onChangeText={setMobile}
+                  onChangeText={(val) => {
+                    setLocalError("");
+                    setMobile(val);
+                  }}
                   placeholder="10-digit mobile number"
                   keyboardType="phone-pad"
                   maxLength={10}
@@ -310,7 +324,10 @@ export default function AuthScreens({ onLogin, authError, isSubmitting }) {
                 <Field
                   label="Create password"
                   value={password}
-                  onChangeText={setPassword}
+                  onChangeText={(val) => {
+                    setLocalError("");
+                    setPassword(val);
+                  }}
                   placeholder="At least 6 characters"
                   secureTextEntry={!showPassword}
                 />
@@ -328,6 +345,7 @@ export default function AuthScreens({ onLogin, authError, isSubmitting }) {
                   title="Create Account"
                   onPress={handleSignup}
                   disabled={isSubmitting}
+                  isSubmitting={isSubmitting}
                 />
 
                 <SwitchLink
@@ -387,7 +405,14 @@ export default function AuthScreens({ onLogin, authError, isSubmitting }) {
                 <Field
                   label={method === "email" ? "Email address" : "Mobile number"}
                   value={contact}
-                  onChangeText={method === "email" ? setEmail : setMobile}
+                  onChangeText={(val) => {
+                    setLocalError("");
+                    if (method === "email") {
+                      setEmail(val);
+                    } else {
+                      setMobile(val);
+                    }
+                  }}
                   placeholder={
                     method === "email"
                       ? "Enter your email"
