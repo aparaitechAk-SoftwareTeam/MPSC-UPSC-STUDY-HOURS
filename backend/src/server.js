@@ -479,6 +479,49 @@ app.get('/api/admin/users', auth('admin'), (req, res) => {
   res.json(read().users.map(publicUser));
 });
 
+app.post('/api/admin/users', auth('admin'), (req, res) => {
+  const { name, email, password, role } = req.body;
+  const normalizedEmail = String(email || '').trim().toLowerCase();
+  const cleanPassword = String(password || '').trim();
+
+  if (!name || !normalizedEmail || !cleanPassword || cleanPassword.length < 8) {
+    return res.status(400).json({ error: 'Name, email, and password (8+ characters) required' });
+  }
+
+  const db = read();
+  if (db.users.some(u => u.email === normalizedEmail)) {
+    return res.status(409).json({ error: 'Email already registered' });
+  }
+
+  const user = {
+    id: Date.now().toString(),
+    name: String(name).trim(),
+    email: normalizedEmail,
+    role: role === 'admin' ? 'admin' : 'student',
+    passwordHash: bcrypt.hashSync(cleanPassword, 10)
+  };
+
+  db.users.push(user);
+  save(db);
+  res.status(201).json(publicUser(user));
+});
+
+app.delete('/api/admin/users/:id', auth('admin'), (req, res) => {
+  const db = read();
+  if (req.params.id === req.user.id) {
+    return res.status(400).json({ error: 'Cannot delete current logged-in administrator' });
+  }
+
+  const initialLength = db.users.length;
+  db.users = db.users.filter(u => u.id !== req.params.id);
+  if (db.users.length === initialLength) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+
+  save(db);
+  res.json({ ok: true, id: req.params.id });
+});
+
 app.get('/api/admin/subjects', auth('admin'), (req, res) => {
   res.json(read().subjects);
 });
@@ -506,6 +549,23 @@ app.post('/api/admin/subjects', auth('admin'), (req, res) => {
   res.status(201).json(subject);
 });
 
+app.put('/api/admin/subjects/:id', auth('admin'), (req, res) => {
+  const { name, paper, topics } = req.body;
+  const db = read();
+  const subject = db.subjects.find(s => s.id === req.params.id);
+
+  if (!subject) {
+    return res.status(404).json({ error: 'Subject not found' });
+  }
+
+  if (name && name.trim()) subject.name = name.trim();
+  if (paper && paper.trim()) subject.paper = paper.trim();
+  if (topics !== undefined) subject.topics = Math.max(0, Number(topics) || 0);
+
+  save(db);
+  res.json(subject);
+});
+
 app.delete('/api/admin/subjects/:id', auth('admin'), (req, res) => {
   const db = read();
 
@@ -515,6 +575,11 @@ app.delete('/api/admin/subjects/:id', auth('admin'), (req, res) => {
 
   save(db);
   res.json({ ok: true });
+});
+
+app.get('/api/admin/notifications', auth('admin'), (req, res) => {
+  const db = read();
+  res.json(db.notifications || []);
 });
 
 app.post('/api/admin/notifications', auth('admin'), (req, res) => {
@@ -531,8 +596,8 @@ app.post('/api/admin/notifications', auth('admin'), (req, res) => {
   const notification = {
     id: Date.now().toString(),
     userId: 'all',
-    title,
-    message,
+    title: title.trim(),
+    message: message.trim(),
     readBy: [],
     createdAt: new Date().toISOString()
   };
@@ -541,6 +606,28 @@ app.post('/api/admin/notifications', auth('admin'), (req, res) => {
   save(db);
 
   res.status(201).json(notification);
+});
+
+app.delete('/api/admin/notifications/:id', auth('admin'), (req, res) => {
+  const db = read();
+  db.notifications = (db.notifications || []).filter(n => n.id !== req.params.id);
+  save(db);
+  res.json({ ok: true, id: req.params.id });
+});
+
+app.get('/api/admin/sessions', auth('admin'), (req, res) => {
+  const db = read();
+  const enriched = (db.sessions || []).map(s => {
+    const u = db.users.find(user => user.id === s.userId);
+    const sub = db.subjects.find(subject => subject.id === s.subjectId);
+    return {
+      ...s,
+      userName: u?.name || 'Aspirant',
+      userEmail: u?.email || '',
+      subjectName: sub?.name || 'General'
+    };
+  });
+  res.json(enriched.sort((a, b) => (b.startedAt || '').localeCompare(a.startedAt || '')));
 });
 
 app.use((err, req, res, next) => {
