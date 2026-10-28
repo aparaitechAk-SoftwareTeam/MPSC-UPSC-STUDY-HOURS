@@ -1,11 +1,21 @@
 import { useSyncExternalStore } from "react";
 
+// ---------------------------------------------------------------------------
+// Profile store
+//
+// STORAGE NOTE: everything in this store lives in the browser's localStorage
+// (key: abhyas_admin_profile). The backend has no profile-update endpoint, so
+// edits here are NOT sent to the server. Identity fields (name, email, role)
+// are initially populated from the authenticated user via GET /api/me.
+// ---------------------------------------------------------------------------
+
 const STORAGE_KEY = "abhyas_admin_profile";
 
 const defaultState = {
-    fullName: "Aditya Pol",
-    email: "poladitya88@gmail.com",
-    phone: "+91 98765 43210",
+    userId: null,
+    fullName: "",
+    email: "",
+    phone: "",
     role: "Admin",
     emailNotifications: true,
     pushNotifications: true,
@@ -29,10 +39,14 @@ function loadInitialState() {
 
 let state = loadInitialState();
 
-// Sync theme immediately on load
-if (typeof document !== "undefined") {
-    document.documentElement.classList.toggle("dark", state.theme === "dark");
+function applyTheme() {
+    if (typeof document !== "undefined") {
+        document.documentElement.classList.toggle("dark", state.theme === "dark");
+    }
 }
+
+// Sync theme immediately on load (also applies to the login screen)
+applyTheme();
 
 const listeners = new Set();
 
@@ -48,24 +62,47 @@ function persistState() {
 
 export function setProfile(next) {
     state = { ...state, ...next };
-    if (typeof document !== "undefined") {
-        document.documentElement.classList.toggle("dark", state.theme === "dark");
-    }
+    applyTheme();
     persistState();
     listeners.forEach((l) => l());
 }
 
+// Populate identity from the authenticated user (GET /api/me or login response).
+// - A different user than last time: identity fields are replaced, local-only
+//   fields (phone) are cleared so one admin never sees another's local edits.
+// - Same user: local edits to name/email are kept; only blanks are filled.
+// - Role always comes from the server; it is not editable.
 export function initProfileFromUser(user) {
     if (!user) return;
-    setProfile({
-        fullName: user.name || user.fullName || state.fullName,
-        email: user.email || state.email,
-        role: user.role ? (user.role.charAt(0).toUpperCase() + user.role.slice(1)) : state.role,
-    });
+    const serverRole = user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : state.role;
+    if (state.userId !== user.id) {
+        setProfile({
+            userId: user.id ?? null,
+            fullName: user.name || user.fullName || "",
+            email: user.email || "",
+            phone: "",
+            role: serverRole,
+        });
+    } else {
+        setProfile({
+            fullName: state.fullName || user.name || "",
+            email: state.email || user.email || "",
+            role: serverRole,
+        });
+    }
+}
+
+// Called on sign-out: drop personal data from memory and localStorage, but keep
+// the theme choice so the login screen / next session looks as the user left it.
+export function signOutProfile() {
+    state = { ...defaultState, theme: state.theme };
+    persistState();
+    listeners.forEach((l) => l());
 }
 
 export function resetProfile() {
     state = { ...defaultState };
+    applyTheme();
     if (typeof window !== "undefined") {
         try {
             localStorage.removeItem(STORAGE_KEY);
@@ -83,7 +120,7 @@ export function useProfile() {
     return useSyncExternalStore(subscribe, () => state, () => state);
 }
 export function initials(name) {
-    return name.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0].toUpperCase()).join("") || "?";
+    return (name || "").split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0].toUpperCase()).join("") || "?";
 }
 export function validateProfile(p) {
     const errors = {};
@@ -91,9 +128,8 @@ export function validateProfile(p) {
         errors.fullName = "Enter your full name";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(p.email.trim()))
         errors.email = "Enter a valid email address";
-    if (!/^\+?[\d\s-]{10,15}$/.test(p.phone.trim()))
+    // Phone is optional (the backend has no phone field); validate only if provided.
+    if (p.phone.trim() && !/^\+?[\d\s-]{10,15}$/.test(p.phone.trim()))
         errors.phone = "Enter a valid phone number";
-    if (!p.role.trim())
-        errors.role = "Select a role";
     return errors;
 }

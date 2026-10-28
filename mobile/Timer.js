@@ -36,18 +36,12 @@ export default function Timer({
   customMinutes = 30,
   setCustomMinutes,
   focusMode = false,
-  zenMode='Light Zen',
-  setZenMode,
-  deepZenUnlocked=false,
-  setDeepZenUnlocked,
   setFocusMode,
   requestExitFocus,
+  theme,
+  isDarkMode = false,
 }) {
-  const deepZenLocked =
-  focusMode &&
-  zenMode === 'Deep Zen' &&
-  !deepZenUnlocked;
-
+  const C = theme || COLORS;
   const formatTime = (totalSeconds) => {
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = totalSeconds % 60;
@@ -73,32 +67,26 @@ export default function Timer({
   };
 
   return (
-    <View style={styles.container}>
-        
-{focusMode ? (
-  deepZenLocked ? (
-    <Text style={styles.subtitle}>
-      Deep Zen is locked. Complete the countdown to exit Focus Mode.
-    </Text>
-  ) : (
-    <TouchableOpacity
-      style={styles.focusButton}
-      onPress={requestExitFocus}
-    >
-      <Text style={styles.focusButtonText}>Exit Focus Mode</Text>
-    </TouchableOpacity>
-  )
-) : (
-  <TouchableOpacity
-    style={styles.focusButton}
-    onPress={() => setFocusMode(true)}
-  >
-    <Text style={styles.focusButtonText}>Enter Focus Mode</Text>
-  </TouchableOpacity>
-)}
+    <View style={[styles.container, { backgroundColor: C.bg }]}>
 
-      <Text style={styles.heading}>Study Timer</Text>
-      <Text style={styles.subtitle}>
+      {focusMode ? (
+        <TouchableOpacity
+          style={[styles.focusButton, isDarkMode && { backgroundColor: '#1e3a8a' }]}
+          onPress={requestExitFocus}
+        >
+          <Text style={[styles.focusButtonText, isDarkMode && { color: '#93c5fd' }]}>Exit Focus Mode</Text>
+        </TouchableOpacity>
+      ) : (
+        <TouchableOpacity
+          style={[styles.focusButton, isDarkMode && { backgroundColor: '#1e3a8a' }]}
+          onPress={() => setFocusMode(true)}
+        >
+          <Text style={[styles.focusButtonText, isDarkMode && { color: '#93c5fd' }]}>Enter Focus Mode</Text>
+        </TouchableOpacity>
+      )}
+
+      <Text style={[styles.heading, { color: C.ink }]}>Study Timer</Text>
+      <Text style={[styles.subtitle, { color: C.muted }]}>
         Track your study sessions and stay consistent.
       </Text>
       <Text style={[styles.label, { marginTop: 18 }]}>
@@ -149,14 +137,16 @@ export default function Timer({
             key={item}
             style={[
               styles.modeButton,
-              mode === item && styles.activeMode,
+              { backgroundColor: C.white, borderColor: C.line },
+              mode === item && { backgroundColor: C.blue, borderColor: C.blue },
             ]}
             onPress={() => changeMode(item)}
           >
             <Text
               style={[
                 styles.modeText,
-                mode === item && styles.activeModeText,
+                { color: C.muted },
+                mode === item && { color: '#ffffff', fontWeight: '700' },
               ]}
             >
               {item}
@@ -165,8 +155,8 @@ export default function Timer({
         ))}
       </View>
 
-      <View style={styles.card}>
-        <Text style={styles.label}>STUDY SUBJECT</Text>
+      <View style={[styles.card, { backgroundColor: C.white, borderColor: C.line }]}>
+        <Text style={[styles.label, { color: C.muted }]}>STUDY SUBJECT</Text>
 
         {subjects.length > 0 ? (
           <View style={styles.subjectList}>
@@ -180,89 +170,91 @@ export default function Timer({
                   key={String(id ?? name)}
                   style={[
                     styles.subjectButton,
-                    selected === id && styles.selectedSubject,
+                    { borderColor: C.line, backgroundColor: C.white },
+                    selected === id && { borderColor: C.blue, backgroundColor: C.soft },
                   ]}
                   disabled={!setSelected || running || elapsed > 0 || saving}
                   onPress={() => setSelected?.(id)}
                 >
-                  <Text style={styles.subjectText}>{name}</Text>
+                  <Text style={[styles.subjectText, { color: selected === id ? C.blue : C.ink, fontWeight: selected === id ? '700' : '400' }]}>{name}</Text>
                 </TouchableOpacity>
               );
             })}
           </View>
         ) : (
-          <Text style={styles.subtitle}>
+          <Text style={[styles.subtitle, { color: C.muted }]}>
             Your subjects will appear here when loaded.
           </Text>
         )}
-        
-
-{mode === 'Custom' && (
-  <View style={{ marginTop: 18 }}>
-    <Text style={styles.label}>CUSTOM DURATION</Text>
-
-    <View style={styles.subjectList}>
-      {[10, 15, 20, 30, 45, 60].map((minutes) => (
-        <TouchableOpacity
-          key={minutes}
-          style={[
-            styles.subjectButton,
-            customMinutes === minutes && styles.selectedSubject,
-          ]}
-          disabled={running || elapsed > 0 || saving}
-          onPress={() => setCustomMinutes?.(minutes)}
-        >
-          <Text style={styles.subjectText}>{minutes} min</Text>
-        </TouchableOpacity>
-      ))}
-    </View>
-
-    <Text style={[styles.label, { marginTop: 14 }]}>
-      OR ENTER YOUR OWN TIME (MINUTES)
-    </Text>
-
-    <TextInput
-      style={styles.durationInput}
-      value={String(customMinutes ?? '')}
-      onChangeText={(text) => {
-        if (/^\d*$/.test(text)) {
-          setCustomMinutes?.(text === '' ? '' : Number(text));
-        }
-      }}
-      keyboardType="number-pad"
-      placeholder="Enter minutes"
-      placeholderTextColor="#94A3B8"
-      editable={!running && elapsed === 0 && !saving}
-    />
-  </View>
-)}
 
 
-    
-        <View style={styles.timerCircle}>
-          <Text style={styles.timerLabel}>STUDY TIME</Text>
-          <Text style={styles.time}>
-  {formatTime(
-  mode === 'Pomodoro'
-    ? Math.max(0, 25 * 60 - elapsed)
-    : mode === 'Custom'
-    ? Math.max(0, customMinutes * 60 - elapsed)
-    : elapsed
-)}
-</Text>
-          <Text style={styles.status}>
+        {mode === 'Custom' && (
+          <View style={{ marginTop: 18 }}>
+            <Text style={[styles.label, { color: C.muted }]}>CUSTOM DURATION</Text>
+
+            <View style={styles.subjectList}>
+              {[10, 15, 20, 30, 45, 60].map((minutes) => (
+                <TouchableOpacity
+                  key={minutes}
+                  style={[
+                    styles.subjectButton,
+                    { borderColor: C.line, backgroundColor: C.white },
+                    customMinutes === minutes && { borderColor: C.blue, backgroundColor: C.soft },
+                  ]}
+                  disabled={running || elapsed > 0 || saving}
+                  onPress={() => setCustomMinutes?.(minutes)}
+                >
+                  <Text style={[styles.subjectText, { color: customMinutes === minutes ? C.blue : C.ink, fontWeight: customMinutes === minutes ? '700' : '400' }]}>{minutes} min</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text style={[styles.label, { color: C.muted, marginTop: 14 }]}>
+              OR ENTER YOUR OWN TIME (MINUTES)
+            </Text>
+
+            <TextInput
+              style={[styles.durationInput, { backgroundColor: C.white, borderColor: C.line, color: C.ink }]}
+              value={String(customMinutes ?? '')}
+              onChangeText={(text) => {
+                if (/^\d*$/.test(text)) {
+                  setCustomMinutes?.(text === '' ? '' : Number(text));
+                }
+              }}
+              keyboardType="number-pad"
+              placeholder="Enter minutes"
+              placeholderTextColor={C.muted}
+              editable={!running && elapsed === 0 && !saving}
+            />
+          </View>
+        )}
+
+
+
+        <View style={[styles.timerCircle, { borderColor: C.soft }]}>
+          <Text style={[styles.timerLabel, { color: C.muted }]}>STUDY TIME</Text>
+          <Text style={[styles.time, { color: C.ink }]}>
+            {formatTime(
+              mode === 'Pomodoro'
+                ? Math.max(0, 25 * 60 - elapsed)
+                : mode === 'Custom'
+                  ? Math.max(0, customMinutes * 60 - elapsed)
+                  : elapsed
+            )}
+          </Text>
+          <Text style={[styles.status, { color: C.muted }]}>
             {saving
               ? 'Saving session...'
               : running
-              ? 'Session in progress'
-              : elapsed > 0
-              ? 'Session paused'
-              : 'Ready to focus'}
+                ? 'Session in progress'
+                : elapsed > 0
+                  ? 'Session paused'
+                  : 'Ready to focus'}
           </Text>
         </View>
 
         <TouchableOpacity
-          style={[styles.primaryButton, saving && styles.disabledButton]}
+          style={[styles.primaryButton, { backgroundColor: C.blue }, saving && styles.disabledButton]}
           disabled={saving}
           onPress={running ? pauseSession : startSession}
         >
@@ -270,21 +262,19 @@ export default function Timer({
             {saving
               ? 'Saving...'
               : running
-              ? 'Pause Session'
-              : elapsed > 0
-              ? 'Resume Session'
-              : 'Start Session'}
+                ? 'Pause Session'
+                : elapsed > 0
+                  ? 'Resume Session'
+                  : 'Start Session'}
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.secondaryButton,
-            deepZenLocked && styles.disabledButton,]
-          }
-          disabled={saving || deepZenLocked}
+          style={[styles.secondaryButton, { backgroundColor: C.soft }]}
+          disabled={saving}
           onPress={finish}
         >
-          <Text style={styles.secondaryText}>Finish & Save Session</Text>
+          <Text style={[styles.secondaryText, { color: C.blue }]}>Finish & Save Session</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -293,7 +283,7 @@ export default function Timer({
           disabled={saving || deepZenLocked}
           onPress={resetSession}
         >
-          <Text style={styles.resetText}>Reset Timer</Text>
+          <Text style={[styles.resetText, { color: C.muted }]}>Reset Timer</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -301,18 +291,18 @@ export default function Timer({
 }
 
 const styles = StyleSheet.create({
-    focusButton: {
-  backgroundColor: '#E0EFFF',
-  paddingVertical: 12,
-  paddingHorizontal: 16,
-  borderRadius: 12,
-  alignItems: 'center',
-  marginBottom: 16,
-},
-focusButtonText: {
-  color: '#1D4ED8',
-  fontWeight: '700',
-},
+  focusButton: {
+    backgroundColor: '#E0EFFF',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  focusButtonText: {
+    color: '#1D4ED8',
+    fontWeight: '700',
+  },
   container: {
     flex: 1,
     backgroundColor: COLORS.bg,
@@ -330,16 +320,16 @@ focusButtonText: {
     lineHeight: 20,
   },
   durationInput: {
-  borderWidth: 1,
-  borderColor: '#CBD5E1',
-  borderRadius: 10,
-  padding: 12,
-  marginTop: 8,
-  color: '#0F172A',
-  backgroundColor: '#FFFFFF',
-  textAlign: 'center',
-  fontSize: 18,
-},
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    borderRadius: 10,
+    padding: 12,
+    marginTop: 8,
+    color: '#0F172A',
+    backgroundColor: '#FFFFFF',
+    textAlign: 'center',
+    fontSize: 18,
+  },
   modeRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
