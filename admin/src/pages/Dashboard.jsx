@@ -40,6 +40,41 @@ function KpiCard({ icon: Icon, label, value, trend, tone, subtext }) {
   );
 }
 
+function computeLast7DaysFromSessions(sessions = [], today = new Date()) {
+  const result = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    d.setHours(0, 0, 0, 0);
+
+    const nextD = new Date(d);
+    nextD.setDate(d.getDate() + 1);
+
+    const daySessions = sessions.filter((s) => {
+      if (!s.startedAt) return false;
+      const sDate = new Date(s.startedAt);
+      return sDate >= d && sDate < nextD;
+    });
+
+    const totalMinutes = daySessions.reduce((acc, s) => acc + (Number(s.minutes) || 0), 0);
+    const hours = parseFloat((totalMinutes / 60).toFixed(1));
+
+    result.push({
+      day: d.toLocaleDateString("en-IN", { weekday: "short" }),
+      date: d.toLocaleDateString("en-IN", { day: "numeric", month: "short" }),
+      hours,
+    });
+  }
+  return result;
+}
+
+function computeWeeklyGoal(days, targetHours = 50) {
+  const completed = parseFloat(days.reduce((acc, d) => acc + (Number(d.hours) || 0), 0).toFixed(1));
+  const remaining = Math.max(0, parseFloat((targetHours - completed).toFixed(1)));
+  const percent = Math.min(100, Math.round((completed / targetHours) * 100));
+  return { goal: targetHours, completed, remaining, percent };
+}
+
 export function Dashboard({
   overview,
   subjects: externalSubjects,
@@ -49,14 +84,27 @@ export function Dashboard({
   isRefreshing,
   onSignOut,
 } = {}) {
-  const isDemo = !overview;
-  const today = useToday();
-  const days = useMemo(() => (today ? getLast7Days(today) : []), [today]);
-  const goal = getWeeklyGoal();
-
-  const activeSubjects = externalSubjects?.length ? externalSubjects : fallbackSubjects;
   const sessions = externalSessions || [];
   const notificationsList = externalNotifications || [];
+  const isDemo = !overview && sessions.length === 0;
+  const today = useToday();
+
+  const days = useMemo(() => {
+    if (!today) return [];
+    if (sessions.length > 0) {
+      return computeLast7DaysFromSessions(sessions, today);
+    }
+    return isDemo ? getLast7Days(today) : computeLast7DaysFromSessions([], today);
+  }, [today, sessions, isDemo]);
+
+  const goal = useMemo(() => {
+    if (sessions.length > 0) {
+      return computeWeeklyGoal(days, 50);
+    }
+    return isDemo ? getWeeklyGoal() : computeWeeklyGoal(days, 50);
+  }, [days, sessions, isDemo]);
+
+  const activeSubjects = externalSubjects?.length ? externalSubjects : fallbackSubjects;
 
   const totalStudents = overview?.users ?? stats.totalStudents;
   const subjectsCount = overview?.subjects ?? activeSubjects.length;

@@ -80,7 +80,13 @@ function App() {
         if (us) setUsers(us);
         if (subs) setSubjects(subs);
         if (sess) setSessions(sess);
-        if (notifs) setNotifications(notifs);
+        if (notifs) {
+          setNotifications(notifs);
+          try {
+            localStorage.setItem('abhyas_admin_notif_count', String(notifs.length));
+            window.dispatchEvent(new Event('abhyas:notifications_updated'));
+          } catch {}
+        }
 
         if (isManualRefresh) {
           toast.success('Data refreshed from server');
@@ -127,7 +133,7 @@ function App() {
 
       if (!res.ok) throw new Error(d.error || 'Invalid credentials');
       if (d.user?.role !== 'admin') {
-        throw new Error('This account has Student role. Please use the Student App at http://localhost:8083 or sign in with admin@abhyas.local');
+        throw new Error('This account has Student role. Please use the Student App at http://localhost:8082 or sign in with admin@abhyas.local');
       }
 
       localStorage.setItem('abhyas_admin_token', d.token);
@@ -147,6 +153,8 @@ function App() {
   function handleSignOut() {
     localStorage.removeItem('abhyas_admin_token');
     localStorage.removeItem('abhyas_admin_profile');
+    localStorage.removeItem('abhyas_admin_notif_count');
+    try { window.dispatchEvent(new Event('abhyas:notifications_updated')); } catch {}
     setToken('');
     setOverview(null);
     setUsers([]);

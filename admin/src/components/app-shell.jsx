@@ -4,7 +4,7 @@ import { LayoutDashboard, Users, BookOpen, Bell, UserRound, Settings, LogOut, Gr
 import { toast } from "sonner";
 import { initials, useProfile } from "@/lib/profile-store";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, } from "@/components/ui/alert-dialog";
-import { notifications } from "@/data/mock";
+
 import { cn } from "@/lib/utils";
 const nav = [
     { to: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -13,6 +13,28 @@ const nav = [
     { to: "/notifications", label: "Notifications", icon: Bell },
     { to: "/profile", label: "Profile", icon: UserRound },
 ];
+export function useNotificationCount() {
+    const [count, setCount] = useState(() => {
+        try {
+            const stored = localStorage.getItem("abhyas_admin_notif_count");
+            return stored !== null ? Number(stored) : 0;
+        } catch {
+            return 0;
+        }
+    });
+    useEffect(() => {
+        const handleUpdate = () => {
+            try {
+                const stored = localStorage.getItem("abhyas_admin_notif_count");
+                setCount(stored !== null ? Number(stored) : 0);
+            } catch {}
+        };
+        window.addEventListener("abhyas:notifications_updated", handleUpdate);
+        return () => window.removeEventListener("abhyas:notifications_updated", handleUpdate);
+    }, []);
+    return count;
+}
+
 export function useToday() {
     const [now, setNow] = useState(null);
     useEffect(() => {
@@ -74,7 +96,7 @@ function Sidebar({ onNavigate, onSignOut }) {
         {nav.map((n) => (<Link key={n.to} to={n.to} onClick={onNavigate} className={itemCls} activeProps={{ className: activeCls }} activeOptions={{ exact: true }}>
             <n.icon className="h-[18px] w-[18px]"/>
             {n.label}
-            {n.label === "Notifications" && (<span className="ml-auto rounded-full bg-destructive px-1.5 text-[11px] font-semibold text-destructive-foreground">{notifications.length}</span>)}
+            {n.label === "Notifications" && notifCount > 0 && (<span className="ml-auto rounded-full bg-destructive px-1.5 text-[11px] font-semibold text-destructive-foreground">{notifCount}</span>)}
           </Link>))}
       </nav>
       <div className="mt-auto flex flex-col gap-1 border-t border-sidebar-border px-3 py-4">

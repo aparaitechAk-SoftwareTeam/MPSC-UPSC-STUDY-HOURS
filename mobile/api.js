@@ -8,16 +8,13 @@ import { Platform, NativeModules } from 'react-native';
 export const getCandidateApiUrls = () => {
   const candidates = [];
 
-  // 1. Web browser:
+  // 1. Web browser: prioritize the exact origin/host the page is currently loaded from
   if (Platform.OS === 'web' && typeof window !== 'undefined' && window.location?.hostname) {
     const host = window.location.hostname;
-    // 127.0.0.1 avoids DNS lookup completely and connects instantly on any Wi-Fi
-    candidates.push('http://127.0.0.1:4000/api');
-    candidates.push('http://localhost:4000/api');
-
-    if (host && host !== 'localhost' && host !== '127.0.0.1') {
-      candidates.push(`http://${host}:4000/api`);
-    }
+    // Matching host prevents CORS mismatch and preflight/PNA issues
+    candidates.push(`http://${host}:4000/api`);
+    if (host !== 'localhost') candidates.push('http://localhost:4000/api');
+    if (host !== '127.0.0.1') candidates.push('http://127.0.0.1:4000/api');
   }
 
   // 2. Metro Bundler dynamic host (Expo Go on physical mobile devices / emulators)
@@ -35,14 +32,14 @@ export const getCandidateApiUrls = () => {
   }
 
   // 4. Standard local loopback endpoints
-  candidates.push('http://127.0.0.1:4000/api');
   candidates.push('http://localhost:4000/api');
+  candidates.push('http://127.0.0.1:4000/api');
 
   // De-duplicate while preserving candidate priority
   return Array.from(new Set(candidates.filter(Boolean)));
 };
 
-let cachedApiBase = getCandidateApiUrls()[0] || 'http://127.0.0.1:4000/api';
+let cachedApiBase = getCandidateApiUrls()[0] || 'http://localhost:4000/api';
 
 /**
  * Returns the currently active working API base URL.
@@ -50,9 +47,7 @@ let cachedApiBase = getCandidateApiUrls()[0] || 'http://127.0.0.1:4000/api';
 export const getApiBase = () => {
   if (Platform.OS === 'web' && typeof window !== 'undefined' && window.location?.hostname) {
     const currentHost = window.location.hostname;
-    if (currentHost === 'localhost' || currentHost === '127.0.0.1') {
-      return cachedApiBase || 'http://127.0.0.1:4000/api';
-    }
+    return `http://${currentHost}:4000/api`;
   }
   return cachedApiBase;
 };
@@ -63,8 +58,7 @@ export const setApiBase = (url) => {
 
 /**
  * Smart, resilient API fetch that automatically fails over between candidates.
- * Uses adaptive timeout: 1.5s for loopback/localhost and 3.5s for external hosts.
- * Prevents requests from hanging on dead or stale Wi-Fi IP addresses.
+ * Uses 30s timeout to allow background operations without hanging prematurely.
  */
 export async function smartApiFetch(route, options = {}) {
   const path = route.startsWith('/') ? route : '/' + route;
@@ -80,10 +74,7 @@ export async function smartApiFetch(route, options = {}) {
     const base = candidates[i];
     const fullUrl = base + path;
 
-    // 12s timeout for local loopback, 15s for LAN/remote (allows SMTP email dispatch)
-    const isLocal = base.includes('127.0.0.1') || base.includes('localhost');
-    const defaultTimeout = isLocal ? 12000 : 15000;
-    const timeoutMs = options.timeout || defaultTimeout;
+    const timeoutMs = options.timeout || 30000;
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -106,6 +97,10 @@ export async function smartApiFetch(route, options = {}) {
       // Network error or timeout: seamlessly attempt the next candidate host
       continue;
     }
+  }
+
+  if (lastError && (lastError.name === 'AbortError' || String(lastError.message).toLowerCase().includes('abort'))) {
+    throw new Error('Connection timed out. Please verify the server is running and try again.');
   }
 
   throw lastError || new Error(`Cannot connect to server. Tried: ${candidates.join(', ')}`);

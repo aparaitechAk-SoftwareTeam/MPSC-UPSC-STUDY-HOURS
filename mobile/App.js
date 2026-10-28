@@ -723,18 +723,14 @@ export default function App() {
     try {
       for (const slot of studySlots) {
         const titleText = slot.title[lang] || slot.title.en;
-        await smartApiFetch('/plans', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: titleText,
-            subjectId: slot.defaultSubjectId,
-            exam: 'UPSC',
-            minutes: slot.durationMinutes,
-            priority: slot.slotNumber === '1ST SLOT' ? 'High' : 'Medium',
-            date: targetDateStr,
-            done: false
-          })
+        await req('/plan', 'POST', {
+          title: titleText,
+          subjectId: slot.defaultSubjectId,
+          exam: 'UPSC',
+          minutes: slot.durationMinutes,
+          priority: slot.slotNumber === '1ST SLOT' ? 'High' : 'Medium',
+          date: targetDateStr,
+          done: false
         });
       }
       await refresh();

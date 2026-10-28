@@ -365,22 +365,35 @@ export default function AuthScreens({
       );
       return data;
     } catch (e) {
-      setLocalError(e.message);
+      const msg = (e.message && e.message.includes("fetch"))
+        ? "Unable to reach server. Please ensure the backend server is running on port 4000."
+        : e.message;
+      setLocalError(msg);
       return null;
     }
+  }
+
+  // Helper to strictly validate email format
+  function isEmailValid(val) {
+    return Boolean(val) && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(val).trim());
   }
 
   // --- Login with Password ---
   function handlePasswordLogin() {
     setLocalError("");
-    if (!email.trim() || !password) {
-      setLocalError("Please enter your email and password.");
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail || !isEmailValid(trimmedEmail)) {
+      setLocalError("Invalid credentials");
+      return;
+    }
+    if (!password) {
+      setLocalError("Invalid credentials");
       return;
     }
 
     if (typeof onLogin === "function") {
       onLogin({
-        email: email.trim(),
+        email: trimmedEmail,
         password,
         isRegister: false,
       });
@@ -390,13 +403,14 @@ export default function AuthScreens({
   // --- Initiate Sign Up: Send OTP ---
   async function handleStartSignUp() {
     setLocalError("");
-    if (!name.trim() || !email.trim() || !mobile.trim() || !password) {
-      setLocalError("Please complete all registration fields.");
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail || !isEmailValid(trimmedEmail)) {
+      setLocalError("Invalid credentials");
       return;
     }
 
-    if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
-      setLocalError("Please enter a valid email address.");
+    if (!name.trim() || !mobile.trim() || !password) {
+      setLocalError("Please complete all registration fields.");
       return;
     }
 
@@ -415,11 +429,16 @@ export default function AuthScreens({
       return;
     }
 
-    const target = method === "email" ? email.trim() : mobile.trim();
-    const result = await requestOtp(target, "signup");
-    if (result) {
-      setOtp("");
-      setScreen("verify-otp");
+    setIsLocalSubmitting(true);
+    try {
+      const target = method === "email" ? trimmedEmail : mobile.trim();
+      const result = await requestOtp(target, "signup");
+      if (result) {
+        setOtp("");
+        setScreen("verify-otp");
+      }
+    } finally {
+      setIsLocalSubmitting(false);
     }
   }
 
@@ -544,7 +563,10 @@ export default function AuthScreens({
 
       setScreen("forgot-reset");
     } catch (e) {
-      setLocalError(e.message);
+      const msg = (e.message && e.message.includes("fetch"))
+        ? "Unable to reach server. Please ensure the backend server is running on port 4000."
+        : e.message;
+      setLocalError(msg);
     } finally {
       setIsLocalSubmitting(false);
     }
@@ -586,7 +608,10 @@ export default function AuthScreens({
       setSuccessMsg("Password successfully reset! You can now sign in with your new credentials.");
       setScreen("forgot-success");
     } catch (e) {
-      setLocalError(e.message);
+      const msg = (e.message && e.message.includes("fetch"))
+        ? "Unable to reach server. Please ensure the backend server is running on port 4000."
+        : e.message;
+      setLocalError(msg);
     } finally {
       setIsLocalSubmitting(false);
     }
@@ -1143,8 +1168,10 @@ export default function AuthScreens({
                 </View>
 
                 <PrimaryButton
-                  title="Send Verification Code & Continue"
+                  title={isLocalSubmitting ? "Sending verification code..." : "Send Verification Code & Continue"}
                   onPress={handleStartSignUp}
+                  disabled={isSubmitting || isLocalSubmitting}
+                  isSubmitting={isLocalSubmitting}
                 />
 
                 <SwitchLink
@@ -1164,7 +1191,32 @@ export default function AuthScreens({
             {/* ============================================================== */}
             {screen === "verify-otp" && (
               <View style={[styles.card, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
-                <Text style={[styles.heading, { color: theme.heading }]}>Verify Your Code</Text>
+                <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                  <Text style={[styles.heading, { color: theme.heading, marginBottom: 0 }]}>Verify Your Code</Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setLocalError("");
+                      setNoticeMsg("");
+                      setScreen("signup");
+                    }}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 4,
+                      paddingVertical: 5,
+                      paddingHorizontal: 10,
+                      borderRadius: 8,
+                      backgroundColor: isDark ? "#1e293b" : "#F1F5F9",
+                      borderWidth: 1,
+                      borderColor: isDark ? "#334155" : "#E2E8F0"
+                    }}
+                  >
+                    <Ionicons name="arrow-back" size={13} color={theme.link} />
+                    <Text style={[styles.link, { color: theme.link, fontSize: 12, fontWeight: "700" }]}>
+                      Back
+                    </Text>
+                  </TouchableOpacity>
+                </View>
                 <Text style={[styles.subtitle, { color: theme.subtitle }]}>
                   Please enter the 6-digit verification code sent to{" "}
                   <Text style={{ fontWeight: "700", color: theme.highlightText }}>
@@ -1172,21 +1224,40 @@ export default function AuthScreens({
                   </Text>
                 </Text>
 
+                {/* 6 Digit Box Inputs */}
                 <SixDigitInput
                   otp={otp}
                   setOtp={setOtp}
                   onComplete={(code) => handleCompleteSignUp(code)}
                 />
 
+                {/* Clear Full-Width Direct OTP Input Space for 100% Reliability */}
+                <Field
+                  label="Or enter 6-digit OTP code directly"
+                  value={otp}
+                  onChangeText={(val) => {
+                    setLocalError("");
+                    const cleaned = val.replace(/\D/g, "").slice(0, 6);
+                    setOtp(cleaned);
+                    if (cleaned.length === 6) {
+                      handleCompleteSignUp(cleaned);
+                    }
+                  }}
+                  placeholder="Enter 6-digit OTP (e.g. 123456)"
+                  keyboardType="number-pad"
+                  maxLength={6}
+                />
+
                 <PrimaryButton
-                  title="Verify & Create Account"
+                  title={isLocalSubmitting ? "Verifying code..." : "Verify & Create Account"}
                   onPress={() => handleCompleteSignUp(otp)}
-                  disabled={otp.length < 6}
+                  disabled={otp.length < 6 || isLocalSubmitting}
+                  isSubmitting={isLocalSubmitting}
                 />
 
                 <View style={styles.resendRow}>
                   {canResend ? (
-                    <TouchableOpacity onPress={() => handleStartSignUp()}>
+                    <TouchableOpacity onPress={() => handleStartSignUp()} disabled={isLocalSubmitting}>
                       <Text style={[styles.resendLink, { color: theme.resendLink }]}>Resend Code Now</Text>
                     </TouchableOpacity>
                   ) : (
@@ -1209,7 +1280,32 @@ export default function AuthScreens({
             {/* ============================================================== */}
             {screen === "forgot-contact" && (
               <View style={[styles.card, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
-                <Text style={[styles.heading, { color: theme.heading }]}>Forgot Password</Text>
+                <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                  <Text style={[styles.heading, { color: theme.heading, marginBottom: 0 }]}>Forgot Password</Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setLocalError("");
+                      setNoticeMsg("");
+                      setScreen("login");
+                    }}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 4,
+                      paddingVertical: 5,
+                      paddingHorizontal: 10,
+                      borderRadius: 8,
+                      backgroundColor: isDark ? "#1e293b" : "#F1F5F9",
+                      borderWidth: 1,
+                      borderColor: isDark ? "#334155" : "#E2E8F0"
+                    }}
+                  >
+                    <Ionicons name="arrow-back" size={13} color={theme.link} />
+                    <Text style={[styles.link, { color: theme.link, fontSize: 12, fontWeight: "700" }]}>
+                      Sign In
+                    </Text>
+                  </TouchableOpacity>
+                </View>
                 <Text style={[styles.subtitle, { color: theme.subtitle }]}>
                   Choose whether you want to identify via Email or Mobile. The OTP verification code will be dispatched to your registered email.
                 </Text>
@@ -1309,7 +1405,32 @@ export default function AuthScreens({
             {/* ============================================================== */}
             {screen === "forgot-otp" && (
               <View style={[styles.card, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
-                <Text style={[styles.heading, { color: theme.heading }]}>Enter Verification Code</Text>
+                <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                  <Text style={[styles.heading, { color: theme.heading, marginBottom: 0 }]}>Enter Verification Code</Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setLocalError("");
+                      setNoticeMsg("");
+                      setScreen("forgot-contact");
+                    }}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 4,
+                      paddingVertical: 5,
+                      paddingHorizontal: 10,
+                      borderRadius: 8,
+                      backgroundColor: isDark ? "#1e293b" : "#F1F5F9",
+                      borderWidth: 1,
+                      borderColor: isDark ? "#334155" : "#E2E8F0"
+                    }}
+                  >
+                    <Ionicons name="arrow-back" size={13} color={theme.link} />
+                    <Text style={[styles.link, { color: theme.link, fontSize: 12, fontWeight: "700" }]}>
+                      Back
+                    </Text>
+                  </TouchableOpacity>
+                </View>
                 <Text style={[styles.subtitle, { color: theme.subtitle }]}>
                   Enter the 6-digit code received on{" "}
                   <Text style={{ fontWeight: "700", color: theme.highlightText }}>
@@ -1365,6 +1486,15 @@ export default function AuthScreens({
                   link="Change Contact"
                   onPress={() => setScreen("forgot-contact")}
                 />
+                <SwitchLink
+                  text="Remembered your password?"
+                  link="Back to Sign In"
+                  onPress={() => {
+                    setLocalError("");
+                    setNoticeMsg("");
+                    setScreen("login");
+                  }}
+                />
               </View>
             )}
 
@@ -1373,7 +1503,32 @@ export default function AuthScreens({
             {/* ============================================================== */}
             {screen === "forgot-reset" && (
               <View style={[styles.card, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
-                <Text style={[styles.heading, { color: theme.heading }]}>Set New Password</Text>
+                <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                  <Text style={[styles.heading, { color: theme.heading, marginBottom: 0 }]}>Set New Password</Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setLocalError("");
+                      setNoticeMsg("");
+                      setScreen("login");
+                    }}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 4,
+                      paddingVertical: 5,
+                      paddingHorizontal: 10,
+                      borderRadius: 8,
+                      backgroundColor: isDark ? "#1e293b" : "#F1F5F9",
+                      borderWidth: 1,
+                      borderColor: isDark ? "#334155" : "#E2E8F0"
+                    }}
+                  >
+                    <Ionicons name="arrow-back" size={13} color={theme.link} />
+                    <Text style={[styles.link, { color: theme.link, fontSize: 12, fontWeight: "700" }]}>
+                      Sign In
+                    </Text>
+                  </TouchableOpacity>
+                </View>
                 <Text style={[styles.subtitle, { color: theme.subtitle }]}>
                   Create a strong new password for your account.
                 </Text>
@@ -1438,6 +1593,27 @@ export default function AuthScreens({
                   title="Update Password & Continue"
                   onPress={handleSaveNewPassword}
                 />
+
+                <View style={{ marginTop: 12 }}>
+                  <SwitchLink
+                    text="Need to re-enter verification code?"
+                    link="Back to OTP"
+                    onPress={() => {
+                      setLocalError("");
+                      setNoticeMsg("");
+                      setScreen("forgot-otp");
+                    }}
+                  />
+                  <SwitchLink
+                    text="Remembered your password?"
+                    link="Back to Sign In"
+                    onPress={() => {
+                      setLocalError("");
+                      setNoticeMsg("");
+                      setScreen("login");
+                    }}
+                  />
+                </View>
               </View>
             )}
 

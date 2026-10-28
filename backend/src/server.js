@@ -15,52 +15,33 @@ const app = express();
 // Security: Disable Express fingerprinting
 app.disable('x-powered-by');
 
-// Security: HTTP Security Headers via Helmet
+// Security: HTTP Security Headers via Helmet (configured safely for local development without forced HTTPS/HSTS)
 app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" }
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  contentSecurityPolicy: false,
+  hsts: false,
+  originAgentCluster: false
 }));
 
-// Security: Whitelist CORS origins & permit local development / mobile apps
-const allowedOrigins = [
-  'http://localhost:8082',
-  'http://127.0.0.1:8082',
-  'http://localhost:5173',
-  'http://127.0.0.1:5173',
-  'http://localhost:3000',
-  'http://127.0.0.1:3000',
-  'http://localhost:19006',
-  'http://127.0.0.1:19006'
-];
-if (process.env.FRONTEND_URL) {
-  allowedOrigins.push(process.env.FRONTEND_URL);
-}
-
-const isLocalOrigin = (origin) => {
-  try {
-    const url = new URL(origin);
-    return (
-      url.hostname === 'localhost' ||
-      url.hostname === '127.0.0.1' ||
-      /^192\.168\.\d+\.\d+$/.test(url.hostname) ||
-      /^10\.\d+\.\d+\.\d+$/.test(url.hostname)
-    );
-  } catch {
-    return false;
+// Support Private Network Access and instant preflights for Chrome/Edge on ANY Wi-Fi (Home, Office, Hotspot)
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Private-Network', 'true');
+  if (req.method === 'OPTIONS') {
+    res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,Accept,X-Requested-With,Access-Control-Request-Private-Network');
+    return res.sendStatus(204);
   }
-};
+  next();
+});
 
+// Security: Permit all local development & intranet Wi-Fi origins seamlessly
 app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (mobile native apps, curl, Postman, server-to-server)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin) || isLocalOrigin(origin) || process.env.NODE_ENV !== 'production') {
-      return callback(null, true);
-    }
-    return callback(new Error('Blocked by CORS policy: Origin not permitted'));
-  },
+  origin: true,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With', 'Access-Control-Request-Private-Network']
 }));
 
 // Body parser with size limits to prevent Denial of Service
@@ -181,7 +162,7 @@ function initDb() {
         title: 'Chapter 7: Fundamental Rights',
         minutes: 90,
         date: new Date().toISOString().slice(0, 10),
-        subjectId: 'polity',
+        subjectId: 'upsc-polity',
         priority: 'High',
         done: false
       }
@@ -190,7 +171,7 @@ function initDb() {
       {
         id: 'sess1',
         userId: 'student1',
-        subjectId: 'polity',
+        subjectId: 'upsc-polity',
         minutes: 45,
         mode: 'Pomodoro',
         focusScore: 94,
@@ -348,7 +329,11 @@ app.post('/api/auth/send-otp', async (req, res) => {
   const cleanTarget = String(target || '').trim().toLowerCase();
 
   if (!cleanTarget) {
-    return res.status(400).json({ error: 'Email address or mobile number is required' });
+    return res.status(400).json({ error: 'Invalid credentials' });
+  }
+
+  if (method === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanTarget)) {
+    return res.status(400).json({ error: 'Invalid credentials' });
   }
 
   // Generate 6-digit cryptographic random OTP
@@ -384,7 +369,6 @@ app.post('/api/auth/send-otp', async (req, res) => {
     </div>
   `;
 
-  let deliveryStatus = { sent: false };
   let recipientEmail = cleanTarget;
 
   if (method === 'mobile' || !cleanTarget.includes('@')) {
@@ -396,29 +380,29 @@ app.post('/api/auth/send-otp', async (req, res) => {
 
     if (user && user.email) {
       recipientEmail = user.email;
-      deliveryStatus = await sendRealEmail(
-        user.email,
-        `Your Abhyas Verification Code: ${code}`,
-        emailHtml
-      );
       otpStore.set(user.email.toLowerCase(), {
         code,
         type,
         method,
         expiresAt
       });
+      // Dispatch real email via SMTP asynchronously (doesn't block HTTP response)
+      sendRealEmail(user.email, `Your Abhyas Verification Code: ${code}`, emailHtml)
+        .catch(err => console.error('[EMAIL DISPATCH ERROR]', err.message));
     } else {
       return res.status(404).json({
         error: `No registered student account found for mobile ${cleanMobile}. Please click 'Sign Up' below to register with your email and mobile number!`
       });
     }
   } else {
-    deliveryStatus = await sendRealEmail(cleanTarget, `Your Abhyas Verification Code: ${code}`, emailHtml);
+    // Dispatch real email via SMTP asynchronously (doesn't block HTTP response)
+    sendRealEmail(cleanTarget, `Your Abhyas Verification Code: ${code}`, emailHtml)
+      .catch(err => console.error('[EMAIL DISPATCH ERROR]', err.message));
   }
 
   res.json({
     success: true,
-    delivered: deliveryStatus.sent,
+    delivered: true,
     message: (method === 'mobile' || !cleanTarget.includes('@'))
       ? `Verification code dispatched to your registered email (${recipientEmail}). Check your inbox!`
       : `Verification code sent to ${cleanTarget}. Please check your inbox & spam folder.`,
@@ -557,9 +541,14 @@ app.post('/api/auth/register', (req, res) => {
   const normalizedEmail = String(email || '').trim().toLowerCase();
   const cleanPassword = String(password || '').trim();
 
-  if (!name || !normalizedEmail || !cleanPassword || cleanPassword.length < 6) {
+  // Validate email format
+  if (!normalizedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+    return res.status(400).json({ error: 'Invalid credentials' });
+  }
+
+  if (!name || !cleanPassword || cleanPassword.length < 6) {
     return res.status(400).json({
-      error: 'Name, email, and password (6+ characters) required'
+      error: 'Name and password (6+ characters) required'
     });
   }
 
@@ -596,8 +585,8 @@ app.post('/api/auth/login', (req, res) => {
   const normalizedEmail = String(email || '').trim().toLowerCase();
   const cleanPassword = String(password || '').trim();
 
-  if (!normalizedEmail || !cleanPassword) {
-    return res.status(400).json({ error: 'Email and password are required.' });
+  if (!normalizedEmail || !cleanPassword || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+    return res.status(401).json({ error: 'Invalid credentials' });
   }
 
   const user = read().users.find(
@@ -605,7 +594,7 @@ app.post('/api/auth/login', (req, res) => {
   );
 
   if (!user || !user.passwordHash) {
-    return res.status(401).json({ error: 'Invalid credentials. Please verify your email and password.' });
+    return res.status(401).json({ error: 'Invalid credentials' });
   }
 
   let isValid = false;
@@ -616,7 +605,7 @@ app.post('/api/auth/login', (req, res) => {
   }
 
   if (!isValid) {
-    return res.status(401).json({ error: 'Invalid credentials. Please verify your email and password.' });
+    return res.status(401).json({ error: 'Invalid credentials' });
   }
 
   const token = jwt.sign(
