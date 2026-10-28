@@ -3,3 +3,22 @@
 **/.expo/
 **/dist/
 backend/data/db.json
+
+# Local Android debug keystore
+**/debug.keystore
+
+# Local database backups
+backend/data/*backup*.json
+backend/data/db.pre-*.json
+
+# Local source-code backup files
+**/*.backup
+**/*.backup-*
+**/*.before-*
+**/*.bak
+**/*-backup-*.js
+**/server.mongodb-backup.js
+**/server.json-backup-*.js
+**/App.js.*-backup*
+**/App.js.*backup*
+**/App.js.*version.txt

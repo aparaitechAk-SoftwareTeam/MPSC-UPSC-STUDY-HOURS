@@ -1,5 +1,6 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
+  AppState,
   View,
   Text,
   TextInput,
@@ -10,34 +11,49 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
-  StyleSheet
+  NativeModules
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Svg, { Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
+import Timer from './Timer';
 
 const C = {
   bg: '#f7f9fe',
-  white: '#ffffff',
+  white: '#fff',
   ink: '#142841',
   muted: '#72849f',
   blue: '#37689f',
-  blueLight: '#edf3fc',
   mid: '#80a9e5',
   soft: '#e9f0fc',
   line: '#e8eef8',
-  light: '#dce8fb',
-  green: '#10b981',
-  greenSoft: '#ecfdf5',
-  amber: '#f59e0b',
-  amberSoft: '#fffbeb',
-  purple: '#8b5cf6',
-  purpleSoft: '#f5f3ff',
-  red: '#ef4444',
-  redSoft: '#fef2f2'
+  light: '#dce8fb'
 };
 
-const API = process.env.EXPO_PUBLIC_API_URL || (Platform.OS === 'android' ? 'http://10.0.2.2:4000/api' : 'http://localhost:4000/api');
+const API =
+  process.env.EXPO_PUBLIC_API_URL ||
+  (Platform.OS === 'android'
+    ? 'http://192.168.1.5:4000/api'
+    : 'http://localhost:4000/api');
+const card = {
+  backgroundColor: C.white,
+  borderRadius: 20,
+  padding: 18,
+  marginBottom: 14,
+  borderWidth: 1,
+  borderColor: '#edf2fc'
+};
+
+const input = {
+  backgroundColor: C.white,
+  borderWidth: 1,
+  borderColor: C.line,
+  borderRadius: 12,
+  paddingHorizontal: 15,
+  paddingVertical: 12,
+  marginTop: 11,
+  color: C.ink
+};
 
 const txt = (size = 14, bold = false, color = C.ink) => ({
   fontSize: size,
@@ -46,149 +62,115 @@ const txt = (size = 14, bold = false, color = C.ink) => ({
 });
 
 const today = () => new Date().toISOString().slice(0, 10);
-const tomorrow = () => {
-  const d = new Date();
-  d.setDate(d.getDate() + 1);
-  return d.toISOString().slice(0, 10);
-};
 
-const SYLLABUS_TOPICS = {
-  polity: [
-    { id: 'polity-1', name: 'Preamble & Salient Features', chapter: 'Basics of Constitution' },
-    { id: 'polity-2', name: 'Fundamental Rights (Articles 12–35)', chapter: 'Part III' },
-    { id: 'polity-3', name: 'Directive Principles & Fundamental Duties', chapter: 'Part IV & IV-A' },
-    { id: 'polity-4', name: 'Union Executive & Parliament', chapter: 'Union Government' },
-    { id: 'polity-5', name: 'Supreme Court & Judicial Review', chapter: 'Judiciary' },
-    { id: 'polity-6', name: 'Center-State Relations & Federalism', chapter: 'Federal System' },
-    { id: 'polity-7', name: 'Panchayati Raj & Urban Local Bodies', chapter: 'Local Self-Govt' },
-    { id: 'polity-8', name: 'Constitutional Bodies (Election Comm, UPSC, CAG)', chapter: 'Institutions' }
-  ],
-  history: [
-    { id: 'history-1', name: 'Revolt of 1857 & Early Resistance', chapter: 'British Expansion' },
-    { id: 'history-2', name: 'Socio-Religious Reform Movements', chapter: 'Social Awakening' },
-    { id: 'history-3', name: 'INC Foundation & Moderate-Extremist Era', chapter: 'Early Nationalism' },
-    { id: 'history-4', name: 'Swadeshi & Home Rule Movements', chapter: 'Mass Struggle' },
-    { id: 'history-5', name: 'Gandhian Era (Non-Cooperation & Salt March)', chapter: 'Gandhian Phase' },
-    { id: 'history-6', name: 'Quit India Movement & INA Trials', chapter: 'Towards Freedom' },
-    { id: 'history-7', name: 'Peasant, Tribal & Working Class Struggles', chapter: 'People’s Movements' },
-    { id: 'history-8', name: 'Partition & Post-Independence Consolidation', chapter: 'Integration' }
-  ],
-  economy: [
-    { id: 'economy-1', name: 'National Income Accounting & GDP Metrics', chapter: 'Macro Fundamentals' },
-    { id: 'economy-2', name: 'Inflation Indices (CPI/WPI) & Monetary Policy', chapter: 'Prices & RBI' },
-    { id: 'economy-3', name: 'Fiscal Policy, Union Budget & Deficits', chapter: 'Public Finance' },
-    { id: 'economy-4', name: 'Banking Structure, IBC & NPA Resolution', chapter: 'Financial System' },
-    { id: 'economy-5', name: 'Agriculture, MSP, Subsidies & Food Security', chapter: 'Primary Sector' },
-    { id: 'economy-6', name: 'External Sector, Balance of Payments & Forex', chapter: 'Foreign Trade' },
-    { id: 'economy-7', name: 'Poverty Measurement & Inclusive Growth', chapter: 'Human Development' },
-    { id: 'economy-8', name: 'Infrastructure, Industrial Policy & FDI', chapter: 'Economic Reforms' }
-  ],
-  geography: [
-    { id: 'geography-1', name: 'Geomorphology & Plate Tectonics', chapter: 'Physical Geology' },
-    { id: 'geography-2', name: 'Climatology, Wind Belts & Cyclones', chapter: 'Atmosphere' },
-    { id: 'geography-3', name: 'Ocean Currents & Marine Resources', chapter: 'Oceanography' },
-    { id: 'geography-4', name: 'Physiographic Divisions of India', chapter: 'Indian Geography' },
-    { id: 'geography-5', name: 'Himalayan & Peninsular River Systems', chapter: 'Drainage' },
-    { id: 'geography-6', name: 'Indian Monsoon Dynamics & Rainfall Patterns', chapter: 'Indian Climate' },
-    { id: 'geography-7', name: 'Soils, Natural Vegetation & Wildlife Parks', chapter: 'Biogeography' },
-    { id: 'geography-8', name: 'Mineral Belts & Energy Resources of India', chapter: 'Economic Resources' }
-  ]
-};
-
-function Chip({ label, active, onPress, style }) {
+function Chip({ label, active, onPress }) {
   return (
     <TouchableOpacity
       onPress={onPress}
-      style={[
-        {
-          backgroundColor: active ? C.blue : C.soft,
-          paddingHorizontal: 13,
-          paddingVertical: 8,
-          borderRadius: 20,
-          marginRight: 8,
-          marginBottom: 8
-        },
-        style
-      ]}
+      style={{
+        backgroundColor: active ? C.blue : C.soft,
+        paddingHorizontal: 13,
+        paddingVertical: 9,
+        borderRadius: 21,
+        marginRight: 7,
+        marginBottom: 6
+      }}
     >
-      <Text style={txt(12, true, active ? C.white : C.blue)}>{label}</Text>
+      <Text style={txt(11, true, active ? 'white' : C.blue)}>
+        {label}
+      </Text>
     </TouchableOpacity>
   );
 }
 
 function Card({ children, style }) {
-  return (
-    <View
-      style={[
-        {
-          backgroundColor: C.white,
-          borderRadius: 18,
-          padding: 16,
-          marginBottom: 14,
-          borderWidth: 1,
-          borderColor: '#edf2fc'
-        },
-        style
-      ]}
-    >
-      {children}
-    </View>
-  );
+  return <View style={[card, style]}>{children}</View>;
 }
 
 function Title({ children, sub }) {
   return (
     <View style={{ marginBottom: 16 }}>
-      <Text style={txt(22, true)}>{children}</Text>
-      {sub ? <Text style={[txt(12, false, C.muted), { marginTop: 4, lineHeight: 18 }]}>{sub}</Text> : null}
+      <Text style={txt(23, true)}>{children}</Text>
+      {sub && (
+        <Text
+          style={[
+            txt(12, false, C.muted),
+            { marginTop: 5, lineHeight: 17 }
+          ]}
+        >
+          {sub}
+        </Text>
+      )}
     </View>
   );
 }
 
-function Ring({ value = 65, size = 150, label = 'Mastered' }) {
+function Ring({ value = 65, size = 160, label = 'Mastered' }) {
   const r = (size - 18) / 2;
-  const co = 2 * Math.PI * r;
-  const clamped = Math.max(0, Math.min(100, value));
+  const circumference = 2 * Math.PI * r;
+  const safeValue = Math.max(0, Math.min(100, value));
+
   return (
-    <View style={{ alignItems: 'center', justifyContent: 'center', width: size, height: size }}>
-      <Svg width={size} height={size} style={{ position: 'absolute', transform: [{ rotate: '-90deg' }] }}>
-        <Circle cx={size / 2} cy={size / 2} r={r} stroke={C.soft} strokeWidth={9} fill="none" />
+    <View
+      style={{
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: size,
+        height: size
+      }}
+    >
+      <Svg
+        width={size}
+        height={size}
+        style={{
+          position: 'absolute',
+          transform: [{ rotate: '-90deg' }]
+        }}
+      >
         <Circle
           cx={size / 2}
           cy={size / 2}
           r={r}
-          stroke={C.blue}
+          stroke={C.soft}
+          strokeWidth={9}
+          fill="none"
+        />
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          stroke={C.mid}
           strokeWidth={9}
           strokeLinecap="round"
           fill="none"
-          strokeDasharray={`${(co * clamped) / 100} ${co}`}
+          strokeDasharray={`${circumference * safeValue / 100} ${circumference}`}
         />
       </Svg>
-      <Text style={txt(24, true)}>{clamped}%</Text>
+
+      <Text style={txt(25, true)}>{safeValue}%</Text>
       <Text style={txt(11, false, C.muted)}>{label}</Text>
     </View>
   );
 }
 
-function Button({ label, onPress, subtle = false, danger = false, style, textStyle }) {
-  const bg = danger ? C.redSoft : subtle ? C.soft : C.blue;
-  const fg = danger ? C.red : subtle ? C.blue : C.white;
+function Button({ label, onPress, subtle = false, disabled = false }) {
   return (
     <TouchableOpacity
       onPress={onPress}
-      style={[
-        {
-          backgroundColor: bg,
-          borderRadius: 12,
-          paddingVertical: 12,
-          paddingHorizontal: 16,
-          alignItems: 'center',
-          marginTop: 9
-        },
-        style
-      ]}
+      disabled={disabled}
+      style={{
+        backgroundColor: subtle ? C.soft : C.blue,
+        borderRadius: 12,
+        paddingVertical: 13,
+        paddingHorizontal: 17,
+        alignItems: 'center',
+        marginTop: 9,
+        opacity: disabled ? 0.55 : 1
+      }}
     >
-      <Text style={[txt(13, true, fg), textStyle]}>{label}</Text>
+      <Text style={txt(13, true, subtle ? C.blue : C.white)}>
+        {label}
+      </Text>
     </TouchableOpacity>
   );
 }
@@ -202,254 +184,634 @@ export default function App() {
   const [register, setRegister] = useState(false);
   const [name, setName] = useState('');
   const [tab, setTab] = useState('Dashboard');
+  const [focusMode, setFocusMode] = useState(false);
+  const [zenMode, setZenMode] = useState('Light Zen');
+  const [deepZenUnlocked, setDeepZenUnlocked] = useState(false);
+  const deepZenLocked =
+  focusMode && zenMode === 'Deep Zen' && !deepZenUnlocked;
+  const [deepZenInterruptions, setDeepZenInterruptions] = useState(0);
+  const appStateRef = useRef(AppState.currentState);
 
-  // Core Data
+  // Reset confirmation state belongs inside the App component.
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
+  const [exitFocusConfirmOpen, setExitFocusConfirmOpen] = useState(false);
+
   const [subjects, setSubjects] = useState([]);
   const [sessions, setSessions] = useState([]);
   const [plans, setPlans] = useState([]);
   const [notes, setNotes] = useState([]);
   const [analytics, setAnalytics] = useState({});
-  const [topicProgress, setTopicProgress] = useState([]);
+  const [analyticsRange, setAnalyticsRange] = useState('7');
 
-  // Timer State
   const [elapsed, setElapsed] = useState(0);
   const [running, setRunning] = useState(false);
   const [selected, setSelected] = useState('polity');
-  const [sessionTopicTitle, setSessionTopicTitle] = useState('Chapter 7: Fundamental Rights');
   const [mode, setMode] = useState('Pomodoro');
+  const [customMinutes, setCustomMinutes] = useState(30);
 
-  // Planner State
-  const [plannerView, setPlannerView] = useState("Today's Plan");
   const [planTitle, setPlanTitle] = useState('');
   const [planMinutes, setPlanMinutes] = useState('45');
-  const [planSubject, setPlanSubject] = useState('polity');
-  const [planPriority, setPlanPriority] = useState('Medium');
-  const [planDateType, setPlanDateType] = useState('today');
-
-  // Syllabus State
-  const [expandedSubject, setExpandedSubject] = useState('polity');
-
   const [notifOpen, setNotifOpen] = useState(false);
-  const interval = useRef(null);
 
-  async function req(route, method = 'GET', body, t = token) {
-    const r = await fetch(API + route, {
+  // Timer and save reliability references.
+  const interval = useRef(null);
+  const savingSession = useRef(false);
+  const activeStartedAt = useRef(null);
+  const elapsedBase = useRef(0);
+  const autoSaveTriggered = useRef(false);
+  const nativePinningActive = useRef(false);
+  const pinningPromptAttempted = useRef(false);
+
+  // Android screen pinning for an active Deep Zen countdown.
+  useEffect(() => {
+    if (Platform.OS !== 'android' || !NativeModules.FocusLock) {
+      return;
+    }
+
+    const shouldPin = deepZenLocked && (running || elapsed > 0);
+
+    
+    if (
+      shouldPin &&
+      !nativePinningActive.current &&
+      !pinningPromptAttempted.current
+    ) {
+      pinningPromptAttempted.current = true;
+
+      NativeModules.FocusLock.startPinning()
+        .then((status) => {
+          nativePinningActive.current = Boolean(status?.active);
+
+          if (status?.mode !== 'LOCKED') {
+            console.warn(
+              'Deep Zen enforcement status:',
+              status?.mode ?? 'UNKNOWN'
+            );
+          }
+        })
+        .catch((error) => {
+          nativePinningActive.current = false;
+          console.warn('Deep Zen screen pinning failed:', error);
+
+          Alert.alert(
+            'Screen pinning unavailable',
+            'Android could not start screen pinning. Strict app-switch prevention is not guaranteed on this device.'
+          );
+        });
+    } else if (!shouldPin && nativePinningActive.current) {
+      nativePinningActive.current = false;
+
+      NativeModules.FocusLock.stopPinning().catch((error) => {
+        console.warn('Could not stop screen pinning:', error);
+      });
+    }
+  }, [deepZenLocked, running, elapsed]);
+
+  // Recheck Android screen pinning when Abhyas returns to the foreground.
+  useEffect(() => {
+    if (Platform.OS !== 'android' || !NativeModules.FocusLock) {
+      return;
+    }
+
+    let checking = false;
+    let mounted = true;
+
+    const shouldKeepLocked = () =>
+      deepZenLocked && (running || elapsed > 0);
+
+    const subscription = AppState.addEventListener(
+      'change',
+      async (nextState) => {
+        if (
+          nextState !== 'active' ||
+          !shouldKeepLocked() ||
+          checking
+        ) {
+          return;
+        }
+
+        checking = true;
+
+        try {
+          const status =
+            await NativeModules.FocusLock.getPinningStatus();
+
+          if (!mounted || !shouldKeepLocked()) {
+            return;
+          }
+
+          nativePinningActive.current = status.active;
+
+          
+
+          if (!status.active) {
+            pinningPromptAttempted.current = true;
+
+            const newStatus =
+              await NativeModules.FocusLock.startPinning();
+
+            if (mounted) {
+              nativePinningActive.current = Boolean(newStatus?.active);
+
+              if (newStatus?.mode !== 'LOCKED') {
+                console.warn(
+                  'Deep Zen recovery mode:',
+                  newStatus?.mode ?? 'UNKNOWN'
+                );
+              }
+            }
+          }
+
+        } catch (error) {
+          nativePinningActive.current = false;
+          console.warn(
+            'Deep Zen foreground lock recovery failed:',
+            error
+          );
+        } finally {
+          checking = false;
+        }
+      }
+    );
+
+    return () => {
+      mounted = false;
+      subscription.remove();
+    };
+  }, [deepZenLocked, running, elapsed]);
+
+  // Track when a student leaves Abhyas during an active Deep Zen session.
+useEffect(() => {
+  if (Platform.OS !== 'android') {
+    return;
+  }
+
+  const subscription = AppState.addEventListener(
+    'change',
+    (nextState) => {
+      const previousState = appStateRef.current;
+      appStateRef.current = nextState;
+
+      const sessionActive =
+        deepZenLocked && running && !deepZenUnlocked;
+
+      const leftApp =
+        previousState === 'active' &&
+        (nextState === 'background' || nextState === 'inactive');
+
+      if (sessionActive && leftApp) {
+        setDeepZenInterruptions((count) => count + 1);
+
+        console.warn(
+          'Deep Zen interruption detected: Abhyas left the foreground.'
+        );
+      }
+
+      if (
+        sessionActive &&
+        nextState === 'active' &&
+        previousState !== 'active'
+      ) {
+        Alert.alert(
+          'Stay focused',
+          'You left Abhyas during Deep Zen. Return to your study session and continue focusing.'
+        );
+      }
+    }
+  );
+
+  return () => subscription.remove();
+}, [deepZenLocked, running, deepZenUnlocked]);
+
+  
+async function req(route, method = 'GET', body, t = token) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+  try {
+    const response = await fetch(API + route, {
       method,
       headers: {
         'Content-Type': 'application/json',
         Authorization: 'Bearer ' + t
       },
-      body: body ? JSON.stringify(body) : undefined
+      body: body ? JSON.stringify(body) : undefined,
+      signal: controller.signal
     });
-    const d = await r.json();
-    if (!r.ok) throw Error(d.error || 'Request failed');
-    return d;
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw Error(data.error || 'Request failed');
+    }
+
+    return data;
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      throw Error('Server is not responding. Check the backend connection and try again.');
+    }
+
+    if (
+      error instanceof TypeError ||
+      error.message === 'Network request failed'
+    ) {
+      throw Error('Cannot connect to the server. Check that the backend is running.');
+    }
+
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
   }
+}
+
 
   async function refresh(t = token) {
     try {
-      const [s, h, p, n, a, tp] = await Promise.all([
-        req('/subjects', 'GET', null, t),
-        req('/sessions', 'GET', null, t),
-        req('/plan', 'GET', null, t),
-        req('/notifications', 'GET', null, t),
-        req('/analytics', 'GET', null, t),
-        req('/topic-progress', 'GET', null, t).catch(() => [])
-      ]);
-      setSubjects(s);
-      setSessions(h);
-      setPlans(p);
-      setNotes(n);
-      setAnalytics(a);
-      setTopicProgress(tp || []);
-    } catch (e) {
-      Alert.alert('Connection error', e.message);
+      const [
+        subjectData,
+        historyData,
+        planData,
+        noteData,
+        analyticsData
+      ] = await Promise.all(
+        [
+          '/subjects',
+          '/sessions',
+          '/plan',
+          '/notifications',
+          '/analytics'
+        ].map(route => req(route, 'GET', null, t))
+      );
+
+      setSubjects(subjectData);
+      setSessions(historyData);
+      setPlans(planData);
+      setNotes(noteData);
+      setAnalytics(analyticsData);
+
+      return true;
+    } catch (error) {
+      Alert.alert('Connection error', error.message);
+      return false;
     }
   }
 
+  // Restore authentication on app startup.
   useEffect(() => {
-    AsyncStorage.getItem('abhyasToken').then(async t => {
-      if (t) {
-        try {
-          const me = await req('/me', 'GET', null, t);
-          setToken(t);
-          setUser(me.user);
-          await refresh(t);
-        } catch {
-          await AsyncStorage.removeItem('abhyasToken');
+    let mounted = true;
+
+    async function restoreLogin() {
+      try {
+        const savedToken = await AsyncStorage.getItem('abhyasToken');
+
+        if (savedToken) {
+          try {
+            const response = await req('/me', 'GET', null, savedToken);
+
+            if (!mounted) return;
+
+            setToken(savedToken);
+            setUser(response.user);
+            await refresh(savedToken);
+          } catch {
+            await AsyncStorage.removeItem('abhyasToken');
+          }
         }
+      } catch (error) {
+        console.error('Unable to restore login:', error);
+      } finally {
+        if (mounted) setLoading(false);
       }
-      setLoading(false);
-    });
+    }
+
+    restoreLogin();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
+  // Update the display using timestamps rather than counting timer ticks.
+  
+  // Update the timer using timestamps and automatically save completed Pomodoro sessions.
+ 
+  // Update timer using timestamps and automatically save completed countdowns.
   useEffect(() => {
-    if (running) interval.current = setInterval(() => setElapsed(v => v + 1), 1000);
-    return () => clearInterval(interval.current);
-  }, [running]);
-
-  async function login() {
-    try {
-      const res = await fetch(API + '/auth/' + (register ? 'register' : 'login'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email: loginEmail, password })
-      });
-      const d = await res.json();
-      if (!res.ok) throw Error(d.error || 'Unable to sign in');
-      if (d.user.role !== 'student') throw Error('Use a student account');
-      setToken(d.token);
-      setUser(d.user);
-      await AsyncStorage.setItem('abhyasToken', d.token);
-      await refresh(d.token);
-    } catch (e) {
-      Alert.alert('Sign in error', e.message);
-    }
-  }
-
-  async function finish() {
-    setRunning(false);
-    let mins = Math.max(1, Math.round(elapsed / 60));
-    try {
-      await req('/sessions', 'POST', { subjectId: selected, minutes: mins, focusScore: 94, mode });
-      setElapsed(0);
-      await refresh();
-      Alert.alert('Session saved', `${mins} minute(s) logged for ${subjects.find(x => x.id === selected)?.name || selected}!`);
-    } catch (e) {
-      Alert.alert('Error', e.message);
-    }
-  }
-
-  // Planner actions
-  async function addPlan() {
-    if (!planTitle.trim()) {
-      Alert.alert('Input needed', 'Please enter a topic or chapter title.');
+    if (!running || activeStartedAt.current === null) {
       return;
     }
-    const targetDate = planDateType === 'tomorrow' ? tomorrow() : today();
+
+    const countdownSeconds =
+      mode === 'Pomodoro'
+        ? 25 * 60
+        : mode === 'Custom'
+        ? customMinutes * 60
+        : null;
+
+    interval.current = setInterval(() => {
+      const activeSeconds = Math.floor(
+        (Date.now() - activeStartedAt.current) / 1000
+      );
+
+      const nextElapsed = elapsedBase.current + activeSeconds;
+
+      if (
+        countdownSeconds !== null &&
+        nextElapsed >= countdownSeconds
+      ) {
+        // Freeze actual active study time at the selected duration.
+        elapsedBase.current = countdownSeconds;
+        activeStartedAt.current = null;
+
+        setElapsed(countdownSeconds);
+        setRunning(false);
+        setDeepZenUnlocked(true);
+
+        // Trigger the existing save flow once.
+        if (!autoSaveTriggered.current) {
+          autoSaveTriggered.current = true;
+          void finish(true);
+        }
+
+        return;
+      }
+
+      setElapsed(nextElapsed);
+    }, 250);
+
+    return () => {
+      if (interval.current) {
+        clearInterval(interval.current);
+        interval.current = null;
+      }
+    };
+  }, [running, mode, customMinutes]);
+
+
+
+
+  // Clean up the timer interval when the component unmounts.
+  useEffect(() => {
+    return () => {
+      if (interval.current) {
+        clearInterval(interval.current);
+        interval.current = null;
+      }
+    };
+  }, []);
+
+  
+  async function login() {
+    const loginUrl = API + '/auth/' + (register ? 'register' : 'login');
+
+    try {
+      console.log('[LOGIN DEBUG] API:', API);
+      console.log('[LOGIN DEBUG] Request URL:', loginUrl);
+
+      let response;
+
+      try {
+        response = await fetch(loginUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name,
+            email: loginEmail,
+            password
+          })
+        });
+      } catch (networkError) {
+        throw Error(
+          'LOGIN REQUEST FAILED\nURL: ' + loginUrl +
+          '\nError: ' + String(networkError)
+        );
+      }
+
+      console.log('[LOGIN DEBUG] HTTP status:', response.status);
+
+      let data;
+
+      try {
+        data = await response.json();
+      } catch {
+        throw Error('Login response was not valid JSON. HTTP status: ' + response.status);
+      }
+
+      if (!response.ok) {
+        throw Error(data.error || 'Unable to sign in. HTTP status: ' + response.status);
+      }
+
+      if (!data.user || data.user.role !== 'student') {
+        throw Error('Invalid response or non-student account.');
+      }
+
+      setToken(data.token);
+      setUser(data.user);
+
+      await AsyncStorage.setItem('abhyasToken', data.token);
+
+      try {
+        await refresh(data.token);
+      } catch (refreshError) {
+        throw Error(
+          'LOGIN SUCCEEDED, BUT DATA REFRESH FAILED: ' +
+          String(refreshError)
+        );
+      }
+    } catch (error) {
+      console.log('[LOGIN DEBUG] Failure:', String(error));
+      Alert.alert('Sign in diagnostics', String(error));
+    }
+  }
+
+
+  // Start a new session or resume a paused session.
+  
+
+  function startSession() {
+    if (savingSession.current) return;
+    if (activeStartedAt.current !== null) return;
+
+    if (focusMode && zenMode === 'Deep Zen' && elapsed === 0) {
+      pinningPromptAttempted.current = false;
+    }
+
+
+  const limitSeconds =
+    mode === 'Pomodoro'
+      ? 25 * 60
+      : mode === 'Custom'
+      ? customMinutes * 60
+      : null;
+
+  if (limitSeconds !== null && elapsed >= limitSeconds) {
+    Alert.alert(
+      'Timer complete',
+      'Your countdown has finished. Save the session or reset the timer before starting again.'
+    );
+    return;
+  }
+
+  activeStartedAt.current = Date.now();
+  setRunning(true);
+}
+
+
+  // Accumulate only active study time.
+  function pauseSession() {
+    if (savingSession.current) return;
+    if (activeStartedAt.current === null) return;
+
+    const activeSeconds = Math.floor(
+      (Date.now() - activeStartedAt.current) / 1000
+    );
+
+    elapsedBase.current += activeSeconds;
+    activeStartedAt.current = null;
+
+    setElapsed(elapsedBase.current);
+    setRunning(false);
+  }
+
+  // Open the in-app reset confirmation dialog.
+  function resetSession() {
+    if (savingSession.current || deepZenLocked) return;
+    setResetConfirmOpen(true);
+  }
+
+  // Cancel must not change the timer or elapsed time.
+  function cancelReset() {
+    setResetConfirmOpen(false);
+  }
+
+  // Confirmed reset stops the timer and clears elapsed time.
+  function confirmReset() {
+    if (savingSession.current || deepZenLocked) return;
+
+    if (interval.current) {
+      clearInterval(interval.current);
+      interval.current = null;
+    }
+
+    activeStartedAt.current = null;
+    elapsedBase.current = 0;
+
+    setRunning(false);
+    setElapsed(0);
+    setResetConfirmOpen(false);
+  }
+
+  // Save the session with a synchronous duplicate-submit guard.
+  async function finish(automatic = false) {
+  if (savingSession.current || (deepZenLocked && !automatic)) return;
+
+    const finalElapsed =
+      elapsedBase.current +
+      (activeStartedAt.current !== null
+        ? Math.floor(
+            (Date.now() - activeStartedAt.current) / 1000
+          )
+        : 0);
+
+    if (finalElapsed <= 0) {
+      Alert.alert('No study time', 'Start a session before saving.');
+      return;
+    }
+
+    savingSession.current = true;
+
+    // Freeze the timer at its final duration.
+    activeStartedAt.current = null;
+    elapsedBase.current = finalElapsed;
+
+    setRunning(false);
+    setElapsed(finalElapsed);
+
+    const minutes = Math.max(1, Math.round(finalElapsed / 60));
+
+    try {
+      await req('/sessions', 'POST', {
+        subjectId: selected,
+        minutes,
+        focusScore: 94,
+        mode
+      });
+
+      // Clear timer state only after the POST succeeds.
+      elapsedBase.current = 0;
+      activeStartedAt.current = null;
+      setElapsed(0);
+
+      const refreshed = await refresh();
+
+      if (refreshed) {
+        Alert.alert('Session saved', `${minutes} minute(s) logged`);
+      } else {
+        Alert.alert(
+          'Session submitted',
+          'The server accepted your session, but history could not be refreshed. Reopen Analytics to verify it.'
+        );
+      }
+    } catch (error) {
+      // Keep the time available for a retry.
+      elapsedBase.current = finalElapsed;
+      activeStartedAt.current = null;
+
+      setElapsed(finalElapsed);
+      setRunning(false);
+
+      Alert.alert(
+        'Save failed',
+        `Your timer value has been kept. Check your connection before retrying.\n\n${error.message}`
+      );
+    } finally {
+      savingSession.current = false;
+    }
+  }
+
+  async function addPlan() {
+    if (!planTitle.trim()) return;
+
     try {
       await req('/plan', 'POST', {
-        title: planTitle.trim(),
+        title: planTitle,
         minutes: Number(planMinutes) || 45,
-        date: targetDate,
-        subjectId: planSubject,
-        priority: planPriority
+        date: today(),
+        subjectId: selected
       });
+
       setPlanTitle('');
       await refresh();
-      Alert.alert('Task Planned', `Scheduled for ${planDateType === 'tomorrow' ? 'Tomorrow' : 'Today'}!`);
-    } catch (e) {
-      Alert.alert('Error', e.message);
+    } catch (error) {
+      Alert.alert('Error', error.message);
     }
   }
 
-  async function markPlan(p) {
+  async function markPlan(plan) {
     try {
-      await req('/plan/' + p.id, 'PATCH', { done: !p.done });
-      await refresh();
-    } catch (e) {
-      Alert.alert('Error', e.message);
-    }
-  }
-
-  async function deletePlan(p) {
-    try {
-      await req('/plan/' + p.id, 'DELETE');
-      await refresh();
-    } catch (e) {
-      Alert.alert('Error', e.message);
-    }
-  }
-
-  function startPlanFocus(p) {
-    if (p.subjectId) setSelected(p.subjectId);
-    setSessionTopicTitle(p.title);
-    setTab('Timer');
-  }
-
-  // Syllabus actions
-  async function updateTopicStatus(topic, currentStatus, subjectId) {
-    const cycle = {
-      'Not Started': 'In Progress',
-      'In Progress': 'Completed',
-      'Completed': 'To Revise',
-      'To Revise': 'Not Started'
-    };
-    const nextStatus = cycle[currentStatus] || 'In Progress';
-
-    // Optimistic UI update
-    setTopicProgress(prev => {
-      const idx = prev.findIndex(item => item.topicId === topic.id);
-      if (idx >= 0) {
-        const updated = [...prev];
-        updated[idx] = { ...updated[idx], status: nextStatus, subjectId };
-        return updated;
-      }
-      return [...prev, { topicId: topic.id, subjectId, status: nextStatus }];
-    });
-
-    try {
-      await req('/topic-progress/' + topic.id, 'PATCH', { status: nextStatus, subjectId });
-      await refresh();
-    } catch (e) {
-      Alert.alert('Error updating topic', e.message);
-      refresh();
-    }
-  }
-
-  async function quickScheduleTopic(topic, subName, subId) {
-    try {
-      await req('/plan', 'POST', {
-        title: `${subName}: ${topic.name}`,
-        minutes: 45,
-        date: today(),
-        subjectId: subId,
-        priority: 'High'
+      await req('/plan/' + plan.id, 'PATCH', {
+        done: !plan.done
       });
-      Alert.alert('Scheduled!', `"${topic.name}" added to today's study planner.`);
+
       await refresh();
-      setTab('Planner');
-    } catch (e) {
-      Alert.alert('Error', e.message);
+    } catch (error) {
+      Alert.alert('Error', error.message);
     }
   }
 
-  async function markNote(n) {
+  async function markNote(note) {
     try {
-      await req('/notifications/' + n.id + '/read', 'PATCH');
-      refresh();
-    } catch (e) {
-      Alert.alert('Error', e.message);
+      await req('/notifications/' + note.id + '/read', 'PATCH');
+      await refresh();
+    } catch (error) {
+      Alert.alert('Error', error.message);
     }
   }
-
-  // Dynamic syllabus calculations
-  const syllabusStats = useMemo(() => {
-    let totalTopicsCount = 0;
-    let completedTopicsCount = 0;
-    let inProgressCount = 0;
-    let toReviseCount = 0;
-
-    Object.entries(SYLLABUS_TOPICS).forEach(([sId, topics]) => {
-      topics.forEach(t => {
-        totalTopicsCount++;
-        const prog = topicProgress.find(p => p.topicId === t.id);
-        if (prog) {
-          if (prog.status === 'Completed') completedTopicsCount++;
-          else if (prog.status === 'In Progress') inProgressCount++;
-          else if (prog.status === 'To Revise') toReviseCount++;
-        }
-      });
-    });
-
-    const overallPct = totalTopicsCount > 0 ? Math.round((completedTopicsCount / totalTopicsCount) * 100) : 0;
-    return { totalTopicsCount, completedTopicsCount, inProgressCount, toReviseCount, overallPct };
-  }, [topicProgress]);
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', backgroundColor: C.bg }}>
-        <ActivityIndicator size="large" color={C.blue} />
+      <View style={{ flex: 1, justifyContent: 'center' }}>
+        <ActivityIndicator color={C.blue} />
       </View>
     );
   }
@@ -471,13 +833,34 @@ export default function App() {
           >
             <Ionicons name="book-outline" size={38} color={C.blue} />
           </View>
-          <Text style={[txt(28, true), { textAlign: 'center', marginTop: 18 }]}>Abhyas Tracker</Text>
-          <Text style={[txt(13, false, C.muted), { textAlign: 'center', marginBottom: 28 }]}>
-            Focused study • Dynamic syllabus • Smart planner
+
+          <Text
+            style={[
+              txt(30, true),
+              { textAlign: 'center', marginTop: 20 }
+            ]}
+          >
+            Abhyas Tracker
           </Text>
+
+          <Text
+            style={[
+              txt(13, false, C.muted),
+              { textAlign: 'center', marginBottom: 35 }
+            ]}
+          >
+            Focused study. Smarter revision.
+          </Text>
+
           {register && (
-            <TextInput placeholder="Full Name" value={name} onChangeText={setName} style={input} />
+            <TextInput
+              placeholder="Full Name"
+              value={name}
+              onChangeText={setName}
+              style={input}
+            />
           )}
+
           <TextInput
             placeholder="Email"
             autoCapitalize="none"
@@ -485,6 +868,7 @@ export default function App() {
             onChangeText={setEmail}
             style={input}
           />
+
           <TextInput
             placeholder="Password"
             secureTextEntry
@@ -492,14 +876,29 @@ export default function App() {
             onChangeText={setPassword}
             style={input}
           />
-          <Button label={register ? 'Create Account' : 'Sign In'} onPress={login} />
+
           <Button
-            label={register ? 'Already registered? Sign in' : 'Create a student account'}
+            label={register ? 'Create Account' : 'Sign In'}
+            onPress={login}
+          />
+          
+          <Button
+            label={
+              register
+                ? 'Already registered? Sign in'
+                : 'Create a student account'
+            }
             subtle
             onPress={() => setRegister(!register)}
           />
-          <Text style={[txt(11, false, C.muted), { textAlign: 'center', marginTop: 22 }]}>
-            Demo student: student@abhyas.local / Student123!
+
+          <Text
+            style={[
+              txt(11, false, C.muted),
+              { textAlign: 'center', marginTop: 25 }
+            ]}
+          >
+            Demo: student@abhyas.local / Student123!
           </Text>
         </View>
       </SafeAreaView>
@@ -508,721 +907,1290 @@ export default function App() {
 
   const total = analytics.totalMinutes || 0;
   const focus = analytics.averageFocus || 0;
-  const unread = notes.filter(n => !(n.readBy || []).includes(user?.id));
 
-  // ---------------- DASHBOARD TAB ----------------
+  const unread = notes.filter(
+    note => !(note.readBy || []).includes(user?.id)
+  );
+
+  const completion = subjects.length
+    ? Math.round(
+        100 *
+          subjects.reduce((sum, subject) => sum + subject.completed, 0) /
+          Math.max(
+            1,
+            subjects.reduce((sum, subject) => sum + subject.topics, 0)
+          )
+      )
+    : 0;
+
   const Dashboard = () => (
     <>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <Chip label="🔥 14-Day Streak" active />
+      <View
+        style={{
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 12
+        }}
+      >
+        <Chip label="14-Day Streak" active />
         <Chip label="UPSC / MPSC 2026" />
       </View>
-      <Title sub="Daily progress, focus milestones and target breakdown">
-        Good morning, {user?.name?.split(' ')[0] || 'Aspirant'}!
+
+      <Title sub="Your study sanctuary â€¢ One session at a time">
+        Good morning, {user?.name?.split(' ')[0]}!
       </Title>
 
       <Card>
         <Text style={txt(14, true)}>Today's Study Progress</Text>
+
         <View style={{ alignItems: 'center', paddingVertical: 12 }}>
           <Ring
             value={Math.min(100, Math.round((total / 480) * 100))}
-            size={160}
+            size={172}
             label={`${Math.floor(total / 60)}h ${total % 60}m logged`}
           />
         </View>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 }}>
-          <Text style={txt(12, false, C.muted)}>Daily goal: 8h 00m</Text>
-          <Text style={txt(12, true, C.blue)}>
-            {Math.max(0, 480 - total)} mins remaining
-          </Text>
-        </View>
-        <Button label="▶ Start Studying Now" onPress={() => setTab('Timer')} />
-      </Card>
 
-      <Card>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Text style={txt(15, true)}>Curriculum Completion</Text>
-          <Text style={txt(13, true, C.blue)}>{syllabusStats.overallPct}%</Text>
-        </View>
-        <View style={{ height: 8, backgroundColor: C.soft, borderRadius: 6, marginVertical: 10 }}>
-          <View
-            style={{
-              backgroundColor: C.blue,
-              width: `${syllabusStats.overallPct}%`,
-              height: 8,
-              borderRadius: 6
-            }}
-          />
-        </View>
-        <Text style={txt(12, false, C.muted)}>
-          {syllabusStats.completedTopicsCount} of {syllabusStats.totalTopicsCount} topics mastered •{' '}
-          {syllabusStats.toReviseCount} to revise
-        </Text>
-        <Button label="Open Syllabus & Checklist →" subtle onPress={() => setTab('Syllabus')} />
-      </Card>
+        <Text style={txt(12, false, C.muted)}>Daily goal: 8h 00m</Text>
 
-      <Card>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Text style={txt(15, true)}>Today's Scheduled Tasks</Text>
-          <TouchableOpacity onPress={() => setTab('Planner')}>
-            <Text style={txt(12, true, C.blue)}>View All ({plans.filter(p => p.date === today()).length})</Text>
-          </TouchableOpacity>
-        </View>
-        {plans.filter(p => p.date === today()).length === 0 ? (
-          <Text style={[txt(12, false, C.muted), { marginTop: 10 }]}>
-            No tasks scheduled for today yet. Plan a study block now!
-          </Text>
-        ) : (
-          plans
-            .filter(p => p.date === today())
-            .slice(0, 3)
-            .map(p => (
-              <View
-                key={p.id}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  paddingVertical: 10,
-                  borderBottomWidth: 1,
-                  borderColor: C.line
-                }}
-              >
-                <TouchableOpacity onPress={() => markPlan(p)} style={{ marginRight: 10 }}>
-                  <Ionicons
-                    name={p.done ? 'checkmark-circle' : 'ellipse-outline'}
-                    size={22}
-                    color={p.done ? C.green : C.blue}
-                  />
-                </TouchableOpacity>
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={[
-                      txt(13, true),
-                      p.done ? { textDecorationLine: 'line-through', color: C.muted } : null
-                    ]}
-                  >
-                    {p.title}
-                  </Text>
-                  <Text style={txt(11, false, C.muted)}>
-                    {p.minutes} mins • {p.priority || 'Medium'} priority
-                  </Text>
-                </View>
-                {!p.done && (
-                  <TouchableOpacity
-                    onPress={() => startPlanFocus(p)}
-                    style={{ backgroundColor: C.soft, paddingHorizontal: 9, paddingVertical: 5, borderRadius: 8 }}
-                  >
-                    <Text style={txt(11, true, C.blue)}>▶ Focus</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-            ))
-        )}
-        <Button label="+ Plan Today's Study" subtle onPress={() => setTab('Planner')} />
-      </Card>
-    </>
-  );
-
-  // ---------------- TIMER TAB ----------------
-  const Timer = () => (
-    <>
-      <View style={{ flexDirection: 'row', marginBottom: 12 }}>
-        <Chip label="Distraction-Free Mode ON" active />
-        <Chip label="Rain White Noise" />
-      </View>
-      <View style={{ flexDirection: 'row' }}>
-        {['Pomodoro', 'Stopwatch', 'Custom'].map(m => (
-          <Chip key={m} label={m} active={mode === m} onPress={() => setMode(m)} />
-        ))}
-      </View>
-
-      <Card>
-        <Text style={txt(12, false, C.muted)}>FOCUS SUBJECT</Text>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 10 }}>
-          {subjects.map(s => (
-            <Chip key={s.id} label={s.name} active={selected === s.id} onPress={() => setSelected(s.id)} />
-          ))}
-        </View>
-        <Text style={[txt(12, false, C.muted), { marginTop: 12 }]}>SESSION FOCUS TOPIC</Text>
-        <TextInput
-          value={sessionTopicTitle}
-          onChangeText={setSessionTopicTitle}
-          placeholder="What topic are you studying?"
-          style={input}
+        <Button
+          label=" Start Studying Now"
+          onPress={() => setTab('Timer')}
         />
       </Card>
 
-      <Card style={{ alignItems: 'center', paddingVertical: 28 }}>
-        <Text style={txt(12, true, C.blue)}>◉ DEEP FOCUS • {mode.toUpperCase()}</Text>
+      <Card>
+        <Text style={txt(15, true)}>Study Briefing & Prep</Text>
+        <Text style={[txt(12, false, C.muted), { marginTop: 8 }]}>
+          Chapter 7  Fundamental Rights
+        </Text>
+        <Text style={[txt(20, true), { marginTop: 8 }]}>
+          Target Focus Block: 1h 30m
+        </Text>
+
+        <Button
+          label="Open Focus Timer"
+          subtle
+          onPress={() => setTab('Timer')}
+        />
+      </Card>
+
+      <Card>
+        <Text style={txt(15, true)}>Chapter Milestone</Text>
+
         <View
           style={{
-            width: 210,
-            height: 210,
-            borderRadius: 105,
-            borderWidth: 10,
-            borderColor: C.light,
-            justifyContent: 'center',
+            flexDirection: 'row',
             alignItems: 'center',
-            marginVertical: 18,
-            backgroundColor: '#fafcff'
+            justifyContent: 'space-around'
           }}
         >
-          <Text style={txt(38, true)}>
-            {String(Math.floor(elapsed / 60)).padStart(2, '0')}:{String(elapsed % 60).padStart(2, '0')}
-          </Text>
-          <Text style={txt(12, false, C.muted)}>{running ? 'Focus in progress...' : 'Ready to start'}</Text>
+          <Ring value={completion} size={130} />
+
+          <View>
+            <Text style={txt(12)}>Target Today: 90 min</Text>
+            <Text
+              style={[
+                txt(12, false, C.muted),
+                { marginTop: 12 }
+              ]}
+            >
+              Retention: 84% â€¢ SRS T2
+            </Text>
+          </View>
         </View>
-        <View style={{ width: '100%' }}>
-          <Button
-            label={running ? '⏸ Pause Session' : '▶ Start Focus Session'}
-            onPress={() => setRunning(!running)}
-          />
-          <Button subtle label="✓ Finish & Save Session" onPress={finish} />
-          <Button
-            subtle
-            label="↺ Reset Timer"
-            onPress={() => {
-              setRunning(false);
-              setElapsed(0);
-            }}
-          />
-        </View>
+      </Card>
+
+      <Card>
+        <Text style={txt(15, true)}>Revision Queue</Text>
+        <Text style={[txt(12, false, C.muted), { marginTop: 7 }]}>
+          {unread.length} notification(s) need your attention.
+        </Text>
+
+        <Button
+          label="Review Now"
+          subtle
+          onPress={() => setNotifOpen(true)}
+        />
       </Card>
     </>
   );
 
-  // ---------------- SYLLABUS TAB ----------------
+
   const Syllabus = () => (
     <>
-      <Title sub="Interactive topic checklist, revision markers & mastery tracking">
+      <Title sub="Track completion, mastery and revision flags">
         Subjects & Syllabus
       </Title>
 
-      {/* Overview Card */}
       <Card>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <View>
-            <Text style={txt(13, true)}>Overall Completion</Text>
-            <Text style={[txt(26, true), { marginVertical: 6 }]}>{syllabusStats.overallPct}%</Text>
-            <Text style={txt(11, false, C.muted)}>
-              {syllabusStats.completedTopicsCount} of {syllabusStats.totalTopicsCount} topics completed
-            </Text>
-          </View>
-          <Ring value={syllabusStats.overallPct} size={110} label="Completed" />
-        </View>
+        <Text style={txt(13, true)}>Overall Completion</Text>
+        <Text style={[txt(25, true), { marginVertical: 10 }]}>
+          {completion}%
+        </Text>
 
-        {/* Status Legends / Breakdown */}
         <View
           style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            marginTop: 14,
-            paddingTop: 12,
-            borderTopWidth: 1,
-            borderColor: C.line
+            height: 9,
+            backgroundColor: C.soft,
+            borderRadius: 10
           }}
         >
-          <View style={{ alignItems: 'center' }}>
-            <Text style={txt(14, true, C.green)}>{syllabusStats.completedTopicsCount}</Text>
-            <Text style={txt(10, false, C.muted)}>Mastered</Text>
+          <View
+            style={{
+              backgroundColor: C.blue,
+              width: completion + '%',
+              height: 9,
+              borderRadius: 10
+            }}
+          />
+        </View>
+
+        <Text style={[txt(11, false, C.muted), { marginTop: 10 }]}>
+          {subjects.reduce((sum, subject) => sum + subject.completed, 0)} /{' '}
+          {subjects.reduce((sum, subject) => sum + subject.topics, 0)} Topics
+          Mastered
+        </Text>
+      </Card>
+
+      <Card>
+        <Text style={txt(15, true)}>Spaced Revision Queue</Text>
+        <Button
+          label="Review Notifications â†’"
+          subtle
+          onPress={() => setNotifOpen(true)}
+        />
+      </Card>
+
+      {subjects.map(subject => (
+        <Card key={subject.id}>
+          <Text style={txt(17, true)}>{subject.name}</Text>
+
+          <Text style={[txt(12, false, C.muted), { marginTop: 5 }]}>
+            {subject.paper} â€¢ {subject.completed}/{subject.topics} topics
+            mastered
+          </Text>
+
+          <View
+            style={{
+              height: 7,
+              backgroundColor: C.soft,
+              borderRadius: 6,
+              marginTop: 15
+            }}
+          >
+            <View
+              style={{
+                backgroundColor: C.mid,
+                height: 7,
+                borderRadius: 6,
+                width:
+                  Math.round(
+                    (100 * subject.completed) / Math.max(1, subject.topics)
+                  ) + '%'
+              }}
+            />
           </View>
-          <View style={{ alignItems: 'center' }}>
-            <Text style={txt(14, true, C.amber)}>{syllabusStats.inProgressCount}</Text>
-            <Text style={txt(10, false, C.muted)}>In Progress</Text>
-          </View>
-          <View style={{ alignItems: 'center' }}>
-            <Text style={txt(14, true, C.purple)}>{syllabusStats.toReviseCount}</Text>
-            <Text style={txt(10, false, C.muted)}>To Revise</Text>
-          </View>
-          <View style={{ alignItems: 'center' }}>
-            <Text style={txt(14, true, C.muted)}>
-              {syllabusStats.totalTopicsCount - syllabusStats.completedTopicsCount - syllabusStats.inProgressCount - syllabusStats.toReviseCount}
-            </Text>
-            <Text style={txt(10, false, C.muted)}>Remaining</Text>
-          </View>
+        </Card>
+      ))}
+    </>
+  );
+
+  const Planner = () => (
+    <>
+      <Title sub="Today's schedule & smart workload balance">
+        Study Planner
+      </Title>
+
+      <Card>
+        <Text style={txt(15, true)}>Today's Plan â€¢ {today()}</Text>
+
+        <View style={{ flexDirection: 'row', marginTop: 12 }}>
+          <Chip label="Today's Plan" active />
+          <Chip label="Weekly View" />
+          <Chip label="Routine" />
         </View>
       </Card>
 
-      {/* Revision Queue Notice */}
-      {syllabusStats.toReviseCount > 0 && (
-        <Card style={{ backgroundColor: C.purpleSoft, borderColor: '#ddd6fe' }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <Ionicons name="refresh-circle-outline" size={24} color={C.purple} />
-            <Text style={txt(14, true, C.purple)}>Spaced Repetition Queue</Text>
-          </View>
-          <Text style={[txt(12, false, C.ink), { marginTop: 6 }]}>
-            You have {syllabusStats.toReviseCount} topic(s) flagged for revision. Schedule a revision block today!
-          </Text>
+      {plans.map(plan => (
+        <Card key={plan.id}>
+          <TouchableOpacity
+            onPress={() => markPlan(plan)}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 12
+            }}
+          >
+            <Ionicons
+              name={plan.done ? 'checkmark-circle' : 'ellipse-outline'}
+              size={26}
+              color={C.blue}
+            />
+
+            <View style={{ flex: 1 }}>
+              <Text style={txt(15, true)}>{plan.title}</Text>
+              <Text style={txt(12, false, C.muted)}>
+                {plan.date} â€¢ {plan.minutes} mins â€¢{' '}
+                {plan.done ? 'Completed' : 'Scheduled'}
+              </Text>
+            </View>
+          </TouchableOpacity>
         </Card>
-      )}
+      ))}
 
-      {/* Subject Cards with Interactive Topics */}
-      {subjects.map(s => {
-        const topicsList = SYLLABUS_TOPICS[s.id] || [];
-        const isExpanded = expandedSubject === s.id;
-        const sCompleted = topicsList.filter(t => {
-          const prog = topicProgress.find(p => p.topicId === t.id);
-          return prog && prog.status === 'Completed';
-        }).length;
-        const sPct = topicsList.length ? Math.round((sCompleted / topicsList.length) * 100) : 0;
+      <Card>
+        <Text style={txt(16, true)}>Add Study Block</Text>
 
-        return (
-          <Card key={s.id} style={{ paddingBottom: isExpanded ? 12 : 16 }}>
-            <TouchableOpacity
-              onPress={() => setExpandedSubject(isExpanded ? null : s.id)}
-              style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
+        <TextInput
+          placeholder="Topic or chapter"
+          style={input}
+          value={planTitle}
+          onChangeText={setPlanTitle}
+        />
+
+        <TextInput
+          keyboardType="numeric"
+          placeholder="Minutes"
+          style={input}
+          value={planMinutes}
+          onChangeText={setPlanMinutes}
+        />
+
+        <Button label="+ Add to Planner" onPress={addPlan} />
+      </Card>
+
+      <Card>
+        <Text style={txt(15, true)}>Workload Capacity</Text>
+
+        <Text style={[txt(12, false, C.muted), { marginTop: 7 }]}>
+          {plans
+            .filter(plan => plan.date === today() && !plan.done)
+            .reduce((sum, plan) => sum + plan.minutes, 0)}{' '}
+          minutes planned today â€¢ 8h capacity
+        </Text>
+      </Card>
+    </>
+  );
+
+  
+  const Analytics = () => {
+    const [analyticsTab, setAnalyticsTab] = useState('Overview');
+    const allDaily = Array.isArray(analytics.daily) ? analytics.daily : [];
+    const chartDays = allDaily.slice(analyticsRange === '7' ? -7 : -30);
+
+    const today = new Date();
+    const todayKey = [
+      today.getFullYear(),
+      String(today.getMonth() + 1).padStart(2, '0'),
+      String(today.getDate()).padStart(2, '0')
+    ].join('-');
+
+    const todayMinutes = Number(
+      allDaily.find(day => day.date === todayKey)?.minutes
+    ) || 0;
+
+    const dailyGoalMinutes = 120;
+    const goalProgress = Math.min(
+      100,
+      Math.round((todayMinutes / dailyGoalMinutes) * 100)
+    );
+
+    const visibleDates = new Set(chartDays.map(day => day.date));
+    const rangeSessions = sessions.filter(
+      session =>
+        session.startedAt &&
+        visibleDates.has(session.startedAt.slice(0, 10))
+    );
+
+    const rangeMinutes = chartDays.reduce(
+      (sum, day) => sum + (Number(day.minutes) || 0),
+      0
+    );
+
+    const maxMinutes = Math.max(
+      1,
+      ...chartDays.map(day => Number(day.minutes) || 0)
+    );
+
+    const rangeFocus = rangeSessions.length
+      ? Math.round(
+          rangeSessions.reduce(
+            (sum, session) => sum + (Number(session.focusScore) || 0),
+            0
+          ) / rangeSessions.length
+        )
+      : 0;
+
+    const averageSession = rangeSessions.length
+      ? Math.round(rangeMinutes / rangeSessions.length)
+      : 0;
+
+    const subjectTotals = rangeSessions.reduce((result, session) => {
+      const subject = subjects.find(
+        item => item.id === session.subjectId
+      );
+      const key = session.subjectId || 'unassigned';
+
+      if (!result[key]) {
+        result[key] = {
+          name: subject?.name || 'Unassigned',
+          minutes: 0,
+          count: 0
+        };
+      }
+
+      result[key].minutes += Number(session.minutes) || 0;
+      result[key].count += 1;
+      return result;
+    }, {});
+
+    const subjectRows = Object.values(subjectTotals).sort(
+      (a, b) => b.minutes - a.minutes
+    );
+
+    const recentSessions = rangeSessions
+      .slice()
+      .sort((a, b) =>
+        (b.startedAt || '').localeCompare(a.startedAt || '')
+      )
+      .slice(0, 8);
+
+    const activeDays = chartDays.filter(
+      day => (Number(day.minutes) || 0) > 0
+    ).length;
+
+    const formatMinutes = value => {
+      const minutes = Math.max(0, Number(value) || 0);
+      const hours = Math.floor(minutes / 60);
+      const remainder = Math.round(minutes % 60);
+
+      return hours
+        ? `${hours}h ${remainder}m`
+        : `${remainder}m`;
+    };
+
+    const sectionSubtitle = {
+      marginTop: 5,
+      marginBottom: 16
+    };
+
+    const sectionHeading = txt(16, true);
+
+    return (
+      <>
+        <Title sub="Understand your habits, track progress and build consistency">
+          Study Analytics
+        </Title>
+
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 16
+          }}
+        >
+          <Text style={txt(12, false, C.muted)}>
+            Your study overview
+          </Text>
+
+          <View style={{ flexDirection: 'row' }}>
+            <Chip
+              label="7 Days"
+              active={analyticsRange === '7'}
+              onPress={() => setAnalyticsRange('7')}
+            />
+            <View style={{ width: 6 }} />
+            <Chip
+              label="30 Days"
+              active={analyticsRange === '30'}
+              onPress={() => setAnalyticsRange('30')}
+            />
+          </View>
+        </View>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 8,
+            paddingBottom: 12,
+            paddingRight: 4
+          }}
+        >
+          {['Overview', 'Activity', 'Subjects', 'Sessions'].map(tab => (
+            <Chip
+              key={tab}
+              label={tab}
+              active={analyticsTab === tab}
+              onPress={() => setAnalyticsTab(tab)}
+            />
+          ))}
+        </ScrollView>
+
+        {analyticsTab === 'Overview' && (
+          <>
+        <Card>
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start'
+            }}
+          >
+            <View style={{ flex: 1, paddingRight: 8 }}>
+              <Text style={txt(17, true)}>Today's Study Goal</Text>
+              <Text
+                style={[
+                  txt(12, false, C.muted),
+                  { marginTop: 6, lineHeight: 19 }
+                ]}
+              >
+                Build a daily habit, one focused session at a time.
+              </Text>
+            </View>
+
+            <View
+              style={{
+                backgroundColor: C.soft,
+                paddingHorizontal: 10,
+                paddingVertical: 6,
+                borderRadius: 12
+              }}
             >
-              <View style={{ flex: 1 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <Text style={txt(16, true)}>{s.name}</Text>
-                  <Text
-                    style={{
-                      fontSize: 10,
-                      fontWeight: '700',
-                      color: C.blue,
-                      backgroundColor: C.soft,
-                      paddingHorizontal: 7,
-                      paddingVertical: 2,
-                      borderRadius: 6
-                    }}
-                  >
-                    {s.paper}
-                  </Text>
-                </View>
-                <Text style={[txt(12, false, C.muted), { marginTop: 4 }]}>
-                  {sCompleted} / {topicsList.length} topics mastered • {sPct}%
-                </Text>
-              </View>
-              <Ionicons name={isExpanded ? 'chevron-up' : 'chevron-down'} size={22} color={C.blue} />
-            </TouchableOpacity>
+              <Text style={txt(11, true, C.blue)}>
+                {goalProgress}% done
+              </Text>
+            </View>
+          </View>
 
-            {/* Progress Bar */}
-            <View style={{ height: 7, backgroundColor: C.soft, borderRadius: 6, marginTop: 12 }}>
-              <View
-                style={{
-                  backgroundColor: C.blue,
-                  height: 7,
-                  borderRadius: 6,
-                  width: `${sPct}%`
-                }}
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-around',
+              marginTop: 18,
+              marginBottom: 8
+            }}
+          >
+            <View style={{ alignItems: 'center' }}>
+              <Ring
+                value={goalProgress}
+                size={125}
+                label="Daily goal"
               />
             </View>
 
-            {/* Expanded Topics List */}
-            {isExpanded && (
-              <View style={{ marginTop: 14, paddingTop: 10, borderTopWidth: 1, borderColor: C.line }}>
-                <Text style={[txt(11, true, C.muted), { marginBottom: 8, letterSpacing: 0.5 }]}>
-                  TOPIC CHECKLIST (TAP TO UPDATE STATUS)
-                </Text>
-                {topicsList.map((t, idx) => {
-                  const prog = topicProgress.find(p => p.topicId === t.id);
-                  const status = prog?.status || 'Not Started';
+            <View style={{ flex: 1, marginLeft: 18 }}>
+              <Text style={txt(22, true)}>
+                {formatMinutes(todayMinutes)}
+              </Text>
+              <Text
+                style={[
+                  txt(12, false, C.muted),
+                  { marginTop: 4 }
+                ]}
+              >
+                studied today
+              </Text>
 
-                  // Badge colors
-                  const statusColors = {
-                    'Completed': { bg: C.greenSoft, fg: C.green, icon: 'checkmark-circle' },
-                    'In Progress': { bg: C.amberSoft, fg: C.amber, icon: 'time-outline' },
-                    'To Revise': { bg: C.purpleSoft, fg: C.purple, icon: 'repeat-outline' },
-                    'Not Started': { bg: C.soft, fg: C.muted, icon: 'ellipse-outline' }
-                  };
-                  const cfg = statusColors[status] || statusColors['Not Started'];
+              <View
+                style={{
+                  height: 8,
+                  borderRadius: 8,
+                  backgroundColor: C.soft,
+                  overflow: 'hidden',
+                  marginTop: 14
+                }}
+              >
+                <View
+                  style={{
+                    height: '100%',
+                    width: `${goalProgress}%`,
+                    backgroundColor: C.blue,
+                    borderRadius: 8
+                  }}
+                />
+              </View>
+
+              <Text
+                style={[
+                  txt(11, false, C.muted),
+                  { marginTop: 7 }
+                ]}
+              >
+                {todayMinutes >= dailyGoalMinutes
+                  ? 'Daily goal reached!'
+                  : `${formatMinutes(
+                      dailyGoalMinutes - todayMinutes
+                    )} remaining of 2h`}
+              </Text>
+            </View>
+          </View>
+        </Card>
+
+        <View
+          style={{
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            justifyContent: 'space-between',
+            marginBottom: 4
+          }}
+        >
+          {[
+            {
+              label: 'Study Time',
+              value: formatMinutes(rangeMinutes),
+              detail: 'Total recorded'
+            },
+            {
+              label: 'Sessions',
+              value: String(rangeSessions.length),
+              detail: 'Completed records'
+            },
+            {
+              label: 'Average Focus',
+              value: `${rangeFocus}%`,
+              detail: 'Recorded focus score'
+            },
+            {
+              label: 'Avg. Session',
+              value: formatMinutes(averageSession),
+              detail: 'Per recorded session'
+            }
+          ].map((item, index) => (
+            <View
+              key={item.label}
+              style={[
+                card,
+                {
+                  width: '48%',
+marginBottom: 10,
+padding: 15,
+borderRadius: 16,
+backgroundColor: [
+  '#EEF2FF',
+  '#E6FFFA',
+  '#FFF1E6',
+  '#FCE7F3'
+][index % 4],
+borderWidth: 1,
+borderColor: [
+  '#C7D2FE',
+  '#99F6E4',
+  '#FED7AA',
+  '#FBCFE8'
+][index % 4]
+                }
+              ]}
+            >
+              <View
+                style={{
+                  width: 34,
+                  height: 5,
+                  borderRadius: 5,
+                  backgroundColor:
+                    index % 2 === 0 ? C.blue : C.muted,
+                  marginBottom: 12
+                }}
+              />
+
+              <Text style={txt(11, false, C.muted)}>
+                {item.label}
+              </Text>
+              <Text
+                style={[
+                  txt(22, true),
+                  { marginTop: 8 }
+                ]}
+              >
+                {item.value}
+              </Text>
+              <Text
+                style={[
+                  txt(10, false, C.muted),
+                  { marginTop: 5 }
+                ]}
+              >
+                {item.detail}
+              </Text>
+            </View>
+          ))}
+        </View>
+                  <Card>
+          <Text style={sectionHeading}>Focus Quality</Text>
+          <Text
+            style={[
+              txt(12, false, C.muted),
+              sectionSubtitle
+            ]}
+          >
+            Average focus score from recorded sessions.
+          </Text>
+
+          <View
+            style={{
+              alignItems: 'center',
+              paddingVertical: 12
+            }}
+          >
+            <Ring
+              value={rangeFocus}
+              size={155}
+              label="Average focus"
+            />
+          </View>
+
+          <Text
+            style={[
+              txt(12, false, C.muted),
+              { textAlign: 'center', lineHeight: 19 }
+            ]}
+          >
+            {rangeSessions.length
+              ? `Based on ${rangeSessions.length} recorded ${
+                  rangeSessions.length === 1 ? 'session' : 'sessions'
+                } in this period.`
+              : 'Complete a study session to begin tracking focus quality.'}
+          </Text>
+        </Card>
+</>
+        )}
+
+
+        {analyticsTab === 'Activity' && (
+          <>
+        <Card>
+          <Text style={sectionHeading}>Daily Study Activity</Text>
+          <Text
+            style={[
+              txt(12, false, C.muted),
+              sectionSubtitle
+            ]}
+          >
+            {analyticsRange === '7'
+              ? 'Minutes studied each day this week'
+              : 'Minutes studied across the selected month'}
+          </Text>
+
+          {chartDays.length === 0 ? (
+            <Text style={txt(12, false, C.muted)}>
+              Daily analytics are not available yet. Refresh after the API is running.
+            </Text>
+          ) : (
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'flex-end',
+                height: 155,
+                justifyContent: 'space-between'
+              }}
+            >
+              {chartDays.map((day, index) => {
+                const minutes = Number(day.minutes) || 0;
+                const barHeight =
+                  minutes > 0
+                    ? Math.max(5, (minutes / maxMinutes) * 105)
+                    : 3;
+
+                const date = new Date(`${day.date}T12:00:00`);
+                const label =
+                  analyticsRange === '7'
+                    ? date.toLocaleDateString(undefined, {
+                        weekday: 'short'
+                      })
+                    : date.getDate() % 5 === 0 || index === 0
+                      ? String(date.getDate())
+                      : '';
+
+                return (
+                  <View
+                    key={day.date}
+                    style={{
+                      flex: 1,
+                      alignItems: 'center',
+                      justifyContent: 'flex-end',
+                      height: '100%'
+                    }}
+                  >
+                    {minutes > 0 && analyticsRange === '7' && (
+                      <Text style={txt(9, false, C.muted)}>
+                        {minutes}
+                      </Text>
+                    )}
+
+                    <View
+                      style={{
+                        width: analyticsRange === '7' ? '55%' : '65%',
+                        maxWidth: 18,
+                        height: barHeight,
+                        borderRadius: 5,
+                        backgroundColor:
+  minutes > 0
+    ? [
+        '#5B6CFF',
+        '#22B8A7',
+        '#FF9F43',
+        '#E879F9',
+        '#F06464',
+        '#38BDF8',
+        '#A3E635'
+      ][index % 7]
+    : C.soft,
+                        marginTop: 5
+                      }}
+                    />
+
+                    <Text
+                      style={[
+                        txt(9, false, C.muted),
+                        { marginTop: 7, height: 14 }
+                      ]}
+                    >
+                      {label}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+          )}
+
+          <View
+            style={{
+              borderTopWidth: 1,
+              borderColor: C.line,
+              marginTop: 14,
+              paddingTop: 13,
+              flexDirection: 'row',
+              justifyContent: 'space-between'
+            }}
+          >
+            <View>
+              <Text style={txt(11, false, C.muted)}>
+                Total study time
+              </Text>
+              <Text
+                style={[
+                  txt(17, true),
+                  { marginTop: 4 }
+                ]}
+              >
+                {formatMinutes(rangeMinutes)}
+              </Text>
+            </View>
+
+            <View style={{ alignItems: 'flex-end' }}>
+              <Text style={txt(11, false, C.muted)}>
+                Active days
+              </Text>
+              <Text
+                style={[
+                  txt(17, true),
+                  { marginTop: 4 }
+                ]}
+              >
+                {activeDays} / {chartDays.length}
+              </Text>
+            </View>
+          </View>
+        </Card>
+
+        <Card>
+          <Text style={sectionHeading}>Study Consistency</Text>
+          <Text
+            style={[
+              txt(12, false, C.muted),
+              sectionSubtitle
+            ]}
+          >
+            Each square represents one day. Stronger color means more study time.
+          </Text>
+
+          {chartDays.length === 0 ? (
+            <Text style={txt(12, false, C.muted)}>
+              Activity will appear when daily analytics are available.
+            </Text>
+          ) : (
+            <>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  flexWrap: 'wrap',
+                  gap: 6
+                }}
+              >
+                {chartDays.map(day => {
+                  const minutes = Number(day.minutes) || 0;
+                  const intensity =
+                    minutes === 0
+                      ? 0
+                      : Math.ceil((minutes / maxMinutes) * 4);
 
                   return (
                     <View
-                      key={t.id}
+                      key={day.date}
                       style={{
-                        paddingVertical: 10,
-                        borderBottomWidth: idx === topicsList.length - 1 ? 0 : 1,
-                        borderColor: '#f1f5f9'
+                        width: analyticsRange === '7' ? '12%' : '8.2%',
+                        aspectRatio: 1,
+                        minWidth: 14,
+                        maxWidth: 28,
+                        borderRadius: 5,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor:
+                          intensity === 0
+                            ? C.soft
+                            : intensity === 1
+                              ? C.line
+                              : intensity === 2
+                                ? C.muted
+                                : C.blue
                       }}
                     >
-                      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <View style={{ flex: 1, marginRight: 8 }}>
-                          <Text style={txt(10, false, C.muted)}>{t.chapter}</Text>
-                          <Text
-                            style={[
-                              txt(13, true),
-                              status === 'Completed' ? { color: '#047857' } : null
-                            ]}
-                          >
-                            {t.name}
-                          </Text>
-                        </View>
-
-                        {/* Interactive Status Button */}
-                        <TouchableOpacity
-                          onPress={() => updateTopicStatus(t, status, s.id)}
-                          style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            backgroundColor: cfg.bg,
-                            paddingHorizontal: 9,
-                            paddingVertical: 6,
-                            borderRadius: 14,
-                            gap: 4
-                          }}
-                        >
-                          <Ionicons name={cfg.icon} size={14} color={cfg.fg} />
-                          <Text style={{ fontSize: 11, fontWeight: '700', color: cfg.fg }}>
-                            {status}
-                          </Text>
-                        </TouchableOpacity>
-                      </View>
-
-                      {/* Quick Action: Schedule for today */}
-                      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 6, gap: 10 }}>
-                        <TouchableOpacity
-                          onPress={() => quickScheduleTopic(t, s.name, s.id)}
-                          style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
-                        >
-                          <Ionicons name="calendar-outline" size={13} color={C.blue} />
-                          <Text style={txt(11, true, C.blue)}>Plan for Today</Text>
-                        </TouchableOpacity>
-                      </View>
+                      <Text
+                        style={{
+                          fontSize: 9,
+                          color:
+                            intensity >= 3
+                              ? '#FFFFFF'
+                              : C.muted
+                        }}
+                      >
+                        {new Date(
+                          `${day.date}T12:00:00`
+                        ).getDate()}
+                      </Text>
                     </View>
                   );
                 })}
               </View>
-            )}
-          </Card>
-        );
-      })}
-    </>
-  );
 
-  // ---------------- PLANNER TAB ----------------
-  const Planner = () => {
-    // Filter plans according to view
-    const filteredPlans = useMemo(() => {
-      if (plannerView === "Today's Plan") {
-        return plans.filter(p => p.date === today() || !p.date);
-      }
-      if (plannerView === 'Weekly View') {
-        return plans;
-      }
-      return plans;
-    }, [plans, plannerView]);
-
-    const todayPlannedMinutes = plans
-      .filter(p => p.date === today() && !p.done)
-      .reduce((a, p) => a + Number(p.minutes || 0), 0);
-    const capacityPct = Math.min(100, Math.round((todayPlannedMinutes / 480) * 100));
-
-    // Suggested unfinished topics for the selected plan subject
-    const suggestedTopics = useMemo(() => {
-      const all = SYLLABUS_TOPICS[planSubject] || [];
-      return all
-        .filter(t => {
-          const prog = topicProgress.find(p => p.topicId === t.id);
-          return !prog || prog.status !== 'Completed';
-        })
-        .slice(0, 3);
-    }, [planSubject, topicProgress]);
-
-    return (
-      <>
-        <Title sub="Target scheduling, task execution & daily workload balance">
-          Study Planner
-        </Title>
-
-        {/* View Switcher Chips */}
-        <Card style={{ paddingVertical: 12 }}>
-          <Text style={[txt(12, true, C.muted), { marginBottom: 8 }]}>PLANNER VIEW</Text>
-          <View style={{ flexDirection: 'row' }}>
-            {["Today's Plan", 'Weekly View', 'Workload & Routine'].map(v => (
-              <Chip key={v} label={v} active={plannerView === v} onPress={() => setPlannerView(v)} />
-            ))}
-          </View>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  marginTop: 16
+                }}
+              >
+                <Text style={txt(11, false, C.muted)}>
+                  {activeDays} active days
+                </Text>
+                <Text style={txt(11, false, C.muted)}>
+                  {chartDays.length - activeDays} days without study
+                </Text>
+              </View>
+            </>
+          )}
         </Card>
-
-        {/* Workload Capacity Meter */}
-        <Card>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Text style={txt(15, true)}>Daily Workload vs. 8h Target</Text>
-            <Text style={txt(13, true, C.blue)}>{capacityPct}% Capacity</Text>
-          </View>
-          <View style={{ height: 8, backgroundColor: C.soft, borderRadius: 6, marginVertical: 10 }}>
-            <View
-              style={{
-                backgroundColor: capacityPct > 90 ? C.amber : C.blue,
-                height: 8,
-                borderRadius: 6,
-                width: `${capacityPct}%`
-              }}
-            />
-          </View>
-          <Text style={txt(12, false, C.muted)}>
-            {todayPlannedMinutes} min scheduled today • {Math.max(0, 480 - todayPlannedMinutes)} min available capacity
-          </Text>
-        </Card>
-
-        {/* Tasks List */}
-        <View style={{ marginBottom: 6 }}>
-          <Text style={[txt(14, true), { marginBottom: 8 }]}>
-            {plannerView === "Today's Plan" ? `Today's Tasks (${today()})` : 'All Scheduled Tasks'}
-          </Text>
-        </View>
-
-        {filteredPlans.length === 0 ? (
-          <Card>
-            <Text style={[txt(13, false, C.muted), { textAlign: 'center', paddingVertical: 12 }]}>
-              No study tasks found for this view. Add a study block below to get started!
-            </Text>
-          </Card>
-        ) : (
-          filteredPlans.map(p => {
-            const priorityColors = {
-              'High': { bg: C.redSoft, fg: C.red },
-              'Medium': { bg: C.amberSoft, fg: C.amber },
-              'Low': { bg: C.soft, fg: C.blue }
-            };
-            const pStyle = priorityColors[p.priority || 'Medium'] || priorityColors['Medium'];
-            const subName = subjects.find(s => s.id === p.subjectId)?.name || p.subjectId || 'General';
-
-            return (
-              <Card key={p.id} style={{ paddingVertical: 14 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
-                  {/* Complete Checkbox */}
-                  <TouchableOpacity onPress={() => markPlan(p)} style={{ marginTop: 2 }}>
-                    <Ionicons
-                      name={p.done ? 'checkmark-circle' : 'ellipse-outline'}
-                      size={24}
-                      color={p.done ? C.green : C.blue}
-                    />
-                  </TouchableOpacity>
-
-                  <View style={{ flex: 1 }}>
-                    {/* Header tags */}
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                      <Text
-                        style={{
-                          fontSize: 10,
-                          fontWeight: '700',
-                          color: pStyle.fg,
-                          backgroundColor: pStyle.bg,
-                          paddingHorizontal: 7,
-                          paddingVertical: 2,
-                          borderRadius: 6
-                        }}
-                      >
-                        {p.priority || 'Medium'}
-                      </Text>
-                      <Text
-                        style={{
-                          fontSize: 10,
-                          fontWeight: '600',
-                          color: C.blue,
-                          backgroundColor: C.soft,
-                          paddingHorizontal: 7,
-                          paddingVertical: 2,
-                          borderRadius: 6
-                        }}
-                      >
-                        {subName}
-                      </Text>
-                      {p.date && (
-                        <Text style={txt(10, false, C.muted)}>
-                          {p.date === today() ? 'Today' : p.date}
-                        </Text>
-                      )}
-                    </View>
-
-                    {/* Title */}
-                    <Text
-                      style={[
-                        txt(14, true),
-                        p.done ? { textDecorationLine: 'line-through', color: C.muted } : null
-                      ]}
-                    >
-                      {p.title}
-                    </Text>
-
-                    <Text style={[txt(11, false, C.muted), { marginTop: 4 }]}>
-                      ⏱ {p.minutes} mins • {p.done ? '✓ Completed' : 'Pending'}
-                    </Text>
-                  </View>
-
-                  {/* Actions */}
-                  <View style={{ alignItems: 'flex-end', gap: 6 }}>
-                    {!p.done && (
-                      <TouchableOpacity
-                        onPress={() => startPlanFocus(p)}
-                        style={{
-                          backgroundColor: C.blue,
-                          paddingHorizontal: 11,
-                          paddingVertical: 6,
-                          borderRadius: 8
-                        }}
-                      >
-                        <Text style={txt(11, true, C.white)}>▶ Focus</Text>
-                      </TouchableOpacity>
-                    )}
-                    <TouchableOpacity onPress={() => deletePlan(p)} style={{ padding: 4 }}>
-                      <Ionicons name="trash-outline" size={17} color={C.muted} />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </Card>
-            );
-          })
+          </>
         )}
 
-        {/* Add Study Block Form */}
-        <Card style={{ marginTop: 8 }}>
-          <Text style={txt(16, true)}>+ Add Study Block</Text>
-          <Text style={[txt(11, false, C.muted), { marginTop: 2, marginBottom: 12 }]}>
-            Schedule focus intervals aligned with your syllabus.
+
+        
+        {analyticsTab === 'Subjects' && (
+        <Card>
+          <Text style={txt(17, true)}>Subject Breakdown</Text>
+          <Text
+            style={[
+              txt(12, false, C.muted),
+              { marginTop: 5, marginBottom: 18 }
+            ]}
+          >
+            See how your study time is distributed across subjects.
           </Text>
 
-          {/* Subject Selector */}
-          <Text style={txt(11, true, C.muted)}>SELECT SUBJECT</Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 6, marginBottom: 8 }}>
-            {subjects.map(s => (
-              <Chip
-                key={s.id}
-                label={s.name}
-                active={planSubject === s.id}
-                onPress={() => setPlanSubject(s.id)}
-              />
-            ))}
-          </View>
+          {subjectRows.length === 0 ||
+          subjectRows.reduce(
+            (sum, subject) => sum + subject.minutes,
+            0
+          ) === 0 ? (
+            <Text style={txt(12, false, C.muted)}>
+              No subject study time recorded for this period.
+            </Text>
+          ) : (
+            <>
+              {/*
+                Donut chart based on actual subject minutes.
+                Each segment represents one subject.
+              */}
+              <View
+                style={{
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: 22
+                }}
+              >
+                <View
+                  style={{
+                    width: 210,
+                    height: 210,
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  {(() => {
+                    const chartColors = [
+                      '#5B6CFF',
+                      '#22B8A7',
+                      '#FF9F43',
+                      '#E879F9',
+                      '#F06464',
+                      '#38BDF8',
+                      '#A3E635',
+                      '#F472B6'
+                    ];
 
-          {/* Quick Syllabus Topic Suggestions */}
-          {suggestedTopics.length > 0 && (
-            <View style={{ marginBottom: 10 }}>
-              <Text style={txt(11, true, C.muted)}>⚡ QUICK PICK FROM UNFINISHED SYLLABUS</Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 6 }}>
-                {suggestedTopics.map(t => (
-                  <TouchableOpacity
-                    key={t.id}
-                    onPress={() => setPlanTitle(t.name)}
+                    const total = subjectRows.reduce(
+                      (sum, subject) => sum + subject.minutes,
+                      0
+                    );
+
+                    const radius = 68;
+                    const strokeWidth = 25;
+                    const circumference = 2 * Math.PI * radius;
+                    let offset = 0;
+
+                    return (
+                      <>
+                        <Svg
+                          width={190}
+                          height={190}
+                          viewBox="0 0 200 200"
+                        >
+                          <Circle
+                            cx="100"
+                            cy="100"
+                            r={radius}
+                            fill="none"
+                            stroke={C.soft}
+                            strokeWidth={strokeWidth}
+                          />
+
+                          {subjectRows.map((subject, index) => {
+                            const fraction = subject.minutes / total;
+                            const segmentLength =
+                              fraction * circumference;
+                            const currentOffset = offset;
+
+                            offset += segmentLength;
+
+                            return (
+                              <Circle
+                                key={subject.name}
+                                cx="100"
+                                cy="100"
+                                r={radius}
+                                fill="none"
+                                stroke={
+                                  chartColors[
+                                    index % chartColors.length
+                                  ]
+                                }
+                                strokeWidth={strokeWidth}
+                                strokeDasharray={`${segmentLength} ${
+                                  circumference - segmentLength
+                                }`}
+                                strokeDashoffset={-currentOffset}
+                                strokeLinecap="butt"
+                                rotation={-90}
+                                origin="100, 100"
+                              />
+                            );
+                          })}
+                        </Svg>
+
+                        <View
+                          style={{
+                            position: 'absolute',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
+                        >
+                          <Text style={txt(11, false, C.muted)}>
+                            Total studied
+                          </Text>
+                          <Text
+                            style={[
+                              txt(22, true),
+                              { marginTop: 5 }
+                            ]}
+                          >
+                            {formatMinutes(total)}
+                          </Text>
+                          <Text
+                            style={[
+                              txt(10, false, C.muted),
+                              { marginTop: 4 }
+                            ]}
+                          >
+                            {subjectRows.length}{' '}
+                            {subjectRows.length === 1
+                              ? 'subject'
+                              : 'subjects'}
+                          </Text>
+                        </View>
+                      </>
+                    );
+                  })()}
+                </View>
+              </View>
+
+              <View
+                style={{
+                  backgroundColor: C.soft,
+                  borderRadius: 14,
+                  padding: 13,
+                  marginBottom: 18,
+                  flexDirection: 'row',
+                  justifyContent: 'space-between'
+                }}
+              >
+                <View>
+                  <Text style={txt(11, false, C.muted)}>
+                    Total sessions
+                  </Text>
+                  <Text
+                    style={[
+                      txt(18, true),
+                      { marginTop: 5 }
+                    ]}
+                  >
+                    {subjectRows.reduce(
+                      (sum, subject) => sum + subject.count,
+                      0
+                    )}
+                  </Text>
+                </View>
+
+                <View style={{ alignItems: 'flex-end' }}>
+                  <Text style={txt(11, false, C.muted)}>
+                    Leading subject
+                  </Text>
+                  <Text
+                    style={[
+                      txt(14, true),
+                      { marginTop: 5 }
+                    ]}
+                  >
+                    {subjectRows
+                      .slice()
+                      .sort((a, b) => b.minutes - a.minutes)[0]
+                      .name}
+                  </Text>
+                </View>
+              </View>
+
+              <Text
+                style={[
+                  txt(13, true),
+                  { marginBottom: 13 }
+                ]}
+              >
+                Subject details
+              </Text>
+
+              {subjectRows.map((subject, index) => {
+                const chartColors = [
+                  '#5B6CFF',
+                  '#22B8A7',
+                  '#FF9F43',
+                  '#E879F9',
+                  '#F06464',
+                  '#38BDF8',
+                  '#A3E635',
+                  '#F472B6'
+                ];
+
+                const total = subjectRows.reduce(
+                  (sum, item) => sum + item.minutes,
+                  0
+                );
+
+                const percentage = total > 0
+                  ? Math.round((subject.minutes / total) * 100)
+                  : 0;
+
+                const color =
+                  chartColors[index % chartColors.length];
+
+                return (
+                  <View
+                    key={subject.name}
                     style={{
-                      backgroundColor: C.soft,
-                      paddingHorizontal: 10,
-                      paddingVertical: 6,
-                      borderRadius: 12,
-                      marginRight: 6,
-                      marginBottom: 6
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      paddingVertical: 12,
+                      borderBottomWidth:
+                        index === subjectRows.length - 1 ? 0 : 1,
+                      borderColor: C.line
                     }}
                   >
-                    <Text style={txt(11, false, C.blue)}>+ {t.name}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
+                    <View
+                      style={{
+                        width: 12,
+                        height: 12,
+                        borderRadius: 4,
+                        backgroundColor: color,
+                        marginRight: 11
+                      }}
+                    />
+
+                    <View style={{ flex: 1, marginRight: 8 }}>
+                      <Text style={txt(13, true)}>
+                        {subject.name}
+                      </Text>
+                      <Text
+                        style={[
+                          txt(11, false, C.muted),
+                          { marginTop: 4 }
+                        ]}
+                      >
+                        {subject.count}{' '}
+                        {subject.count === 1
+                          ? 'session'
+                          : 'sessions'}
+                      </Text>
+                    </View>
+
+                    <View style={{ alignItems: 'flex-end' }}>
+                      <Text style={txt(13, true)}>
+                        {formatMinutes(subject.minutes)}
+                      </Text>
+                      <Text
+                        style={[
+                          txt(11, false, C.muted),
+                          { marginTop: 4 }
+                        ]}
+                      >
+                        {percentage}%
+                      </Text>
+                    </View>
+                  </View>
+                );
+              })}
+            </>
           )}
-
-          {/* Title Input */}
-          <Text style={txt(11, true, C.muted)}>TOPIC OR CHAPTER TITLE</Text>
-          <TextInput
-            placeholder="e.g. Fundamental Rights (Art 14–18)"
-            style={input}
-            value={planTitle}
-            onChangeText={setPlanTitle}
-          />
-
-          {/* Duration Chips */}
-          <Text style={[txt(11, true, C.muted), { marginTop: 12 }]}>TARGET DURATION (MINUTES)</Text>
-          <View style={{ flexDirection: 'row', marginTop: 6 }}>
-            {['30', '45', '60', '90'].map(m => (
-              <Chip
-                key={m}
-                label={`${m}m`}
-                active={planMinutes === m}
-                onPress={() => setPlanMinutes(m)}
-              />
-            ))}
-          </View>
-
-          {/* Priority & Date Selector */}
-          <View style={{ flexDirection: 'row', gap: 12, marginTop: 4 }}>
-            <View style={{ flex: 1 }}>
-              <Text style={txt(11, true, C.muted)}>PRIORITY</Text>
-              <View style={{ flexDirection: 'row', marginTop: 6 }}>
-                {['High', 'Medium', 'Low'].map(p => (
-                  <Chip
-                    key={p}
-                    label={p}
-                    active={planPriority === p}
-                    onPress={() => setPlanPriority(p)}
-                  />
-                ))}
-              </View>
-            </View>
-
-            <View style={{ flex: 1 }}>
-              <Text style={txt(11, true, C.muted)}>DATE</Text>
-              <View style={{ flexDirection: 'row', marginTop: 6 }}>
-                {['today', 'tomorrow'].map(d => (
-                  <Chip
-                    key={d}
-                    label={d === 'today' ? 'Today' : 'Tomorrow'}
-                    active={planDateType === d}
-                    onPress={() => setPlanDateType(d)}
-                  />
-                ))}
-              </View>
-            </View>
-          </View>
-
-          <Button label="+ Schedule Study Task" onPress={addPlan} />
         </Card>
+        )}
+{analyticsTab === 'Sessions' && (
+        <Card>
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 4
+            }}
+          >
+            <Text style={sectionHeading}>Recent Sessions</Text>
+            <Text style={txt(11, false, C.muted)}>
+              Latest {recentSessions.length}
+            </Text>
+          </View>
+
+          <Text
+            style={[
+              txt(12, false, C.muted),
+              { marginTop: 5, marginBottom: 8 }
+            ]}
+          >
+            Your latest recorded study sessions in this period.
+          </Text>
+
+          {recentSessions.length === 0 ? (
+            <Text
+              style={[
+                txt(12, false, C.muted),
+                { marginTop: 12 }
+              ]}
+            >
+              No sessions recorded during this period.
+            </Text>
+          ) : (
+            recentSessions.map((session, index) => {
+              const subjectName = subjects.find(
+                subject => subject.id === session.subjectId
+              )?.name || 'Study Session';
+
+              return (
+                <View
+                  key={session.id || `${session.startedAt}-${index}`}
+                  style={{
+                    paddingVertical: 13,
+                    borderBottomWidth:
+                      index === recentSessions.length - 1 ? 0 : 1,
+                    borderColor: C.line
+                  }}
+                >
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center'
+                    }}
+                  >
+                    <View
+                      style={{
+                        width: 38,
+                        height: 38,
+                        borderRadius: 12,
+                        backgroundColor: C.soft,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginRight: 11
+                      }}
+                    >
+                      <Text style={txt(11, true, C.blue)}>
+                        {String(index + 1).padStart(2, '0')}
+                      </Text>
+                    </View>
+
+                    <View style={{ flex: 1 }}>
+                      <Text style={txt(13, true)}>
+                        {subjectName}
+                      </Text>
+                      <Text
+                        style={[
+                          txt(11, false, C.muted),
+                          { marginTop: 5 }
+                        ]}
+                      >
+                        {session.startedAt
+                          ? new Date(
+                              session.startedAt
+                            ).toLocaleDateString()
+                          : 'Date unavailable'}
+                      </Text>
+                    </View>
+
+                    <View style={{ alignItems: 'flex-end' }}>
+                      <Text style={txt(13, true)}>
+                        {formatMinutes(session.minutes)}
+                      </Text>
+                      <Text
+                        style={[
+                          txt(10, false, C.muted),
+                          { marginTop: 4 }
+                        ]}
+                      >
+                        {Number(session.focusScore) || 0}% focus
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              );
+            })
+          )}
+        </Card>
+        )}
+
       </>
     );
   };
 
-  // ---------------- ANALYTICS TAB ----------------
-  const Analytics = () => (
-    <>
-      <Title sub="Study performance, retention and endurance trends">
-        Analytics & Focus Trends
-      </Title>
-      <View style={{ flexDirection: 'row' }}>
-        <Chip label="This Week" active />
-        <Chip label="Last Week" />
-        <Chip label="This Month" />
-      </View>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 12, marginBottom: 14 }}>
-        {[
-          ['Logged Hours', `${Math.floor(total / 60)}h ${total % 60}m`],
-          ['Focus Quality', `${focus}%`],
-          ['Total Sessions', analytics.sessionCount || sessions.length || 0],
-          ['Daily Target', '8h 00m']
-        ].map(([k, v]) => (
-          <View key={k} style={[styles.card, { width: '48%', marginBottom: 0 }]}>
-            <Text style={txt(11, false, C.muted)}>{k}</Text>
-            <Text style={[txt(24, true), { marginTop: 12 }]}>{v}</Text>
-          </View>
-        ))}
-      </View>
-      <Card>
-        <Text style={txt(16, true)}>Focus Quality Breakdown</Text>
-        <View style={{ alignItems: 'center', padding: 20 }}>
-          <Ring value={focus} size={180} label="Focus purity" />
-        </View>
-        <Text style={txt(12, false, C.muted)}>
-          Calculated from completed sessions. Increases as you log distraction-free study blocks.
-        </Text>
-      </Card>
-      <Card>
-        <Text style={txt(15, true)}>Recent Sessions History</Text>
-        {sessions.length === 0 ? (
-          <Text style={[txt(12, false, C.muted), { marginTop: 8 }]}>No sessions recorded yet.</Text>
-        ) : (
-          sessions.slice(0, 5).map(s => (
-            <View key={s.id} style={{ paddingVertical: 12, borderBottomWidth: 1, borderColor: C.line }}>
-              <Text style={txt(14, true)}>
-                {subjects.find(x => x.id === s.subjectId)?.name || 'Study Session'}
-              </Text>
-              <Text style={[txt(12, false, C.muted), { marginTop: 3 }]}>
-                {s.minutes} mins • {s.focusScore}% focus • {new Date(s.startedAt).toLocaleDateString()}
-              </Text>
-            </View>
-          ))
-        )}
-      </Card>
-    </>
-  );
 
   const tabs = [
     ['Dashboard', 'home-outline'],
@@ -1237,15 +2205,16 @@ export default function App() {
       style={{
         flex: 1,
         backgroundColor: C.bg,
-        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0
+        paddingTop:
+          Platform.OS === 'android' ? StatusBar.currentHeight : 0
       }}
     >
       <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
 
-      {/* Header */}
+      {!focusMode && (
       <View
         style={{
-          paddingHorizontal: 18,
+          paddingHorizontal: 19,
           paddingVertical: 14,
           backgroundColor: C.white,
           flexDirection: 'row',
@@ -1256,8 +2225,8 @@ export default function App() {
       >
         <View
           style={{
-            width: 36,
-            height: 36,
+            width: 35,
+            height: 35,
             borderRadius: 10,
             backgroundColor: C.soft,
             justifyContent: 'center',
@@ -1266,64 +2235,120 @@ export default function App() {
         >
           <Ionicons name="book-outline" color={C.blue} size={20} />
         </View>
+
         <View style={{ flex: 1, marginLeft: 10 }}>
           <Text style={txt(15, true)}>Abhyas Tracker</Text>
           <Text style={txt(10, false, C.muted)}>{tab}</Text>
         </View>
-        <TouchableOpacity onPress={() => setNotifOpen(!notifOpen)} style={{ padding: 8 }}>
-          <Ionicons name="notifications-outline" size={22} color={C.ink} />
+
+        <TouchableOpacity
+          onPress={() => setNotifOpen(!notifOpen)}
+          style={{ padding: 12 }}
+        >
+          <Ionicons
+            name="notifications-outline"
+            size={23}
+            color={C.ink}
+          />
+
           {unread.length > 0 && (
             <View
               style={{
                 height: 8,
                 width: 8,
-                borderRadius: 4,
+                borderRadius: 5,
                 backgroundColor: '#e44242',
                 position: 'absolute',
-                right: 7,
-                top: 7
+                right: 9,
+                top: 8
               }}
             />
           )}
         </TouchableOpacity>
+
         <TouchableOpacity
           onPress={() =>
-            Alert.alert('Account', `${user?.name}\n${user?.email}`, [
+            Alert.alert('Account', `${user.name}\n${user.email}`, [
               {
                 text: 'Sign Out',
                 onPress: async () => {
+                  if (savingSession.current) {
+                    Alert.alert(
+                      'Save in progress',
+                      'Wait until the session save finishes before signing out.'
+                    );
+                    return;
+                  }
+
+                  // Do not silently discard an active timer.
+                  if (running || elapsed > 0) {
+                    Alert.alert(
+                      'Study session in progress',
+                      'Finish or reset your unsaved session before signing out.'
+                    );
+                    return;
+                  }
+
                   setRunning(false);
                   await AsyncStorage.removeItem('abhyasToken');
                   setToken('');
                   setUser(null);
                 }
               },
-              { text: 'Cancel' }
+              { text: 'Cancel', style: 'cancel' }
             ])
           }
-          style={{ padding: 6, marginLeft: 4 }}
+          style={{ padding: 9 }}
         >
-          <Ionicons name="person-circle-outline" size={26} color={C.blue} />
+          <Ionicons
+            name="person-circle-outline"
+            size={24}
+            color={C.blue}
+          />
         </TouchableOpacity>
       </View>
-
-      {/* Main Content Area */}
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 30 }}>
+      )}
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: 18, paddingBottom: 30 }}
+      >
         {notifOpen ? (
           <>
-            <TouchableOpacity onPress={() => setNotifOpen(false)} style={{ marginBottom: 12 }}>
-              <Text style={txt(13, true, C.blue)}>← Back to {tab}</Text>
+            <TouchableOpacity onPress={() => setNotifOpen(false)}>
+              <Text style={txt(12, true, C.blue)}>â† Back to {tab}</Text>
             </TouchableOpacity>
-            <Title sub="Your revision and study reminders">Notifications</Title>
-            {notes.map(n => (
-              <Card key={n.id}>
-                <Text style={txt(11, true, C.blue)}>SPACED REPETITION PROTOCOL</Text>
-                <Text style={[txt(16, true), { marginTop: 6 }]}>{n.title}</Text>
-                <Text style={[txt(13, false, C.muted), { marginTop: 6 }]}>{n.message}</Text>
+
+            <Title sub="Your revision and study reminders">
+              Notifications
+            </Title>
+
+            {notes.map(note => (
+              <Card key={note.id}>
+                <Text style={txt(11, true, C.blue)}>
+                  SPACED REPETITION PROTOCOL
+                </Text>
+
+                <Text style={[txt(17, true), { marginTop: 8 }]}>
+                  {note.title}
+                </Text>
+
+                <Text
+                  style={[
+                    txt(13, false, C.muted),
+                    { marginTop: 8 }
+                  ]}
+                >
+                  {note.message}
+                </Text>
+
                 <Button
-                  label={(n.readBy || []).includes(user.id) ? 'Read ✓' : 'Mark as Read'}
+                  label={
+                    (note.readBy || []).includes(user.id)
+                      ? 'Read âœ“'
+                      : 'Mark as Read'
+                  }
                   subtle
-                  onPress={() => markNote(n)}
+                  onPress={() => markNote(note)}
                 />
               </Card>
             ))}
@@ -1331,7 +2356,29 @@ export default function App() {
         ) : tab === 'Dashboard' ? (
           <Dashboard />
         ) : tab === 'Timer' ? (
-          <Timer />
+  <Timer
+    elapsed={elapsed}
+    running={running}
+    mode={mode}
+    setMode={setMode}
+    startSession={startSession}
+    pauseSession={pauseSession}
+    finish={finish}
+    resetSession={resetSession}
+    saving={savingSession.current}
+    selected={selected}
+    subjects={subjects}
+    setSelected={setSelected}
+    customMinutes={customMinutes}
+    setCustomMinutes={setCustomMinutes}
+    focusMode={focusMode}
+    setFocusMode={setFocusMode}
+    zenMode={zenMode}
+    setZenMode={setZenMode}
+    deepZenUnlocked={deepZenUnlocked}
+    setDeepZenUnlocked={setDeepZenUnlocked}
+    requestExitFocus={() => setExitFocusConfirmOpen(true)}
+  />
         ) : tab === 'Syllabus' ? (
           <Syllabus />
         ) : tab === 'Planner' ? (
@@ -1340,8 +2387,7 @@ export default function App() {
           <Analytics />
         )}
       </ScrollView>
-
-      {/* Bottom Navigation */}
+      {!focusMode && (
       <View
         style={{
           backgroundColor: C.white,
@@ -1351,45 +2397,207 @@ export default function App() {
           paddingVertical: 10
         }}
       >
-        {tabs.map(([t, ic]) => (
+        {tabs.map(([tabName, iconName]) => (
           <TouchableOpacity
-            key={t}
+            key={tabName}
             style={{ flex: 1, alignItems: 'center' }}
             onPress={() => {
-              setTab(t);
+              setTab(tabName);
               setNotifOpen(false);
               refresh();
             }}
           >
-            <Ionicons name={ic} size={22} color={tab === t ? C.blue : '#667080'} />
-            <Text style={txt(10, tab === t, tab === t ? C.blue : C.muted)}>{t}</Text>
+            <Ionicons
+              name={iconName}
+              size={23}
+              color={tab === tabName ? C.blue : '#667080'}
+            />
+
+            <Text
+              style={txt(
+                10,
+                tab === tabName,
+                tab === tabName ? C.blue : C.muted
+              )}
+            >
+              {tabName}
+            </Text>
           </TouchableOpacity>
         ))}
       </View>
+      )}
+
+      {/* Reset confirmation dialog: inside the main SafeAreaView. */}
+      {resetConfirmOpen && (
+        <View
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.5)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 24,
+            zIndex: 999,
+            elevation: 20
+          }}
+        >
+          <View
+            style={{
+              width: '100%',
+              maxWidth: 380,
+              backgroundColor: C.white,
+              borderRadius: 18,
+              padding: 24,
+              borderWidth: 1,
+              borderColor: C.line
+            }}
+          >
+            <Text style={{ fontSize: 20, fontWeight: '700', color: C.ink }}>
+              Reset study session?
+            </Text>
+
+            <Text
+              style={{
+                marginTop: 10,
+                marginBottom: 24,
+                color: C.muted,
+                fontSize: 14,
+                lineHeight: 21
+              }}
+            >
+              Your current unsaved study time will be discarded.
+            </Text>
+
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <TouchableOpacity
+                onPress={cancelReset}
+                style={{
+                  flex: 1,
+                  padding: 13,
+                  borderRadius: 10,
+                  backgroundColor: C.soft,
+                  alignItems: 'center'
+                }}
+              >
+                <Text style={{ color: C.blue, fontWeight: '600' }}>
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={confirmReset}
+                disabled={savingSession.current}
+                style={{
+                  flex: 1,
+                  padding: 13,
+                  borderRadius: 10,
+                  backgroundColor: '#DC2626',
+                  alignItems: 'center',
+                  opacity: savingSession.current ? 0.55 : 1
+                }}
+              >
+                <Text style={{ color: C.white, fontWeight: '600' }}>
+                  Reset
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
+{/* Exit Focus Mode confirmation dialog */}
+{exitFocusConfirmOpen && (
+  <View
+    style={{
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(15, 23, 42, 0.5)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 24,
+      zIndex: 1000,
+      elevation: 21,
+    }}
+  >
+    <View
+      style={{
+        width: '100%',
+        maxWidth: 380,
+        backgroundColor: C.white,
+        borderRadius: 18,
+        padding: 24,
+        borderWidth: 1,
+        borderColor: C.line,
+      }}
+    >
+      <Text style={{ fontSize: 20, fontWeight: '700', color: C.ink }}>
+        Exit Focus Mode?
+      </Text>
+
+      <Text
+        style={{
+          marginTop: 10,
+          marginBottom: 24,
+          color: C.muted,
+          fontSize: 14,
+          lineHeight: 21,
+        }}
+      >
+        Are you sure you want to leave Focus Mode and return to normal navigation?
+      </Text>
+
+      <View style={{ flexDirection: 'row', gap: 12 }}>
+        <TouchableOpacity
+          onPress={() => setExitFocusConfirmOpen(false)}
+          style={{
+            flex: 1,
+            padding: 13,
+            borderRadius: 10,
+            backgroundColor: C.soft,
+            alignItems: 'center',
+          }}
+        >
+          <Text style={{ color: C.blue, fontWeight: '600' }}>
+            Stay Focused
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() => {
+            if (deepZenLocked) {
+    setExitFocusConfirmOpen(false);
+    Alert.alert(
+      'Deep Zen is locked',
+      'Complete the countdown before exiting Focus Mode.'
+    );
+    return;
+  }
+            setExitFocusConfirmOpen(false);
+            setFocusMode(false);
+          }}
+          style={{
+            flex: 1,
+            padding: 13,
+            borderRadius: 10,
+            backgroundColor: C.blue,
+            alignItems: 'center',
+          }}
+        >
+          <Text style={{ color: C.white, fontWeight: '600' }}>
+            Exit Focus Mode
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </View>
+)}
     </SafeAreaView>
   );
 }
 
-const input = {
-  backgroundColor: C.white,
-  borderWidth: 1,
-  borderColor: C.line,
-  borderRadius: 12,
-  paddingHorizontal: 14,
-  paddingVertical: 11,
-  marginTop: 6,
-  marginBottom: 10,
-  color: C.ink,
-  fontSize: 13
-};
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: C.white,
-    borderRadius: 18,
-    padding: 16,
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: '#edf2fc'
-  }
-});
