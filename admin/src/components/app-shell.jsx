@@ -1,16 +1,17 @@
 import { Link, useNavigate } from "@/components/router-link";
-import { useEffect, useState } from "react";
-import { LayoutDashboard, Users, BookOpen, Bell, UserRound, Settings, LogOut, GraduationCap, CalendarDays, Menu, X, } from "lucide-react";
+import { useEffect, useState, useRef, useCallback } from "react";
+import { LayoutDashboard, Users, BookOpen, Timer, Megaphone, Bell, UserRound, Settings, LogOut, GraduationCap, CalendarDays, Menu, X, RefreshCw, Ticket } from "lucide-react";
 import { toast } from "sonner";
-import { initials, useProfile } from "@/lib/profile-store";
+import { initials, useProfile, signOutProfile } from "@/lib/profile-store";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, } from "@/components/ui/alert-dialog";
-
 import { cn } from "@/lib/utils";
 const nav = [
     { to: "/", label: "Dashboard", icon: LayoutDashboard },
     { to: "/students", label: "Students", icon: Users },
     { to: "/syllabus", label: "Syllabus", icon: BookOpen },
-    { to: "/notifications", label: "Notifications", icon: Bell },
+    { to: "/sessions", label: "Sessions", icon: Timer },
+    { to: "/announcements", label: "Announcements", icon: Megaphone },
+    { to: "/tickets", label: "Ticket Management", icon: Ticket },
     { to: "/profile", label: "Profile", icon: UserRound },
 ];
 export function useNotificationCount() {
@@ -59,16 +60,16 @@ export function SignOutDialog({ open, onOpenChange, onSignOut }) {
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction id="confirm-sign-out-btn" className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={async () => {
+          <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={async () => {
             try {
                 localStorage.removeItem("abhyas_admin_token");
-                localStorage.removeItem("abhyas_admin_profile");
+                signOutProfile();
             } catch {}
             if (onSignOut) {
                 await onSignOut();
+            } else {
+                window.dispatchEvent(new Event("abhyas:signout"));
             }
-            window.dispatchEvent(new Event("abhyas:signout"));
-            toast.success("Signed out");
             onOpenChange?.(false);
         }}>
             Sign out
@@ -93,23 +94,203 @@ function Sidebar({ onNavigate, onSignOut }) {
       </div>
       <p className="px-6 pb-2 text-[11px] font-semibold uppercase tracking-wider text-sidebar-muted">Management</p>
       <nav className="flex flex-col gap-1 px-3">
-        {nav.map((n) => (<Link key={n.to} to={n.to} onClick={onNavigate} className={itemCls} activeProps={{ className: activeCls }} activeOptions={{ exact: true }}>
+        {nav.map((n) => (
+          <Link key={n.to} to={n.to} onClick={onNavigate} className={itemCls} activeProps={{ className: activeCls }} activeOptions={{ exact: true }}>
             <n.icon className="h-[18px] w-[18px]"/>
             {n.label}
-            {n.label === "Notifications" && notifCount > 0 && (<span className="ml-auto rounded-full bg-destructive px-1.5 text-[11px] font-semibold text-destructive-foreground">{notifCount}</span>)}
-          </Link>))}
+          </Link>
+        ))}
       </nav>
       <div className="mt-auto flex flex-col gap-1 border-t border-sidebar-border px-3 py-4">
         <Link to="/settings" onClick={onNavigate} className={itemCls} activeProps={{ className: activeCls }}>
           <Settings className="h-[18px] w-[18px]"/> Settings
         </Link>
-        <button id="sidebar-sign-out-btn" type="button" onClick={() => setSignOut(true)} className={cn(itemCls, "text-left")}>
+        <button type="button" onClick={() => setSignOut(true)} className={cn(itemCls, "text-left")}>
           <LogOut className="h-[18px] w-[18px]"/> Sign Out
         </button>
       </div>
       <SignOutDialog open={signOut} onOpenChange={setSignOut} onSignOut={onSignOut}/>
     </div>);
 }
+
+export function NotificationBell() {
+  const [open, setOpen] = useState(false);
+  const [notificationsList, setNotificationsList] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const containerRef = useRef(null);
+  const buttonRef = useRef(null);
+  const API = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
+
+  const fetchNotifications = useCallback(async () => {
+    const token = localStorage.getItem("abhyas_admin_token");
+    if (!token) return;
+    try {
+      setLoading(true);
+      const res = await fetch(API + "/notifications", {
+        headers: { Authorization: "Bearer " + token },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setNotificationsList(Array.isArray(data) ? data : []);
+      }
+    } catch {
+      // Keep existing list on error
+    } finally {
+      setLoading(false);
+    }
+  }, [API]);
+
+  useEffect(() => {
+    fetchNotifications();
+    const handleUpdate = () => fetchNotifications();
+    window.addEventListener("abhyas:notifications_updated", handleUpdate);
+    return () => window.removeEventListener("abhyas:notifications_updated", handleUpdate);
+  }, [fetchNotifications]);
+
+  // Click outside and Escape key handler
+  useEffect(() => {
+    if (!open) return;
+    function handleClickOutside(e) {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    }
+    function handleKeyDown(e) {
+      if (e.key === "Escape") {
+        setOpen(false);
+        buttonRef.current?.focus();
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
+
+  const handleToggle = () => {
+    if (!open) {
+      fetchNotifications();
+    }
+    setOpen((v) => !v);
+  };
+
+  const hasNotifications = notificationsList.length > 0;
+
+  return (
+    <div className="relative" ref={containerRef}>
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={handleToggle}
+        aria-label="Open notifications"
+        aria-expanded={open}
+        aria-haspopup="dialog"
+        className="relative grid h-10 w-10 place-items-center rounded-lg border bg-card hover:bg-muted text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
+      >
+        <Bell className="h-[18px] w-[18px]" />
+        {hasNotifications && (
+          <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-destructive ring-2 ring-card" />
+        )}
+      </button>
+
+      {open && (
+        <div
+          role="dialog"
+          aria-label="Notifications popup"
+          className="absolute right-0 top-full mt-2 w-80 sm:w-96 rounded-2xl border bg-card/95 backdrop-blur-md shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between border-b px-4 py-3 bg-muted/30">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-bold text-foreground">Notifications</span>
+              {hasNotifications && (
+                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
+                  {notificationsList.length}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={fetchNotifications}
+                className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                title="Refresh notifications"
+                aria-label="Refresh notifications"
+              >
+                <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                title="Close"
+                aria-label="Close notifications"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* List or Empty State */}
+          <div className="max-h-80 overflow-y-auto divide-y divide-border/60">
+            {loading && notificationsList.length === 0 ? (
+              <div className="p-6 space-y-3">
+                <div className="h-4 w-3/4 rounded bg-muted animate-pulse" />
+                <div className="h-3 w-full rounded bg-muted/60 animate-pulse" />
+                <div className="h-3 w-1/2 rounded bg-muted/60 animate-pulse" />
+              </div>
+            ) : notificationsList.length === 0 ? (
+              <div className="flex flex-col items-center justify-center p-8 text-center">
+                <div className="mb-3 grid h-12 w-12 place-items-center rounded-full bg-muted/60 text-muted-foreground">
+                  <Bell className="h-5 w-5" />
+                </div>
+                <p className="text-sm font-bold text-foreground">No new notifications</p>
+                <p className="mt-1 text-xs text-muted-foreground max-w-[220px]">
+                  You're all caught up! New announcements and platform alerts will appear here.
+                </p>
+              </div>
+            ) : (
+              notificationsList.map((n) => (
+                <div key={n.id} className="p-4 hover:bg-muted/40 transition-colors">
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <p className="text-xs font-bold text-foreground leading-snug">{n.title}</p>
+                    <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                      {n.createdAt
+                        ? new Date(n.createdAt).toLocaleDateString("en-IN", {
+                            month: "short",
+                            day: "numeric",
+                          })
+                        : "Recent"}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {n.message}
+                  </p>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="border-t bg-muted/30 p-2 text-center">
+            <Link
+              to="/announcements"
+              onClick={() => setOpen(false)}
+              className="block rounded-lg py-1.5 text-xs font-semibold text-primary hover:bg-primary/10 transition-colors"
+            >
+              Broadcast an Announcement →
+            </Link>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function AppShell({ title, children, onSignOut }) {
     const today = useToday();
     const profile = useProfile();
@@ -146,10 +327,7 @@ export function AppShell({ title, children, onSignOut }) {
                 <CalendarDays className="h-4 w-4"/>
                 {today ? formatLongDate(today) : "\u00a0"}
               </div>
-              <Link to="/notifications" aria-label="Notifications" className="relative grid h-10 w-10 place-items-center rounded-lg border bg-card hover:bg-muted">
-                <Bell className="h-[18px] w-[18px]"/>
-                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-destructive"/>
-              </Link>
+              <NotificationBell />
               <Link to="/profile" aria-label="Profile" className="flex items-center gap-2">
                 <span className="grid h-10 w-10 place-items-center rounded-full bg-destructive text-sm font-bold text-destructive-foreground ring-2 ring-accent">
                   {initials(profile.fullName)}

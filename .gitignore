@@ -21,14 +21,28 @@ data/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+**/npm-debug.log*
+**/yarn-debug.log*
+**/pnpm-debug.log*
 
 # Backup files
 *.backup*
 **/*.backup*
+**/*.backup
+**/*.backup.*
+**/*.backup-*
+**/*-backup
+**/*-backup-*
+backend/data/*.backup.json
+backend/src/*.backup.js
 
 # OS metadata
 .DS_Store
 Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
 
 # Local scripts
 start-app.bat

@@ -1,29 +1,23 @@
 require('dotenv').config();
-
+const { connectDB } = require('./db');
+const {
+    User,
+    Subject,
+    Plan,
+    Session,
+    Notification,
+    Ticket
+} = require('./models');
 const express = require('express');
 const cors = require('cors');
-const fs = require('fs');
-const path = require('path');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
+const crypto = require('crypto');
 
 const app = express();
 
-// Security: Disable Express fingerprinting
-app.disable('x-powered-by');
-
-// Security: HTTP Security Headers via Helmet (configured safely for local development without forced HTTPS/HSTS)
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" },
-  contentSecurityPolicy: false,
-  hsts: false,
-  originAgentCluster: false
-}));
-
-// Support Private Network Access and instant preflights for Chrome/Edge on ANY Wi-Fi (Home, Office, Hotspot)
+// Support Private Network Access and instant preflights for Chrome/Edge on ANY Wi-Fi
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Private-Network', 'true');
   if (req.method === 'OPTIONS') {
@@ -36,7 +30,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// Security: Permit all local development & intranet Wi-Fi origins seamlessly
 app.use(cors({
   origin: true,
   credentials: true,
@@ -44,301 +37,100 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With', 'Access-Control-Request-Private-Network']
 }));
 
-// Body parser with size limits to prevent Denial of Service
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({ limit: '2mb' }));
 
-// Security: Rate Limiting
-const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 400, // max 400 requests per 15 mins per IP
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: 'Too many requests, please try again after 15 minutes.' }
-});
-app.use('/api', apiLimiter);
-
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 30, // max 30 attempts per 15 mins per IP
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: 'Too many authentication attempts. Please wait 15 minutes before trying again.' }
-});
-app.use('/api/auth/', authLimiter);
-
-// Security: Input Sanitization against XSS
-function sanitizeText(val) {
-  if (typeof val !== 'string') return val;
-  return val
-    .replace(/<[^>]*>?/gm, '') // Strip HTML tags
-    .replace(/javascript:/gi, '')
-    .replace(/vbscript:/gi, '')
-    .replace(/data:text\/html/gi, '')
-    .replace(/onload\s*=/gi, '')
-    .replace(/onerror\s*=/gi, '')
-    .replace(/onclick\s*=/gi, '')
-    .trim();
-}
-
-function sanitizePayload(obj) {
-  if (!obj || typeof obj !== 'object') return obj;
-  if (Array.isArray(obj)) return obj.map(sanitizePayload);
-  const clean = {};
-  for (const [k, v] of Object.entries(obj)) {
-    // Preserve raw password and OTP strings during authentication
-    if (k === 'password' || k === 'newPassword' || k === 'otp') {
-      clean[k] = typeof v === 'string' ? v.trim() : v;
-    } else if (typeof v === 'string') {
-      clean[k] = sanitizeText(v);
-    } else if (typeof v === 'object') {
-      clean[k] = sanitizePayload(v);
-    } else {
-      clean[k] = v;
-    }
-  }
-  return clean;
-}
-
-app.use((req, res, next) => {
-  if (req.body && typeof req.body === 'object') {
-    req.body = sanitizePayload(req.body);
-  }
-  next();
-});
-
-const file = path.join(__dirname, '../data/db.json');
 const secret = process.env.JWT_SECRET || 'development-only-change-this-secret';
 
-function initDb() {
-  const email = process.env.ADMIN_EMAIL || 'admin@abhyas.local';
-  const password = process.env.ADMIN_PASSWORD || 'ChangeMe123!';
-  const now = new Date().toISOString();
+// In-memory OTP storage with TTL
+const otpStore = new Map();
 
-  const initial = {
-    users: [
-      {
-        id: 'admin1',
-        name: 'Admin',
-        email: email.toLowerCase(),
-        role: 'admin',
-        passwordHash: bcrypt.hashSync(password, 12)
-      },
-      {
-        id: 'student1',
-        name: 'Demo Aspirant',
-        email: 'student@abhyas.local',
-        role: 'student',
-        passwordHash: bcrypt.hashSync('Student123!', 12)
-      }
-    ],
-    subjects: [
-      // UPSC Civil Services (9 Core Subjects)
-      { id: 'upsc-history-culture', exam: 'UPSC', name: 'History and Culture', paper: 'UPSC GS Paper I', topics: 6, completed: 3, imageUrl: 'https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=160&q=80' },
-      { id: 'upsc-geography', exam: 'UPSC', name: 'Geography', paper: 'UPSC GS Paper I', topics: 6, completed: 2, imageUrl: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=160&q=80' },
-      { id: 'upsc-polity', exam: 'UPSC', name: 'Indian Polity and Governance', paper: 'UPSC GS Paper II', topics: 6, completed: 4, imageUrl: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=160&q=80' },
-      { id: 'upsc-economy', exam: 'UPSC', name: 'Indian Economy', paper: 'UPSC GS Paper III', topics: 6, completed: 2, imageUrl: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=160&q=80' },
-      { id: 'upsc-environment', exam: 'UPSC', name: 'Environment and Ecology', paper: 'UPSC GS Paper III', topics: 5, completed: 3, imageUrl: 'https://images.unsplash.com/photo-1473448912268-2022ce9509d8?auto=format&fit=crop&w=160&q=80' },
-      { id: 'upsc-science-tech', exam: 'UPSC', name: 'Science and Technology', paper: 'UPSC GS Paper III', topics: 5, completed: 2, imageUrl: 'https://images.unsplash.com/photo-1507668077129-56e32842fceb?auto=format&fit=crop&w=160&q=80' },
-      { id: 'upsc-current-affairs', exam: 'UPSC', name: 'Current Affairs', paper: 'UPSC Prelims & Mains', topics: 5, completed: 3, imageUrl: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=160&q=80' },
-      { id: 'upsc-csat', exam: 'UPSC', name: 'CSAT (Prelims Paper II)', paper: 'UPSC Prelims Paper II', topics: 6, completed: 4, imageUrl: 'https://images.unsplash.com/photo-1509228468518-180dd4864904?auto=format&fit=crop&w=160&q=80' },
-      { id: 'upsc-ethics', exam: 'UPSC', name: 'Ethics, Integrity and Aptitude (Mains)', paper: 'UPSC GS Paper IV', topics: 5, completed: 2, imageUrl: 'https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=160&q=80' },
-
-      // MPSC Maharashtra State Services (9 Core Subjects)
-      { id: 'mpsc-history', exam: 'MPSC', name: 'Maharashtra and Indian History', paper: 'MPSC GS Paper I', topics: 6, completed: 3, imageUrl: 'https://images.unsplash.com/photo-1578328819058-b69f3a3b0f6b?auto=format&fit=crop&w=160&q=80' },
-      { id: 'mpsc-geography', exam: 'MPSC', name: 'Maharashtra and Indian Geography', paper: 'MPSC GS Paper I', topics: 6, completed: 3, imageUrl: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=160&q=80' },
-      { id: 'mpsc-polity', exam: 'MPSC', name: 'Indian Constitution and Maharashtra Administration', paper: 'MPSC GS Paper II', topics: 6, completed: 4, imageUrl: 'https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=160&q=80' },
-      { id: 'mpsc-economy', exam: 'MPSC', name: 'Indian and Maharashtra Economy', paper: 'MPSC GS Paper III', topics: 6, completed: 2, imageUrl: 'https://images.unsplash.com/photo-1570126618953-d437176e8c79?auto=format&fit=crop&w=160&q=80' },
-      { id: 'mpsc-marathi', exam: 'MPSC', name: 'Marathi Language', paper: 'MPSC Language Paper 1', topics: 5, completed: 3, imageUrl: 'https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=160&q=80' },
-      { id: 'mpsc-english', exam: 'MPSC', name: 'English Language', paper: 'MPSC Language Paper 2', topics: 5, completed: 3, imageUrl: 'https://images.unsplash.com/photo-1457369804613-52c61a468e7d?auto=format&fit=crop&w=160&q=80' },
-      { id: 'mpsc-aptitude', exam: 'MPSC', name: 'Aptitude and Reasoning', paper: 'MPSC CSAT / Paper II', topics: 6, completed: 4, imageUrl: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&w=160&q=80' },
-      { id: 'mpsc-environment-science', exam: 'MPSC', name: 'Environment and Science', paper: 'MPSC GS Paper IV', topics: 5, completed: 2, imageUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=160&q=80' },
-      { id: 'mpsc-current-affairs', exam: 'MPSC', name: 'Current Affairs', paper: 'MPSC Prelims & Mains', topics: 5, completed: 3, imageUrl: 'https://images.unsplash.com/photo-1495020689067-958852a7765e?auto=format&fit=crop&w=160&q=80' }
-    ],
-    topicProgress: [],
-    plans: [
-      {
-        id: 'plan1',
-        userId: 'student1',
-        title: 'Chapter 7: Fundamental Rights',
-        minutes: 90,
-        date: new Date().toISOString().slice(0, 10),
-        subjectId: 'upsc-polity',
-        priority: 'High',
-        done: false
-      }
-    ],
-    sessions: [
-      {
-        id: 'sess1',
-        userId: 'student1',
-        subjectId: 'upsc-polity',
-        minutes: 45,
-        mode: 'Pomodoro',
-        focusScore: 94,
-        startedAt: now
-      }
-    ],
-    notifications: [
-      {
-        id: 'notice1',
-        userId: 'all',
-        title: 'Spaced Repetition Due',
-        message: 'Review Fundamental Rights (Articles 14–32)',
-        readBy: [],
-        createdAt: now
-      }
-    ]
-  };
-
-  fs.mkdirSync(path.dirname(file), { recursive: true });
-  fs.writeFileSync(file, JSON.stringify(initial, null, 2));
-  return initial;
-}
-
-function read() {
-  try {
-    if (!fs.existsSync(file)) return initDb();
-
-    const parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
-
-    if (!parsed || !Array.isArray(parsed.users) || parsed.users.length === 0) {
-      return initDb();
-    }
-
-    const users = parsed.users || [];
-    if (!users.some(u => String(u.email || '').toLowerCase() === 'admin@abhyas.local')) {
-      users.push({
-        id: 'admin1',
-        name: 'Admin',
-        email: 'admin@abhyas.local',
-        role: 'admin',
-        passwordHash: bcrypt.hashSync('ChangeMe123!', 12)
-      });
-    }
-    if (!users.some(u => String(u.email || '').toLowerCase() === 'student@abhyas.local')) {
-      users.push({
-        id: 'student1',
-        name: 'Demo Aspirant',
-        email: 'student@abhyas.local',
-        role: 'student',
-        passwordHash: bcrypt.hashSync('Student123!', 12)
-      });
-    }
-
-    return {
-      users,
-      subjects: parsed.subjects || [],
-      topicProgress: parsed.topicProgress || [],
-      plans: parsed.plans || [],
-      sessions: parsed.sessions || [],
-      notifications: parsed.notifications || []
-    };
-  } catch (err) {
-    console.error('Error reading db.json:', err);
-    throw err;
-  }
-}
-
-function save(db) {
-  fs.mkdirSync(path.dirname(file), { recursive: true });
-  fs.writeFileSync(file, JSON.stringify(db, null, 2));
-}
-
-function auth(role) {
-  return (req, res, next) => {
-    try {
-      const token = (req.headers.authorization || '').replace(/^Bearer /, '').trim();
-      if (!token) {
-        return res.status(401).json({ error: 'Authentication required. No token provided.' });
-      }
-
-      const user = jwt.verify(token, secret);
-
-      if (role && user.role !== role) {
-        return res.status(403).json({ error: 'Forbidden: Insufficient permissions.' });
-      }
-
-      req.user = user;
-      next();
-    } catch {
-      return res.status(401).json({ error: 'Authentication required or token expired.' });
-    }
-  };
-}
-
-function publicUser(user) {
-  const { password, passwordHash, ...safe } = user;
-  return safe;
-}
-
-app.get('/api/health', (req, res) => {
-  res.json({ ok: true, service: 'Abhyas Tracker API', status: 'healthy' });
-});
-
-// Real Email & SMS Transporters
-function getMailer() {
-  const host = process.env.SMTP_HOST || 'smtp.gmail.com';
-  const port = Number(process.env.SMTP_PORT) || 465;
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS ? String(process.env.SMTP_PASS).replace(/\s+/g, '') : '';
-
-  if (!user || !pass) {
-    return null;
-  }
-
-  return nodemailer.createTransport({
-    host,
-    port,
-    secure: port === 465,
-    auth: { user, pass }
+// Configure Nodemailer SMTP Transport
+let realTransporter = null;
+if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+  realTransporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: Number(process.env.SMTP_PORT) || 587,
+    secure: process.env.SMTP_SECURE === 'true' || process.env.SMTP_PORT === '465',
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+    tls: { rejectUnauthorized: false }
   });
 }
 
-async function sendRealEmail(to, subject, htmlContent) {
-  const transporter = getMailer();
-  if (!transporter) {
-    console.warn(`[EMAIL DISPATCH NOTICE] Real email delivery requires SMTP_USER and SMTP_PASS in backend/.env.`);
-    return {
-      sent: false,
-      reason: 'SMTP email credentials not yet configured in backend/.env.'
-    };
+async function sendRealEmail(to, subject, html) {
+  if (!realTransporter) {
+    console.log(`[EMAIL DISPATCH - SIMULATED] To: ${to} | Subject: ${subject}`);
+    return { sent: true, simulated: true };
   }
-
   try {
-    const from = process.env.SMTP_FROM || `"Abhyas Study Hours" <${process.env.SMTP_USER}>`;
-    const info = await transporter.sendMail({
-      from,
+    const info = await realTransporter.sendMail({
+      from: process.env.SMTP_FROM || `"Abhyas Tracker" <${process.env.SMTP_USER}>`,
       to,
       subject,
-      html: htmlContent
+      html
     });
-    console.log(`[EMAIL DISPATCH SUCCESS] Real email sent to ${to} (MessageId: ${info.messageId})`);
+    console.log(`[EMAIL DISPATCH - SUCCESS] Sent to: ${to} | MsgId: ${info.messageId}`);
     return { sent: true, messageId: info.messageId };
   } catch (err) {
-    console.error(`[EMAIL DISPATCH ERROR] Failed to send email to ${to}:`, err.message);
+    console.error(`[EMAIL DISPATCH - ERROR] Failed to send to ${to}:`, err.message);
     return { sent: false, error: err.message };
   }
 }
 
-// In-memory OTP Store for Login, Signup & Password Reset
-const otpStore = new Map();
+function auth(role) {
+    return (req, res, next) => {
+        try {
+            const t = (req.headers.authorization || '').replace(/^Bearer /, '');
+            const u = jwt.verify(t, secret);
+            if (role && u.role !== role) return res.status(403).json({ error: 'Forbidden' });
+            req.user = u;
+            next();
+        } catch {
+            return res.status(401).json({ error: 'Authentication required' });
+        }
+    };
+}
 
-// Send OTP via Real Email / SMS
+function publicUser(u) {
+    if (!u) return null;
+    const obj = typeof u.toPublicJSON === 'function'
+        ? u.toPublicJSON()
+        : (typeof u.toJSON === 'function' ? u.toJSON() : { ...u });
+    delete obj.passwordHash;
+    delete obj._id;
+    delete obj.__v;
+    return obj;
+}
+
+function cleanDoc(doc) {
+    if (!doc) return doc;
+    const obj = typeof doc.toJSON === 'function' ? doc.toJSON() : { ...doc };
+    delete obj._id;
+    delete obj.__v;
+    return obj;
+}
+
+// -------------------------------------------------------------
+// Health Check
+// -------------------------------------------------------------
+app.get('/api/health', (req, res) => res.json({ ok: true, service: 'Abhyas Tracker API' }));
+
+// -------------------------------------------------------------
+// OTP Verification & Forgot Password
+// -------------------------------------------------------------
 app.post('/api/auth/send-otp', async (req, res) => {
-  const { target, type = 'general', method = 'email' } = req.body;
+  const { target, type = 'forgot', method = 'email' } = req.body || {};
   const cleanTarget = String(target || '').trim().toLowerCase();
 
   if (!cleanTarget) {
-    return res.status(400).json({ error: 'Invalid credentials' });
-  }
-
-  if (method === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanTarget)) {
-    return res.status(400).json({ error: 'Invalid credentials' });
+    return res.status(400).json({ error: 'Email address or mobile number is required' });
   }
 
   // Generate 6-digit cryptographic random OTP
-  const code = Math.floor(100000 + Math.random() * 900000).toString();
-  const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes
+  const code = String(crypto.randomInt(100000, 999999));
+  const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
 
   otpStore.set(cleanTarget, {
     code,
@@ -348,35 +140,26 @@ app.post('/api/auth/send-otp', async (req, res) => {
   });
 
   const emailHtml = `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 540px; margin: 0 auto; padding: 28px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">
-      <div style="text-align: center; margin-bottom: 24px;">
-        <div style="display: inline-block; width: 48px; height: 48px; line-height: 48px; border-radius: 14px; background-color: #2457C5; color: #ffffff; font-size: 26px; font-weight: bold; text-align: center;">S</div>
-        <h2 style="color: #18356B; margin: 12px 0 4px 0; font-size: 22px;">Study Hours - Abhyas Tracker</h2>
-        <p style="color: #64748B; font-size: 13px; margin: 0;">Your journey to UPSC &amp; MPSC success</p>
-      </div>
-
-      <div style="background-color: #f8faff; border-radius: 12px; padding: 22px; border: 1px solid #dce8fb; text-align: center;">
-        <p style="color: #334155; font-size: 14px; margin-top: 0; font-weight: 600;">Here is your One-Time Password (OTP) for account verification:</p>
-        <div style="font-size: 34px; font-weight: 800; letter-spacing: 7px; color: #2457C5; padding: 14px 24px; background-color: #ffffff; border: 2px dashed #80a9e5; border-radius: 10px; display: inline-block; margin: 12px 0;">
+    <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
+      <h2 style="color: #1e3a8a; margin-top: 0; text-align: center;">Abhyas Tracker Security</h2>
+      <p style="color: #475569; font-size: 15px;">Your single-use verification code for <strong>${type === 'login' ? 'Instant Sign In' : 'Password Reset'}</strong> is:</p>
+      <div style="text-align: center; margin: 28px 0;">
+        <span style="font-size: 34px; font-weight: 800; letter-spacing: 8px; color: #2563eb; background: #eff6ff; padding: 12px 24px; border-radius: 8px; border: 1px dashed #bfdbfe; display: inline-block;">
           ${code}
-        </div>
-        <p style="color: #64748B; font-size: 12px; margin-bottom: 0;">This code is valid for <strong>5 minutes</strong>. Do not share this code with anyone.</p>
+        </span>
       </div>
-
-      <p style="color: #94a3b8; font-size: 12px; text-align: center; margin-top: 24px; border-top: 1px solid #f1f5f9; padding-top: 16px;">
-        If you did not request this verification code, please ignore this email.
-      </p>
+      <p style="color: #64748b; font-size: 13px;">This code expires in 10 minutes. For your security, never share this code with anyone.</p>
     </div>
   `;
 
   let recipientEmail = cleanTarget;
 
   if (method === 'mobile' || !cleanTarget.includes('@')) {
-    const cleanMobile = cleanTarget.replace(/\D/g, '').slice(-10);
-    const db = read();
-    const user = db.users.find(u =>
-      String(u.mobile || '').replace(/\D/g, '').slice(-10) === cleanMobile
-    );
+    const cleanMobile = cleanTarget.replace(/\D/g, '');
+    let user = null;
+    try {
+      user = await User.findOne({ phone: cleanMobile });
+    } catch {}
 
     if (user && user.email) {
       recipientEmail = user.email;
@@ -386,16 +169,14 @@ app.post('/api/auth/send-otp', async (req, res) => {
         method,
         expiresAt
       });
-      // Dispatch real email via SMTP asynchronously (doesn't block HTTP response)
       sendRealEmail(user.email, `Your Abhyas Verification Code: ${code}`, emailHtml)
         .catch(err => console.error('[EMAIL DISPATCH ERROR]', err.message));
     } else {
       return res.status(404).json({
-        error: `No registered student account found for mobile ${cleanMobile}. Please click 'Sign Up' below to register with your email and mobile number!`
+        error: `No registered student account found for mobile ${cleanMobile}. Please sign up first with your email and mobile number!`
       });
     }
   } else {
-    // Dispatch real email via SMTP asynchronously (doesn't block HTTP response)
     sendRealEmail(cleanTarget, `Your Abhyas Verification Code: ${code}`, emailHtml)
       .catch(err => console.error('[EMAIL DISPATCH ERROR]', err.message));
   }
@@ -405,692 +186,584 @@ app.post('/api/auth/send-otp', async (req, res) => {
     delivered: true,
     message: (method === 'mobile' || !cleanTarget.includes('@'))
       ? `Verification code dispatched to your registered email (${recipientEmail}). Check your inbox!`
-      : `Verification code sent to ${cleanTarget}. Please check your inbox & spam folder.`,
-    target: cleanTarget,
-    method,
-    expiresIn: 300
+      : `Verification code sent to ${cleanTarget}. Please check your inbox & spam folder.`
   });
 });
 
-// Verify OTP (Secure - Backdoor Removed)
 app.post('/api/auth/verify-otp', (req, res) => {
-  const { target, otp } = req.body;
+  const { target, code } = req.body || {};
   const cleanTarget = String(target || '').trim().toLowerCase();
-  const cleanOtp = String(otp || '').trim();
-
-  if (!cleanTarget || !cleanOtp) {
-    return res.status(400).json({ error: 'Target contact and OTP code are required.' });
-  }
+  const cleanCode = String(code || '').trim();
 
   const record = otpStore.get(cleanTarget);
   if (!record) {
-    return res.status(400).json({ error: 'No OTP requested for this contact or it has expired.' });
+    return res.status(400).json({ error: 'No active code found for this account. Please request a new code.' });
   }
 
   if (Date.now() > record.expiresAt) {
     otpStore.delete(cleanTarget);
-    return res.status(400).json({ error: 'OTP has expired. Please request a new one.' });
+    return res.status(400).json({ error: 'Verification code has expired. Please request a new code.' });
   }
 
-  if (record.code !== cleanOtp) {
-    return res.status(400).json({ error: 'Incorrect 6-digit OTP code. Please try again.' });
+  if (record.code !== cleanCode) {
+    return res.status(400).json({ error: 'Incorrect verification code. Please check and try again.' });
   }
 
   res.json({ success: true, verified: true });
 });
 
-// Login via OTP (Secure - Backdoor Removed)
-app.post('/api/auth/login-otp', (req, res) => {
-  const { target, otp } = req.body;
+app.post('/api/auth/login-otp', async (req, res) => {
+  const { target, code } = req.body || {};
   const cleanTarget = String(target || '').trim().toLowerCase();
-  const cleanOtp = String(otp || '').trim();
-
-  if (!cleanTarget || !cleanOtp) {
-    return res.status(400).json({ error: 'Target and OTP are required.' });
-  }
+  const cleanCode = String(code || '').trim();
 
   const record = otpStore.get(cleanTarget);
-  const isValidOtp = record && record.code === cleanOtp && Date.now() <= record.expiresAt;
-
-  if (!isValidOtp) {
-    return res.status(400).json({ error: 'Invalid or expired OTP code.' });
-  }
-
-  const db = read();
-  const cleanMobileTarget = cleanTarget.replace(/\D/g, '').slice(-10);
-  let user = db.users.find(u =>
-    String(u.email || '').trim().toLowerCase() === cleanTarget ||
-    (cleanMobileTarget.length === 10 && String(u.mobile || '').replace(/\D/g, '').slice(-10) === cleanMobileTarget)
-  );
-
-  if (!user) {
-    user = {
-      id: Date.now().toString(),
-      name: cleanTarget.includes('@') ? cleanTarget.split('@')[0] : `Student ${cleanTarget.slice(-4)}`,
-      email: cleanTarget.includes('@') ? cleanTarget : `${cleanTarget}@abhyas.local`,
-      mobile: !cleanTarget.includes('@') ? cleanTarget : undefined,
-      role: 'student',
-      passwordHash: bcrypt.hashSync(Math.random().toString(36), 12)
-    };
-    db.users.push(user);
-    save(db);
+  if (!record || Date.now() > record.expiresAt || record.code !== cleanCode) {
+    return res.status(401).json({ error: 'Invalid or expired OTP code.' });
   }
 
   otpStore.delete(cleanTarget);
 
-  const token = jwt.sign(
-    { id: user.id, role: user.role },
-    secret,
-    { expiresIn: '7d' }
-  );
-
-  res.json({ token, user: publicUser(user) });
-});
-
-// Reset Password with OTP (Secure - Backdoor Removed, Plaintext Scrubbed)
-app.post('/api/auth/reset-password', (req, res) => {
-  const { target, otp, newPassword } = req.body;
-  const cleanTarget = String(target || '').trim().toLowerCase();
-  const cleanOtp = String(otp || '').trim();
-  const cleanPassword = String(newPassword || '').trim();
-
-  if (!cleanPassword || cleanPassword.length < 6) {
-    return res.status(400).json({ error: 'New password must be at least 6 characters' });
-  }
-
-  const record = otpStore.get(cleanTarget);
-  const isValidOtp = record && record.code === cleanOtp && Date.now() <= record.expiresAt;
-
-  if (!isValidOtp) {
-    return res.status(400).json({ error: 'Invalid or expired verification code' });
-  }
-
-  const db = read();
-  const cleanMobileTarget = cleanTarget.replace(/\D/g, '').slice(-10);
-  let user = db.users.find(u =>
-    String(u.email || '').trim().toLowerCase() === cleanTarget ||
-    (cleanMobileTarget.length === 10 && String(u.mobile || '').replace(/\D/g, '').slice(-10) === cleanMobileTarget)
-  );
-
-  if (!user) {
-    user = {
-      id: Date.now().toString(),
-      name: cleanTarget.includes('@') ? cleanTarget.split('@')[0] : `Student ${cleanTarget.slice(-4)}`,
-      email: cleanTarget.includes('@') ? cleanTarget : `${cleanTarget}@abhyas.local`,
-      mobile: !cleanTarget.includes('@') ? cleanTarget : undefined,
-      role: 'student',
-      passwordHash: bcrypt.hashSync(cleanPassword, 12)
-    };
-    db.users.push(user);
-    save(db);
-    otpStore.delete(cleanTarget);
-    return res.json({ success: true, message: 'Password updated successfully! You can now sign in.' });
-  }
-
-  user.passwordHash = bcrypt.hashSync(cleanPassword, 12);
-  if ('password' in user) delete user.password;
-  save(db);
-  otpStore.delete(cleanTarget);
-
-  res.json({ success: true, message: 'Password updated successfully! You can now sign in.' });
-});
-
-// Authentication: Register
-app.post('/api/auth/register', (req, res) => {
-  const { name, email, mobile, password } = req.body;
-  const normalizedEmail = String(email || '').trim().toLowerCase();
-  const cleanPassword = String(password || '').trim();
-
-  // Validate email format
-  if (!normalizedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
-    return res.status(400).json({ error: 'Invalid credentials' });
-  }
-
-  if (!name || !cleanPassword || cleanPassword.length < 6) {
-    return res.status(400).json({
-      error: 'Name and password (6+ characters) required'
-    });
-  }
-
-  const db = read();
-
-  if (db.users.some(user => user.email === normalizedEmail)) {
-    return res.status(409).json({ error: 'Email already registered' });
-  }
-
-  const user = {
-    id: Date.now().toString(),
-    name: String(name).trim(),
-    email: normalizedEmail,
-    mobile: mobile ? String(mobile).replace(/\D/g, '').slice(-10) : undefined,
-    role: 'student',
-    passwordHash: bcrypt.hashSync(cleanPassword, 12)
-  };
-
-  db.users.push(user);
-  save(db);
-
-  const token = jwt.sign(
-    { id: user.id, role: user.role },
-    secret,
-    { expiresIn: '7d' }
-  );
-
-  res.status(201).json({ token, user: publicUser(user) });
-});
-
-// Authentication: Login (Strict Bcrypt, No Plaintext Backdoors)
-app.post('/api/auth/login', (req, res) => {
-  const { email, password } = req.body;
-  const normalizedEmail = String(email || '').trim().toLowerCase();
-  const cleanPassword = String(password || '').trim();
-
-  if (!normalizedEmail || !cleanPassword || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
-    return res.status(401).json({ error: 'Invalid credentials' });
-  }
-
-  const user = read().users.find(
-    item => String(item.email || '').trim().toLowerCase() === normalizedEmail
-  );
-
-  if (!user || !user.passwordHash) {
-    return res.status(401).json({ error: 'Invalid credentials' });
-  }
-
-  let isValid = false;
   try {
-    isValid = bcrypt.compareSync(cleanPassword, user.passwordHash);
-  } catch (e) {
-    console.warn('bcrypt compare warning:', e.message);
-  }
-
-  if (!isValid) {
-    return res.status(401).json({ error: 'Invalid credentials' });
-  }
-
-  const token = jwt.sign(
-    { id: user.id, role: user.role },
-    secret,
-    { expiresIn: '7d' }
-  );
-
-  res.json({ token, user: publicUser(user) });
-});
-
-// Current User Profile
-app.get('/api/me', auth(), (req, res) => {
-  const user = read().users.find(item => item.id === req.user.id);
-  if (!user) return res.status(404).json({ error: 'User not found' });
-  res.json({ user: publicUser(user) });
-});
-
-// Syllabus: subjects
-app.get('/api/subjects', auth(), (req, res) => {
-  res.json(read().subjects);
-});
-
-// Syllabus: fetch individual topic progress for logged-in student
-app.get('/api/topic-progress', auth(), (req, res) => {
-  const db = read();
-  res.json(
-    db.topicProgress.filter(item => item.userId === req.user.id)
-  );
-});
-
-// Syllabus: save or update an individual topic's status
-const handleTopicProgressUpdate = (req, res) => {
-  const allowedStatuses = [
-    'Not Started',
-    'In Progress',
-    'Completed',
-    'To Revise'
-  ];
-
-  const {
-    status,
-    subjectId,
-    targetDate,
-    timeSpentMinutes,
-    revisionCount,
-    completionPercentage
-  } = req.body;
-
-  if (!allowedStatuses.includes(status)) {
-    return res.status(400).json({ error: 'Invalid topic status' });
-  }
-
-  const db = read();
-
-  let item = db.topicProgress.find(
-    entry =>
-      entry.userId === req.user.id &&
-      entry.topicId === req.params.topicId
-  );
-
-  if (item) {
-    item.status = status;
-    if (subjectId) item.subjectId = subjectId;
-    if (targetDate !== undefined) item.targetDate = targetDate;
-    if (timeSpentMinutes !== undefined) item.timeSpentMinutes = Number(timeSpentMinutes) || 0;
-    if (revisionCount !== undefined) item.revisionCount = Number(revisionCount) || 0;
-    if (completionPercentage !== undefined) {
-      item.completionPercentage = Math.max(0, Math.min(100, Number(completionPercentage) || 0));
-    } else {
-      item.completionPercentage = status === 'Completed' ? 100 : status === 'In Progress' ? 50 : status === 'To Revise' ? 75 : 0;
-    }
-  } else {
-    item = {
-      id: Date.now().toString(),
-      userId: req.user.id,
-      topicId: req.params.topicId,
-      subjectId: subjectId || null,
-      status,
-      targetDate: targetDate || null,
-      timeSpentMinutes: Number(timeSpentMinutes) || 0,
-      revisionCount: Number(revisionCount) || 0,
-      completionPercentage: completionPercentage !== undefined
-        ? Math.max(0, Math.min(100, Number(completionPercentage) || 0))
-        : (status === 'Completed' ? 100 : status === 'In Progress' ? 50 : status === 'To Revise' ? 75 : 0)
-    };
-
-    db.topicProgress.push(item);
-  }
-
-  const sId = subjectId || item.subjectId;
-  if (sId) {
-    const sub = db.subjects.find(s => s.id === sId);
-    if (sub) {
-      const completedCount = db.topicProgress.filter(
-        tp => tp.userId === req.user.id && tp.subjectId === sId && tp.status === 'Completed'
-      ).length;
-      sub.completed = completedCount;
-    }
-  }
-
-  save(db);
-  res.json(item);
-};
-
-app.patch('/api/topic-progress/:topicId', auth(), handleTopicProgressUpdate);
-app.post('/api/topic-progress/:topicId', auth(), handleTopicProgressUpdate);
-app.patch('/api/topics/progress/:topicId', auth(), handleTopicProgressUpdate);
-app.post('/api/topics/progress/:topicId', auth(), handleTopicProgressUpdate);
-
-// Planner: get plans belonging to logged-in student (IDOR Safe)
-app.get('/api/plan', auth(), (req, res) => {
-  const db = read();
-  res.json(
-    db.plans.filter(item => item.userId === req.user.id)
-  );
-});
-
-// Planner: create a plan
-app.post('/api/plan', auth(), (req, res) => {
-  const { title, minutes, date, subjectId, priority } = req.body;
-  const duration = Number(minutes);
-
-  if (
-    typeof title !== 'string' ||
-    !title.trim() ||
-    !Number.isFinite(duration) ||
-    duration <= 0 ||
-    duration > 1440
-  ) {
-    return res.status(400).json({
-      error: 'Enter a title and a duration between 1 and 1440 minutes'
+    const user = await User.findOne({
+      $or: [{ email: cleanTarget }, { phone: cleanTarget.replace(/\D/g, '') }]
     });
-  }
 
-  const validPriority = ['Low', 'Medium', 'High'];
-  const selectedPriority = validPriority.includes(priority)
-    ? priority
-    : 'Medium';
-
-  const db = read();
-
-  const plan = {
-    id: Date.now().toString(),
-    userId: req.user.id,
-    title: sanitizeText(title),
-    minutes: duration,
-    date: date || new Date().toISOString().slice(0, 10),
-    subjectId: subjectId || null,
-    exam: req.body.exam || (String(subjectId || '').startsWith('mpsc') ? 'MPSC' : 'UPSC'),
-    priority: selectedPriority,
-    done: false
-  };
-
-  db.plans.push(plan);
-  save(db);
-
-  res.status(201).json(plan);
-});
-
-// Planner: update completion and priority (IDOR Safe)
-app.patch('/api/plan/:id', auth(), (req, res) => {
-  const db = read();
-
-  const plan = db.plans.find(
-    item => item.id === req.params.id && item.userId === req.user.id
-  );
-
-  if (!plan) return res.status(404).json({ error: 'Plan not found' });
-
-  if (typeof req.body.done === 'boolean') {
-    plan.done = req.body.done;
-  }
-
-  if (req.body.priority !== undefined) {
-    if (!['Low', 'Medium', 'High'].includes(req.body.priority)) {
-      return res.status(400).json({ error: 'Invalid priority' });
+    if (!user) {
+      return res.status(404).json({ error: 'No account found. Please sign up first.' });
     }
 
-    plan.priority = req.body.priority;
+    const token = jwt.sign({ id: user.id, role: user.role }, secret, { expiresIn: '7d' });
+    res.json({ token, user: publicUser(user) });
+  } catch (err) {
+    res.status(500).json({ error: 'Login failed' });
+  }
+});
+
+app.post('/api/auth/reset-password', async (req, res) => {
+  const { target, code, newPassword } = req.body || {};
+  const cleanTarget = String(target || '').trim().toLowerCase();
+  const cleanCode = String(code || '').trim();
+  const cleanPass = String(newPassword || '').trim();
+
+  if (!cleanPass || cleanPass.length < 6) {
+    return res.status(400).json({ error: 'Password must be at least 6 characters long.' });
   }
 
-  save(db);
-  res.json(plan);
-});
-
-// Planner: delete a plan (IDOR Safe)
-app.delete('/api/plan/:id', auth(), (req, res) => {
-  const db = read();
-  const initialLength = db.plans.length;
-  db.plans = db.plans.filter(
-    item => !(item.id === req.params.id && item.userId === req.user.id)
-  );
-
-  if (db.plans.length === initialLength) {
-    return res.status(404).json({ error: 'Plan not found' });
+  const record = otpStore.get(cleanTarget);
+  if (!record || Date.now() > record.expiresAt || record.code !== cleanCode) {
+    return res.status(400).json({ error: 'Invalid or expired verification session. Please verify your OTP again.' });
   }
 
-  save(db);
-  res.json({ success: true, id: req.params.id });
-});
+  otpStore.delete(cleanTarget);
 
-// Study sessions (IDOR Safe)
-app.get('/api/sessions', auth(), (req, res) => {
-  res.json(
-    read().sessions
-      .filter(item => item.userId === req.user.id)
-      .sort((a, b) => b.startedAt.localeCompare(a.startedAt))
-  );
-});
-
-app.post('/api/sessions', auth(), (req, res) => {
-  const { subjectId, minutes, mode, focusScore, startedAt, topic, note, activity } = req.body;
-  const duration = Number(minutes);
-
-  if (!Number.isFinite(duration) || duration <= 0 || duration > 1440) {
-    return res.status(400).json({ error: 'Minutes must be 1–1440' });
-  }
-
-  const db = read();
-
-  const session = {
-    id: Date.now().toString(),
-    userId: req.user.id,
-    subjectId: subjectId || null,
-    minutes: duration,
-    mode: mode ? sanitizeText(mode) : 'Pomodoro',
-    activity: activity ? sanitizeText(activity) : 'Theory & Reading',
-    topic: sanitizeText(topic || note || ''),
-    note: sanitizeText(note || topic || ''),
-    focusScore: Math.min(100, Math.max(0, Number(focusScore) || 92)),
-    startedAt: startedAt && !isNaN(new Date(startedAt).getTime())
-      ? new Date(startedAt).toISOString()
-      : new Date().toISOString()
-  };
-
-  db.sessions.push(session);
-  save(db);
-
-  res.status(201).json(session);
-});
-
-// Notifications (IDOR Safe)
-app.get('/api/notifications', auth(), (req, res) => {
-  res.json(
-    read().notifications.filter(
-      item => item.userId === req.user.id || item.userId === 'all'
-    )
-  );
-});
-
-app.patch('/api/notifications/:id/read', auth(), (req, res) => {
-  const db = read();
-
-  const notification = db.notifications.find(
-    item =>
-      item.id === req.params.id &&
-      (item.userId === req.user.id || item.userId === 'all')
-  );
-
-  if (!notification) {
-    return res.status(404).json({ error: 'Notification not found' });
-  }
-
-  notification.readBy = notification.readBy || [];
-
-  if (!notification.readBy.includes(req.user.id)) {
-    notification.readBy.push(req.user.id);
-  }
-
-  save(db);
-  res.json(notification);
-});
-
-// Analytics (IDOR Safe)
-app.get('/api/analytics', auth(), (req, res) => {
-  const sessions = read().sessions.filter(
-    item => item.userId === req.user.id
-  );
-
-  const totalMinutes = sessions.reduce(
-    (sum, item) => sum + item.minutes,
-    0
-  );
-
-  const averageFocus = sessions.length
-    ? Math.round(
-        sessions.reduce((sum, item) => sum + item.focusScore, 0) /
-        sessions.length
-      )
-    : 0;
-
-  res.json({
-    sessionCount: sessions.length,
-    totalMinutes,
-    averageFocus,
-    weekly: sessions.slice(-7).map(item => ({
-      date: item.startedAt.slice(0, 10),
-      minutes: item.minutes
-    }))
-  });
-});
-
-// Admin routes (Protected by auth('admin'))
-app.get('/api/admin/overview', auth('admin'), (req, res) => {
-  const db = read();
-
-  res.json({
-    users: db.users.length,
-    subjects: db.subjects.length,
-    sessions: db.sessions.length,
-    minutes: db.sessions.reduce((sum, item) => sum + item.minutes, 0)
-  });
-});
-
-app.get('/api/admin/users', auth('admin'), (req, res) => {
-  res.json(read().users.map(publicUser));
-});
-
-app.post('/api/admin/users', auth('admin'), (req, res) => {
-  const { name, email, password, role } = req.body;
-  const normalizedEmail = String(email || '').trim().toLowerCase();
-  const cleanPassword = String(password || '').trim();
-
-  if (!name || !normalizedEmail || !cleanPassword || cleanPassword.length < 8) {
-    return res.status(400).json({ error: 'Name, email, and password (8+ characters) required' });
-  }
-
-  const db = read();
-  if (db.users.some(u => u.email === normalizedEmail)) {
-    return res.status(409).json({ error: 'Email already registered' });
-  }
-
-  const user = {
-    id: Date.now().toString(),
-    name: sanitizeText(name),
-    email: normalizedEmail,
-    role: role === 'admin' ? 'admin' : 'student',
-    passwordHash: bcrypt.hashSync(cleanPassword, 12)
-  };
-
-  db.users.push(user);
-  save(db);
-  res.status(201).json(publicUser(user));
-});
-
-app.delete('/api/admin/users/:id', auth('admin'), (req, res) => {
-  const db = read();
-  if (req.params.id === req.user.id) {
-    return res.status(400).json({ error: 'Cannot delete current logged-in administrator' });
-  }
-
-  const initialLength = db.users.length;
-  db.users = db.users.filter(u => u.id !== req.params.id);
-  if (db.users.length === initialLength) {
-    return res.status(404).json({ error: 'User not found' });
-  }
-
-  save(db);
-  res.json({ ok: true, id: req.params.id });
-});
-
-app.get('/api/admin/subjects', auth('admin'), (req, res) => {
-  res.json(read().subjects);
-});
-
-app.post('/api/admin/subjects', auth('admin'), (req, res) => {
-  const { name, paper, topics, exam, imageUrl } = req.body;
-
-  if (!name || !name.trim()) {
-    return res.status(400).json({ error: 'Name required' });
-  }
-
-  const db = read();
-
-  const subject = {
-    id: Date.now().toString(),
-    name: sanitizeText(name),
-    exam: (exam || (paper && paper.includes('MPSC') ? 'MPSC' : 'UPSC')).toUpperCase(),
-    paper: paper ? sanitizeText(paper) : 'GS Paper II',
-    topics: Math.max(0, Number(topics) || 0),
-    completed: 0,
-    imageUrl: imageUrl ? sanitizeText(imageUrl) : null
-  };
-
-  db.subjects.push(subject);
-  save(db);
-
-  res.status(201).json(subject);
-});
-
-app.put('/api/admin/subjects/:id', auth('admin'), (req, res) => {
-  const { name, paper, topics, exam, imageUrl } = req.body;
-  const db = read();
-  const subject = db.subjects.find(s => s.id === req.params.id);
-
-  if (!subject) {
-    return res.status(404).json({ error: 'Subject not found' });
-  }
-
-  if (name && name.trim()) subject.name = sanitizeText(name);
-  if (paper && paper.trim()) subject.paper = sanitizeText(paper);
-  if (exam) subject.exam = exam.toUpperCase();
-  if (topics !== undefined) subject.topics = Math.max(0, Number(topics) || 0);
-  if (imageUrl !== undefined) subject.imageUrl = imageUrl ? sanitizeText(imageUrl) : null;
-
-  save(db);
-  res.json(subject);
-});
-
-app.delete('/api/admin/subjects/:id', auth('admin'), (req, res) => {
-  const db = read();
-
-  db.subjects = db.subjects.filter(
-    subject => subject.id !== req.params.id
-  );
-
-  save(db);
-  res.json({ ok: true });
-});
-
-app.get('/api/admin/notifications', auth('admin'), (req, res) => {
-  const db = read();
-  res.json(db.notifications || []);
-});
-
-app.post('/api/admin/notifications', auth('admin'), (req, res) => {
-  const { title, message } = req.body;
-
-  if (!title || !message) {
-    return res.status(400).json({
-      error: 'Title and message required'
+  try {
+    const user = await User.findOne({
+      $or: [{ email: cleanTarget }, { phone: cleanTarget.replace(/\D/g, '') }]
     });
+
+    if (!user) {
+      return res.status(404).json({ error: 'Account not found.' });
+    }
+
+    user.passwordHash = bcrypt.hashSync(cleanPass, 10);
+    await user.save();
+
+    res.json({ success: true, message: 'Password updated successfully! You can now sign in with your new password.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Password update failed' });
   }
-
-  const db = read();
-
-  const notification = {
-    id: Date.now().toString(),
-    userId: 'all',
-    title: sanitizeText(title),
-    message: sanitizeText(message),
-    readBy: [],
-    createdAt: new Date().toISOString()
-  };
-
-  db.notifications.unshift(notification);
-  save(db);
-
-  res.status(201).json(notification);
 });
 
-app.delete('/api/admin/notifications/:id', auth('admin'), (req, res) => {
-  const db = read();
-  db.notifications = (db.notifications || []).filter(n => n.id !== req.params.id);
-  save(db);
-  res.json({ ok: true, id: req.params.id });
+// -------------------------------------------------------------
+// Authentication & User Account Routes
+// -------------------------------------------------------------
+app.post('/api/auth/register', async (req, res) => {
+    try {
+        const { name, email, password, phone } = req.body || {};
+        if (!name || !email || !password || password.length < 6) {
+            return res.status(400).json({ error: 'Name, email, and password (6+ characters) required' });
+        }
+        const normalizedEmail = String(email).trim().toLowerCase();
+        const existing = await User.findOne({ email: normalizedEmail });
+        if (existing) {
+            return res.status(409).json({ error: 'Email already registered' });
+        }
+        const user = await User.create({
+            id: Date.now().toString(),
+            name: String(name).trim(),
+            email: normalizedEmail,
+            phone: String(phone || '').trim(),
+            role: 'student',
+            passwordHash: bcrypt.hashSync(password, 10)
+        });
+        const token = jwt.sign({ id: user.id, role: user.role }, secret, { expiresIn: '7d' });
+        res.status(201).json({ token, user: publicUser(user) });
+    } catch (err) {
+        res.status(500).json({ error: 'Registration failed' });
+    }
 });
 
-app.get('/api/admin/sessions', auth('admin'), (req, res) => {
-  const db = read();
-  const enriched = (db.sessions || []).map(s => {
-    const u = db.users.find(user => user.id === s.userId);
-    const sub = db.subjects.find(subject => subject.id === s.subjectId);
-    return {
-      ...s,
-      userName: u?.name || 'Aspirant',
-      userEmail: u?.email || '',
-      subjectName: sub?.name || 'General'
-    };
-  });
-  res.json(enriched.sort((a, b) => (b.startedAt || '').localeCompare(a.startedAt || '')));
+app.post('/api/auth/login', async (req, res) => {
+    try {
+        const { email, password } = req.body || {};
+        const rawTarget = String(email || '').trim();
+        const cleanPassword = String(password || '').trim();
+        if (!rawTarget || !cleanPassword) {
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
+        const user = await User.findOne({
+            $or: [
+                { email: rawTarget.toLowerCase() },
+                { phone: rawTarget }
+            ]
+        });
+
+        if (!user || !user.passwordHash || !bcrypt.compareSync(cleanPassword, user.passwordHash)) {
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+        res.json({
+            token: jwt.sign({ id: user.id, role: user.role }, secret, { expiresIn: '7d' }),
+            user: publicUser(user)
+        });
+    } catch (err) {
+        res.status(500).json({ error: 'Login failed' });
+    }
 });
 
-// Secure Error Handler: Never leak stack traces or internal errors to client
-app.use((err, req, res, next) => {
-  if (err && err.message && err.message.includes('CORS')) {
-    return res.status(403).json({ error: 'Request blocked by CORS policy' });
-  }
-  console.error('[SERVER ERROR]', err.message || err);
-  res.status(500).json({ error: 'Internal server error' });
+app.get('/api/me', auth(), async (req, res) => {
+    try {
+        const u = await User.findOne({ id: req.user.id });
+        if (!u) return res.status(404).json({ error: 'User not found' });
+        res.json({ user: publicUser(u) });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to retrieve profile' });
+    }
 });
 
+// Self account deletion (Preserves historical activity data for analytics)
+app.delete('/api/users/me', auth(), async (req, res) => {
+    try {
+        const u = await User.findOneAndDelete({ id: req.user.id });
+        if (!u) return res.status(404).json({ error: 'User not found' });
+        res.json({ ok: true, message: 'Account deleted successfully' });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to delete account' });
+    }
+});
+
+// -------------------------------------------------------------
+// Subjects Routes
+// -------------------------------------------------------------
+app.get('/api/subjects', auth(), async (req, res) => {
+    try {
+        const subjects = await Subject.find().lean();
+        res.json(subjects.map(cleanDoc));
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch subjects' });
+    }
+});
+
+// -------------------------------------------------------------
+// Study Plan Routes
+// -------------------------------------------------------------
+app.get('/api/plan', auth(), async (req, res) => {
+    try {
+        const plans = await Plan.find({ userId: req.user.id }).lean();
+        res.json(plans.map(cleanDoc));
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch plans' });
+    }
+});
+
+app.post('/api/plan', auth(), async (req, res) => {
+    try {
+        const { title, minutes, date, subjectId, exam, priority } = req.body || {};
+        if (!title || !Number.isFinite(Number(minutes)) || Number(minutes) <= 0) {
+            return res.status(400).json({ error: 'Title and positive minutes required' });
+        }
+        const obj = await Plan.create({
+            id: Date.now().toString(),
+            userId: req.user.id,
+            title,
+            minutes: Number(minutes),
+            date: date || new Date().toISOString().slice(0, 10),
+            subjectId: subjectId || null,
+            done: false
+        });
+        res.status(201).json(cleanDoc(obj));
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to create plan' });
+    }
+});
+
+app.patch('/api/plan/:id', auth(), async (req, res) => {
+    try {
+        const x = await Plan.findOneAndUpdate(
+            { id: req.params.id, userId: req.user.id },
+            { $set: { done: !!req.body.done } },
+            { returnDocument: 'after' }
+        );
+        if (!x) return res.status(404).json({ error: 'Not found' });
+        res.json(cleanDoc(x));
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to update plan' });
+    }
+});
+
+app.delete('/api/plan/:id', auth(), async (req, res) => {
+    try {
+        const removed = await Plan.findOneAndDelete({ id: req.params.id, userId: req.user.id });
+        if (!removed) return res.status(404).json({ error: 'Plan not found' });
+        res.json({ ok: true, id: req.params.id });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to delete plan' });
+    }
+});
+
+// -------------------------------------------------------------
+// Study Session Routes
+// -------------------------------------------------------------
+app.get('/api/sessions', auth(), async (req, res) => {
+    try {
+        const sessions = await Session.find({ userId: req.user.id }).sort({ startedAt: -1 }).lean();
+        res.json(sessions.map(cleanDoc));
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch sessions' });
+    }
+});
+
+app.post('/api/sessions', auth(), async (req, res) => {
+    try {
+        const { subjectId, minutes, mode, focusScore } = req.body || {};
+        const m = Number(minutes);
+        if (!Number.isFinite(m) || m <= 0 || m > 1440) {
+            return res.status(400).json({ error: 'Minutes must be 1–1440' });
+        }
+        const obj = await Session.create({
+            id: Date.now().toString(),
+            userId: req.user.id,
+            subjectId: subjectId || null,
+            minutes: m,
+            mode: mode || 'Pomodoro',
+            focusScore: Math.min(100, Math.max(0, Number(focusScore) || 90)),
+            startedAt: new Date().toISOString()
+        });
+        res.status(201).json(cleanDoc(obj));
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to create session' });
+    }
+});
+
+// -------------------------------------------------------------
+// Notifications Routes
+// -------------------------------------------------------------
+app.get('/api/notifications', auth(), async (req, res) => {
+    try {
+        const notifs = await Notification.find({ userId: { $in: [req.user.id, 'all'] } }).sort({ createdAt: -1 }).lean();
+        res.json(notifs.map(cleanDoc));
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch notifications' });
+    }
+});
+
+app.patch('/api/notifications/:id/read', auth(), async (req, res) => {
+    try {
+        const n = await Notification.findOneAndUpdate(
+            { id: req.params.id, userId: { $in: [req.user.id, 'all'] } },
+            { $addToSet: { readBy: req.user.id } },
+            { returnDocument: 'after' }
+        );
+        if (!n) return res.status(404).json({ error: 'Not found' });
+        res.json(cleanDoc(n));
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to mark notification as read' });
+    }
+});
+
+// -------------------------------------------------------------
+// Support Tickets Routes (Student)
+// -------------------------------------------------------------
+app.get('/api/tickets', auth(), async (req, res) => {
+    try {
+        const tickets = await Ticket.find({ userId: req.user.id }).sort({ createdAt: -1 }).lean();
+        res.json(tickets.map(cleanDoc));
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch tickets' });
+    }
+});
+
+app.post('/api/tickets', auth(), async (req, res) => {
+    try {
+        const { type, subject, message } = req.body || {};
+        if (!type || !message || !message.trim()) {
+            return res.status(400).json({ error: 'Category and message are required' });
+        }
+        const now = new Date().toISOString();
+        const obj = await Ticket.create({
+            id: Date.now().toString(),
+            userId: req.user.id,
+            type,
+            subject: (subject && subject.trim()) ? subject.trim() : `${type} Request`,
+            message: message.trim(),
+            status: 'Open',
+            createdAt: now,
+            updatedAt: now,
+            replies: []
+        });
+        res.status(201).json(cleanDoc(obj));
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to create ticket' });
+    }
+});
+
+app.get('/api/tickets/:id', auth(), async (req, res) => {
+    try {
+        const x = await Ticket.findOne({ id: req.params.id, userId: req.user.id }).lean();
+        if (!x) return res.status(404).json({ error: 'Ticket not found' });
+        res.json(cleanDoc(x));
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch ticket' });
+    }
+});
+
+app.patch('/api/tickets/:id', auth(), async (req, res) => {
+    try {
+        const x = await Ticket.findOne({ id: req.params.id, userId: req.user.id });
+        if (!x) return res.status(404).json({ error: 'Ticket not found' });
+        if (x.status === 'Resolved') return res.status(400).json({ error: 'Resolved tickets cannot be edited' });
+
+        const { type, subject, message } = req.body || {};
+        if (type) x.type = type;
+        if (subject !== undefined) x.subject = subject.trim();
+        if (message && message.trim()) x.message = message.trim();
+        x.updatedAt = new Date().toISOString();
+        await x.save();
+        res.json(cleanDoc(x));
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to update ticket' });
+    }
+});
+
+app.delete('/api/tickets/:id', auth(), async (req, res) => {
+    try {
+        const removed = await Ticket.findOneAndDelete({ id: req.params.id, userId: req.user.id });
+        if (!removed) return res.status(404).json({ error: 'Ticket not found' });
+        res.json({ ok: true, id: removed.id });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to delete ticket' });
+    }
+});
+
+// -------------------------------------------------------------
+// Analytics Route
+// -------------------------------------------------------------
+app.get('/api/analytics', auth(), async (req, res) => {
+    try {
+        const sessions = await Session.find({ userId: req.user.id }).sort({ startedAt: 1 }).lean();
+        const minutes = sessions.reduce((a, x) => a + x.minutes, 0);
+        const focus = sessions.length
+            ? Math.round(sessions.reduce((a, x) => a + x.focusScore, 0) / sessions.length)
+            : 0;
+        res.json({
+            sessionCount: sessions.length,
+            totalMinutes: minutes,
+            averageFocus: focus,
+            weekly: sessions.slice(-7).map(s => ({
+                date: (s.startedAt || '').slice(0, 10),
+                minutes: s.minutes
+            }))
+        });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to calculate analytics' });
+    }
+});
+
+// -------------------------------------------------------------
+// Admin Routes
+// -------------------------------------------------------------
+app.get('/api/admin/overview', auth('admin'), async (req, res) => {
+    try {
+        const [totalUsers, students, totalSubjects, sessions] = await Promise.all([
+            User.countDocuments(),
+            User.countDocuments({ role: 'student' }),
+            Subject.countDocuments(),
+            Session.find().lean()
+        ]);
+        res.json({
+            users: students,
+            totalAccounts: totalUsers,
+            subjects: totalSubjects,
+            sessions: sessions.length,
+            minutes: sessions.reduce((a, s) => a + s.minutes, 0)
+        });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch admin overview' });
+    }
+});
+
+app.get('/api/admin/users', auth('admin'), async (req, res) => {
+    try {
+        const users = await User.find({}, '-passwordHash').lean();
+        res.json(users.map(cleanDoc));
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch users' });
+    }
+});
+
+app.get('/api/admin/subjects', auth('admin'), async (req, res) => {
+    try {
+        const subjects = await Subject.find().lean();
+        res.json(subjects.map(cleanDoc));
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch subjects' });
+    }
+});
+
+app.post('/api/admin/subjects', auth('admin'), async (req, res) => {
+    try {
+        const { name, paper, topics } = req.body || {};
+        if (!name) return res.status(400).json({ error: 'Name required' });
+        const x = await Subject.create({
+            id: Date.now().toString(),
+            name,
+            paper: paper || 'GS Paper II',
+            topics: Number(topics) || 0,
+            completed: 0
+        });
+        res.status(201).json(cleanDoc(x));
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to create subject' });
+    }
+});
+
+app.delete('/api/admin/subjects/:id', auth('admin'), async (req, res) => {
+    try {
+        const removed = await Subject.findOneAndDelete({ id: req.params.id });
+        if (!removed) return res.status(404).json({ error: 'Subject not found' });
+        res.json({ ok: true, id: req.params.id });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to delete subject' });
+    }
+});
+
+app.get('/api/admin/sessions', auth('admin'), async (req, res) => {
+    try {
+        const sessions = await Session.find().sort({ startedAt: -1 }).lean();
+        res.json(sessions.map(cleanDoc));
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch sessions' });
+    }
+});
+
+app.get('/api/admin/tickets', auth('admin'), async (req, res) => {
+    try {
+        const [tickets, users] = await Promise.all([
+            Ticket.find().sort({ createdAt: -1 }).lean(),
+            User.find({}, 'id name email').lean()
+        ]);
+        const userMap = new Map(users.map(u => [u.id, u]));
+        const result = tickets.map(t => {
+            const u = userMap.get(t.userId);
+            return {
+                ...cleanDoc(t),
+                studentName: u?.name || 'Unknown Student',
+                studentEmail: u?.email || 'N/A'
+            };
+        });
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch admin tickets' });
+    }
+});
+
+app.patch('/api/admin/tickets/:id', auth('admin'), async (req, res) => {
+    try {
+        const x = await Ticket.findOne({ id: req.params.id });
+        if (!x) return res.status(404).json({ error: 'Ticket not found' });
+
+        const { status, reply } = req.body || {};
+        if (status) x.status = status;
+        if (reply && String(reply).trim()) {
+            x.replies = x.replies || [];
+            const adminUser = await User.findOne({ id: req.user.id });
+            x.replies.push({
+                id: Date.now().toString(),
+                sender: 'admin',
+                adminId: req.user.id,
+                adminName: adminUser?.name || 'Admin Support',
+                message: String(reply).trim(),
+                createdAt: new Date().toISOString()
+            });
+        }
+        x.updatedAt = new Date().toISOString();
+        await x.save();
+
+        const u = await User.findOne({ id: x.userId });
+        res.json({
+            ...cleanDoc(x),
+            studentName: u?.name || 'Unknown Student',
+            studentEmail: u?.email || 'N/A'
+        });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to update ticket' });
+    }
+});
+
+app.post('/api/admin/notifications', auth('admin'), async (req, res) => {
+    try {
+        if (!req.body.title || !req.body.message) {
+            return res.status(400).json({ error: 'Title and message required' });
+        }
+        const x = await Notification.create({
+            id: Date.now().toString(),
+            userId: 'all',
+            title: req.body.title,
+            message: req.body.message,
+            readBy: [],
+            createdAt: new Date().toISOString()
+        });
+        res.status(201).json(cleanDoc(x));
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to create notification' });
+    }
+});
+
+app.delete('/api/admin/notifications/:id', auth('admin'), async (req, res) => {
+    try {
+        const removed = await Notification.findOneAndDelete({ id: req.params.id });
+        if (!removed) return res.status(404).json({ error: 'Notification not found' });
+        res.json({ ok: true, id: req.params.id });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to delete notification' });
+    }
+});
+
+// -------------------------------------------------------------
+// Server Initialization
+// -------------------------------------------------------------
 const port = process.env.PORT || 4000;
 
-app.listen(port, '0.0.0.0', () => {
-  console.log(`Abhyas API listening on 0.0.0.0:${port} (http://localhost:${port} & http://127.0.0.1:${port})`);
-});
+async function startServer() {
+    try {
+        if (process.env.MONGODB_URI) {
+            await connectDB();
+        } else {
+            console.log('[Server] MONGODB_URI not provided; starting server in standalone mode');
+        }
+    } catch (err) {
+        console.error(`[Server] Database connection error: ${err.message}. Starting API in fallback mode.`);
+    }
+
+    const server = app.listen(port, '0.0.0.0', () => {
+        console.log(`Abhyas API listening on 0.0.0.0:${port} (http://localhost:${port})`);
+    });
+    return server;
+}
+
+if (require.main === module) {
+    startServer();
+}
+
+module.exports = { app, startServer };
