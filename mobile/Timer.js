@@ -19,6 +19,7 @@ const COLORS = {
   line: '#E8EEF8',
 };
 
+
 export default function Timer({
   elapsed = 0,
   running = false,
@@ -58,6 +59,9 @@ export default function Timer({
       );
       return;
     }
+    if (nextMode === 'Stopwatch' && zenMode === 'Deep Zen') {
+    setZenMode?.('Light Zen');
+  }
 
     setMode?.(nextMode);
   };
@@ -85,7 +89,48 @@ export default function Timer({
       <Text style={[styles.subtitle, { color: C.muted }]}>
         Track your study sessions and stay consistent.
       </Text>
+      <Text style={[styles.label, { marginTop: 18 }]}>
+  FOCUS STYLE
+</Text>
 
+<View style={styles.modeRow}>
+  {['Light Zen', 'Deep Zen'].map((item) => {
+    const unavailable = mode === 'Stopwatch' && item === 'Deep Zen';
+
+    return (
+      <TouchableOpacity
+        key={item}
+        style={[
+          styles.modeButton,
+          zenMode === item && styles.activeMode,
+          unavailable && { opacity: 0.4 },
+        ]}
+        disabled={unavailable || running || elapsed > 0 || saving}
+        onPress={() => {
+  setDeepZenUnlocked?.(false);
+  setZenMode?.(item);
+}}
+      >
+        <Text
+          style={[
+            styles.modeText,
+            zenMode === item && styles.activeModeText,
+          ]}
+        >
+          {item}
+        </Text>
+      </TouchableOpacity>
+    );
+  })}
+</View>
+
+<Text style={styles.subtitle}>
+  {mode === 'Stopwatch'
+    ? 'Stopwatch supports Light Zen only.'
+    : zenMode === 'Deep Zen'
+    ? 'Deep Zen is designed to keep you focused until the countdown ends.'
+    : 'Light Zen lets you leave Focus Mode whenever you need.'}
+</Text>
       <View style={styles.modeRow}>
         {['Pomodoro', 'Stopwatch', 'Custom'].map((item) => (
           <TouchableOpacity
@@ -233,8 +278,9 @@ export default function Timer({
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.resetButton}
-          disabled={saving}
+          style={[styles.resetButton,
+            deepZenLocked && styles.disabledButton,]}
+          disabled={saving || deepZenLocked}
           onPress={resetSession}
         >
           <Text style={[styles.resetText, { color: C.muted }]}>Reset Timer</Text>
