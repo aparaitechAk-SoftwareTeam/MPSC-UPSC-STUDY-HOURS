@@ -170,7 +170,7 @@ app.post('/api/sessions', auth(), asyncRoute(async (req, res) => {
   const m = Number(minutes);
 
   if (!Number.isFinite(m) || m <= 0 || m > 1440) {
-    return res.status(400).json({ error: 'Minutes must be 1–1440' });
+    return res.status(400).json({ error: 'Minutes must be 1-1440' });
   }
 
   const item = {
@@ -422,10 +422,10 @@ async function start() {
   db = client.db(DB_NAME);
   await db.command({ ping: 1 });
 
-  await col('users').createIndex({ email: 1 }, { unique: true, name: 'unique_user_email' });
-  await col('users').createIndex({ id: 1 }, { unique: true, name: 'unique_user_id' });
+  await col('users').createIndex({ email: 1 }, { unique: true, name: 'email_1' });
+  await col('users').createIndex({ id: 1 }, { unique: true, name: 'id_1' });
   for (const name of ['subjects', 'plans', 'sessions', 'notifications']) {
-    await col(name).createIndex({ id: 1 }, { unique: true, name: `unique_${name}_id` });
+    await col(name).createIndex({ id: 1 }, { unique: true, name: 'id_1' });
   }
 
   app.listen(PORT, '0.0.0.0', () => {
