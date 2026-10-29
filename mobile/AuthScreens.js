@@ -285,12 +285,11 @@ export default function AuthScreens({
   // Screens: 'login' | 'signup' | 'login-otp' | 'verify-otp' | 'forgot-contact' | 'forgot-otp' | 'forgot-reset' | 'forgot-success'
   const [screen, setScreen] = useState("login");
   const [loginRole, setLoginRole] = useState("student"); // "student" | "admin"
-  const [method, setMethod] = useState("email"); // 'email' | 'mobile'
+  const [method, setMethod] = useState("email"); // Email OTP exclusive
 
   // Input States
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [mobile, setMobile] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -310,7 +309,7 @@ export default function AuthScreens({
   const [timerSeconds, setTimerSeconds] = useState(30);
   const [canResend, setCanResend] = useState(false);
 
-  const targetContact = method === "email" ? email : mobile;
+  const targetContact = email;
   const effectiveError = localError || authError || "";
 
   // Resolve API Base URL
@@ -410,13 +409,13 @@ export default function AuthScreens({
       return;
     }
 
-    if (!name.trim() || !mobile.trim() || !password) {
+    if (!name.trim() || !trimmedEmail || !password) {
       setLocalError("Please complete all registration fields.");
       return;
     }
 
-    if (!/^\d{10}$/.test(mobile.trim())) {
-      setLocalError("Mobile number must be a valid 10-digit number.");
+    if (!isEmailValid(trimmedEmail)) {
+      setLocalError("Please enter a valid email address.");
       return;
     }
 
@@ -432,8 +431,7 @@ export default function AuthScreens({
 
     setIsLocalSubmitting(true);
     try {
-      const target = method === "email" ? trimmedEmail : mobile.trim();
-      const result = await requestOtp(target, "signup");
+      const result = await requestOtp(trimmedEmail, "signup");
       if (result) {
         setOtp("");
         setScreen("verify-otp");
@@ -454,11 +452,11 @@ export default function AuthScreens({
 
     setIsLocalSubmitting(true);
     try {
-      const target = (method === "email" ? email : mobile).trim();
+      const cleanEmail = email.trim().toLowerCase();
       const vRes = await smartApiFetch("/auth/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ target, code: cleaned, otp: cleaned }),
+        body: JSON.stringify({ target: cleanEmail, code: cleaned, otp: cleaned }),
       });
       const vData = await vRes.json();
       if (!vRes.ok) throw new Error(vData.error || "Invalid verification code");
@@ -469,9 +467,7 @@ export default function AuthScreens({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: name.trim(),
-          email: email.trim(),
-          phone: mobile.trim(),
-          mobile: mobile.trim(),
+          email: cleanEmail,
           password,
         }),
       });
@@ -494,9 +490,9 @@ export default function AuthScreens({
   // --- Passwordless Login via OTP ---
   async function handleRequestLoginOtp() {
     setLocalError("");
-    const target = (method === "email" ? email : mobile).trim();
-    if (!target) {
-      setLocalError(`Please enter your ${method === "email" ? "email" : "mobile number"}.`);
+    const target = email.trim().toLowerCase();
+    if (!target || !isEmailValid(target)) {
+      setLocalError("Please enter a valid registered email address.");
       return;
     }
 
@@ -517,7 +513,7 @@ export default function AuthScreens({
 
     setIsLocalSubmitting(true);
     try {
-      const target = (method === "email" ? email : mobile).trim();
+      const target = email.trim().toLowerCase();
       const res = await smartApiFetch("/auth/login-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -543,9 +539,13 @@ export default function AuthScreens({
   async function handleForgotSendOtp() {
     setLocalError("");
     setNoticeMsg("");
-    const target = targetContact.trim();
+    const target = email.trim().toLowerCase();
     if (!target) {
-      setLocalError(`Please enter your registered ${method === "email" ? "email" : "mobile number"}.`);
+      setLocalError("Please enter your registered email address.");
+      return;
+    }
+    if (!isEmailValid(target)) {
+      setLocalError("Please enter a valid email address.");
       return;
     }
 
@@ -660,7 +660,7 @@ export default function AuthScreens({
     const targetEmail = (email || "").trim();
     const targetPass = password;
     if (!targetEmail) {
-      setLocalError("Please enter your registered student email address or mobile number.");
+      setLocalError("Please enter your registered student email address.");
       return;
     }
     if (!targetPass) {
@@ -912,13 +912,13 @@ export default function AuthScreens({
                     </Text>
 
                     <Field
-                      label="Student Email Address or Mobile"
+                      label="Student Email Address"
                       value={email}
                       onChangeText={(val) => {
                         setLocalError("");
                         setEmail(val);
                       }}
-                      placeholder="Enter your registered email address or mobile"
+                      placeholder="Enter your registered email address"
                       keyboardType="email-address"
                     />
 
@@ -1113,18 +1113,6 @@ export default function AuthScreens({
                 />
 
                 <Field
-                  label="Mobile number"
-                  value={mobile}
-                  onChangeText={(val) => {
-                    setLocalError("");
-                    setMobile(val);
-                  }}
-                  placeholder="10-digit mobile number"
-                  keyboardType="phone-pad"
-                  maxLength={10}
-                />
-
-                <Field
                   label="Create password"
                   value={password}
                   onChangeText={(val) => {
@@ -1180,47 +1168,8 @@ export default function AuthScreens({
                   </Text>
                 </TouchableOpacity>
 
-                {/* Channel Selector */}
-                <View style={styles.methodChoiceRow}>
-                  <Text style={[styles.methodChoiceLabel, { color: theme.subtitle }]}>Send OTP to:</Text>
-                  <TouchableOpacity
-                    style={[
-                      styles.smallChoicePill,
-                      { backgroundColor: theme.choicePillBg, borderColor: theme.choicePillBorder },
-                      method === "email" && { backgroundColor: theme.choicePillActiveBg, borderColor: theme.choicePillActiveBorder },
-                    ]}
-                    onPress={() => setMethod("email")}
-                  >
-                    <Text
-                      style={[
-                        styles.smallChoiceText,
-                        { color: method === "email" ? theme.choicePillActiveText : theme.choicePillText },
-                      ]}
-                    >
-                      Email Inbox
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[
-                      styles.smallChoicePill,
-                      { backgroundColor: theme.choicePillBg, borderColor: theme.choicePillBorder },
-                      method === "mobile" && { backgroundColor: theme.choicePillActiveBg, borderColor: theme.choicePillActiveBorder },
-                    ]}
-                    onPress={() => setMethod("mobile")}
-                  >
-                    <Text
-                      style={[
-                        styles.smallChoiceText,
-                        { color: method === "mobile" ? theme.choicePillActiveText : theme.choicePillText },
-                      ]}
-                    >
-                      Mobile SMS
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
                 <PrimaryButton
-                  title={isLocalSubmitting ? "Sending verification code..." : "Send Verification Code & Continue"}
+                  title={isLocalSubmitting ? "Sending verification code..." : "Send Verification Code to Email"}
                   onPress={handleStartSignUp}
                   disabled={isSubmitting || isLocalSubmitting}
                   isSubmitting={isLocalSubmitting}
@@ -1359,45 +1308,18 @@ export default function AuthScreens({
                   </TouchableOpacity>
                 </View>
                 <Text style={[styles.subtitle, { color: theme.subtitle }]}>
-                  Choose whether you want to identify via Email or Mobile. The OTP verification code will be dispatched to your registered email.
+                  Enter your registered email address to receive your 6-digit password reset verification code.
                 </Text>
 
-                {/* Delivery method pills */}
-                <View style={styles.methodRow}>
-                  <TouchableOpacity
-                    style={[styles.methodButton, method === "email" ? styles.methodSelected : null]}
-                    onPress={() => setMethod("email")}
-                  >
-                    <Text style={[styles.methodText, method === "email" ? styles.methodTextSelected : null]}>
-                      ✉️ Via Email
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.methodButton, method === "mobile" ? styles.methodSelected : null]}
-                    onPress={() => setMethod("mobile")}
-                  >
-                    <Text style={[styles.methodText, method === "mobile" ? styles.methodTextSelected : null]}>
-                      📱 Via Mobile
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
                 <Field
-                  label={method === "email" ? "Registered Email Address" : "Registered Mobile Number"}
-                  value={method === "email" ? email : mobile}
+                  label="Registered Email Address"
+                  value={email}
                   onChangeText={(val) => {
                     setLocalError("");
-                    if (method === "email") setEmail(val);
-                    else setMobile(val);
+                    setEmail(val);
                   }}
-                  placeholder={
-                    method === "email"
-                      ? "Enter registered email (e.g. bhumikajadhav.aparaitech@gmail.com)"
-                      : "Enter 10-digit mobile number"
-                  }
-                  keyboardType={method === "email" ? "email-address" : "phone-pad"}
-                  maxLength={method === "mobile" ? 10 : undefined}
+                  placeholder="Enter registered email (e.g. you@example.com)"
+                  keyboardType="email-address"
                 />
 
                 <View
@@ -1415,7 +1337,7 @@ export default function AuthScreens({
                 >
                   <Ionicons name="mail-unread-outline" size={16} color={theme.primaryBtn} />
                   <Text style={{ fontSize: 11, color: isDark ? "#93c5fd" : "#1e40af", flex: 1, lineHeight: 15 }}>
-                    Whichever option you choose, your OTP reset code is dispatched to your registered email inbox.
+                    Your password reset OTP code will be dispatched directly to your registered email inbox.
                   </Text>
                 </View>
 
@@ -1534,8 +1456,8 @@ export default function AuthScreens({
                 </View>
 
                 <SwitchLink
-                  text="Want to try another email or mobile?"
-                  link="Change Contact"
+                  text="Want to use a different email?"
+                  link="Change Email"
                   onPress={() => setScreen("forgot-contact")}
                 />
                 <SwitchLink

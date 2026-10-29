@@ -21,7 +21,12 @@ export const getCustomApiBase = () => customApiBase;
 export const getCandidateApiUrls = () => {
   const candidates = [];
 
-  // 0. User-defined custom server override (if set)
+  // 0. Environment variable override for deployed remote backend or APK builds
+  if (process.env.EXPO_PUBLIC_API_URL && typeof process.env.EXPO_PUBLIC_API_URL === 'string' && process.env.EXPO_PUBLIC_API_URL.trim()) {
+    candidates.push(process.env.EXPO_PUBLIC_API_URL.trim().replace(/\/+$/, ''));
+  }
+
+  // 0b. User-defined custom server override (if set)
   if (customApiBase) {
     candidates.push(customApiBase);
   }
@@ -64,6 +69,9 @@ let cachedApiBase = getCandidateApiUrls()[0] || 'http://localhost:4000/api';
  */
 export const getApiBase = () => {
   if (customApiBase) return customApiBase;
+  if (process.env.EXPO_PUBLIC_API_URL && typeof process.env.EXPO_PUBLIC_API_URL === 'string' && process.env.EXPO_PUBLIC_API_URL.trim()) {
+    return process.env.EXPO_PUBLIC_API_URL.trim().replace(/\/+$/, '');
+  }
   if (Platform.OS === 'web' && typeof window !== 'undefined' && window.location?.hostname) {
     const currentHost = window.location.hostname;
     return `http://${currentHost}:4000/api`;
