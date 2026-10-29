@@ -611,7 +611,8 @@ app.get('/api/subjects', auth(), async (req, res) => {
             async () => (await Subject.find().lean()).map(cleanDoc),
             () => readJsonDb().subjects || []
         );
-        res.json(subjects);
+        const filtered = (subjects || []).filter(s => s && s.id && (String(s.id).startsWith('upsc-') || String(s.id).startsWith('mpsc-')));
+        res.json(filtered);
     } catch (err) {
         res.status(500).json({ error: 'Failed to fetch subjects' });
     }
@@ -1142,7 +1143,8 @@ app.get('/api/admin/subjects', auth('admin'), async (req, res) => {
             async () => (await Subject.find().lean()).map(cleanDoc),
             () => readJsonDb().subjects || []
         );
-        res.json(subjects);
+        const filtered = (subjects || []).filter(s => s && s.id && (String(s.id).startsWith('upsc-') || String(s.id).startsWith('mpsc-')));
+        res.json(filtered);
     } catch (err) {
         res.status(500).json({ error: 'Failed to fetch subjects' });
     }

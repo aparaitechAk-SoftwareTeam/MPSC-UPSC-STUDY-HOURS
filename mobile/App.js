@@ -145,7 +145,7 @@ const getNext7Days = () => {
 const SYLLABUS_TOPICS = {
   // ==================== UPSC CIVIL SERVICES (9 SUBJECTS) ====================
   'upsc-history-culture': [
-    { id: '', name: 'Ancient Indian history', chapter: 'uh-1History and Culture' },
+    { id: 'uh-1', name: 'Ancient Indian history', chapter: 'History and Culture' },
     { id: 'uh-2', name: 'Medieval Indian history', chapter: 'History and Culture' },
     { id: 'uh-3', name: 'Modern Indian history', chapter: 'History and Culture' },
     { id: 'uh-4', name: 'Indian freedom struggle', chapter: 'History and Culture' },
@@ -777,8 +777,6 @@ export default function App() {
 
   const [notifOpen, setNotifOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [customServerInput, setCustomServerInput] = useState('');
-  const [serverPingStatus, setServerPingStatus] = useState(null);
   const [selectedTrackDate, setSelectedTrackDate] = useState(today());
   const [expandedSubjectId, setExpandedSubjectId] = useState(null);
 
@@ -947,7 +945,6 @@ export default function App() {
     AsyncStorage.getItem('abhyas_custom_api_base').then(val => {
       if (val) {
         setCustomApiBase(val);
-        setCustomServerInput(val);
       }
     }).catch(() => {});
   }, []);
@@ -1114,7 +1111,8 @@ export default function App() {
         req('/analytics', 'GET', null, t),
         req('/topic-progress', 'GET', null, t).catch(() => [])
       ]);
-      setSubjects(s);
+      const validSubjects = Array.isArray(s) ? s.filter(x => x && x.id && (String(x.id).startsWith('upsc-') || String(x.id).startsWith('mpsc-'))) : [];
+      setSubjects(validSubjects);
       setSessions(h);
       setPlans(p);
       setNotes(n);
@@ -2486,14 +2484,8 @@ export default function App() {
     const isMPSC = syllabusExamFilter === 'MPSC';
     const currentScope = isUPSC ? syllabusStats.upsc : isMPSC ? syllabusStats.mpsc : syllabusStats.overall;
 
-    // Filter out duplicate legacy subjects if canonical UPSC/MPSC modules exist
-    const hasCanonicalUpsc = subjects.some(s => s.id && s.id.startsWith('upsc-'));
-    const cleanSubjects = subjects.filter(s => {
-      if (hasCanonicalUpsc && (s.id === 'polity' || s.id === 'history' || s.id === 'economy' || s.id === 'geography')) {
-        return false;
-      }
-      return true;
-    });
+    // Keep ONLY real-time standard UPSC & MPSC subjects
+    const cleanSubjects = subjects.filter(s => s && s.id && (String(s.id).startsWith('upsc-') || String(s.id).startsWith('mpsc-')));
 
     const displayedSubjects = cleanSubjects.filter(s => {
       if (syllabusExamFilter === 'ALL') return true;
@@ -4830,94 +4822,7 @@ export default function App() {
                 </View>
               </View>
 
-              {/* 7. Wi-Fi & Server Connectivity Manager */}
-              <View style={{ marginBottom: 20, paddingTop: 16, borderTopWidth: 1, borderColor: C.line }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                  <Ionicons name="wifi-outline" size={18} color={C.blue} />
-                  <Text style={txt(14, true)}>Wi-Fi & Server Connectivity</Text>
-                </View>
-                <Text style={[txt(11, false, C.muted), { marginBottom: 10 }]}>
-                  Connect seamlessly across different Wi-Fi networks and mobile phone hotspots.
-                </Text>
-
-                <View
-                  style={{
-                    backgroundColor: isDark ? '#1e293b' : '#f8fafc',
-                    borderRadius: 12,
-                    padding: 12,
-                    borderWidth: 1,
-                    borderColor: C.line,
-                    marginBottom: 10
-                  }}
-                >
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                    <Text style={txt(11, true, C.muted)}>ACTIVE ENDPOINT</Text>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-                      <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: C.green }} />
-                      <Text style={{ fontSize: 11, fontWeight: '700', color: C.green }}>Connected</Text>
-                    </View>
-                  </View>
-                  <Text style={[txt(12, true, C.blue), { fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace' }]}>
-                    {getApiBase()}
-                  </Text>
-                  <TouchableOpacity
-                    onPress={async () => {
-                      setServerPingStatus('testing');
-                      const ok = await testApiConnection(getApiBase());
-                      setServerPingStatus(ok ? 'ok' : 'fail');
-                      setTimeout(() => setServerPingStatus(null), 3000);
-                    }}
-                    style={{
-                      marginTop: 8,
-                      alignSelf: 'flex-start',
-                      backgroundColor: C.soft,
-                      paddingHorizontal: 8,
-                      paddingVertical: 4,
-                      borderRadius: 6
-                    }}
-                  >
-                    <Text style={txt(10, true, C.blue)}>
-                      {serverPingStatus === 'testing' ? 'Testing Connection...' : serverPingStatus === 'ok' ? '✓ Ping Success (200 OK)' : serverPingStatus === 'fail' ? '✕ Unreachable' : '⚡ Test Connection'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
-                <Text style={txt(11, true, C.muted)}>SWITCH SERVER HOST / IP (WHEN CHANGING WI-FI)</Text>
-                <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
-                  <TextInput
-                    value={customServerInput}
-                    onChangeText={setCustomServerInput}
-                    placeholder="e.g. http://192.168.1.5:4000/api"
-                    placeholderTextColor={C.muted}
-                    style={[input, { flex: 1, marginBottom: 0 }]}
-                  />
-                  <TouchableOpacity
-                    onPress={async () => {
-                      if (customServerInput.trim()) {
-                        setCustomApiBase(customServerInput.trim());
-                        await AsyncStorage.setItem('abhyas_custom_api_base', customServerInput.trim());
-                        refresh();
-                        appAlert('Server Connected', `Switched API endpoint to ${customServerInput.trim()}`);
-                      } else {
-                        setCustomApiBase(null);
-                        await AsyncStorage.removeItem('abhyas_custom_api_base');
-                        refresh();
-                        appAlert('Auto-Detect Restored', 'Reverted to automatic Wi-Fi server detection.');
-                      }
-                    }}
-                    style={{
-                      backgroundColor: C.blue,
-                      paddingHorizontal: 14,
-                      justifyContent: 'center',
-                      borderRadius: 10
-                    }}
-                  >
-                    <Text style={txt(12, true, '#ffffff')}>Save</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* 8. Sign Out Button */}
+              {/* 7. Sign Out Button */}
               <View style={{ marginBottom: 16, paddingTop: 16, borderTopWidth: 1, borderColor: C.line }}>
                 <TouchableOpacity
                   onPress={async () => {
