@@ -216,6 +216,12 @@ export default function App() {
   const [name, setName] = useState('');
   const [tab, setTab] = useState('Dashboard');
   const [focusMode, setFocusMode] = useState(false);
+  const [zenMode, setZenMode] = useState('Light Zen');
+  const [deepZenUnlocked, setDeepZenUnlocked] = useState(false);
+  const [deepZenInterruptions, setDeepZenInterruptions] = useState(0);
+  const appStateRef = useRef(AppState.currentState);
+  const deepZenLocked =
+    focusMode && zenMode === 'Deep Zen' && !deepZenUnlocked;
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   // Reset confirmation state belongs inside the App component.
