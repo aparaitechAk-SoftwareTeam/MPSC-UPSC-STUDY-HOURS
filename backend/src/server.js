@@ -1394,6 +1394,20 @@ async function startServer() {
     server.on('error', (err) => {
         console.error('[Server Listen Error]', err.message);
     });
+
+    // Background auto-reconnect interval if connection drops or network changes
+    setInterval(async () => {
+        if (!isDbMongo() && process.env.MONGODB_URI) {
+            try {
+                await connectDB();
+                isMongoConnected = true;
+                console.log('[Server] Reconnected to MongoDB Atlas in background!');
+            } catch (_) {
+                // Silently wait for next interval
+            }
+        }
+    }, 15000);
+
     return server;
 }
 
