@@ -60,7 +60,7 @@ const dbFile = path.join(__dirname, '../data/db.json');
 let isMongoConnected = false;
 
 function isDbMongo() {
-  return isMongoConnected && mongoose.connection.readyState === 1;
+  return mongoose.connection.readyState === 1;
 }
 
 // Resilient DB executor: attempts MongoDB if ready, automatically falls back to local JSON db on error/network drop
@@ -70,13 +70,16 @@ async function withDb(mongoFn, jsonFn) {
       return await mongoFn();
     } catch (err) {
       console.warn(`[DB Failover] MongoDB query failed (${err.message}). Seamlessly using local db.json.`);
-      isMongoConnected = false;
       return await jsonFn();
     }
   }
   return await jsonFn();
 }
 
+mongoose.connection.on('connected', () => {
+  console.log('[MongoDB] Connected to MongoDB Atlas.');
+  isMongoConnected = true;
+});
 mongoose.connection.on('disconnected', () => {
   console.warn('[MongoDB] Connection lost. Seamlessly routing requests to local JSON database.');
   isMongoConnected = false;
