@@ -562,6 +562,9 @@ useEffect(() => {
   // Restore authentication on app startup.
   useEffect(() => {
     let mounted = true;
+    const safetyTimer = setTimeout(() => {
+      if (mounted) setLoading(false);
+    }, 2000);
 
     async function restoreLogin() {
       try {
@@ -591,6 +594,7 @@ useEffect(() => {
 
     return () => {
       mounted = false;
+      clearTimeout(safetyTimer);
     };
   }, []);
 
@@ -876,102 +880,39 @@ useEffect(() => {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', backgroundColor: C.bg }}>
-        <ActivityIndicator color={C.blue} />
+      <View
+        style={{
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: C.bg,
+          minHeight: Platform.OS === 'web' ? '100vh' : '100%',
+          height: '100%'
+        }}
+      >
+        <ActivityIndicator size="large" color={C.blue} />
       </View>
     );
   }
 
   if (!token) {
     return (
-      <ThemeContext.Provider value={{ theme: C, isDarkMode, toggleTheme }}>
-        <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
-          <View style={{ flex: 1, justifyContent: 'center', padding: 28 }}>
-            <View
-              style={{
-                alignSelf: 'center',
-                width: 74,
-                height: 74,
-                borderRadius: 22,
-                backgroundColor: C.soft,
-                justifyContent: 'center',
-                alignItems: 'center'
-              }}
-            >
-              <Ionicons name="book-outline" size={38} color={C.blue} />
-            </View>
-
-            <Text
-              style={[
-                txt(30, true),
-                { textAlign: 'center', marginTop: 20 }
-              ]}
-            >
-              Abhyas Tracker
-            </Text>
-
-            <Text
-              style={[
-                txt(13, false, C.muted),
-                { textAlign: 'center', marginBottom: 35 }
-              ]}
-            >
-              Focused study. Smarter revision.
-            </Text>
-
-            {register && (
-              <TextInput
-                placeholder="Full Name"
-                placeholderTextColor={C.muted}
-                value={name}
-                onChangeText={setName}
-                style={input}
-              />
-            )}
-
-            <TextInput
-              placeholder="Email"
-              placeholderTextColor={C.muted}
-              autoCapitalize="none"
-              value={loginEmail}
-              onChangeText={setEmail}
-              style={input}
-            />
-
-            <TextInput
-              placeholder="Password"
-              placeholderTextColor={C.muted}
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-              style={input}
-            />
-
-            <Button
-              label={register ? 'Create Account' : 'Sign In'}
-              onPress={login}
-            />
-
-            <Button
-              label={
-                register
-                  ? 'Already registered? Sign in'
-                  : 'Create a student account'
-              }
-              subtle
-              onPress={() => setRegister(!register)}
-            />
-
-            <Text
-              style={[
-                txt(11, false, C.muted),
-                { textAlign: 'center', marginTop: 25 }
-              ]}
-            >
-              Demo: student@abhyas.local / Student123!
-            </Text>
-          </View>
-        </SafeAreaView>
+      <ThemeContext.Provider value={{ theme: C, ...C, isDarkMode, toggleTheme }}>
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: C.bg,
+            minHeight: Platform.OS === 'web' ? '100vh' : '100%',
+            height: '100%'
+          }}
+        >
+          <AuthScreens
+            onLogin={handleLogin}
+            apiUrl={API}
+            isDark={isDarkMode}
+            onToggleTheme={toggleTheme}
+          />
+        </View>
       </ThemeContext.Provider>
     );
   }
@@ -2693,6 +2634,8 @@ borderColor: [
         style={{
           flex: 1,
           backgroundColor: C.bg,
+          minHeight: Platform.OS === 'web' ? '100vh' : '100%',
+          height: '100%',
           paddingTop:
             Platform.OS === 'android' ? StatusBar.currentHeight : 0
         }}

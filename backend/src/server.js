@@ -1,4 +1,13 @@
 require('dotenv').config();
+const fs = require('fs');
+const path = require('path');
+const express = require('express');
+const cors = require('cors');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+const nodemailer = require('nodemailer');
+const crypto = require('crypto');
+
 const { connectDB } = require('./db');
 const {
     User,
@@ -8,12 +17,6 @@ const {
     Notification,
     Ticket
 } = require('./models');
-const express = require('express');
-const cors = require('cors');
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
-const nodemailer = require('nodemailer');
-const crypto = require('crypto');
 
 const app = express();
 
@@ -40,6 +43,25 @@ app.use(cors({
 app.use(express.json({ limit: '2mb' }));
 
 const secret = process.env.JWT_SECRET || 'development-only-change-this-secret';
+const dbFile = path.join(__dirname, '../data/db.json');
+
+let isMongoConnected = false;
+
+function readJsonDb() {
+  try {
+    return JSON.parse(fs.readFileSync(dbFile, 'utf8'));
+  } catch (err) {
+    return { users: [], subjects: [], plans: [], sessions: [], notifications: [], tickets: [] };
+  }
+}
+
+function writeJsonDb(data) {
+  try {
+    fs.writeFileSync(dbFile, JSON.stringify(data, null, 2), 'utf8');
+  } catch (err) {
+    console.error('[JSON DB Write Error]', err.message);
+  }
+}
 
 // In-memory OTP storage with TTL
 const otpStore = new Map();
@@ -115,7 +137,11 @@ function cleanDoc(doc) {
 // -------------------------------------------------------------
 // Health Check
 // -------------------------------------------------------------
-app.get('/api/health', (req, res) => res.json({ ok: true, service: 'Abhyas Tracker API' }));
+app.get('/api/health', (req, res) => res.json({
+  ok: true,
+  service: 'Abhyas Tracker API',
+  storage: isMongoConnected ? 'mongodb' : 'local-json'
+}));
 
 // -------------------------------------------------------------
 // OTP Verification & Forgot Password
@@ -158,7 +184,12 @@ app.post('/api/auth/send-otp', async (req, res) => {
     const cleanMobile = cleanTarget.replace(/\D/g, '');
     let user = null;
     try {
-      user = await User.findOne({ phone: cleanMobile });
+      if (isMongoConnected) {
+        user = await User.findOne({ $or: [{ phone: cleanMobile }, { mobile: cleanMobile }] });
+      } else {
+        const db = readJsonDb();
+        user = (db.users || []).find(u => (u.mobile && u.mobile === cleanMobile) || (u.phone && u.phone === cleanMobile));
+      }
     } catch {}
 
     if (user && user.email) {
@@ -225,9 +256,20 @@ app.post('/api/auth/login-otp', async (req, res) => {
   otpStore.delete(cleanTarget);
 
   try {
-    const user = await User.findOne({
-      $or: [{ email: cleanTarget }, { phone: cleanTarget.replace(/\D/g, '') }]
-    });
+    let user = null;
+    const cleanDigits = cleanTarget.replace(/\D/g, '');
+    if (isMongoConnected) {
+      user = await User.findOne({
+        $or: [{ email: cleanTarget }, { phone: cleanDigits }, { mobile: cleanDigits }]
+      });
+    } else {
+      const db = readJsonDb();
+      user = (db.users || []).find(u =>
+        (u.email && u.email.toLowerCase() === cleanTarget) ||
+        (u.mobile && u.mobile === cleanDigits) ||
+        (u.phone && u.phone === cleanDigits)
+      );
+    }
 
     if (!user) {
       return res.status(404).json({ error: 'No account found. Please sign up first.' });
@@ -236,7 +278,7 @@ app.post('/api/auth/login-otp', async (req, res) => {
     const token = jwt.sign({ id: user.id, role: user.role }, secret, { expiresIn: '7d' });
     res.json({ token, user: publicUser(user) });
   } catch (err) {
-    res.status(500).json({ error: 'Login failed' });
+    res.status(500).json({ error: 'Login failed: ' + err.message });
   }
 });
 
@@ -258,20 +300,31 @@ app.post('/api/auth/reset-password', async (req, res) => {
   otpStore.delete(cleanTarget);
 
   try {
-    const user = await User.findOne({
-      $or: [{ email: cleanTarget }, { phone: cleanTarget.replace(/\D/g, '') }]
-    });
+    const cleanDigits = cleanTarget.replace(/\D/g, '');
+    const newHash = bcrypt.hashSync(cleanPass, 10);
 
-    if (!user) {
-      return res.status(404).json({ error: 'Account not found.' });
+    if (isMongoConnected) {
+      const user = await User.findOne({
+        $or: [{ email: cleanTarget }, { phone: cleanDigits }, { mobile: cleanDigits }]
+      });
+      if (!user) return res.status(404).json({ error: 'Account not found.' });
+      user.passwordHash = newHash;
+      await user.save();
+    } else {
+      const db = readJsonDb();
+      const user = (db.users || []).find(u =>
+        (u.email && u.email.toLowerCase() === cleanTarget) ||
+        (u.mobile && u.mobile === cleanDigits) ||
+        (u.phone && u.phone === cleanDigits)
+      );
+      if (!user) return res.status(404).json({ error: 'Account not found.' });
+      user.passwordHash = newHash;
+      writeJsonDb(db);
     }
-
-    user.passwordHash = bcrypt.hashSync(cleanPass, 10);
-    await user.save();
 
     res.json({ success: true, message: 'Password updated successfully! You can now sign in with your new password.' });
   } catch (err) {
-    res.status(500).json({ error: 'Password update failed' });
+    res.status(500).json({ error: 'Password update failed: ' + err.message });
   }
 });
 
@@ -285,40 +338,64 @@ app.post('/api/auth/register', async (req, res) => {
             return res.status(400).json({ error: 'Name, email, and password (6+ characters) required' });
         }
         const normalizedEmail = String(email).trim().toLowerCase();
-        const existing = await User.findOne({ email: normalizedEmail });
-        if (existing) {
-            return res.status(409).json({ error: 'Email already registered' });
-        }
-        const user = await User.create({
+        const cleanPhone = String(phone || '').trim();
+        const hash = bcrypt.hashSync(password, 10);
+        const newUser = {
             id: Date.now().toString(),
             name: String(name).trim(),
             email: normalizedEmail,
-            phone: String(phone || '').trim(),
+            phone: cleanPhone,
             role: 'student',
-            passwordHash: bcrypt.hashSync(password, 10)
-        });
-        const token = jwt.sign({ id: user.id, role: user.role }, secret, { expiresIn: '7d' });
-        res.status(201).json({ token, user: publicUser(user) });
+            passwordHash: hash
+        };
+
+        if (isMongoConnected) {
+            const existing = await User.findOne({ email: normalizedEmail });
+            if (existing) return res.status(409).json({ error: 'Email already registered' });
+            const created = await User.create(newUser);
+            const token = jwt.sign({ id: created.id, role: created.role }, secret, { expiresIn: '7d' });
+            return res.status(201).json({ token, user: publicUser(created) });
+        } else {
+            const db = readJsonDb();
+            db.users = db.users || [];
+            if (db.users.some(u => u.email && u.email.toLowerCase() === normalizedEmail)) {
+                return res.status(409).json({ error: 'Email already registered' });
+            }
+            db.users.push(newUser);
+            writeJsonDb(db);
+            const token = jwt.sign({ id: newUser.id, role: newUser.role }, secret, { expiresIn: '7d' });
+            return res.status(201).json({ token, user: publicUser(newUser) });
+        }
     } catch (err) {
-        res.status(500).json({ error: 'Registration failed' });
+        res.status(500).json({ error: 'Registration failed: ' + err.message });
     }
 });
 
 app.post('/api/auth/login', async (req, res) => {
     try {
         const { email, password } = req.body || {};
-        const rawTarget = String(email || '').trim();
+        const rawTarget = String(email || '').trim().toLowerCase();
         const cleanPassword = String(password || '').trim();
         if (!rawTarget || !cleanPassword) {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
 
-        const user = await User.findOne({
-            $or: [
-                { email: rawTarget.toLowerCase() },
-                { phone: rawTarget }
-            ]
-        });
+        let user = null;
+        if (isMongoConnected) {
+            user = await User.findOne({
+                $or: [
+                    { email: rawTarget },
+                    { phone: rawTarget }
+                ]
+            });
+        } else {
+            const db = readJsonDb();
+            user = (db.users || []).find(u =>
+                (u.email && u.email.toLowerCase() === rawTarget) ||
+                (u.mobile && u.mobile === rawTarget) ||
+                (u.phone && u.phone === rawTarget)
+            );
+        }
 
         if (!user || !user.passwordHash || !bcrypt.compareSync(cleanPassword, user.passwordHash)) {
             return res.status(401).json({ error: 'Invalid credentials' });
@@ -328,13 +405,18 @@ app.post('/api/auth/login', async (req, res) => {
             user: publicUser(user)
         });
     } catch (err) {
-        res.status(500).json({ error: 'Login failed' });
+        res.status(500).json({ error: 'Login failed: ' + err.message });
     }
 });
 
 app.get('/api/me', auth(), async (req, res) => {
     try {
-        const u = await User.findOne({ id: req.user.id });
+        let u = null;
+        if (isMongoConnected) {
+            u = await User.findOne({ id: req.user.id });
+        } else {
+            u = (readJsonDb().users || []).find(x => x.id === req.user.id);
+        }
         if (!u) return res.status(404).json({ error: 'User not found' });
         res.json({ user: publicUser(u) });
     } catch (err) {
@@ -342,11 +424,19 @@ app.get('/api/me', auth(), async (req, res) => {
     }
 });
 
-// Self account deletion (Preserves historical activity data for analytics)
+// Self account deletion
 app.delete('/api/users/me', auth(), async (req, res) => {
     try {
-        const u = await User.findOneAndDelete({ id: req.user.id });
-        if (!u) return res.status(404).json({ error: 'User not found' });
+        if (isMongoConnected) {
+            const u = await User.findOneAndDelete({ id: req.user.id });
+            if (!u) return res.status(404).json({ error: 'User not found' });
+            return res.json({ ok: true, message: 'Account deleted successfully' });
+        }
+        const db = readJsonDb();
+        const idx = (db.users || []).findIndex(x => x.id === req.user.id);
+        if (idx === -1) return res.status(404).json({ error: 'User not found' });
+        db.users.splice(idx, 1);
+        writeJsonDb(db);
         res.json({ ok: true, message: 'Account deleted successfully' });
     } catch (err) {
         res.status(500).json({ error: 'Failed to delete account' });
@@ -358,8 +448,11 @@ app.delete('/api/users/me', auth(), async (req, res) => {
 // -------------------------------------------------------------
 app.get('/api/subjects', auth(), async (req, res) => {
     try {
-        const subjects = await Subject.find().lean();
-        res.json(subjects.map(cleanDoc));
+        if (isMongoConnected) {
+            const subjects = await Subject.find().lean();
+            return res.json(subjects.map(cleanDoc));
+        }
+        res.json(readJsonDb().subjects || []);
     } catch (err) {
         res.status(500).json({ error: 'Failed to fetch subjects' });
     }
@@ -370,8 +463,12 @@ app.get('/api/subjects', auth(), async (req, res) => {
 // -------------------------------------------------------------
 app.get('/api/plan', auth(), async (req, res) => {
     try {
-        const plans = await Plan.find({ userId: req.user.id }).lean();
-        res.json(plans.map(cleanDoc));
+        if (isMongoConnected) {
+            const plans = await Plan.find({ userId: req.user.id }).lean();
+            return res.json(plans.map(cleanDoc));
+        }
+        const plans = (readJsonDb().plans || []).filter(p => p.userId === req.user.id);
+        res.json(plans);
     } catch (err) {
         res.status(500).json({ error: 'Failed to fetch plans' });
     }
@@ -379,11 +476,11 @@ app.get('/api/plan', auth(), async (req, res) => {
 
 app.post('/api/plan', auth(), async (req, res) => {
     try {
-        const { title, minutes, date, subjectId, exam, priority } = req.body || {};
+        const { title, minutes, date, subjectId } = req.body || {};
         if (!title || !Number.isFinite(Number(minutes)) || Number(minutes) <= 0) {
             return res.status(400).json({ error: 'Title and positive minutes required' });
         }
-        const obj = await Plan.create({
+        const newPlan = {
             id: Date.now().toString(),
             userId: req.user.id,
             title,
@@ -391,8 +488,16 @@ app.post('/api/plan', auth(), async (req, res) => {
             date: date || new Date().toISOString().slice(0, 10),
             subjectId: subjectId || null,
             done: false
-        });
-        res.status(201).json(cleanDoc(obj));
+        };
+        if (isMongoConnected) {
+            const obj = await Plan.create(newPlan);
+            return res.status(201).json(cleanDoc(obj));
+        }
+        const db = readJsonDb();
+        db.plans = db.plans || [];
+        db.plans.push(newPlan);
+        writeJsonDb(db);
+        res.status(201).json(newPlan);
     } catch (err) {
         res.status(500).json({ error: 'Failed to create plan' });
     }
@@ -400,13 +505,21 @@ app.post('/api/plan', auth(), async (req, res) => {
 
 app.patch('/api/plan/:id', auth(), async (req, res) => {
     try {
-        const x = await Plan.findOneAndUpdate(
-            { id: req.params.id, userId: req.user.id },
-            { $set: { done: !!req.body.done } },
-            { returnDocument: 'after' }
-        );
-        if (!x) return res.status(404).json({ error: 'Not found' });
-        res.json(cleanDoc(x));
+        if (isMongoConnected) {
+            const x = await Plan.findOneAndUpdate(
+                { id: req.params.id, userId: req.user.id },
+                { $set: { done: !!req.body.done } },
+                { returnDocument: 'after' }
+            );
+            if (!x) return res.status(404).json({ error: 'Not found' });
+            return res.json(cleanDoc(x));
+        }
+        const db = readJsonDb();
+        const item = (db.plans || []).find(p => p.id === req.params.id && p.userId === req.user.id);
+        if (!item) return res.status(404).json({ error: 'Not found' });
+        item.done = !!req.body.done;
+        writeJsonDb(db);
+        res.json(item);
     } catch (err) {
         res.status(500).json({ error: 'Failed to update plan' });
     }
@@ -414,8 +527,16 @@ app.patch('/api/plan/:id', auth(), async (req, res) => {
 
 app.delete('/api/plan/:id', auth(), async (req, res) => {
     try {
-        const removed = await Plan.findOneAndDelete({ id: req.params.id, userId: req.user.id });
-        if (!removed) return res.status(404).json({ error: 'Plan not found' });
+        if (isMongoConnected) {
+            const removed = await Plan.findOneAndDelete({ id: req.params.id, userId: req.user.id });
+            if (!removed) return res.status(404).json({ error: 'Plan not found' });
+            return res.json({ ok: true, id: req.params.id });
+        }
+        const db = readJsonDb();
+        const idx = (db.plans || []).findIndex(p => p.id === req.params.id && p.userId === req.user.id);
+        if (idx === -1) return res.status(404).json({ error: 'Plan not found' });
+        db.plans.splice(idx, 1);
+        writeJsonDb(db);
         res.json({ ok: true, id: req.params.id });
     } catch (err) {
         res.status(500).json({ error: 'Failed to delete plan' });
@@ -427,8 +548,14 @@ app.delete('/api/plan/:id', auth(), async (req, res) => {
 // -------------------------------------------------------------
 app.get('/api/sessions', auth(), async (req, res) => {
     try {
-        const sessions = await Session.find({ userId: req.user.id }).sort({ startedAt: -1 }).lean();
-        res.json(sessions.map(cleanDoc));
+        if (isMongoConnected) {
+            const sessions = await Session.find({ userId: req.user.id }).sort({ startedAt: -1 }).lean();
+            return res.json(sessions.map(cleanDoc));
+        }
+        const sessions = (readJsonDb().sessions || [])
+            .filter(s => s.userId === req.user.id)
+            .sort((a, b) => (b.startedAt || '').localeCompare(a.startedAt || ''));
+        res.json(sessions);
     } catch (err) {
         res.status(500).json({ error: 'Failed to fetch sessions' });
     }
@@ -441,7 +568,7 @@ app.post('/api/sessions', auth(), async (req, res) => {
         if (!Number.isFinite(m) || m <= 0 || m > 1440) {
             return res.status(400).json({ error: 'Minutes must be 1–1440' });
         }
-        const obj = await Session.create({
+        const newSession = {
             id: Date.now().toString(),
             userId: req.user.id,
             subjectId: subjectId || null,
@@ -449,8 +576,16 @@ app.post('/api/sessions', auth(), async (req, res) => {
             mode: mode || 'Pomodoro',
             focusScore: Math.min(100, Math.max(0, Number(focusScore) || 90)),
             startedAt: new Date().toISOString()
-        });
-        res.status(201).json(cleanDoc(obj));
+        };
+        if (isMongoConnected) {
+            const obj = await Session.create(newSession);
+            return res.status(201).json(cleanDoc(obj));
+        }
+        const db = readJsonDb();
+        db.sessions = db.sessions || [];
+        db.sessions.push(newSession);
+        writeJsonDb(db);
+        res.status(201).json(newSession);
     } catch (err) {
         res.status(500).json({ error: 'Failed to create session' });
     }
@@ -461,8 +596,14 @@ app.post('/api/sessions', auth(), async (req, res) => {
 // -------------------------------------------------------------
 app.get('/api/notifications', auth(), async (req, res) => {
     try {
-        const notifs = await Notification.find({ userId: { $in: [req.user.id, 'all'] } }).sort({ createdAt: -1 }).lean();
-        res.json(notifs.map(cleanDoc));
+        if (isMongoConnected) {
+            const notifs = await Notification.find({ userId: { $in: [req.user.id, 'all'] } }).sort({ createdAt: -1 }).lean();
+            return res.json(notifs.map(cleanDoc));
+        }
+        const notifs = (readJsonDb().notifications || [])
+            .filter(n => n.userId === 'all' || n.userId === req.user.id)
+            .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+        res.json(notifs);
     } catch (err) {
         res.status(500).json({ error: 'Failed to fetch notifications' });
     }
@@ -470,13 +611,22 @@ app.get('/api/notifications', auth(), async (req, res) => {
 
 app.patch('/api/notifications/:id/read', auth(), async (req, res) => {
     try {
-        const n = await Notification.findOneAndUpdate(
-            { id: req.params.id, userId: { $in: [req.user.id, 'all'] } },
-            { $addToSet: { readBy: req.user.id } },
-            { returnDocument: 'after' }
-        );
-        if (!n) return res.status(404).json({ error: 'Not found' });
-        res.json(cleanDoc(n));
+        if (isMongoConnected) {
+            const n = await Notification.findOneAndUpdate(
+                { id: req.params.id, userId: { $in: [req.user.id, 'all'] } },
+                { $addToSet: { readBy: req.user.id } },
+                { returnDocument: 'after' }
+            );
+            if (!n) return res.status(404).json({ error: 'Not found' });
+            return res.json(cleanDoc(n));
+        }
+        const db = readJsonDb();
+        const item = (db.notifications || []).find(n => n.id === req.params.id);
+        if (!item) return res.status(404).json({ error: 'Not found' });
+        item.readBy = item.readBy || [];
+        if (!item.readBy.includes(req.user.id)) item.readBy.push(req.user.id);
+        writeJsonDb(db);
+        res.json(item);
     } catch (err) {
         res.status(500).json({ error: 'Failed to mark notification as read' });
     }
@@ -487,8 +637,14 @@ app.patch('/api/notifications/:id/read', auth(), async (req, res) => {
 // -------------------------------------------------------------
 app.get('/api/tickets', auth(), async (req, res) => {
     try {
-        const tickets = await Ticket.find({ userId: req.user.id }).sort({ createdAt: -1 }).lean();
-        res.json(tickets.map(cleanDoc));
+        if (isMongoConnected) {
+            const tickets = await Ticket.find({ userId: req.user.id }).sort({ createdAt: -1 }).lean();
+            return res.json(tickets.map(cleanDoc));
+        }
+        const tickets = (readJsonDb().tickets || [])
+            .filter(t => t.userId === req.user.id)
+            .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+        res.json(tickets);
     } catch (err) {
         res.status(500).json({ error: 'Failed to fetch tickets' });
     }
@@ -501,7 +657,7 @@ app.post('/api/tickets', auth(), async (req, res) => {
             return res.status(400).json({ error: 'Category and message are required' });
         }
         const now = new Date().toISOString();
-        const obj = await Ticket.create({
+        const obj = {
             id: Date.now().toString(),
             userId: req.user.id,
             type,
@@ -511,48 +667,18 @@ app.post('/api/tickets', auth(), async (req, res) => {
             createdAt: now,
             updatedAt: now,
             replies: []
-        });
-        res.status(201).json(cleanDoc(obj));
+        };
+        if (isMongoConnected) {
+            const created = await Ticket.create(obj);
+            return res.status(201).json(cleanDoc(created));
+        }
+        const db = readJsonDb();
+        db.tickets = db.tickets || [];
+        db.tickets.push(obj);
+        writeJsonDb(db);
+        res.status(201).json(obj);
     } catch (err) {
         res.status(500).json({ error: 'Failed to create ticket' });
-    }
-});
-
-app.get('/api/tickets/:id', auth(), async (req, res) => {
-    try {
-        const x = await Ticket.findOne({ id: req.params.id, userId: req.user.id }).lean();
-        if (!x) return res.status(404).json({ error: 'Ticket not found' });
-        res.json(cleanDoc(x));
-    } catch (err) {
-        res.status(500).json({ error: 'Failed to fetch ticket' });
-    }
-});
-
-app.patch('/api/tickets/:id', auth(), async (req, res) => {
-    try {
-        const x = await Ticket.findOne({ id: req.params.id, userId: req.user.id });
-        if (!x) return res.status(404).json({ error: 'Ticket not found' });
-        if (x.status === 'Resolved') return res.status(400).json({ error: 'Resolved tickets cannot be edited' });
-
-        const { type, subject, message } = req.body || {};
-        if (type) x.type = type;
-        if (subject !== undefined) x.subject = subject.trim();
-        if (message && message.trim()) x.message = message.trim();
-        x.updatedAt = new Date().toISOString();
-        await x.save();
-        res.json(cleanDoc(x));
-    } catch (err) {
-        res.status(500).json({ error: 'Failed to update ticket' });
-    }
-});
-
-app.delete('/api/tickets/:id', auth(), async (req, res) => {
-    try {
-        const removed = await Ticket.findOneAndDelete({ id: req.params.id, userId: req.user.id });
-        if (!removed) return res.status(404).json({ error: 'Ticket not found' });
-        res.json({ ok: true, id: removed.id });
-    } catch (err) {
-        res.status(500).json({ error: 'Failed to delete ticket' });
     }
 });
 
@@ -561,10 +687,12 @@ app.delete('/api/tickets/:id', auth(), async (req, res) => {
 // -------------------------------------------------------------
 app.get('/api/analytics', auth(), async (req, res) => {
     try {
-        const sessions = await Session.find({ userId: req.user.id }).sort({ startedAt: 1 }).lean();
-        const minutes = sessions.reduce((a, x) => a + x.minutes, 0);
+        const sessions = isMongoConnected
+            ? await Session.find({ userId: req.user.id }).sort({ startedAt: 1 }).lean()
+            : (readJsonDb().sessions || []).filter(s => s.userId === req.user.id);
+        const minutes = sessions.reduce((a, x) => a + (Number(x.minutes) || 0), 0);
         const focus = sessions.length
-            ? Math.round(sessions.reduce((a, x) => a + x.focusScore, 0) / sessions.length)
+            ? Math.round(sessions.reduce((a, x) => a + (Number(x.focusScore) || 0), 0) / sessions.length)
             : 0;
         res.json({
             sessionCount: sessions.length,
@@ -572,7 +700,7 @@ app.get('/api/analytics', auth(), async (req, res) => {
             averageFocus: focus,
             weekly: sessions.slice(-7).map(s => ({
                 date: (s.startedAt || '').slice(0, 10),
-                minutes: s.minutes
+                minutes: Number(s.minutes) || 0
             }))
         });
     } catch (err) {
@@ -585,18 +713,32 @@ app.get('/api/analytics', auth(), async (req, res) => {
 // -------------------------------------------------------------
 app.get('/api/admin/overview', auth('admin'), async (req, res) => {
     try {
-        const [totalUsers, students, totalSubjects, sessions] = await Promise.all([
-            User.countDocuments(),
-            User.countDocuments({ role: 'student' }),
-            Subject.countDocuments(),
-            Session.find().lean()
-        ]);
+        if (isMongoConnected) {
+            const [totalUsers, students, totalSubjects, sessions] = await Promise.all([
+                User.countDocuments(),
+                User.countDocuments({ role: 'student' }),
+                Subject.countDocuments(),
+                Session.find().lean()
+            ]);
+            return res.json({
+                users: students,
+                totalAccounts: totalUsers,
+                subjects: totalSubjects,
+                sessions: sessions.length,
+                minutes: sessions.reduce((a, s) => a + s.minutes, 0)
+            });
+        }
+        const db = readJsonDb();
+        const users = db.users || [];
+        const students = users.filter(u => u.role === 'student');
+        const subjects = db.subjects || [];
+        const sessions = db.sessions || [];
         res.json({
-            users: students,
-            totalAccounts: totalUsers,
-            subjects: totalSubjects,
+            users: students.length,
+            totalAccounts: users.length,
+            subjects: subjects.length,
             sessions: sessions.length,
-            minutes: sessions.reduce((a, s) => a + s.minutes, 0)
+            minutes: sessions.reduce((a, s) => a + (Number(s.minutes) || 0), 0)
         });
     } catch (err) {
         res.status(500).json({ error: 'Failed to fetch admin overview' });
@@ -605,8 +747,12 @@ app.get('/api/admin/overview', auth('admin'), async (req, res) => {
 
 app.get('/api/admin/users', auth('admin'), async (req, res) => {
     try {
-        const users = await User.find({}, '-passwordHash').lean();
-        res.json(users.map(cleanDoc));
+        if (isMongoConnected) {
+            const users = await User.find({}, '-passwordHash').lean();
+            return res.json(users.map(cleanDoc));
+        }
+        const users = (readJsonDb().users || []).map(publicUser);
+        res.json(users);
     } catch (err) {
         res.status(500).json({ error: 'Failed to fetch users' });
     }
@@ -614,8 +760,11 @@ app.get('/api/admin/users', auth('admin'), async (req, res) => {
 
 app.get('/api/admin/subjects', auth('admin'), async (req, res) => {
     try {
-        const subjects = await Subject.find().lean();
-        res.json(subjects.map(cleanDoc));
+        if (isMongoConnected) {
+            const subjects = await Subject.find().lean();
+            return res.json(subjects.map(cleanDoc));
+        }
+        res.json(readJsonDb().subjects || []);
     } catch (err) {
         res.status(500).json({ error: 'Failed to fetch subjects' });
     }
@@ -625,14 +774,22 @@ app.post('/api/admin/subjects', auth('admin'), async (req, res) => {
     try {
         const { name, paper, topics } = req.body || {};
         if (!name) return res.status(400).json({ error: 'Name required' });
-        const x = await Subject.create({
+        const x = {
             id: Date.now().toString(),
             name,
             paper: paper || 'GS Paper II',
             topics: Number(topics) || 0,
             completed: 0
-        });
-        res.status(201).json(cleanDoc(x));
+        };
+        if (isMongoConnected) {
+            const created = await Subject.create(x);
+            return res.status(201).json(cleanDoc(created));
+        }
+        const db = readJsonDb();
+        db.subjects = db.subjects || [];
+        db.subjects.push(x);
+        writeJsonDb(db);
+        res.status(201).json(x);
     } catch (err) {
         res.status(500).json({ error: 'Failed to create subject' });
     }
@@ -640,8 +797,16 @@ app.post('/api/admin/subjects', auth('admin'), async (req, res) => {
 
 app.delete('/api/admin/subjects/:id', auth('admin'), async (req, res) => {
     try {
-        const removed = await Subject.findOneAndDelete({ id: req.params.id });
-        if (!removed) return res.status(404).json({ error: 'Subject not found' });
+        if (isMongoConnected) {
+            const removed = await Subject.findOneAndDelete({ id: req.params.id });
+            if (!removed) return res.status(404).json({ error: 'Subject not found' });
+            return res.json({ ok: true, id: req.params.id });
+        }
+        const db = readJsonDb();
+        const idx = (db.subjects || []).findIndex(s => s.id === req.params.id);
+        if (idx === -1) return res.status(404).json({ error: 'Subject not found' });
+        db.subjects.splice(idx, 1);
+        writeJsonDb(db);
         res.json({ ok: true, id: req.params.id });
     } catch (err) {
         res.status(500).json({ error: 'Failed to delete subject' });
@@ -650,8 +815,11 @@ app.delete('/api/admin/subjects/:id', auth('admin'), async (req, res) => {
 
 app.get('/api/admin/sessions', auth('admin'), async (req, res) => {
     try {
-        const sessions = await Session.find().sort({ startedAt: -1 }).lean();
-        res.json(sessions.map(cleanDoc));
+        if (isMongoConnected) {
+            const sessions = await Session.find().sort({ startedAt: -1 }).lean();
+            return res.json(sessions.map(cleanDoc));
+        }
+        res.json(readJsonDb().sessions || []);
     } catch (err) {
         res.status(500).json({ error: 'Failed to fetch sessions' });
     }
@@ -659,12 +827,16 @@ app.get('/api/admin/sessions', auth('admin'), async (req, res) => {
 
 app.get('/api/admin/tickets', auth('admin'), async (req, res) => {
     try {
-        const [tickets, users] = await Promise.all([
-            Ticket.find().sort({ createdAt: -1 }).lean(),
-            User.find({}, 'id name email').lean()
-        ]);
+        const users = isMongoConnected
+            ? await User.find({}, 'id name email').lean()
+            : (readJsonDb().users || []);
         const userMap = new Map(users.map(u => [u.id, u]));
-        const result = tickets.map(t => {
+
+        const rawTickets = isMongoConnected
+            ? await Ticket.find().sort({ createdAt: -1 }).lean()
+            : (readJsonDb().tickets || []);
+
+        const result = rawTickets.map(t => {
             const u = userMap.get(t.userId);
             return {
                 ...cleanDoc(t),
@@ -678,65 +850,30 @@ app.get('/api/admin/tickets', auth('admin'), async (req, res) => {
     }
 });
 
-app.patch('/api/admin/tickets/:id', auth('admin'), async (req, res) => {
-    try {
-        const x = await Ticket.findOne({ id: req.params.id });
-        if (!x) return res.status(404).json({ error: 'Ticket not found' });
-
-        const { status, reply } = req.body || {};
-        if (status) x.status = status;
-        if (reply && String(reply).trim()) {
-            x.replies = x.replies || [];
-            const adminUser = await User.findOne({ id: req.user.id });
-            x.replies.push({
-                id: Date.now().toString(),
-                sender: 'admin',
-                adminId: req.user.id,
-                adminName: adminUser?.name || 'Admin Support',
-                message: String(reply).trim(),
-                createdAt: new Date().toISOString()
-            });
-        }
-        x.updatedAt = new Date().toISOString();
-        await x.save();
-
-        const u = await User.findOne({ id: x.userId });
-        res.json({
-            ...cleanDoc(x),
-            studentName: u?.name || 'Unknown Student',
-            studentEmail: u?.email || 'N/A'
-        });
-    } catch (err) {
-        res.status(500).json({ error: 'Failed to update ticket' });
-    }
-});
-
 app.post('/api/admin/notifications', auth('admin'), async (req, res) => {
     try {
         if (!req.body.title || !req.body.message) {
             return res.status(400).json({ error: 'Title and message required' });
         }
-        const x = await Notification.create({
+        const x = {
             id: Date.now().toString(),
             userId: 'all',
             title: req.body.title,
             message: req.body.message,
             readBy: [],
             createdAt: new Date().toISOString()
-        });
-        res.status(201).json(cleanDoc(x));
+        };
+        if (isMongoConnected) {
+            const created = await Notification.create(x);
+            return res.status(201).json(cleanDoc(created));
+        }
+        const db = readJsonDb();
+        db.notifications = db.notifications || [];
+        db.notifications.push(x);
+        writeJsonDb(db);
+        res.status(201).json(x);
     } catch (err) {
         res.status(500).json({ error: 'Failed to create notification' });
-    }
-});
-
-app.delete('/api/admin/notifications/:id', auth('admin'), async (req, res) => {
-    try {
-        const removed = await Notification.findOneAndDelete({ id: req.params.id });
-        if (!removed) return res.status(404).json({ error: 'Notification not found' });
-        res.json({ ok: true, id: req.params.id });
-    } catch (err) {
-        res.status(500).json({ error: 'Failed to delete notification' });
     }
 });
 
@@ -746,14 +883,18 @@ app.delete('/api/admin/notifications/:id', auth('admin'), async (req, res) => {
 const port = process.env.PORT || 4000;
 
 async function startServer() {
-    try {
-        if (process.env.MONGODB_URI) {
+    if (process.env.MONGODB_URI) {
+        try {
             await connectDB();
-        } else {
-            console.log('[Server] MONGODB_URI not provided; starting server in standalone mode');
+            isMongoConnected = true;
+            console.log('[Server] Connected to MongoDB Atlas');
+        } catch (err) {
+            console.error(`[Server] MongoDB connection failed: ${err.message}. Falling back to local data/db.json storage.`);
+            isMongoConnected = false;
         }
-    } catch (err) {
-        console.error(`[Server] Database connection error: ${err.message}. Starting API in fallback mode.`);
+    } else {
+        console.log('[Server] MONGODB_URI not provided; running with local data/db.json storage.');
+        isMongoConnected = false;
     }
 
     const server = app.listen(port, '0.0.0.0', () => {
