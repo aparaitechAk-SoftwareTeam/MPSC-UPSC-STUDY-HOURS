@@ -249,7 +249,7 @@ function SixDigitInput({ otp, setOtp, onComplete }) {
 export default function AuthScreens({
   onLogin,
   authError,
-  isSubmitting,
+  isSubmitting: propSubmitting,
   apiUrl,
   isDark: propIsDark,
   onToggleTheme: propOnToggleTheme,
@@ -289,7 +289,7 @@ export default function AuthScreens({
 
   // Input States
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("bhumikajadhav.aparaitech@gmail.com");
+  const [email, setEmail] = useState("");
   const [mobile, setMobile] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -300,17 +300,18 @@ export default function AuthScreens({
   const [successMsg, setSuccessMsg] = useState("");
 
   // Admin credentials state
-  const [adminEmail, setAdminEmail] = useState("admin@abhyas.local");
+  const [adminEmail, setAdminEmail] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
   const [showAdminPassword, setShowAdminPassword] = useState(false);
   const [isLocalSubmitting, setIsLocalSubmitting] = useState(false);
+  const isSubmitting = Boolean(isLocalSubmitting || propSubmitting);
 
   // Countdown timer for OTP resend
   const [timerSeconds, setTimerSeconds] = useState(30);
   const [canResend, setCanResend] = useState(false);
 
   const targetContact = method === "email" ? email : mobile;
-  const effectiveError = authError || localError;
+  const effectiveError = localError || authError || "";
 
   // Resolve API Base URL
   const resolvedApi = apiUrl || getApiBase();
@@ -383,11 +384,11 @@ export default function AuthScreens({
     setLocalError("");
     const trimmedEmail = email.trim();
     if (!trimmedEmail || !isEmailValid(trimmedEmail)) {
-      setLocalError("Invalid credentials");
+      setLocalError("Please enter a valid email address.");
       return;
     }
     if (!password) {
-      setLocalError("Invalid credentials");
+      setLocalError("Please enter your password.");
       return;
     }
 
@@ -405,7 +406,7 @@ export default function AuthScreens({
     setLocalError("");
     const trimmedEmail = email.trim();
     if (!trimmedEmail || !isEmailValid(trimmedEmail)) {
-      setLocalError("Invalid credentials");
+      setLocalError("Please enter a valid email address.");
       return;
     }
 
@@ -445,32 +446,48 @@ export default function AuthScreens({
   // --- Complete Sign Up after OTP ---
   async function handleCompleteSignUp(otpCode = otp) {
     setLocalError("");
-    if (otpCode.length < 6) {
+    const cleaned = String(otpCode || "").replace(/\D/g, "");
+    if (cleaned.length < 6) {
       setLocalError("Please enter the complete 6-digit verification code.");
       return;
     }
 
+    setIsLocalSubmitting(true);
     try {
-      const target = method === "email" ? email.trim() : mobile.trim();
+      const target = (method === "email" ? email : mobile).trim();
       const vRes = await smartApiFetch("/auth/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ target, otp: otpCode }),
+        body: JSON.stringify({ target, code: cleaned, otp: cleaned }),
       });
       const vData = await vRes.json();
       if (!vRes.ok) throw new Error(vData.error || "Invalid verification code");
 
-      if (typeof onLogin === "function") {
-        onLogin({
+      // Complete registration via API
+      const regRes = await smartApiFetch("/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           name: name.trim(),
           email: email.trim(),
+          phone: mobile.trim(),
           mobile: mobile.trim(),
           password,
-          isRegister: true,
+        }),
+      });
+      const regData = await regRes.json();
+      if (!regRes.ok) throw new Error(regData.error || "Registration failed");
+
+      if (typeof onLogin === "function") {
+        await onLogin({
+          token: regData.token,
+          user: regData.user,
         });
       }
     } catch (e) {
-      setLocalError(e.message);
+      setLocalError(e.message || "Registration failed");
+    } finally {
+      setIsLocalSubmitting(false);
     }
   }
 
@@ -492,29 +509,33 @@ export default function AuthScreens({
 
   async function handleVerifyLoginOtp(otpCode = otp) {
     setLocalError("");
-    if (otpCode.length < 6) {
+    const cleaned = String(otpCode || "").replace(/\D/g, "");
+    if (cleaned.length < 6) {
       setLocalError("Please enter the complete 6-digit code.");
       return;
     }
 
+    setIsLocalSubmitting(true);
     try {
       const target = (method === "email" ? email : mobile).trim();
       const res = await smartApiFetch("/auth/login-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ target, otp: otpCode }),
+        body: JSON.stringify({ target, code: cleaned, otp: cleaned }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Unable to sign in with OTP");
 
       if (typeof onLogin === "function") {
-        onLogin({
+        await onLogin({
           token: data.token,
           user: data.user,
         });
       }
     } catch (e) {
-      setLocalError(e.message);
+      setLocalError(e.message || "Unable to sign in with OTP");
+    } finally {
+      setIsLocalSubmitting(false);
     }
   }
 
@@ -551,16 +572,17 @@ export default function AuthScreens({
 
     setIsLocalSubmitting(true);
     try {
-      const target = targetContact.trim();
+      const target = (targetContact || email || "").trim();
       const res = await smartApiFetch("/auth/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ target, otp: cleaned }),
+        body: JSON.stringify({ target, code: cleaned, otp: cleaned }),
         timeout: 10000,
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Incorrect or expired reset code.");
 
+      setOtp(cleaned);
       setScreen("forgot-reset");
     } catch (e) {
       const msg = (e.message && e.message.includes("fetch"))
@@ -575,7 +597,7 @@ export default function AuthScreens({
   // --- Forgot Password: Save New Password ---
   async function handleSaveNewPassword() {
     setLocalError("");
-    const target = (email || targetContact || "").trim();
+    const target = (targetContact || email || "").trim();
     if (!target) {
       setLocalError("Please enter your registered email address.");
       return;
@@ -597,7 +619,8 @@ export default function AuthScreens({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           target,
-          otp: otp || "123456",
+          code: otp,
+          otp: otp,
           newPassword: password,
         }),
         timeout: 10000,
@@ -631,30 +654,50 @@ export default function AuthScreens({
   }
 
   // Sign In as Student with entered email and password
-  function handleSignInAsStudent() {
+  async function handleSignInAsStudent() {
     setLoginRole("student");
     setLocalError("");
     const targetEmail = (email || "").trim();
     const targetPass = password;
     if (!targetEmail) {
-      setLocalError("Please enter your registered student email address.");
+      setLocalError("Please enter your registered student email address or mobile number.");
       return;
     }
     if (!targetPass) {
       setLocalError("Please enter your student password.");
       return;
     }
-    if (typeof onLogin === "function") {
-      onLogin({
-        email: targetEmail,
-        password: targetPass,
-        isRegister: false,
+
+    setIsLocalSubmitting(true);
+    try {
+      const res = await smartApiFetch("/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: targetEmail,
+          password: targetPass,
+        }),
+        timeout: 10000
       });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Invalid credentials. Please verify your student email and password.");
+      }
+      if (typeof onLogin === "function") {
+        await onLogin({
+          token: data.token,
+          user: data.user,
+        });
+      }
+    } catch (err) {
+      setLocalError(err.message || "Failed to sign in. Please verify your credentials.");
+    } finally {
+      setIsLocalSubmitting(false);
     }
   }
 
   // Sign In as Admin with entered admin email and password
-  function handleSignInAsAdminSubmit() {
+  async function handleSignInAsAdminSubmit() {
     setLoginRole("admin");
     setLocalError("");
     const targetEmail = (adminEmail || "").trim();
@@ -667,12 +710,32 @@ export default function AuthScreens({
       setLocalError("Please enter your administrator password.");
       return;
     }
-    if (typeof onLogin === "function") {
-      onLogin({
-        email: targetEmail,
-        password: targetPass,
-        isRegister: false,
+
+    setIsLocalSubmitting(true);
+    try {
+      const res = await smartApiFetch("/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: targetEmail,
+          password: targetPass,
+        }),
+        timeout: 10000
       });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Invalid administrator credentials.");
+      }
+      if (typeof onLogin === "function") {
+        await onLogin({
+          token: data.token,
+          user: data.user,
+        });
+      }
+    } catch (err) {
+      setLocalError(err.message || "Admin login failed.");
+    } finally {
+      setIsLocalSubmitting(false);
     }
   }
 
@@ -849,13 +912,13 @@ export default function AuthScreens({
                     </Text>
 
                     <Field
-                      label="Student Email Address"
+                      label="Student Email Address or Mobile"
                       value={email}
                       onChangeText={(val) => {
                         setLocalError("");
                         setEmail(val);
                       }}
-                      placeholder="Enter registered email (e.g. bhumikajadhav.aparaitech@gmail.com)"
+                      placeholder="Enter your registered email address or mobile"
                       keyboardType="email-address"
                     />
 
@@ -937,7 +1000,7 @@ export default function AuthScreens({
                         setLocalError("");
                         setAdminEmail(val);
                       }}
-                      placeholder="Enter admin email (e.g. admin@abhyas.local)"
+                      placeholder="Enter your admin email address"
                       keyboardType="email-address"
                     />
 
@@ -956,17 +1019,6 @@ export default function AuthScreens({
                       <TouchableOpacity onPress={() => setShowAdminPassword(!showAdminPassword)}>
                         <Text style={[styles.link, { color: theme.link }]}>
                           {showAdminPassword ? "Hide password" : "Show password"}
-                        </Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        onPress={() => {
-                          setAdminEmail("admin@abhyas.local");
-                          setAdminPassword("ChangeMe123!");
-                        }}
-                      >
-                        <Text style={[styles.link, { color: "#7c3aed", fontSize: 12, fontWeight: "700" }]}>
-                          Fill default credentials
                         </Text>
                       </TouchableOpacity>
                     </View>

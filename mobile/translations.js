@@ -18,6 +18,7 @@ export const translations = {
     syllabus: 'Syllabus',
     planner: 'Planner',
     analytics: 'Analytics',
+    ticketSupport: 'Ticket Support',
     settings: 'Settings',
 
     // Subtitles
@@ -247,6 +248,7 @@ export const translations = {
     syllabus: 'पाठ्यक्रम',
     planner: 'योजना',
     analytics: 'विश्लेषण',
+    ticketSupport: 'सहायता टिकट',
     settings: 'सेटिंग्स',
 
     // Subtitles
@@ -476,6 +478,7 @@ export const translations = {
     syllabus: 'अभ्यासक्रम',
     planner: 'नियोजक',
     analytics: 'विश्लेषण',
+    ticketSupport: 'मदत व तक्रार',
     settings: 'सेटिंग्ज',
 
     // Subtitles
