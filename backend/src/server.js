@@ -19,6 +19,13 @@ const {
     Ticket
 } = require('./models');
 
+process.on('uncaughtException', (err) => {
+  console.warn('[Process] Caught exception:', err.message);
+});
+process.on('unhandledRejection', (reason) => {
+  console.warn('[Process] Unhandled rejection:', reason?.message || reason);
+});
+
 const app = express();
 
 // Support Private Network Access and instant preflights for Chrome/Edge on ANY Wi-Fi
@@ -1376,6 +1383,9 @@ async function startServer() {
 
     const server = app.listen(port, '0.0.0.0', () => {
         console.log(`Abhyas API listening on 0.0.0.0:${port} (http://localhost:${port})`);
+    });
+    server.on('error', (err) => {
+        console.error('[Server Listen Error]', err.message);
     });
     return server;
 }

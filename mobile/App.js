@@ -145,7 +145,7 @@ const getNext7Days = () => {
 const SYLLABUS_TOPICS = {
   // ==================== UPSC CIVIL SERVICES (9 SUBJECTS) ====================
   'upsc-history-culture': [
-    { id: 'uh-1', name: 'Ancient Indian history', chapter: 'History and Culture' },
+    { id: '', name: 'Ancient Indian history', chapter: 'uh-1History and Culture' },
     { id: 'uh-2', name: 'Medieval Indian history', chapter: 'History and Culture' },
     { id: 'uh-3', name: 'Modern Indian history', chapter: 'History and Culture' },
     { id: 'uh-4', name: 'Indian freedom struggle', chapter: 'History and Culture' },
@@ -763,8 +763,9 @@ export default function App() {
   // Timer Focus State
   const [focusExamFilter, setFocusExamFilter] = useState('ALL');
 
-  // Manual / Offline Study Logging State (Default to visible so students can immediately log book reading)
-  const [manualLogOpen, setManualLogOpen] = useState(true);
+  // Manual / Offline Study Logging State (Accessible via Settings & Topic actions)
+  const [manualLogOpen, setManualLogOpen] = useState(false);
+  const [manualLogMode, setManualLogMode] = useState('offline'); // 'offline' or 'past'
   const [manualSubject, setManualSubject] = useState('upsc-polity');
   const [manualExamFilter, setManualExamFilter] = useState('ALL');
   const [manualDate, setManualDate] = useState('today');
@@ -1287,7 +1288,7 @@ export default function App() {
       await req('/sessions', 'POST', {
         subjectId: subId,
         minutes: totalMins,
-        mode: 'Offline Study',
+        mode: manualLogMode === 'past' ? 'Past Study Log' : 'Offline Book Study',
         activity: manualActivity,
         note: manualTopic.trim(),
         startedAt: sessionTime,
@@ -1297,7 +1298,10 @@ export default function App() {
       setManualLogOpen(false);
       setManualTopic('');
       const subObj = subjects.find(x => x.id === subId);
-      appAlert('Study Hours Logged! 📚', `Logged ${hrs > 0 ? `${hrs}h ` : ''}${mins > 0 ? `${mins}m` : ''} of ${subObj?.name || subId} to your study tracker!`);
+      appAlert(
+        manualLogMode === 'past' ? 'Past Hours Logged! 📝' : 'Offline Study Logged! 📚',
+        `Logged ${hrs > 0 ? `${hrs}h ` : ''}${mins > 0 ? `${mins}m` : ''} of ${subObj?.name || subId} to your study tracker!`
+      );
     } catch (e) {
       appAlert('Error', e.message);
     } finally {
@@ -1387,10 +1391,18 @@ export default function App() {
     }
   }
 
-  function startPlanFocus(p) {
-    if (p.subjectId) setSelected(p.subjectId);
-    setSessionTopicTitle(p.title);
+  const handleStartFocus = (subjectId = null, topicTitle = '') => {
+    if (subjectId) setSelected(subjectId);
+    if (topicTitle) setSessionTopicTitle(topicTitle);
     setTab('Timer');
+    setRunning(true);
+  };
+
+  function startPlanFocus(p) {
+    if (p?.subjectId) setSelected(p.subjectId);
+    if (p?.title) setSessionTopicTitle(p.title);
+    setTab('Timer');
+    setRunning(true);
   }
 
   function navigateToTopic(p) {
@@ -1748,7 +1760,7 @@ export default function App() {
         title: 'Focus Timer',
         subtitle: running ? 'Active Session' : 'Start Session',
         icon: 'stopwatch-outline',
-        onPress: () => setTab('Timer')
+        onPress: () => handleStartFocus()
       },
       {
         id: 'planner',
@@ -1887,7 +1899,7 @@ export default function App() {
             {isMorning ? (
               <>
                 <TouchableOpacity
-                  onPress={() => setTab('Timer')}
+                  onPress={() => handleStartFocus(todayReminderPlans[0]?.subjectId, todayReminderPlans[0]?.title)}
                   style={{
                     flex: 1,
                     backgroundColor: C.blue,
@@ -2003,11 +2015,7 @@ export default function App() {
 
           <View style={{ flexDirection: 'row', gap: 8 }}>
             <TouchableOpacity
-              onPress={() => {
-                setSelected(topNeglected.id);
-                setSessionTopicTitle(`${topNeglected.name} Priority Session`);
-                setTab('Timer');
-              }}
+              onPress={() => handleStartFocus(topNeglected.id, `${topNeglected.name} Priority Session`)}
               style={{
                 flex: 1,
                 backgroundColor: C.blue,
@@ -2101,7 +2109,7 @@ export default function App() {
           </Text>
         )}
 
-        <Button label={`▶ ${t('startTimer')}`} onPress={() => setTab('Timer')} />
+        <Button label={running ? `⏸ ${t('pauseTimer')}` : `▶ ${t('startTimer')}`} onPress={() => handleStartFocus()} />
       </Card>
 
       {/* DAILY STUDY ENCOURAGEMENT CARD */}
@@ -2185,7 +2193,14 @@ export default function App() {
             </Text>
           </Text>
         </View>
-        <Button label="Open Focus Timer" subtle onPress={() => setTab('Timer')} />
+        <Button
+          label="▶ Start Focus Timer"
+          subtle
+          onPress={() => {
+            const planTarget = plans.find(p => !p.done && p.date === todayDateStr);
+            handleStartFocus(planTarget?.subjectId, planTarget?.title);
+          }}
+        />
       </Card>
 
       <Card>
@@ -2445,7 +2460,7 @@ export default function App() {
               return (
                 <Chip
                   key={s.id}
-                  label={`${isMp ? '🚩 ' : '🏛️ '}${getSubjectName(s, lang)}}`}
+                  label={`${isMp ? '🚩 ' : '🏛️ '}${getSubjectName(s, lang)}`}
                   active={selected === s.id}
                   onPress={() => setSelected(s.id)}
                 />
@@ -2497,43 +2512,6 @@ export default function App() {
           </Title>
         </View>
 
-        {/* ---------------- OFFLINE & BOOK STUDY QUICK ACCESS BANNER ---------------- */}
-        <Card
-          style={{
-            backgroundColor: isDark ? '#142a1e' : '#f0fdf4',
-            borderColor: isDark ? '#059669' : '#86efac',
-            borderWidth: 1.5,
-            paddingVertical: 12,
-            marginBottom: 12
-          }}
-        >
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <View style={{ flex: 1, marginRight: 8 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Ionicons name="book" size={18} color="#059669" />
-                <Text style={txt(13, true, isDark ? '#34d399' : '#15803d')}>
-                  📖 Log Offline / Book Study Hours
-                </Text>
-              </View>
-              <Text style={[txt(11, false, C.muted), { marginTop: 2 }]}>
-                Studied Laxmikanth, NCERT, Spectrum, or in library? Track your offline study progress.
-              </Text>
-            </View>
-            <TouchableOpacity
-              onPress={() => setManualLogOpen(!manualLogOpen)}
-              style={{
-                backgroundColor: '#059669',
-                paddingHorizontal: 12,
-                paddingVertical: 8,
-                borderRadius: 8
-              }}
-            >
-              <Text style={txt(12, true, '#ffffff')}>
-                {manualLogOpen ? 'Hide Form ▲' : '+ Log Book Hours ▼'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </Card>
 
         {/* ---------------- NAVIGATED TOPIC CONFIRMATION BANNER ---------------- */}
         {navigatedTopicInfo && (
@@ -2575,199 +2553,7 @@ export default function App() {
           </Card>
         )}
 
-        {/* ---------------- OFFLINE STUDY HOURS LOGGER IN SYLLABUS ---------------- */}
-        {manualLogOpen && (
-          <Card
-            nativeID="offline-logger-section"
-            {...{ id: 'offline-logger-section' }}
-            style={{ borderColor: C.blue, borderWidth: 1.5, paddingBottom: 16 }}
-          >
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Ionicons name="book-outline" size={20} color={C.blue} />
-                <Text style={txt(15, true)}>Log Offline / Book Study Hours</Text>
-              </View>
-              <TouchableOpacity onPress={() => setManualLogOpen(false)}>
-                <Ionicons name="close-circle" size={20} color={C.muted} />
-              </TouchableOpacity>
-            </View>
-            <Text style={[txt(11, false, C.muted), { marginBottom: 12, lineHeight: 16 }]}>
-              Studied from standard books (Laxmikanth, Spectrum, NCERT) or in a library? Record completed hours directly into your study progress.
-            </Text>
 
-            {/* Exam Filter */}
-            <Text style={txt(11, true, C.muted)}>TARGET EXAM SECTION</Text>
-            <View style={{ flexDirection: 'row', marginTop: 4, marginBottom: 8 }}>
-              <Chip
-                label="All Subjects"
-                active={manualExamFilter === 'ALL'}
-                onPress={() => setManualExamFilter('ALL')}
-              />
-              <Chip
-                label="🏛️ UPSC"
-                active={manualExamFilter === 'UPSC'}
-                onPress={() => setManualExamFilter('UPSC')}
-              />
-              <Chip
-                label="🚩 MPSC"
-                active={manualExamFilter === 'MPSC'}
-                onPress={() => setManualExamFilter('MPSC')}
-              />
-            </View>
-
-            {/* Subject Picker */}
-            <Text style={txt(11, true, C.muted)}>SELECT SUBJECT</Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 4, marginBottom: 10 }}>
-              {subjects
-                .filter(s => {
-                  if (manualExamFilter === 'ALL') return true;
-                  const sExam = s.exam || (s.id.startsWith('mpsc') ? 'MPSC' : 'UPSC');
-                  return sExam === manualExamFilter;
-                })
-                .map(s => {
-                  const isMp = (s.exam || (s.id.startsWith('mpsc') ? 'MPSC' : 'UPSC')) === 'MPSC';
-                  const isSel = (manualSubject || selected) === s.id;
-                  return (
-                    <Chip
-                      key={s.id}
-                      label={`${isMp ? '🚩 ' : '🏛️ '}${getSubjectName(s, lang)}`}
-                      active={isSel}
-                      onPress={() => setManualSubject(s.id)}
-                    />
-                  );
-                })}
-            </View>
-
-            {/* Study Date */}
-            <Text style={txt(11, true, C.muted)}>DATE</Text>
-            <View style={{ flexDirection: 'row', marginTop: 4, marginBottom: 10, gap: 6 }}>
-              <Chip
-                label={`Today (${today()})`}
-                active={manualDate === 'today'}
-                onPress={() => setManualDate('today')}
-              />
-              <Chip
-                label={`Yesterday (${yesterday()})`}
-                active={manualDate === 'yesterday'}
-                onPress={() => setManualDate('yesterday')}
-              />
-            </View>
-
-            {/* Duration Presets */}
-            <Text style={txt(11, true, C.muted)}>DURATION STUDIED</Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4, marginBottom: 8 }}>
-              {[
-                ['30m', '0', '30'],
-                ['45m', '0', '45'],
-                ['1 Hour', '1', '0'],
-                ['1.5 Hours', '1', '30'],
-                ['2 Hours', '2', '0'],
-                ['2.5 Hours', '2', '30'],
-                ['3 Hours', '3', '0'],
-                ['4 Hours', '4', '0']
-              ].map(([lbl, h, m]) => {
-                const isActive = manualHours === h && manualMinutes === m;
-                return (
-                  <Chip
-                    key={lbl}
-                    label={lbl}
-                    active={isActive}
-                    onPress={() => {
-                      setManualHours(h);
-                      setManualMinutes(m);
-                    }}
-                  />
-                );
-              })}
-            </View>
-
-            {/* Custom Hours & Minutes Input */}
-            <View style={{ flexDirection: 'row', gap: 10, marginBottom: 10 }}>
-              <View style={{ flex: 1 }}>
-                <Text style={txt(11, false, C.muted)}>Hours</Text>
-                <TextInput
-                  keyboardType="numeric"
-                  value={manualHours}
-                  onChangeText={setManualHours}
-                  placeholder="e.g. 2"
-                  placeholderTextColor={C.muted}
-                  style={input}
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={txt(11, false, C.muted)}>Minutes</Text>
-                <TextInput
-                  keyboardType="numeric"
-                  value={manualMinutes}
-                  onChangeText={setManualMinutes}
-                  placeholder="e.g. 30"
-                  placeholderTextColor={C.muted}
-                  style={input}
-                />
-              </View>
-            </View>
-
-            {/* Activity Tag */}
-            <Text style={txt(11, true, C.muted)}>STUDY ACTIVITY</Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4, marginBottom: 10 }}>
-              {[
-                '📖 Theory & Reading',
-                '📝 PYQs & MCQs',
-                '✍️ Mains Answer Writing',
-                '📰 Current Affairs',
-                '🔁 Revision'
-              ].map(act => (
-                <Chip
-                  key={act}
-                  label={act}
-                  active={manualActivity === act}
-                  onPress={() => setManualActivity(act)}
-                />
-              ))}
-            </View>
-
-            {/* Standard Book Quick Presets */}
-            <Text style={txt(11, true, C.muted)}>STANDARD REFERENCE BOOK PRESETS</Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4, marginBottom: 8 }}>
-              {[
-                ['📖 M. Laxmikanth', 'M. Laxmikanth: Indian Polity - Chapter Reading'],
-                ['📘 Spectrum Modern India', 'Rajiv Ahir Spectrum: Modern Indian History'],
-                ['📗 NCERT GS Foundation', 'NCERT GS Core Textbooks Reading'],
-                ['📙 Ramesh Singh Economy', 'Ramesh Singh: Indian Economy Chapter Study'],
-                ['🏛️ G.C. Leong Geography', 'G.C. Leong: Certificate Physical Geography'],
-                ['📚 Library Self-Study', 'Library Offline Self-Study & Notes Making']
-              ].map(([chipLbl, noteVal]) => (
-                <Chip
-                  key={chipLbl}
-                  label={chipLbl}
-                  active={manualTopic.includes(chipLbl.split(' ')[1])}
-                  onPress={() => setManualTopic(noteVal)}
-                />
-              ))}
-            </View>
-
-            {/* Topic / Book Note */}
-            <Text style={txt(11, true, C.muted)}>CHAPTER / TOPIC NOTE (OPTIONAL)</Text>
-            <TextInput
-              value={manualTopic}
-              onChangeText={setManualTopic}
-              placeholder="e.g. Laxmikanth Ch 7: Fundamental Rights + solved 25 PYQs"
-              placeholderTextColor={C.muted}
-              style={input}
-            />
-
-            <View style={{ marginTop: 6 }}>
-              <Button
-                label={
-                  isLoggingManual
-                    ? 'Saving Session...'
-                    : `✓ Save ${manualHours || 0}h ${manualMinutes || 0}m Study Time`
-                }
-                onPress={saveManualSession}
-              />
-            </View>
-          </Card>
-        )}
 
         {/* Exam Section Switcher */}
         <Card style={{ paddingVertical: 12 }}>
@@ -2895,11 +2681,7 @@ export default function App() {
             </Text>
             <View style={{ flexDirection: 'row', gap: 8 }}>
               <TouchableOpacity
-                onPress={() => {
-                  setSelected(topNeglected.id);
-                  setSessionTopicTitle(`${topNeglected.name} Priority Session`);
-                  setTab('Timer');
-                }}
+                onPress={() => handleStartFocus(topNeglected.id, `${topNeglected.name} Priority Session`)}
                 style={{
                   flex: 1,
                   backgroundColor: C.blue,
@@ -2914,6 +2696,7 @@ export default function App() {
                 onPress={() => {
                   setManualSubject(topNeglected.id);
                   setManualTopic(`${topNeglected.name} Study Session`);
+                  setManualLogMode('past');
                   setManualLogOpen(true);
                 }}
                 style={{
@@ -3159,12 +2942,21 @@ export default function App() {
                         />
                       </View>
 
-                      {/* Topic Action Buttons (+1 Revise, Plan for Today) */}
-                      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', marginTop: 6, gap: 14 }}>
+                      {/* Topic Action Buttons (Start Focus, Log Hours, +1 Revise, Plan for Today) */}
+                      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', marginTop: 6, gap: 12, flexWrap: 'wrap' }}>
+                        <TouchableOpacity
+                          onPress={() => handleStartFocus(s.id, `${getTopicName(topicItem, lang)} (${getSubjectName(s, lang)})`)}
+                          style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}
+                        >
+                          <Ionicons name="play-circle" size={13} color={C.blue} />
+                          <Text style={txt(11, true, C.blue)}>▶ {t('focus')}</Text>
+                        </TouchableOpacity>
+
                         <TouchableOpacity
                           onPress={() => {
                             setManualSubject(s.id);
                             setManualTopic(`${topicItem.name} (${s.name})`);
+                            setManualLogMode('offline');
                             setManualLogOpen(true);
                           }}
                           style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}
@@ -4501,11 +4293,7 @@ export default function App() {
 
                   {/* Right Floating Play (▶) Action Button */}
                   <TouchableOpacity
-                    onPress={() => {
-                      setSelected(sub.id);
-                      setSessionTopicTitle(`${getSubjectName(sub, lang)} Focus Session`);
-                      setTab('Timer');
-                    }}
+                    onPress={() => handleStartFocus(sub.id, `${getSubjectName(sub, lang)} Focus Session`)}
                     style={{
                       width: 44,
                       height: 44,
@@ -4899,42 +4687,77 @@ export default function App() {
                 </View>
               </View>
 
-              {/* 4. Log Offline Study Hours (Single Clean Action) */}
+              {/* 4. Log Offline & Past Study Hours */}
               <View style={{ marginBottom: 20, paddingTop: 16, borderTopWidth: 1, borderColor: C.line }}>
-                <TouchableOpacity
-                  onPress={() => {
-                    setSettingsOpen(false);
-                    setManualLogOpen(true);
-                    setTab('Syllabus');
-                    setTimeout(() => {
-                      if (Platform.OS === 'web' && typeof document !== 'undefined') {
-                        const el = document.getElementById('offline-logger-section');
-                        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                      }
-                    }, 150);
-                  }}
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    backgroundColor: isDark ? '#1e293b' : '#f8fafc',
-                    padding: 13,
-                    borderRadius: 12,
-                    borderWidth: 1,
-                    borderColor: C.line
-                  }}
-                >
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, marginRight: 8 }}>
-                    <Ionicons name="book-outline" size={20} color={C.blue} />
-                    <View style={{ flex: 1 }}>
-                      <Text style={txt(13, true)}>{t('offlineLoggerTitle')}</Text>
-                      <Text style={[txt(11, false, C.muted), { marginTop: 2 }]} numberOfLines={2}>
-                        {t('offlineLoggerDesc')}
-                      </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                  <Ionicons name="time-outline" size={18} color={C.blue} />
+                  <Text style={txt(14, true)}>Manual & Offline Study Logging</Text>
+                </View>
+                <Text style={[txt(11, false, C.muted), { marginBottom: 10 }]}>
+                  Log hours studied away from phone, from textbooks, library sessions, or past days.
+                </Text>
+
+                <View style={{ gap: 8 }}>
+                  {/* Option A: Log Offline Book Study */}
+                  <TouchableOpacity
+                    onPress={() => {
+                      setSettingsOpen(false);
+                      setManualLogMode('offline');
+                      setManualLogOpen(true);
+                    }}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      backgroundColor: isDark ? '#142a1e' : '#f0fdf4',
+                      padding: 13,
+                      borderRadius: 12,
+                      borderWidth: 1.5,
+                      borderColor: isDark ? '#059669' : '#86efac'
+                    }}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, marginRight: 8 }}>
+                      <Ionicons name="book-outline" size={20} color="#059669" />
+                      <View style={{ flex: 1 }}>
+                        <Text style={txt(13, true, isDark ? '#34d399' : '#15803d')}>📖 Log Offline Book Study</Text>
+                        <Text style={[txt(11, false, C.muted), { marginTop: 2 }]} numberOfLines={2}>
+                          Laxmikanth, NCERT, Spectrum, or library textbook study sessions.
+                        </Text>
+                      </View>
                     </View>
-                  </View>
-                  <Ionicons name="chevron-forward" size={16} color={C.muted} />
-                </TouchableOpacity>
+                    <Ionicons name="chevron-forward" size={16} color="#059669" />
+                  </TouchableOpacity>
+
+                  {/* Option B: Log Past Study Hours */}
+                  <TouchableOpacity
+                    onPress={() => {
+                      setSettingsOpen(false);
+                      setManualLogMode('past');
+                      setManualLogOpen(true);
+                    }}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      backgroundColor: isDark ? '#2e1c10' : '#fff7ed',
+                      padding: 13,
+                      borderRadius: 12,
+                      borderWidth: 1.5,
+                      borderColor: isDark ? '#ea580c' : '#fed7aa'
+                    }}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, marginRight: 8 }}>
+                      <Ionicons name="create-outline" size={20} color="#ea580c" />
+                      <View style={{ flex: 1 }}>
+                        <Text style={txt(13, true, isDark ? '#fb923c' : '#c2410c')}>📝 Log Past Hours</Text>
+                        <Text style={[txt(11, false, C.muted), { marginTop: 2 }]} numberOfLines={2}>
+                          Manually add study hours for earlier today, yesterday, or previous sessions.
+                        </Text>
+                      </View>
+                    </View>
+                    <Ionicons name="chevron-forward" size={16} color="#ea580c" />
+                  </TouchableOpacity>
+                </View>
               </View>
 
               {/* 5. Daily Target Goal */}
@@ -5169,6 +4992,361 @@ export default function App() {
     );
   };
 
+  const ManualLogModal = () => {
+    if (!manualLogOpen) return null;
+
+    const isOffline = manualLogMode === 'offline';
+
+    return (
+      <Modal
+        visible={manualLogOpen}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setManualLogOpen(false)}
+      >
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0, 0, 0, 0.65)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 16
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: C.cardBg,
+              width: '100%',
+              maxWidth: 540,
+              maxHeight: Platform.OS === 'web' ? '88vh' : '92%',
+              height: Platform.OS === 'web' ? '88vh' : undefined,
+              borderRadius: 20,
+              borderWidth: 1,
+              borderColor: C.line,
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+          >
+            {/* Modal Header */}
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                paddingHorizontal: 20,
+                paddingVertical: 16,
+                borderBottomWidth: 1,
+                borderColor: C.line,
+                backgroundColor: isDark ? '#1e293b' : '#f8fafc'
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <View
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 12,
+                    backgroundColor: isOffline ? (isDark ? '#064e3b' : '#dcfce7') : (isDark ? '#431407' : '#ffedd5'),
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <Ionicons
+                    name={isOffline ? 'book' : 'time'}
+                    size={20}
+                    color={isOffline ? (isDark ? '#34d399' : '#059669') : (isDark ? '#fb923c' : '#ea580c')}
+                  />
+                </View>
+                <View>
+                  <Text style={txt(16, true)}>
+                    {isOffline ? '📖 Log Offline Book Study' : '📝 Log Past Study Hours'}
+                  </Text>
+                  <Text style={txt(11, false, C.muted)}>
+                    {isOffline ? 'Standard books & library self-study' : 'Manual entry for past or offline sessions'}
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                onPress={() => setManualLogOpen(false)}
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 16,
+                  backgroundColor: C.soft,
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <Ionicons name="close" size={20} color={C.muted} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Mode Switcher Tabs */}
+            <View
+              style={{
+                flexDirection: 'row',
+                paddingHorizontal: 16,
+                paddingVertical: 10,
+                borderBottomWidth: 1,
+                borderColor: C.line,
+                backgroundColor: isDark ? '#0f172a' : '#f1f5f9',
+                gap: 8
+              }}
+            >
+              <TouchableOpacity
+                onPress={() => setManualLogMode('offline')}
+                style={{
+                  flex: 1,
+                  paddingVertical: 8,
+                  borderRadius: 10,
+                  alignItems: 'center',
+                  backgroundColor: isOffline ? (isDark ? '#064e3b' : '#dcfce7') : 'transparent',
+                  borderWidth: 1,
+                  borderColor: isOffline ? (isDark ? '#059669' : '#86efac') : 'transparent'
+                }}
+              >
+                <Text style={txt(12, true, isOffline ? (isDark ? '#34d399' : '#15803d') : C.muted)}>
+                  📖 Offline Book Study
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setManualLogMode('past')}
+                style={{
+                  flex: 1,
+                  paddingVertical: 8,
+                  borderRadius: 10,
+                  alignItems: 'center',
+                  backgroundColor: !isOffline ? (isDark ? '#431407' : '#ffedd5') : 'transparent',
+                  borderWidth: 1,
+                  borderColor: !isOffline ? (isDark ? '#ea580c' : '#fed7aa') : 'transparent'
+                }}
+              >
+                <Text style={txt(12, true, !isOffline ? (isDark ? '#fb923c' : '#c2410c') : C.muted)}>
+                  📝 Past Hours Entry
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Scrollable Form Content */}
+            <ScrollView
+              style={{ flex: 1, minHeight: 0 }}
+              contentContainerStyle={{ padding: 20, paddingBottom: 24 }}
+              showsVerticalScrollIndicator={true}
+            >
+              {/* Exam Section */}
+              <Text style={txt(11, true, C.muted)}>TARGET EXAM SECTION</Text>
+              <View style={{ flexDirection: 'row', marginTop: 6, marginBottom: 12 }}>
+                <Chip
+                  label="All Subjects"
+                  active={manualExamFilter === 'ALL'}
+                  onPress={() => setManualExamFilter('ALL')}
+                />
+                <Chip
+                  label="🏛️ UPSC"
+                  active={manualExamFilter === 'UPSC'}
+                  onPress={() => setManualExamFilter('UPSC')}
+                />
+                <Chip
+                  label="🚩 MPSC"
+                  active={manualExamFilter === 'MPSC'}
+                  onPress={() => setManualExamFilter('MPSC')}
+                />
+              </View>
+
+              {/* Subject Picker */}
+              <Text style={txt(11, true, C.muted)}>SELECT SUBJECT</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 6, marginBottom: 12 }}>
+                {subjects
+                  .filter(s => {
+                    if (manualExamFilter === 'ALL') return true;
+                    const sExam = s.exam || (s.id.startsWith('mpsc') ? 'MPSC' : 'UPSC');
+                    return sExam === manualExamFilter;
+                  })
+                  .map(s => {
+                    const isMp = (s.exam || (s.id.startsWith('mpsc') ? 'MPSC' : 'UPSC')) === 'MPSC';
+                    const isSel = (manualSubject || selected) === s.id;
+                    return (
+                      <Chip
+                        key={s.id}
+                        label={`${isMp ? '🚩 ' : '🏛️ '}${getSubjectName(s, lang)}`}
+                        active={isSel}
+                        onPress={() => setManualSubject(s.id)}
+                      />
+                    );
+                  })}
+              </View>
+
+              {/* Study Date */}
+              <Text style={txt(11, true, C.muted)}>STUDY DATE</Text>
+              <View style={{ flexDirection: 'row', marginTop: 6, marginBottom: 12, gap: 6, flexWrap: 'wrap' }}>
+                <Chip
+                  label={`Today (${today()})`}
+                  active={manualDate === 'today'}
+                  onPress={() => setManualDate('today')}
+                />
+                <Chip
+                  label={`Yesterday (${yesterday()})`}
+                  active={manualDate === 'yesterday'}
+                  onPress={() => setManualDate('yesterday')}
+                />
+              </View>
+
+              {/* Duration Presets */}
+              <Text style={txt(11, true, C.muted)}>DURATION STUDIED</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6, marginBottom: 10 }}>
+                {[
+                  ['30m', '0', '30'],
+                  ['45m', '0', '45'],
+                  ['1 Hour', '1', '0'],
+                  ['1.5 Hours', '1', '30'],
+                  ['2 Hours', '2', '0'],
+                  ['2.5 Hours', '2', '30'],
+                  ['3 Hours', '3', '0'],
+                  ['4 Hours', '4', '0']
+                ].map(([lbl, h, m]) => {
+                  const isActive = manualHours === h && manualMinutes === m;
+                  return (
+                    <Chip
+                      key={lbl}
+                      label={lbl}
+                      active={isActive}
+                      onPress={() => {
+                        setManualHours(h);
+                        setManualMinutes(m);
+                      }}
+                    />
+                  );
+                })}
+              </View>
+
+              {/* Custom Hours & Minutes Input */}
+              <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={txt(11, false, C.muted)}>Hours</Text>
+                  <TextInput
+                    keyboardType="numeric"
+                    value={manualHours}
+                    onChangeText={setManualHours}
+                    placeholder="e.g. 2"
+                    placeholderTextColor={C.muted}
+                    style={input}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={txt(11, false, C.muted)}>Minutes</Text>
+                  <TextInput
+                    keyboardType="numeric"
+                    value={manualMinutes}
+                    onChangeText={setManualMinutes}
+                    placeholder="e.g. 30"
+                    placeholderTextColor={C.muted}
+                    style={input}
+                  />
+                </View>
+              </View>
+
+              {/* Activity Tag */}
+              <Text style={txt(11, true, C.muted)}>STUDY ACTIVITY</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6, marginBottom: 12 }}>
+                {[
+                  '📖 Theory & Reading',
+                  '📝 PYQs & MCQs',
+                  '✍️ Mains Answer Writing',
+                  '📰 Current Affairs',
+                  '🔁 Revision'
+                ].map(act => (
+                  <Chip
+                    key={act}
+                    label={act}
+                    active={manualActivity === act}
+                    onPress={() => setManualActivity(act)}
+                  />
+                ))}
+              </View>
+
+              {/* Standard Book Quick Presets */}
+              <Text style={txt(11, true, C.muted)}>
+                {isOffline ? 'STANDARD REFERENCE BOOK PRESETS' : 'COMMON SESSION PRESETS'}
+              </Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6, marginBottom: 10 }}>
+                {[
+                  ['📖 M. Laxmikanth', 'M. Laxmikanth: Indian Polity - Chapter Reading'],
+                  ['📘 Spectrum Modern India', 'Rajiv Ahir Spectrum: Modern Indian History'],
+                  ['📗 NCERT GS Foundation', 'NCERT GS Core Textbooks Reading'],
+                  ['📙 Ramesh Singh Economy', 'Ramesh Singh: Indian Economy Chapter Study'],
+                  ['🏛️ G.C. Leong Geography', 'G.C. Leong: Certificate Physical Geography'],
+                  ['📚 Library Self-Study', 'Library Offline Self-Study & Notes Making']
+                ].map(([chipLbl, noteVal]) => (
+                  <Chip
+                    key={chipLbl}
+                    label={chipLbl}
+                    active={manualTopic.includes(chipLbl.split(' ')[1])}
+                    onPress={() => setManualTopic(noteVal)}
+                  />
+                ))}
+              </View>
+
+              {/* Topic / Book Note */}
+              <Text style={txt(11, true, C.muted)}>CHAPTER / TOPIC NOTE (OPTIONAL)</Text>
+              <TextInput
+                value={manualTopic}
+                onChangeText={setManualTopic}
+                placeholder="e.g. Laxmikanth Ch 7: Fundamental Rights + solved 25 PYQs"
+                placeholderTextColor={C.muted}
+                style={input}
+              />
+            </ScrollView>
+
+            {/* Modal Bottom Action */}
+            <View
+              style={{
+                padding: 16,
+                borderTopWidth: 1,
+                borderColor: C.line,
+                backgroundColor: isDark ? '#1e293b' : '#f8fafc',
+                flexDirection: 'row',
+                gap: 10
+              }}
+            >
+              <TouchableOpacity
+                onPress={() => setManualLogOpen(false)}
+                style={{
+                  paddingVertical: 11,
+                  paddingHorizontal: 16,
+                  borderRadius: 12,
+                  backgroundColor: C.soft,
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <Text style={txt(13, true, C.muted)}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={saveManualSession}
+                disabled={isLoggingManual}
+                style={{
+                  flex: 1,
+                  backgroundColor: isOffline ? '#059669' : C.blue,
+                  paddingVertical: 11,
+                  borderRadius: 12,
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <Text style={txt(13, true, '#ffffff')}>
+                  {isLoggingManual
+                    ? 'Saving Session...'
+                    : `✓ Save ${manualHours || 0}h ${manualMinutes || 0}m Study Time`}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
+
   const tabs = [
     ['Dashboard', 'home-outline'],
     ['Timer', 'stopwatch-outline'],
@@ -5289,7 +5467,7 @@ export default function App() {
                     : 'No tasks scheduled yet today. Open the planner to schedule your study sessions!'}
                 </Text>
                 <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
-                  <Button label="▶ Go to Study Timer" onPress={() => { setNotifOpen(false); setTab('Timer'); }} />
+                  <Button label="▶ Go to Study Timer" onPress={() => { setNotifOpen(false); handleStartFocus(todayReminderPlans[0]?.subjectId, todayReminderPlans[0]?.title); }} />
                 </View>
               </Card>
 
@@ -5352,6 +5530,9 @@ export default function App() {
 
         {/* Settings Modal Sheet */}
         <SettingsModal />
+
+        {/* Dedicated Manual & Offline Study Logger Modal */}
+        <ManualLogModal />
 
         {/* Global In-App Dialog / Popup Modal (Replaces browser popups) */}
         {Boolean(appDialog) && (
