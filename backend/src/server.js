@@ -1,13 +1,15 @@
 
 require('dotenv').config();
 const { connectDB } = require('./db');
+
 const {
     User,
     Subject,
     Plan,
     Session,
     Notification,
-    Ticket
+    Ticket,
+    TopicProgress
 } = require('./models');
 const express = require('express');
 const cors = require('cors');
@@ -319,26 +321,137 @@ app.delete('/api/tickets/:id', auth(), async (req, res) => {
 // -------------------------------------------------------------
 // Analytics Route
 // -------------------------------------------------------------
+
+app.get('/api/topic-progress', auth(), async (req, res) => {
+    try {
+        const progress = await TopicProgress.find({
+            userId: req.user.id
+        }).lean();
+
+        res.json(progress.map(cleanDoc));
+    } catch (err) {
+        console.error('Failed to fetch topic progress:', err);
+        res.status(500).json({ error: 'Failed to fetch topic progress' });
+    }
+});
+
+app.patch('/api/topic-progress/:topicId', auth(), async (req, res) => {
+    try {
+        const topicId = String(req.params.topicId || '').trim();
+        const { status, subjectId } = req.body;
+
+        const allowedStatuses = [
+            'Not Started',
+            'In Progress',
+            'Completed',
+            'To Revise'
+        ];
+
+        if (!topicId) {
+            return res.status(400).json({ error: 'Topic ID is required' });
+        }
+
+        if (!allowedStatuses.includes(status)) {
+            return res.status(400).json({ error: 'Invalid topic status' });
+        }
+
+        const progress = await TopicProgress.findOneAndUpdate(
+            { userId: req.user.id, topicId },
+            {
+                $set: {
+                    status,
+                    subjectId: subjectId || null
+                },
+                $setOnInsert: {
+                    userId: req.user.id,
+                    topicId
+                }
+            },
+            {
+                new: true,
+                upsert: true,
+                runValidators: true,
+                setDefaultsOnInsert: true
+            }
+        );
+
+        res.json(cleanDoc(progress));
+    } catch (err) {
+        console.error('Failed to update topic progress:', err);
+        res.status(500).json({ error: 'Failed to update topic progress' });
+    }
+});
+
+
+
 app.get('/api/analytics', auth(), async (req, res) => {
     try {
-        const sessions = await Session.find({ userId: req.user.id }).sort({ startedAt: 1 }).lean();
-        const minutes = sessions.reduce((a, x) => a + x.minutes, 0);
+        const sessions = await Session.find({
+            userId: req.user.id
+        }).sort({ startedAt: 1 }).lean();
+
+        // All-time statistics
+        const minutes = sessions.reduce(
+            (sum, session) => sum + (Number(session.minutes) || 0),
+            0
+        );
+
         const focus = sessions.length
-            ? Math.round(sessions.reduce((a, x) => a + x.focusScore, 0) / sessions.length)
+            ? Math.round(
+                sessions.reduce(
+                    (sum, session) => sum + (Number(session.focusScore) || 0),
+                    0
+                ) / sessions.length
+            )
             : 0;
+
+        // Generate the last 30 UTC calendar days, including zero-study days.
+        const now = new Date();
+        const today = new Date(Date.UTC(
+            now.getUTCFullYear(),
+            now.getUTCMonth(),
+            now.getUTCDate()
+        ));
+
+        const daily = Array.from({ length: 30 }, (_, index) => {
+            const date = new Date(today);
+            date.setUTCDate(today.getUTCDate() - (29 - index));
+
+            return {
+                date: date.toISOString().slice(0, 10),
+                minutes: 0
+            };
+        });
+
+        const dailyByDate = new Map(
+            daily.map(day => [day.date, day])
+        );
+
+        // Add all sessions from each day together.
+        for (const session of sessions) {
+            const date = (session.startedAt || '').slice(0, 10);
+            const day = dailyByDate.get(date);
+
+            if (day) {
+                day.minutes += Number(session.minutes) || 0;
+            }
+        }
+
         res.json({
             sessionCount: sessions.length,
             totalMinutes: minutes,
             averageFocus: focus,
-            weekly: sessions.slice(-7).map(s => ({
-                date: (s.startedAt || '').slice(0, 10),
-                minutes: s.minutes
-            }))
+            daily,
+            weekly: daily.slice(-7)
         });
     } catch (err) {
-        res.status(500).json({ error: 'Failed to calculate analytics' });
+        console.error('Failed to calculate analytics:', err);
+        res.status(500).json({
+            error: 'Failed to calculate analytics'
+        });
     }
 });
+
 
 // -------------------------------------------------------------
 // Admin Routes
