@@ -1344,7 +1344,7 @@ useEffect(() => {
             marginBottom: 12
           }}
         >
-          <Chip label="?? 14-Day Streak" active />
+          <Chip label="🔥 14-Day Streak" active />
           <Chip label="UPSC / MPSC 2026" />
         </View>
 
@@ -1655,7 +1655,7 @@ useEffect(() => {
           >
             <Text style={txt(15, true, C.ink)}>Syllabus Milestone</Text>
             <TouchableOpacity onPress={() => setTab('Syllabus')}>
-              <Text style={txt(11, true, C.blue)}>View All ?</Text>
+              <Text style={txt(11, true, C.blue)}>View All →</Text>
             </TouchableOpacity>
           </View>
 
