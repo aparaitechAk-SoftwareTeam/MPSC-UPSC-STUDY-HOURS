@@ -19,6 +19,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Timer from './Timer';
 import SettingsScreen from './SettingsScreen';
 import TicketSupportScreen from './TicketSupportScreen';
+import NotificationsScreen from './NotificationsScreen';
 
 const LIGHT_THEME = {
   bg: '#f7f9fe',
@@ -3294,46 +3295,13 @@ borderColor: [
         contentContainerStyle={{ padding: 18, paddingBottom: 30 }}
       >
         {notifOpen ? (
-          <>
-            <TouchableOpacity onPress={() => setNotifOpen(false)}>
-               <Text style={txt(12, true, C.blue)}>Back to {tab}</Text>
-            </TouchableOpacity>
-
-            <Title sub="Your revision and study reminders">
-              Notifications
-            </Title>
-
-            {notes.map(note => (
-              <Card key={note.id}>
-                <Text style={txt(11, true, C.blue)}>
-                  SPACED REPETITION PROTOCOL
-                </Text>
-
-                <Text style={[txt(17, true), { marginTop: 8 }]}>
-                  {note.title}
-                </Text>
-
-                <Text
-                  style={[
-                    txt(13, false, C.muted),
-                    { marginTop: 8 }
-                  ]}
-                >
-                  {note.message}
-                </Text>
-
-                <Button
-                  label={
-                    (note.readBy || []).includes(user.id)
-                      ? 'Read'
-                      : 'Mark as Read'
-                  }
-                  subtle
-                  onPress={() => markNote(note)}
-                />
-              </Card>
-            ))}
-          </>
+          <NotificationsScreen
+            notes={notes}
+            user={user}
+            onMarkRead={markNote}
+            onBack={() => setNotifOpen(false)}
+            C={C}
+          />
         ) : tab === 'Dashboard' ? (
           <Dashboard />
         ) : tab === 'Timer' ? (

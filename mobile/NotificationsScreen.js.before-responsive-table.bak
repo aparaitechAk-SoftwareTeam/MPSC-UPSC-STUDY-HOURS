@@ -1,0 +1,275 @@
+﻿import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+
+export default function NotificationsScreen({
+  notes = [],
+  user,
+  onMarkRead,
+  onBack,
+  C,
+}) {
+  const [selectedId, setSelectedId] = useState(null);
+
+  const isRead = note =>
+    (note.readBy || []).includes(user?.id);
+
+  const formatDate = value => {
+    if (!value) return 'Date unavailable';
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'Date unavailable';
+
+    return date.toLocaleString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const selectedNote = notes.find(note => note.id === selectedId);
+
+  const openNote = note => {
+    setSelectedId(note.id);
+
+    if (!isRead(note) && onMarkRead) {
+      onMarkRead(note);
+    }
+  };
+
+  const column = {
+    title: 220,
+    date: 165,
+    status: 100,
+    action: 90,
+  };
+
+  const headerCell = width => ({
+    width,
+    minHeight: 48,
+    paddingHorizontal: 10,
+    paddingVertical: 12,
+    justifyContent: 'center',
+    borderRightWidth: 1,
+    borderRightColor: C.border,
+  });
+
+  const bodyCell = width => ({
+    width,
+    minHeight: 64,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    justifyContent: 'center',
+    borderRightWidth: 1,
+    borderRightColor: C.border,
+  });
+
+  const headerText = {
+    color: C.ink,
+    fontSize: 11,
+    fontWeight: '800',
+  };
+
+  return (
+    <View style={{ flex: 1 }}>
+      <TouchableOpacity
+        onPress={selectedNote ? () => setSelectedId(null) : onBack}
+        style={{ marginBottom: 16 }}
+      >
+        <Text style={{ color: C.blue, fontSize: 13, fontWeight: '700' }}>
+          {selectedNote ? '← Back to announcements' : '← Back to app'}
+        </Text>
+      </TouchableOpacity>
+
+      <Text style={{ color: C.ink, fontSize: 24, fontWeight: '800' }}>
+        {selectedNote ? 'Announcement Details' : 'Notifications'}
+      </Text>
+
+      <Text style={{ color: C.muted, fontSize: 13, marginTop: 6, marginBottom: 18 }}>
+        {selectedNote
+          ? 'Complete announcement information'
+          : 'Announcement register and read status'}
+      </Text>
+
+      {selectedNote ? (
+        <View
+          style={{
+            backgroundColor: C.card,
+            borderWidth: 1,
+            borderColor: C.border,
+            borderRadius: 12,
+            padding: 18,
+          }}
+        >
+          <Text
+            style={{
+              color: isRead(selectedNote) ? C.green : C.amber,
+              fontWeight: '800',
+              fontSize: 12,
+            }}
+          >
+            {isRead(selectedNote) ? 'READ' : 'UNREAD'}
+          </Text>
+
+          <Text style={{ color: C.muted, fontSize: 12, marginTop: 8 }}>
+            Posted: {formatDate(selectedNote.createdAt)}
+          </Text>
+
+          <Text
+            style={{
+              color: C.ink,
+              fontSize: 21,
+              fontWeight: '800',
+              lineHeight: 29,
+              marginTop: 18,
+            }}
+          >
+            {selectedNote.title}
+          </Text>
+
+          <View
+            style={{
+              height: 1,
+              backgroundColor: C.line,
+              marginVertical: 16,
+            }}
+          />
+
+          <Text style={{ color: C.ink, fontSize: 15, lineHeight: 25 }}>
+            {selectedNote.message}
+          </Text>
+        </View>
+      ) : notes.length === 0 ? (
+        <View
+          style={{
+            padding: 22,
+            backgroundColor: C.card,
+            borderWidth: 1,
+            borderColor: C.border,
+            borderRadius: 12,
+          }}
+        >
+          <Text style={{ color: C.ink, fontWeight: '700' }}>
+            No announcements yet
+          </Text>
+          <Text style={{ color: C.muted, marginTop: 8, fontSize: 13 }}>
+            New announcements will appear here.
+          </Text>
+        </View>
+      ) : (
+        <ScrollView horizontal showsHorizontalScrollIndicator>
+          <View
+            style={{
+              width: column.title + column.date + column.status + column.action,
+              borderWidth: 1,
+              borderColor: C.border,
+              backgroundColor: C.card,
+            }}
+          >
+            {/* TABLE HEADER */}
+            <View
+              style={{
+                flexDirection: 'row',
+                backgroundColor: C.soft,
+                borderBottomWidth: 2,
+                borderBottomColor: C.border,
+              }}
+            >
+              <View style={headerCell(column.title)}>
+                <Text style={headerText}>ANNOUNCEMENT TITLE</Text>
+              </View>
+
+              <View style={headerCell(column.date)}>
+                <Text style={headerText}>DATE POSTED</Text>
+              </View>
+
+              <View style={headerCell(column.status)}>
+                <Text style={headerText}>STATUS</Text>
+              </View>
+
+              <View style={[headerCell(column.action), { borderRightWidth: 0 }]}>
+                <Text style={headerText}>ACTION</Text>
+              </View>
+            </View>
+
+            {/* TABLE BODY */}
+            {notes.map((note, index) => {
+              const read = isRead(note);
+
+              return (
+                <View
+                  key={note.id}
+                  style={{
+                    flexDirection: 'row',
+                    backgroundColor:
+                      index % 2 === 0 ? C.card : C.bg,
+                    borderBottomWidth: index === notes.length - 1 ? 0 : 1,
+                    borderBottomColor: C.border,
+                  }}
+                >
+                  <TouchableOpacity
+                    onPress={() => openNote(note)}
+                    style={bodyCell(column.title)}
+                  >
+                    <Text
+                      style={{
+                        color: C.ink,
+                        fontSize: 13,
+                        fontWeight: read ? '500' : '800',
+                        lineHeight: 19,
+                      }}
+                    >
+                      {note.title}
+                    </Text>
+                  </TouchableOpacity>
+
+                  <View style={bodyCell(column.date)}>
+                    <Text style={{ color: C.muted, fontSize: 12, lineHeight: 18 }}>
+                      {formatDate(note.createdAt)}
+                    </Text>
+                  </View>
+
+                  <View style={bodyCell(column.status)}>
+                    <Text
+                      style={{
+                        color: read ? C.green : C.amber,
+                        fontWeight: '800',
+                        fontSize: 11,
+                      }}
+                    >
+                      {read ? 'READ' : 'UNREAD'}
+                    </Text>
+                  </View>
+
+                  <View
+                    style={[
+                      bodyCell(column.action),
+                      { borderRightWidth: 0 },
+                    ]}
+                  >
+                    <TouchableOpacity
+                      onPress={() => openNote(note)}
+                      style={{
+                        backgroundColor: C.soft,
+                        borderWidth: 1,
+                        borderColor: C.border,
+                        borderRadius: 6,
+                        paddingHorizontal: 10,
+                        paddingVertical: 7,
+                      }}
+                    >
+                      <Text style={{ color: C.blue, fontSize: 12, fontWeight: '700' }}>
+                        View
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        </ScrollView>
+      )}
+    </View>
+  );
+}

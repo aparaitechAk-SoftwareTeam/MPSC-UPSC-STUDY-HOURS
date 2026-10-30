@@ -1,0 +1,338 @@
+{
+  "users": [
+    {
+      "id": "1792569268259zojir",
+      "name": "Disha",
+      "email": "student@abhyas.local",
+      "role": "student",
+      "passwordHash": "$2a$10$x471U6L40a1rfwAzYlqUzOsO3V1zL0W4FkPyYr7jWTYgm4MAjNX4e"
+    },
+    {
+      "id": "1792569268375scczp",
+      "name": "Admin",
+      "email": "admin@abhyas.local",
+      "role": "admin",
+      "passwordHash": "$2a$10$Wwb9mjLRrHSmF6mu3gjlRuQi.uWg/Ot3sm3qT6Ufl4MZRCG1Ig/1m"
+    }
+  ],
+  "subjects": [],
+  "plans": [],
+  "sessions": [
+    {
+      "id": "1792582327851",
+      "userId": "1792569268259zojir",
+      "subjectId": "polity",
+      "minutes": 1,
+      "mode": "Pomodoro",
+      "focusScore": 94,
+      "startedAt": "2026-10-21T11:32:07.852Z"
+    },
+    {
+      "id": "1792585409776",
+      "userId": "1792569268259zojir",
+      "subjectId": "polity",
+      "minutes": 1,
+      "mode": "Pomodoro",
+      "focusScore": 94,
+      "startedAt": "2026-10-21T12:23:29.776Z"
+    },
+    {
+      "id": "1792585492209",
+      "userId": "1792569268259zojir",
+      "subjectId": "polity",
+      "minutes": 1,
+      "mode": "Pomodoro",
+      "focusScore": 94,
+      "startedAt": "2026-10-21T12:24:52.210Z"
+    },
+    {
+      "id": "1792586992107",
+      "userId": "1792569268259zojir",
+      "subjectId": "polity",
+      "minutes": 1,
+      "mode": "Pomodoro",
+      "focusScore": 94,
+      "startedAt": "2026-10-21T12:49:52.107Z"
+    },
+    {
+      "id": "1792637321708",
+      "userId": "1792569268259zojir",
+      "subjectId": "polity",
+      "minutes": 5,
+      "mode": "Pomodoro",
+      "focusScore": 94,
+      "startedAt": "2026-10-22T02:48:41.708Z"
+    },
+    {
+      "id": "1792639457828",
+      "userId": "1792569268259zojir",
+      "subjectId": "polity",
+      "minutes": 1,
+      "mode": "Pomodoro",
+      "focusScore": 94,
+      "startedAt": "2026-10-22T03:24:17.834Z"
+    },
+    {
+      "id": "1792639544521",
+      "userId": "1792569268259zojir",
+      "subjectId": "polity",
+      "minutes": 1,
+      "mode": "Pomodoro",
+      "focusScore": 94,
+      "startedAt": "2026-10-22T03:25:44.521Z"
+    },
+    {
+      "id": "1792640104463",
+      "userId": "1792569268259zojir",
+      "subjectId": "polity",
+      "minutes": 1,
+      "mode": "Pomodoro",
+      "focusScore": 94,
+      "startedAt": "2026-10-22T03:35:04.464Z"
+    },
+    {
+      "id": "1792640708022",
+      "userId": "1792569268259zojir",
+      "subjectId": "polity",
+      "minutes": 1,
+      "mode": "Pomodoro",
+      "focusScore": 94,
+      "startedAt": "2026-10-22T03:45:08.023Z"
+    },
+    {
+      "id": "1792641018387",
+      "userId": "1792569268259zojir",
+      "subjectId": "polity",
+      "minutes": 2,
+      "mode": "Pomodoro",
+      "focusScore": 94,
+      "startedAt": "2026-10-22T03:50:18.387Z"
+    },
+    {
+      "id": "1792641103923",
+      "userId": "1792569268259zojir",
+      "subjectId": "polity",
+      "minutes": 1,
+      "mode": "Custom",
+      "focusScore": 94,
+      "startedAt": "2026-10-22T03:51:43.923Z"
+    },
+    {
+      "id": "1792642502354",
+      "userId": "1792569268259zojir",
+      "subjectId": "polity",
+      "minutes": 1,
+      "mode": "Custom",
+      "focusScore": 94,
+      "startedAt": "2026-10-22T04:15:02.355Z"
+    },
+    {
+      "id": "1792642573450",
+      "userId": "1792569268259zojir",
+      "subjectId": "polity",
+      "minutes": 1,
+      "mode": "Custom",
+      "focusScore": 94,
+      "startedAt": "2026-10-22T04:16:13.450Z"
+    },
+    {
+      "id": "1792642703365",
+      "userId": "1792569268259zojir",
+      "subjectId": "polity",
+      "minutes": 2,
+      "mode": "Custom",
+      "focusScore": 94,
+      "startedAt": "2026-10-22T04:18:23.365Z"
+    },
+    {
+      "id": "1792643453117",
+      "userId": "1792569268259zojir",
+      "subjectId": "polity",
+      "minutes": 1,
+      "mode": "Pomodoro",
+      "focusScore": 94,
+      "startedAt": "2026-10-22T04:30:53.117Z"
+    },
+    {
+      "id": "1792645198731",
+      "userId": "1792569268259zojir",
+      "subjectId": "polity",
+      "minutes": 3,
+      "mode": "Pomodoro",
+      "focusScore": 94,
+      "startedAt": "2026-10-22T04:59:58.733Z"
+    },
+    {
+      "id": "1792645524574",
+      "userId": "1792569268259zojir",
+      "subjectId": "polity",
+      "minutes": 1,
+      "mode": "Pomodoro",
+      "focusScore": 94,
+      "startedAt": "2026-10-22T05:05:24.575Z"
+    },
+    {
+      "id": "1792645566848",
+      "userId": "1792569268259zojir",
+      "subjectId": "polity",
+      "minutes": 1,
+      "mode": "Custom",
+      "focusScore": 94,
+      "startedAt": "2026-10-22T05:06:06.849Z"
+    },
+    {
+      "id": "1792646247153",
+      "userId": "1792569268259zojir",
+      "subjectId": "polity",
+      "minutes": 1,
+      "mode": "Custom",
+      "focusScore": 94,
+      "startedAt": "2026-10-22T05:17:27.154Z"
+    },
+    {
+      "id": "1792646668171",
+      "userId": "1792569268259zojir",
+      "subjectId": "polity",
+      "minutes": 1,
+      "mode": "Pomodoro",
+      "focusScore": 94,
+      "startedAt": "2026-10-22T05:24:28.172Z"
+    },
+    {
+      "id": "1792647554913",
+      "userId": "1792569268259zojir",
+      "subjectId": "polity",
+      "minutes": 2,
+      "mode": "Pomodoro",
+      "focusScore": 94,
+      "startedAt": "2026-10-22T05:39:14.913Z"
+    },
+    {
+      "id": "1792727887995",
+      "userId": "1792569268259zojir",
+      "subjectId": "polity",
+      "minutes": 1,
+      "mode": "Custom",
+      "focusScore": 94,
+      "startedAt": "2026-10-23T03:58:07.995Z"
+    },
+    {
+      "id": "1792728383343",
+      "userId": "1792569268259zojir",
+      "subjectId": "polity",
+      "minutes": 1,
+      "mode": "Custom",
+      "focusScore": 94,
+      "startedAt": "2026-10-23T04:06:23.343Z"
+    },
+    {
+      "id": "1792729557885",
+      "userId": "1792569268259zojir",
+      "subjectId": "polity",
+      "minutes": 1,
+      "mode": "Pomodoro",
+      "focusScore": 94,
+      "startedAt": "2026-10-23T04:25:57.886Z"
+    },
+    {
+      "id": "1792729650920",
+      "userId": "1792569268259zojir",
+      "subjectId": "polity",
+      "minutes": 1,
+      "mode": "Custom",
+      "focusScore": 94,
+      "startedAt": "2026-10-23T04:27:30.920Z"
+    },
+    {
+      "id": "1792729904203",
+      "userId": "1792569268259zojir",
+      "subjectId": "polity",
+      "minutes": 1,
+      "mode": "Custom",
+      "focusScore": 94,
+      "startedAt": "2026-10-23T04:31:44.203Z"
+    },
+    {
+      "id": "1792729944279",
+      "userId": "1792569268259zojir",
+      "subjectId": "polity",
+      "minutes": 1,
+      "mode": "Custom",
+      "focusScore": 94,
+      "startedAt": "2026-10-23T04:32:24.279Z"
+    },
+    {
+      "id": "1792983772376",
+      "userId": "1792569268259zojir",
+      "subjectId": "polity",
+      "minutes": 1,
+      "mode": "Custom",
+      "focusScore": 94,
+      "startedAt": "2026-10-26T03:02:52.378Z"
+    },
+    {
+      "id": "1793008360652",
+      "userId": "1792569268259zojir",
+      "subjectId": "polity",
+      "minutes": 1,
+      "mode": "Custom",
+      "focusScore": 94,
+      "startedAt": "2026-10-26T09:52:40.655Z"
+    },
+    {
+      "id": "1793010451146",
+      "userId": "1792569268259zojir",
+      "subjectId": "polity",
+      "minutes": 1,
+      "mode": "Custom",
+      "focusScore": 94,
+      "startedAt": "2026-10-26T10:27:31.152Z"
+    },
+    {
+      "id": "1793011869553",
+      "userId": "1792569268259zojir",
+      "subjectId": "polity",
+      "minutes": 1,
+      "mode": "Custom",
+      "focusScore": 94,
+      "startedAt": "2026-10-26T10:51:09.554Z"
+    },
+    {
+      "id": "1793017593982",
+      "userId": "1792569268259zojir",
+      "subjectId": "polity",
+      "minutes": 1,
+      "mode": "Custom",
+      "focusScore": 94,
+      "startedAt": "2026-10-26T12:26:33.984Z"
+    },
+    {
+      "id": "1793039185426",
+      "userId": "1792569268259zojir",
+      "subjectId": "polity",
+      "minutes": 1,
+      "mode": "Custom",
+      "focusScore": 94,
+      "startedAt": "2026-10-26T18:26:25.429Z"
+    },
+    {
+      "id": "1793070242799",
+      "userId": "1792569268259zojir",
+      "subjectId": "polity",
+      "minutes": 1,
+      "mode": "Custom",
+      "focusScore": 94,
+      "startedAt": "2026-10-27T03:04:02.799Z"
+    },
+    {
+      "id": "1793073316611",
+      "userId": "1792569268259zojir",
+      "subjectId": "polity",
+      "minutes": 1,
+      "mode": "Custom",
+      "focusScore": 94,
+      "startedAt": "2026-10-27T03:55:16.611Z"
+    }
+  ],
+  "notifications": []
+}

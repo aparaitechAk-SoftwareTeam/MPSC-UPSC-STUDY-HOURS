@@ -1,0 +1,317 @@
+﻿import React, { useState } from 'react';
+import { View, Text, TouchableOpacity } from 'react-native';
+
+export default function NotificationsScreen({
+  notes = [],
+  user,
+  onMarkRead,
+  onBack,
+  C,
+}) {
+  const [selectedId, setSelectedId] = useState(null);
+
+  const isRead = note =>
+    (note.readBy || []).includes(user?.id);
+
+  const formatDate = value => {
+    if (!value) return 'Date unavailable';
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      return 'Date unavailable';
+    }
+
+    return date.toLocaleString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const selectedNote = notes.find(
+    note => note.id === selectedId
+  );
+
+  const openNote = note => {
+    setSelectedId(note.id);
+
+    if (!isRead(note) && onMarkRead) {
+      onMarkRead(note);
+    }
+  };
+
+  const mutedText = {
+    color: C.muted,
+    fontSize: 12,
+  };
+
+  const actionStyle = {
+    backgroundColor: C.soft,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    alignSelf: 'flex-start',
+  };
+
+  return (
+    <View style={{ flex: 1 }}>
+      <TouchableOpacity
+        onPress={
+          selectedNote
+            ? () => setSelectedId(null)
+            : onBack
+        }
+        style={{ marginBottom: 18 }}
+        accessibilityRole="button"
+      >
+        <Text
+          style={{
+            color: C.blue,
+            fontSize: 13,
+            fontWeight: '700',
+          }}
+        >
+          {selectedNote ? '← All announcements' : '← Back to app'}
+        </Text>
+      </TouchableOpacity>
+
+      <Text
+        style={{
+          color: C.ink,
+          fontSize: 25,
+          fontWeight: '800',
+        }}
+      >
+        {selectedNote ? 'Announcement Details' : 'Notifications'}
+      </Text>
+
+      <Text
+        style={{
+          color: C.muted,
+          fontSize: 13,
+          marginTop: 6,
+          marginBottom: 18,
+        }}
+      >
+        {selectedNote
+          ? 'Read the complete announcement below.'
+          : 'Announcements and study reminders'}
+      </Text>
+
+      {selectedNote ? (
+        <View
+          style={{
+            backgroundColor: C.card,
+            borderColor: C.border,
+            borderWidth: 1,
+            borderRadius: 16,
+            padding: 18,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: 8,
+            }}
+          >
+            <Text
+              style={{
+                color: isRead(selectedNote) ? C.green : C.amber,
+                fontSize: 12,
+                fontWeight: '800',
+              }}
+            >
+              {isRead(selectedNote) ? 'READ' : 'UNREAD'}
+            </Text>
+
+            <Text style={mutedText}>
+              {formatDate(selectedNote.createdAt)}
+            </Text>
+          </View>
+
+          <Text
+            style={{
+              color: C.ink,
+              fontSize: 21,
+              fontWeight: '800',
+              marginTop: 18,
+              lineHeight: 29,
+            }}
+          >
+            {selectedNote.title}
+          </Text>
+
+          <View
+            style={{
+              height: 1,
+              backgroundColor: C.line,
+              marginVertical: 16,
+            }}
+          />
+
+          <Text
+            style={{
+              color: C.ink,
+              fontSize: 15,
+              lineHeight: 25,
+            }}
+          >
+            {selectedNote.message}
+          </Text>
+        </View>
+      ) : notes.length === 0 ? (
+        <View
+          style={{
+            backgroundColor: C.card,
+            borderColor: C.border,
+            borderWidth: 1,
+            borderRadius: 16,
+            padding: 24,
+            alignItems: 'center',
+          }}
+        >
+          <Text
+            style={{
+              color: C.ink,
+              fontSize: 16,
+              fontWeight: '700',
+            }}
+          >
+            No announcements yet
+          </Text>
+
+          <Text
+            style={{
+              color: C.muted,
+              fontSize: 13,
+              marginTop: 8,
+              textAlign: 'center',
+            }}
+          >
+            New announcements will appear here.
+          </Text>
+        </View>
+      ) : (
+        <View
+          style={{
+            backgroundColor: C.card,
+            borderColor: C.border,
+            borderWidth: 1,
+            borderRadius: 14,
+            overflow: 'hidden',
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: C.soft,
+              paddingHorizontal: 14,
+              paddingVertical: 12,
+            }}
+          >
+            <Text
+              style={{
+                color: C.ink,
+                fontSize: 12,
+                fontWeight: '800',
+              }}
+            >
+              ANNOUNCEMENT REGISTER
+            </Text>
+          </View>
+
+          {notes.map((note, index) => {
+            const read = isRead(note);
+
+            return (
+              <TouchableOpacity
+                key={note.id}
+                onPress={() => openNote(note)}
+                activeOpacity={0.75}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  `${note.title}, ${read ? 'read' : 'unread'}`
+                }
+                style={{
+                  padding: 15,
+                  borderTopWidth: index === 0 ? 0 : 1,
+                  borderTopColor: C.line,
+                  backgroundColor: C.card,
+                }}
+              >
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'flex-start',
+                    justifyContent: 'space-between',
+                    gap: 10,
+                  }}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={{
+                        color: C.ink,
+                        fontSize: 15,
+                        fontWeight: read ? '600' : '800',
+                        lineHeight: 22,
+                      }}
+                    >
+                      {note.title}
+                    </Text>
+
+                    <Text
+                      style={{
+                        color: C.muted,
+                        fontSize: 12,
+                        marginTop: 7,
+                      }}
+                    >
+                      Posted: {formatDate(note.createdAt)}
+                    </Text>
+                  </View>
+
+                  <View
+                    style={{
+                      backgroundColor: read
+                        ? C.greenSoft
+                        : C.amberSoft,
+                      borderRadius: 20,
+                      paddingHorizontal: 9,
+                      paddingVertical: 5,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: read ? C.green : C.amber,
+                        fontSize: 10,
+                        fontWeight: '800',
+                      }}
+                    >
+                      {read ? 'READ' : 'UNREAD'}
+                    </Text>
+                  </View>
+                </View>
+
+                <Text
+                  style={{
+                    color: C.blue,
+                    fontSize: 12,
+                    fontWeight: '700',
+                    marginTop: 12,
+                  }}
+                >
+                  View full announcement →
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      )}
+    </View>
+  );
+}
