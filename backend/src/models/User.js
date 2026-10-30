@@ -20,6 +20,11 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       trim: true
     },
+    phone: {
+      type: String,
+      trim: true,
+      default: ''
+    },
     role: {
       type: String,
       required: true,

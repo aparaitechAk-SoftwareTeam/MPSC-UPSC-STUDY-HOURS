@@ -17,7 +17,11 @@ import Tickets from '@/pages/Tickets';
 import SignIn from '@/pages/SignIn';
 import { initProfileFromUser, signOutProfile } from '@/lib/profile-store';
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+const API = (typeof window !== 'undefined' && window.location?.hostname)
+  ? (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+      ? 'http://localhost:4000/api'
+      : `http://${window.location.hostname}:4000/api`)
+  : (import.meta.env.VITE_API_URL || 'http://localhost:4000/api');
 
 function App() {
   // The token starts empty: nothing protected renders until the stored token is verified below.
@@ -128,6 +132,9 @@ function App() {
 
   function handleSignOut() {
     localStorage.removeItem('abhyas_admin_token');
+    localStorage.removeItem('abhyas_admin_profile');
+    localStorage.removeItem('abhyas_admin_notif_count');
+    try { window.dispatchEvent(new Event('abhyas:notifications_updated')); } catch {}
     signOutProfile();
     setToken('');
     setData({ overview: null, users: [], subjects: [], sessions: [] });
@@ -154,10 +161,10 @@ function App() {
       await request('/admin/subjects', 'POST', {
         name: form.name,
         paper: form.paper,
-        topics: Number(form.topics),
+        topics: Number(form.topics) || 20,
       });
       setForm({ ...form, name: '' });
-      toast.success('Subject added successfully');
+      toast.success('Subject added to curriculum');
       await load();
     } catch (e) {
       setError(e.message);
@@ -167,11 +174,11 @@ function App() {
 
   // Management Action: Delete Subject
   async function delSubject(id) {
-    if (!window.confirm('Delete this subject?')) return;
+    if (!window.confirm('Are you sure you want to delete this subject?')) return;
     try {
       setError('');
       await request('/admin/subjects/' + id, 'DELETE');
-      toast.success('Subject deleted');
+      toast.success('Subject removed');
       await load();
     } catch (e) {
       setError(e.message);

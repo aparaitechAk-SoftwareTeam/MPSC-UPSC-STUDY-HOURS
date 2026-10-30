@@ -14,6 +14,28 @@ const nav = [
     { to: "/tickets", label: "Ticket Management", icon: Ticket },
     { to: "/profile", label: "Profile", icon: UserRound },
 ];
+export function useNotificationCount() {
+    const [count, setCount] = useState(() => {
+        try {
+            const stored = localStorage.getItem("abhyas_admin_notif_count");
+            return stored !== null ? Number(stored) : 0;
+        } catch {
+            return 0;
+        }
+    });
+    useEffect(() => {
+        const handleUpdate = () => {
+            try {
+                const stored = localStorage.getItem("abhyas_admin_notif_count");
+                setCount(stored !== null ? Number(stored) : 0);
+            } catch {}
+        };
+        window.addEventListener("abhyas:notifications_updated", handleUpdate);
+        return () => window.removeEventListener("abhyas:notifications_updated", handleUpdate);
+    }, []);
+    return count;
+}
+
 export function useToday() {
     const [now, setNow] = useState(null);
     useEffect(() => {

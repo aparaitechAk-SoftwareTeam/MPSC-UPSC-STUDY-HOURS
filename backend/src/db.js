@@ -1,3 +1,7 @@
+const dns = require('dns');
+try {
+  dns.setServers(['8.8.8.8', '1.1.1.1']);
+} catch (_) {}
 const mongoose = require('mongoose');
 
 async function connectDB() {
@@ -11,7 +15,7 @@ async function connectDB() {
 
   try {
     const conn = await mongoose.connect(uri, {
-      serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of hanging
+      serverSelectionTimeoutMS: 10000,
     });
 
     console.log(`[Database] MongoDB connected successfully to host: ${conn.connection.host}`);
