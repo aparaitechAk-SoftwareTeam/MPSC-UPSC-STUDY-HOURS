@@ -1335,7 +1335,7 @@ useEffect(() => {
         subtitle:
           todaySessions.length > 0
             ? 'Present today'
-            : '14-Day streak',
+            : `${Number(analytics.currentStreak) || 0}-Day streak`,
         icon: 'calendar-number-outline',
         onPress: () =>
           Alert.alert(
@@ -1379,7 +1379,7 @@ useEffect(() => {
             marginBottom: 12
           }}
         >
-          <Chip label="🔥 14-Day Streak" active />
+          <Chip label={`🔥 ${Number(analytics.currentStreak) || 0}-Day Streak`} active />
           <Chip label="UPSC / MPSC 2026" />
         </View>
 
@@ -3321,9 +3321,19 @@ borderColor: [
             onSignOut={handleSignOut}
             onOpenSettings={() => setSettingsOpen(true)}
             onOpenReminders={() => setRemindersOpen(true)}
-            onProfileUpdated={(updatedUser) => setUser(updatedUser)}
+            onProfileUpdated={async (updatedUser) => {
+              const data = await req('/me', 'PATCH', {
+                name: updatedUser.name,
+                email: updatedUser.email,
+                phone: updatedUser.phone || updatedUser.mobile || '',
+                examTarget: updatedUser.examTarget,
+                preferredSubjects: updatedUser.preferredSubjects,
+              });
+              setUser(data.user);
+              return data.user;
+            }}
             studyGoal={6}
-            studyStreak={0}
+            studyStreak={Number(analytics.currentStreak) || 0}
           />
         ) : notifOpen ? (
           <NotificationsScreen
@@ -3672,6 +3682,8 @@ borderColor: [
     </ThemeContext.Provider>
   );
 }
+
+
 
 
 

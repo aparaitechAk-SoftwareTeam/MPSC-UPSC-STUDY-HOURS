@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+﻿const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema(
   {
@@ -19,6 +19,21 @@ const userSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
       trim: true
+    },
+    phone: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    examTarget: {
+      type: String,
+      trim: true,
+      default: 'MPSC / UPSC'
+    },
+    preferredSubjects: {
+      type: String,
+      trim: true,
+      default: 'Polity, History'
     },
     role: {
       type: String,

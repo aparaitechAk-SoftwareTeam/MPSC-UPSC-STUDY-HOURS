@@ -1,4 +1,4 @@
-﻿
+
 import React, { useState } from 'react';
 import {
   View,
@@ -65,6 +65,7 @@ export default function StudentProfileScreen({
   studyStreak = 0,
 }) {
   const [editing, setEditing] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
   const [mobile, setMobile] = useState(
@@ -111,7 +112,7 @@ export default function StudentProfileScreen({
   const profileErrors = showValidation ? validateProfile() : {};
 
 
-  const saveProfile = () => {
+  const saveProfile = async () => {
     setShowValidation(true);
     const errors = validateProfile();
 
@@ -180,19 +181,36 @@ export default function StudentProfileScreen({
       preferredSubjects: updatedSubjects,
     };
 
-    setName(updatedName);
-    setEmail(updatedEmail);
-    setMobile(updatedMobile);
-    setExam(updatedExam);
-    setSubjects(updatedSubjects);
+    setSavingProfile(true);
 
-    onProfileUpdated?.(updatedUser);
-    setEditing(false);
+    try {
+      if (typeof onProfileUpdated !== 'function') {
+        throw new Error('Profile saving is unavailable. Please try again.');
+      }
 
-    Alert.alert(
-      'Profile updated',
-      'Your changes have been saved for this app session.'
-    );
+      const savedUser = await onProfileUpdated(updatedUser);
+      const confirmedUser = savedUser || updatedUser;
+
+      setName(confirmedUser.name || updatedName);
+      setEmail(confirmedUser.email || updatedEmail);
+      setMobile(confirmedUser.phone || confirmedUser.mobile || updatedMobile);
+      setExam(confirmedUser.examTarget || updatedExam);
+      setSubjects(confirmedUser.preferredSubjects || updatedSubjects);
+
+      setEditing(false);
+
+      Alert.alert(
+        'Profile updated',
+        'Your profile has been saved to your account.'
+      );
+    } catch (error) {
+      Alert.alert(
+        'Unable to save profile',
+        error?.message || 'Your changes could not be saved. Please try again.'
+      );
+    } finally {
+      setSavingProfile(false);
+    }
   };
     const confirmSignOut = () => {
   setSignOutConfirmOpen(true);
@@ -349,9 +367,19 @@ export default function StudentProfileScreen({
               <Text style={styles.cancelText}>Cancel</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.saveButton} onPress={saveProfile}>
-              <Ionicons name="checkmark" size={19} color="#FFFFFF" />
-              <Text style={styles.saveText}>Save Changes</Text>
+            <TouchableOpacity
+              style={[styles.saveButton, savingProfile && { opacity: 0.6 }]}
+              onPress={saveProfile}
+              disabled={savingProfile}
+            >
+              <Ionicons
+                name={savingProfile ? "hourglass-outline" : "checkmark"}
+                size={19}
+                color="#FFFFFF"
+              />
+              <Text style={styles.saveText}>
+                {savingProfile ? 'Saving...' : 'Save Changes'}
+              </Text>
             </TouchableOpacity>
           </View>
         ) : (

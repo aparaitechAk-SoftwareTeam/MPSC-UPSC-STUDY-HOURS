@@ -1,4 +1,4 @@
-
+﻿
 require('dotenv').config();
 const { connectDB } = require('./db');
 
@@ -113,6 +113,105 @@ app.get('/api/me', auth(), async (req, res) => {
         res.status(500).json({ error: 'Failed to retrieve profile' });
     }
 });
+app.patch('/api/me', auth(), async (req, res) => {
+    try {
+        const allowedFields = [
+            'name',
+            'email',
+            'phone',
+            'examTarget',
+            'preferredSubjects'
+        ];
+
+        const suppliedFields = allowedFields.filter(
+            (field) => Object.prototype.hasOwnProperty.call(req.body || {}, field)
+        );
+
+        if (suppliedFields.length === 0) {
+            return res.status(400).json({ error: 'No profile fields supplied' });
+        }
+
+        const updates = {};
+
+        for (const field of suppliedFields) {
+            const value = req.body[field];
+
+            if (typeof value !== 'string') {
+                return res.status(400).json({ error: `Invalid ${field}` });
+            }
+
+            const trimmed = value.trim();
+
+            if (field === 'name') {
+                if (trimmed.length < 2 || trimmed.length > 100) {
+                    return res.status(400).json({ error: 'Name must be between 2 and 100 characters' });
+                }
+                updates.name = trimmed;
+            }
+
+            if (field === 'email') {
+                const normalizedEmail = trimmed.toLowerCase();
+                if (
+                    normalizedEmail.length > 254 ||
+                    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)
+                ) {
+                    return res.status(400).json({ error: 'Enter a valid email address' });
+                }
+
+                const existing = await User.findOne({
+                    email: normalizedEmail,
+                    id: { $ne: req.user.id }
+                });
+
+                if (existing) {
+                    return res.status(409).json({ error: 'Email already registered' });
+                }
+
+                updates.email = normalizedEmail;
+            }
+
+            if (field === 'phone') {
+                if (trimmed && !/^[+]?[0-9\s()-]{7,20}$/.test(trimmed)) {
+                    return res.status(400).json({ error: 'Enter a valid phone number' });
+                }
+                updates.phone = trimmed;
+            }
+
+            if (field === 'examTarget') {
+                if (!trimmed || trimmed.length > 100) {
+                    return res.status(400).json({ error: 'Exam target is required and must be under 100 characters' });
+                }
+                updates.examTarget = trimmed;
+            }
+
+            if (field === 'preferredSubjects') {
+                if (!trimmed || trimmed.length > 500) {
+                    return res.status(400).json({ error: 'Preferred subjects are required and must be under 500 characters' });
+                }
+                updates.preferredSubjects = trimmed;
+            }
+        }
+
+        const user = await User.findOneAndUpdate(
+            { id: req.user.id },
+            { $set: updates },
+            { new: true, runValidators: true }
+        );
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        return res.json({ user: publicUser(user) });
+    } catch (err) {
+        if (err.code === 11000) {
+            return res.status(409).json({ error: 'Email already registered' });
+        }
+
+        console.error('Profile update failed:', err.message);
+        return res.status(500).json({ error: 'Failed to update profile' });
+    }
+});
 
 // Self account deletion (Preserves historical activity data for analytics)
 app.delete('/api/users/me', auth(), async (req, res) => {
@@ -201,7 +300,7 @@ app.post('/api/sessions', auth(), async (req, res) => {
         const { subjectId, minutes, mode, focusScore } = req.body;
         const m = Number(minutes);
         if (!Number.isFinite(m) || m <= 0 || m > 1440) {
-            return res.status(400).json({ error: 'Minutes must be 1–1440' });
+            return res.status(400).json({ error: 'Minutes must be 1â€“1440' });
         }
         const obj = await Session.create({
             id: Date.now().toString(),
@@ -437,10 +536,35 @@ app.get('/api/analytics', auth(), async (req, res) => {
             }
         }
 
+        const studiedDates = new Set(
+            sessions
+                .filter(session => Number(session.minutes) > 0)
+                .map(session => (session.startedAt || '').slice(0, 10))
+                .filter(date => /^\d{4}-\d{2}-\d{2}$/.test(date))
+        );
+
+        // Current streak: count consecutive study days, starting today
+        // or yesterday if no session has been recorded today.
+        let currentStreak = 0;
+        const streakCursor = new Date(today);
+
+        if (!studiedDates.has(streakCursor.toISOString().slice(0, 10))) {
+            streakCursor.setUTCDate(streakCursor.getUTCDate() - 1);
+        }
+
+        while (studiedDates.has(streakCursor.toISOString().slice(0, 10))) {
+            currentStreak += 1;
+            streakCursor.setUTCDate(streakCursor.getUTCDate() - 1);
+        }
+
+        const daysStudiedLast30 = daily.filter(day => day.minutes > 0).length;
+
         res.json({
             sessionCount: sessions.length,
             totalMinutes: minutes,
             averageFocus: focus,
+            currentStreak,
+            daysStudiedLast30,
             daily,
             weekly: daily.slice(-7)
         });
@@ -634,3 +758,4 @@ if (require.main === module) {
 }
 
 module.exports = { app, startServer };
+
