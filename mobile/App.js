@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import {
   AppState,
   View,
@@ -31,9 +31,63 @@ const LIGHT_THEME = {
   soft: '#e9f0fc',
   line: '#e8eef8',
   light: '#dce8fb',
+
   border: '#edf2fc',
   danger: '#ef4444',
   dangerSoft: '#fef2f2',
+
+  green: '#10b981',
+  greenSoft: '#ecfdf5',
+  amber: '#f59e0b',
+  amberSoft: '#fffbeb',
+  purple: '#8b5cf6',
+  purpleSoft: '#f5f3ff',
+  red: '#ef4444',
+  redSoft: '#fef2f2'
+};
+
+const SYLLABUS_TOPICS = {
+  polity: [
+    { id: 'polity-1', name: 'Preamble & Salient Features', chapter: 'Basics of Constitution' },
+    { id: 'polity-2', name: 'Fundamental Rights (Articles 12-35)', chapter: 'Part III' },
+    { id: 'polity-3', name: 'Directive Principles & Fundamental Duties', chapter: 'Part IV & IV-A' },
+    { id: 'polity-4', name: 'Union Executive & Parliament', chapter: 'Union Government' },
+    { id: 'polity-5', name: 'Supreme Court & Judicial Review', chapter: 'Judiciary' },
+    { id: 'polity-6', name: 'Center-State Relations & Federalism', chapter: 'Federal System' },
+    { id: 'polity-7', name: 'Panchayati Raj & Urban Local Bodies', chapter: 'Local Self-Govt' },
+    { id: 'polity-8', name: 'Constitutional Bodies (Election Comm, UPSC, CAG)', chapter: 'Institutions' }
+  ],
+  history: [
+    { id: 'history-1', name: 'Revolt of 1857 & Early Resistance', chapter: 'British Expansion' },
+    { id: 'history-2', name: 'Socio-Religious Reform Movements', chapter: 'Social Awakening' },
+    { id: 'history-3', name: 'INC Foundation & Moderate-Extremist Era', chapter: 'Early Nationalism' },
+    { id: 'history-4', name: 'Swadeshi & Home Rule Movements', chapter: 'Mass Struggle' },
+    { id: 'history-5', name: 'Gandhian Era (Non-Cooperation & Salt March)', chapter: 'Gandhian Phase' },
+    { id: 'history-6', name: 'Quit India Movement & INA Trials', chapter: 'Towards Freedom' },
+    { id: 'history-7', name: "Peasant, Tribal & Working Class Struggles", chapter: "People's Movements" },
+    { id: 'history-8', name: 'Partition & Post-Independence Consolidation', chapter: 'Integration' }
+  ],
+  economy: [
+    { id: 'economy-1', name: 'National Income Accounting & GDP Metrics', chapter: 'Macro Fundamentals' },
+    { id: 'economy-2', name: 'Inflation Indices (CPI/WPI) & Monetary Policy', chapter: 'Prices & RBI' },
+    { id: 'economy-3', name: 'Fiscal Policy, Union Budget & Deficits', chapter: 'Public Finance' },
+    { id: 'economy-4', name: 'Banking Structure, IBC & NPA Resolution', chapter: 'Financial System' },
+    { id: 'economy-5', name: 'Agriculture, MSP, Subsidies & Food Security', chapter: 'Primary Sector' },
+    { id: 'economy-6', name: 'External Sector, Balance of Payments & Forex', chapter: 'Foreign Trade' },
+    { id: 'economy-7', name: 'Poverty Measurement & Inclusive Growth', chapter: 'Human Development' },
+    { id: 'economy-8', name: 'Infrastructure, Industrial Policy & FDI', chapter: 'Economic Reforms' }
+  ],
+  geography: [
+    { id: 'geography-1', name: 'Geomorphology & Plate Tectonics', chapter: 'Physical Geology' },
+    { id: 'geography-2', name: 'Climatology, Wind Belts & Cyclones', chapter: 'Atmosphere' },
+    { id: 'geography-3', name: 'Ocean Currents & Marine Resources', chapter: 'Oceanography' },
+    { id: 'geography-4', name: 'Physiographic Divisions of India', chapter: 'Indian Geography' },
+    { id: 'geography-5', name: 'Himalayan & Peninsular River Systems', chapter: 'Drainage' },
+    { id: 'geography-6', name: 'Indian Monsoon Dynamics & Rainfall Patterns', chapter: 'Indian Climate' },
+    { id: 'geography-7', name: 'Soils, Natural Vegetation & Wildlife Parks', chapter: 'Biogeography' },
+    { id: 'geography-8', name: 'Mineral Belts & Energy Resources of India', chapter: 'Economic Resources' }
+  ]
+
 };
 
 const DARK_THEME = {
@@ -62,10 +116,15 @@ const useTheme = () => React.useContext(ThemeContext);
 const API =
   process.env.EXPO_PUBLIC_API_URL ||
   (Platform.OS === 'android'
-    ? 'http://192.168.1.5:4000/api'
+    ? 'http://192.168.1.2:4000/api'
     : 'http://localhost:4000/api');
 
 const today = () => new Date().toISOString().slice(0, 10);
+const tomorrow = () => {
+  const date = new Date();
+  date.setDate(date.getDate() + 1);
+  return date.toISOString().slice(0, 10);
+};
 
 function Chip({ label, active, onPress }) {
   const { theme: C } = useTheme();
@@ -215,6 +274,26 @@ export default function App() {
   const [focusMode, setFocusMode] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
 
+  // Zen mode state shared with the Timer component.
+  const [zenMode, setZenMode] = useState('Light Zen');
+  const [deepZenUnlocked, setDeepZenUnlocked] = useState(false);
+  const [deepZenInterruptions, setDeepZenInterruptions] = useState(0);
+
+
+const handleTabChange = (nextTab) => {
+  if (deepZenSessionActive && nextTab !== 'Timer') {
+    Alert.alert(
+      'Deep Zen Active',
+      'You cannot switch to another screen while a Deep Zen session is active. Return to the Timer and finish the session first.'
+    );
+    return;
+  }
+
+  setTab(nextTab);
+  setNotifOpen(false);
+  refresh();
+};
+
   // Reset confirmation state belongs inside the App component.
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
   const [exitFocusConfirmOpen, setExitFocusConfirmOpen] = useState(false);
@@ -225,19 +304,30 @@ export default function App() {
   const [notes, setNotes] = useState([]);
   const [analytics, setAnalytics] = useState({});
   const [analyticsRange, setAnalyticsRange] = useState('7');
+  const [topicProgress, setTopicProgress] = useState([]);
+  const [expandedSubject, setExpandedSubject] = useState('polity');
+  const [sessionTopicTitle, setSessionTopicTitle] = useState('Chapter 7: Fundamental Rights');
 
   const [elapsed, setElapsed] = useState(0);
   const [running, setRunning] = useState(false);
+  const deepZenLocked = zenMode === 'Deep Zen' && !deepZenUnlocked;
+const deepZenSessionActive =
+  deepZenLocked && (running || elapsed > 0);
   const [selected, setSelected] = useState('polity');
   const [mode, setMode] = useState('Pomodoro');
   const [customMinutes, setCustomMinutes] = useState(30);
 
   const [planTitle, setPlanTitle] = useState('');
   const [planMinutes, setPlanMinutes] = useState('45');
+  const [plannerView, setPlannerView] = useState("Today's Plan");
+  const [planSubject, setPlanSubject] = useState('polity');
+  const [planPriority, setPlanPriority] = useState('Medium');
+  const [planDateType, setPlanDateType] = useState('today');
   const [notifOpen, setNotifOpen] = useState(false);
 
   // Timer and save reliability references.
   const interval = useRef(null);
+  const appStateRef = useRef(AppState.currentState);
   const savingSession = useRef(false);
   const activeStartedAt = useRef(null);
   const elapsedBase = useRef(0);
@@ -253,7 +343,7 @@ export default function App() {
 
     const shouldPin = deepZenLocked && (running || elapsed > 0);
 
-    
+
     if (
       shouldPin &&
       !nativePinningActive.current &&
@@ -325,7 +415,7 @@ export default function App() {
 
           nativePinningActive.current = status.active;
 
-          
+
 
           if (!status.active) {
             pinningPromptAttempted.current = true;
@@ -532,22 +622,23 @@ useEffect(() => {
         historyData,
         planData,
         noteData,
-        analyticsData
-      ] = await Promise.all(
-        [
-          '/subjects',
-          '/sessions',
-          '/plan',
-          '/notifications',
-          '/analytics'
-        ].map(route => req(route, 'GET', null, t))
-      );
+        analyticsData,
+        progressData
+      ] = await Promise.all([
+        req('/subjects', 'GET', null, t),
+        req('/sessions', 'GET', null, t),
+        req('/plan', 'GET', null, t),
+        req('/notifications', 'GET', null, t),
+        req('/analytics', 'GET', null, t),
+        req('/topic-progress', 'GET', null, t).catch(() => [])
+      ]);
 
       setSubjects(subjectData);
       setSessions(historyData);
       setPlans(planData);
       setNotes(noteData);
       setAnalytics(analyticsData);
+      setTopicProgress(progressData || []);
 
       return true;
     } catch (error) {
@@ -660,7 +751,7 @@ useEffect(() => {
     };
   }, []);
 
-  
+
   async function login() {
     const loginUrl = API + '/auth/' + (register ? 'register' : 'login');
 
@@ -730,6 +821,7 @@ useEffect(() => {
   function startSession() {
     if (savingSession.current) return;
     if (activeStartedAt.current !== null) return;
+    autoSaveTriggered.current = false;
 
     const limitSeconds =
       mode === 'Pomodoro'
@@ -753,8 +845,15 @@ useEffect(() => {
 
   // Accumulate only active study time.
   function pauseSession() {
-    if (savingSession.current) return;
-    if (activeStartedAt.current === null) return;
+  if (savingSession.current) return;
+
+  if (deepZenLocked && (running || elapsed > 0)) {
+    Alert.alert(
+      'Deep Zen Active',
+      'You cannot pause this session. Wait until the countdown reaches 00:00.'
+    );
+    return;
+  }
 
     const activeSeconds = Math.floor(
       (Date.now() - activeStartedAt.current) / 1000
@@ -789,6 +888,7 @@ useEffect(() => {
 
     activeStartedAt.current = null;
     elapsedBase.current = 0;
+    autoSaveTriggered.current = false;
 
     setRunning(false);
     setElapsed(0);
@@ -797,7 +897,11 @@ useEffect(() => {
 
   // Save the session with a synchronous duplicate-submit guard.
   async function finish(automatic = false) {
-  if (savingSession.current || (deepZenLocked && !automatic)) return;
+  const isAutomatic = automatic === true;
+
+  if (savingSession.current || (deepZenLocked && !isAutomatic)) {
+    return;
+  }
 
     const finalElapsed =
       elapsedBase.current +
@@ -863,19 +967,97 @@ useEffect(() => {
     }
   }
 
-  async function addPlan() {
-    if (!planTitle.trim()) return;
+  // Update syllabus topic status and persist it through the API.
+  async function updateTopicStatus(topic, currentStatus, subjectId) {
+    const cycle = {
+      'Not Started': 'In Progress',
+      'In Progress': 'Completed',
+      'Completed': 'To Revise',
+      'To Revise': 'Not Started'
+    };
+    const nextStatus = cycle[currentStatus] || 'In Progress';
+
+    setTopicProgress(previous => {
+      const index = previous.findIndex(item => item.topicId === topic.id);
+      if (index >= 0) {
+        const updated = [...previous];
+        updated[index] = { ...updated[index], status: nextStatus, subjectId };
+        return updated;
+      }
+      return [...previous, { topicId: topic.id, subjectId, status: nextStatus }];
+    });
 
     try {
-      await req('/plan', 'POST', {
-        title: planTitle,
-        minutes: Number(planMinutes) || 45,
-        date: today(),
-        subjectId: selected
-      });
+      await req('/topic-progress/' + topic.id, 'PATCH', { status: nextStatus, subjectId });
+      await refresh();
+    } catch (error) {
+      Alert.alert('Error updating topic', error.message);
+      await refresh();
+    }
+  }
 
+  async function quickScheduleTopic(topic, subjectName, subjectId) {
+    try {
+      await req('/plan', 'POST', {
+        title: `${subjectName}: ${topic.name}`,
+        minutes: 45,
+        date: today(),
+        subjectId,
+        priority: 'High'
+      });
+      Alert.alert('Scheduled!', `"${topic.name}" added to today's study planner.`);
+      await refresh();
+      setTab('Planner');
+    } catch (error) {
+      Alert.alert('Error', error.message);
+    }
+  }
+
+  const syllabusStats = useMemo(() => {
+    let totalTopicsCount = 0;
+    let completedTopicsCount = 0;
+    let inProgressCount = 0;
+    let toReviseCount = 0;
+
+    Object.entries(SYLLABUS_TOPICS).forEach(([subjectId, topics]) => {
+      topics.forEach(topic => {
+        totalTopicsCount++;
+        const progress = topicProgress.find(item => item.topicId === topic.id);
+        if (progress?.status === 'Completed') completedTopicsCount++;
+        else if (progress?.status === 'In Progress') inProgressCount++;
+        else if (progress?.status === 'To Revise') toReviseCount++;
+      });
+    });
+
+    const overallPct = totalTopicsCount
+      ? Math.round((completedTopicsCount / totalTopicsCount) * 100)
+      : 0;
+    return {
+      totalTopicsCount,
+      completedTopicsCount,
+      inProgressCount,
+      toReviseCount,
+      overallPct
+    };
+  }, [topicProgress]);
+
+  async function addPlan() {
+    if (!planTitle.trim()) {
+      Alert.alert('Input needed', 'Please enter a topic or chapter title.');
+      return;
+    }
+    const targetDate = planDateType === 'tomorrow' ? tomorrow() : today();
+    try {
+      await req('/plan', 'POST', {
+        title: planTitle.trim(),
+        minutes: Number(planMinutes) || 45,
+        date: targetDate,
+        subjectId: planSubject,
+        priority: planPriority
+      });
       setPlanTitle('');
       await refresh();
+      Alert.alert('Task Planned', `Scheduled for ${planDateType === 'tomorrow' ? 'Tomorrow' : 'Today'}!`);
     } catch (error) {
       Alert.alert('Error', error.message);
     }
@@ -883,14 +1065,26 @@ useEffect(() => {
 
   async function markPlan(plan) {
     try {
-      await req('/plan/' + plan.id, 'PATCH', {
-        done: !plan.done
-      });
-
+      await req('/plan/' + plan.id, 'PATCH', { done: !plan.done });
       await refresh();
     } catch (error) {
       Alert.alert('Error', error.message);
     }
+  }
+
+  async function deletePlan(plan) {
+    try {
+      await req('/plan/' + plan.id, 'DELETE');
+      await refresh();
+    } catch (error) {
+      Alert.alert('Error', error.message);
+    }
+  }
+
+  function startPlanFocus(plan) {
+    if (plan.subjectId) setSelected(plan.subjectId);
+    setSessionTopicTitle(plan.title);
+    setTab('Timer');
   }
 
   async function markNote(note) {
@@ -1053,6 +1247,11 @@ useEffect(() => {
           : 'Good evening';
     const studentFirstName = user?.name ? user.name.trim().split(' ')[0] : 'Aspirant';
 
+      <Title sub="Your study sanctuary - One session at a time">
+        Good morning, {user?.name?.split(' ')[0]}!
+      </Title>
+
+
     // Upcoming or active study plan
     const activePlan =
       plans.find(p => !p.done && p.date === todayDateStr) ||
@@ -1144,12 +1343,12 @@ useEffect(() => {
             marginBottom: 12
           }}
         >
-          <Chip label="🔥 14-Day Streak" active />
+          <Chip label="?? 14-Day Streak" active />
           <Chip label="UPSC / MPSC 2026" />
         </View>
 
         {/* Personalized Welcome Header */}
-        <Title sub="Your study sanctuary • One session at a time">
+        <Title sub="Your study sanctuary - One session at a time">
           {greetingText}, {studentFirstName}!
         </Title>
 
@@ -1279,7 +1478,7 @@ useEffect(() => {
                 ]}
               >
                 {remainingMinutes === 0
-                  ? 'Goal Met! 🎉'
+                  ? 'Goal Met! ??'
                   : `${remainingHours}h ${remainingMinsRemainder}m`}
               </Text>
             </View>
@@ -1292,12 +1491,16 @@ useEffect(() => {
                 { textAlign: 'center', marginBottom: 10, lineHeight: 17 }
               ]}
             >
+
               No sessions logged today yet. Ready to start your preparation?
+
+              Retention: 84%  SRS T2
+
             </Text>
           )}
 
           <Button
-            label="▶ Start Studying Now"
+            label="? Start Studying Now"
             onPress={() => setTab('Timer')}
           />
         </Card>
@@ -1324,7 +1527,7 @@ useEffect(() => {
             "Discipline is choosing between what you want now and what you want most. Every focused hour brings you closer to the civil services list."
           </Text>
           <Text style={[txt(11, false, C.muted), { marginTop: 6 }]}>
-            Abhyas Discipline • MPSC & UPSC Aspirants
+            Abhyas Discipline - MPSC & UPSC Aspirants
           </Text>
         </Card>
 
@@ -1407,12 +1610,12 @@ useEffect(() => {
 
           <Text style={[txt(12, false, C.muted), { marginTop: 4 }]}>
             {activePlan
-              ? `${selectedSubjectObj?.name || 'General Studies'} • Target Task`
-              : `${selectedSubjectObj?.name || 'Indian Polity'} • Standard Session`}
+              ? `${selectedSubjectObj?.name || 'General Studies'} - Target Task`
+              : `${selectedSubjectObj?.name || 'Indian Polity'} - Standard Session`}
           </Text>
 
           <Text style={[txt(18, true, C.ink), { marginTop: 6 }]}>
-            {activePlan?.title || 'Chapter 7 • Fundamental Rights'}
+            {activePlan?.title || 'Chapter 7 - Fundamental Rights'}
           </Text>
 
           <View
@@ -1451,7 +1654,7 @@ useEffect(() => {
           >
             <Text style={txt(15, true, C.ink)}>Syllabus Milestone</Text>
             <TouchableOpacity onPress={() => setTab('Syllabus')}>
-              <Text style={txt(11, true, C.blue)}>View All →</Text>
+              <Text style={txt(11, true, C.blue)}>View All ?</Text>
             </TouchableOpacity>
           </View>
 
@@ -1494,161 +1697,484 @@ useEffect(() => {
 
   const Syllabus = () => (
     <>
-      <Title sub="Track completion, mastery and revision flags">
+      <Title sub="Interactive topic checklist, revision markers & mastery tracking">
         Subjects & Syllabus
       </Title>
 
+      {/* Overview Card */}
       <Card>
-        <Text style={txt(13, true)}>Overall Completion</Text>
-        <Text style={[txt(25, true), { marginVertical: 10 }]}>
-          {completion}%
-        </Text>
-
-        <View
-          style={{
-            height: 9,
-            backgroundColor: C.soft,
-            borderRadius: 10
-          }}
-        >
-          <View
-            style={{
-              backgroundColor: C.blue,
-              width: completion + '%',
-              height: 9,
-              borderRadius: 10
-            }}
-          />
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <View>
+            <Text style={txt(13, true)}>Overall Completion</Text>
+            <Text style={[txt(26, true), { marginVertical: 6 }]}>{syllabusStats.overallPct}%</Text>
+            <Text style={txt(11, false, C.muted)}>
+              {syllabusStats.completedTopicsCount} of {syllabusStats.totalTopicsCount} topics completed
+            </Text>
+          </View>
+          <Ring value={syllabusStats.overallPct} size={110} label="Completed" />
         </View>
 
-        <Text style={[txt(11, false, C.muted), { marginTop: 10 }]}>
-          {subjects.reduce((sum, subject) => sum + subject.completed, 0)} /{' '}
-          {subjects.reduce((sum, subject) => sum + subject.topics, 0)} Topics
-          Mastered
-        </Text>
+        {/* Status Legends / Breakdown */}
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            marginTop: 14,
+            paddingTop: 12,
+            borderTopWidth: 1,
+            borderColor: C.line
+          }}
+        >
+          <View style={{ alignItems: 'center' }}>
+            <Text style={txt(14, true, C.green)}>{syllabusStats.completedTopicsCount}</Text>
+            <Text style={txt(10, false, C.muted)}>Mastered</Text>
+          </View>
+          <View style={{ alignItems: 'center' }}>
+            <Text style={txt(14, true, C.amber)}>{syllabusStats.inProgressCount}</Text>
+            <Text style={txt(10, false, C.muted)}>In Progress</Text>
+          </View>
+          <View style={{ alignItems: 'center' }}>
+            <Text style={txt(14, true, C.purple)}>{syllabusStats.toReviseCount}</Text>
+            <Text style={txt(10, false, C.muted)}>To Revise</Text>
+          </View>
+          <View style={{ alignItems: 'center' }}>
+            <Text style={txt(14, true, C.muted)}>
+              {syllabusStats.totalTopicsCount - syllabusStats.completedTopicsCount - syllabusStats.inProgressCount - syllabusStats.toReviseCount}
+            </Text>
+            <Text style={txt(10, false, C.muted)}>Remaining</Text>
+          </View>
+        </View>
       </Card>
 
-      <Card>
-        <Text style={txt(15, true)}>Spaced Revision Queue</Text>
-        <Button
-          label="Review Notifications â†’"
-          subtle
-          onPress={() => setNotifOpen(true)}
-        />
-      </Card>
-
-      {subjects.map(subject => (
-        <Card key={subject.id}>
-          <Text style={txt(17, true)}>{subject.name}</Text>
-
-          <Text style={[txt(12, false, C.muted), { marginTop: 5 }]}>
-            {subject.paper} â€¢ {subject.completed}/{subject.topics} topics
-            mastered
+      {/* Revision Queue Notice */}
+      {syllabusStats.toReviseCount > 0 && (
+        <Card style={{ backgroundColor: C.purpleSoft, borderColor: '#ddd6fe' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Ionicons name="refresh-circle-outline" size={24} color={C.purple} />
+            <Text style={txt(14, true, C.purple)}>Spaced Repetition Queue</Text>
+          </View>
+          <Text style={[txt(12, false, C.ink), { marginTop: 6 }]}>
+            You have {syllabusStats.toReviseCount} topic(s) flagged for revision. Schedule a revision block today!
           </Text>
+        </Card>
+      )}
 
-          <View
-            style={{
-              height: 7,
-              backgroundColor: C.soft,
-              borderRadius: 6,
-              marginTop: 15
-            }}
-          >
+      {/* Subject Cards with Interactive Topics */}
+      {subjects.map(s => {
+        const topicsList = SYLLABUS_TOPICS[s.id] || [];
+        const isExpanded = expandedSubject === s.id;
+        const sCompleted = topicsList.filter(t => {
+          const prog = topicProgress.find(p => p.topicId === t.id);
+          return prog && prog.status === 'Completed';
+        }).length;
+        const sPct = topicsList.length ? Math.round((sCompleted / topicsList.length) * 100) : 0;
+
+        return (
+          <Card key={s.id} style={{ paddingBottom: isExpanded ? 12 : 16 }}>
+            <TouchableOpacity
+              onPress={() => setExpandedSubject(isExpanded ? null : s.id)}
+              style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
+            >
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Text style={txt(16, true)}>{s.name}</Text>
+                  <Text
+                    style={{
+                      fontSize: 10,
+                      fontWeight: '700',
+                      color: C.blue,
+                      backgroundColor: C.soft,
+                      paddingHorizontal: 7,
+                      paddingVertical: 2,
+                      borderRadius: 6
+                    }}
+                  >
+                    {s.paper}
+                  </Text>
+                </View>
+                <Text style={[txt(12, false, C.muted), { marginTop: 4 }]}>
+                  {sCompleted} / {topicsList.length} topics mastered - {sPct}%
+                </Text>
+              </View>
+              <Ionicons name={isExpanded ? 'chevron-up' : 'chevron-down'} size={22} color={C.blue} />
+            </TouchableOpacity>
+
+            {/* Progress Bar */}
+            <View style={{ height: 7, backgroundColor: C.soft, borderRadius: 6, marginTop: 12 }}>
+              <View
+                style={{
+                  backgroundColor: C.blue,
+                  height: 7,
+                  borderRadius: 6,
+                  width: `${sPct}%`
+                }}
+              />
+            </View>
+
+            {/* Expanded Topics List */}
+            {isExpanded && (
+              <View style={{ marginTop: 14, paddingTop: 10, borderTopWidth: 1, borderColor: C.line }}>
+                <Text style={[txt(11, true, C.muted), { marginBottom: 8, letterSpacing: 0.5 }]}>
+                  TOPIC CHECKLIST (TAP TO UPDATE STATUS)
+                </Text>
+                {topicsList.map((t, idx) => {
+                  const prog = topicProgress.find(p => p.topicId === t.id);
+                  const status = prog?.status || 'Not Started';
+
+                  // Badge colors
+                  const statusColors = {
+                    'Completed': { bg: C.greenSoft, fg: C.green, icon: 'checkmark-circle' },
+                    'In Progress': { bg: C.amberSoft, fg: C.amber, icon: 'time-outline' },
+                    'To Revise': { bg: C.purpleSoft, fg: C.purple, icon: 'repeat-outline' },
+                    'Not Started': { bg: C.soft, fg: C.muted, icon: 'ellipse-outline' }
+                  };
+                  const cfg = statusColors[status] || statusColors['Not Started'];
+
+                  return (
+                    <View
+                      key={t.id}
+                      style={{
+                        paddingVertical: 10,
+                        borderBottomWidth: idx === topicsList.length - 1 ? 0 : 1,
+                        borderColor: '#f1f5f9'
+                      }}
+                    >
+                      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <View style={{ flex: 1, marginRight: 8 }}>
+                          <Text style={txt(10, false, C.muted)}>{t.chapter}</Text>
+                          <Text
+                            style={[
+                              txt(13, true),
+                              status === 'Completed' ? { color: '#047857' } : null
+                            ]}
+                          >
+                            {t.name}
+                          </Text>
+                        </View>
+
+                        {/* Interactive Status Button */}
+                        <TouchableOpacity
+                          onPress={() => updateTopicStatus(t, status, s.id)}
+                          style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            backgroundColor: cfg.bg,
+                            paddingHorizontal: 9,
+                            paddingVertical: 6,
+                            borderRadius: 14,
+                            gap: 4
+                          }}
+                        >
+                          <Ionicons name={cfg.icon} size={14} color={cfg.fg} />
+                          <Text style={{ fontSize: 11, fontWeight: '700', color: cfg.fg }}>
+                            {status}
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+
+                      {/* Quick Action: Schedule for today */}
+                      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 6, gap: 10 }}>
+                        <TouchableOpacity
+                          onPress={() => quickScheduleTopic(t, s.name, s.id)}
+                          style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+                        >
+                          <Ionicons name="calendar-outline" size={13} color={C.blue} />
+                          <Text style={txt(11, true, C.blue)}>Plan for Today</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            )}
+          </Card>
+        );
+      })}
+    </>
+  );
+
+  const Planner = () => {
+    // Filter plans according to view
+    const filteredPlans = useMemo(() => {
+      if (plannerView === "Today's Plan") {
+        return plans.filter(p => p.date === today() || !p.date);
+      }
+      if (plannerView === 'Weekly View') {
+        return plans;
+      }
+      return plans;
+    }, [plans, plannerView]);
+
+    const todayPlannedMinutes = plans
+      .filter(p => p.date === today() && !p.done)
+      .reduce((a, p) => a + Number(p.minutes || 0), 0);
+    const capacityPct = Math.min(100, Math.round((todayPlannedMinutes / 480) * 100));
+
+    // Suggested unfinished topics for the selected plan subject
+    const suggestedTopics = useMemo(() => {
+      const all = SYLLABUS_TOPICS[planSubject] || [];
+      return all
+        .filter(t => {
+          const prog = topicProgress.find(p => p.topicId === t.id);
+          return !prog || prog.status !== 'Completed';
+        })
+        .slice(0, 3);
+    }, [planSubject, topicProgress]);
+
+    return (
+      <>
+        <Title sub="Target scheduling, task execution & daily workload balance">
+          Study Planner
+        </Title>
+
+        {/* View Switcher Chips */}
+        <Card style={{ paddingVertical: 12 }}>
+          <Text style={[txt(12, true, C.muted), { marginBottom: 8 }]}>PLANNER VIEW</Text>
+          <View style={{ flexDirection: 'row' }}>
+            {["Today's Plan", 'Weekly View', 'Workload & Routine'].map(v => (
+              <Chip key={v} label={v} active={plannerView === v} onPress={() => setPlannerView(v)} />
+            ))}
+          </View>
+        </Card>
+
+        {/* Workload Capacity Meter */}
+        <Card>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Text style={txt(15, true)}>Daily Workload vs. 8h Target</Text>
+            <Text style={txt(13, true, C.blue)}>{capacityPct}% Capacity</Text>
+          </View>
+          <View style={{ height: 8, backgroundColor: C.soft, borderRadius: 6, marginVertical: 10 }}>
             <View
               style={{
-                backgroundColor: C.mid,
-                height: 7,
+                backgroundColor: capacityPct > 90 ? C.amber : C.blue,
+                height: 8,
                 borderRadius: 6,
-                width:
-                  Math.round(
-                    (100 * subject.completed) / Math.max(1, subject.topics)
-                  ) + '%'
+                width: `${capacityPct}%`
               }}
             />
           </View>
+          <Text style={txt(12, false, C.muted)}>
+            {todayPlannedMinutes} min scheduled today - {Math.max(0, 480 - todayPlannedMinutes)} min available capacity
+          </Text>
         </Card>
-      ))}
-    </>
-  );
 
-  const Planner = () => (
-    <>
-      <Title sub="Today's schedule & smart workload balance">
-        Study Planner
-      </Title>
-
-      <Card>
-        <Text style={txt(15, true)}>Today's Plan â€¢ {today()}</Text>
-
-        <View style={{ flexDirection: 'row', marginTop: 12 }}>
-          <Chip label="Today's Plan" active />
-          <Chip label="Weekly View" />
-          <Chip label="Routine" />
+        {/* Tasks List */}
+        <View style={{ marginBottom: 6 }}>
+          <Text style={[txt(14, true), { marginBottom: 8 }]}>
+            {plannerView === "Today's Plan" ? `Today's Tasks (${today()})` : 'All Scheduled Tasks'}
+          </Text>
         </View>
-      </Card>
 
-      {plans.map(plan => (
-        <Card key={plan.id}>
-          <TouchableOpacity
-            onPress={() => markPlan(plan)}
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 12
-            }}
-          >
-            <Ionicons
-              name={plan.done ? 'checkmark-circle' : 'ellipse-outline'}
-              size={26}
-              color={C.blue}
-            />
+        {filteredPlans.length === 0 ? (
+          <Card>
+            <Text style={[txt(13, false, C.muted), { textAlign: 'center', paddingVertical: 12 }]}>
+              No study tasks found for this view. Add a study block below to get started!
+            </Text>
+          </Card>
+        ) : (
+          filteredPlans.map(p => {
+            const priorityColors = {
+              'High': { bg: C.redSoft, fg: C.red },
+              'Medium': { bg: C.amberSoft, fg: C.amber },
+              'Low': { bg: C.soft, fg: C.blue }
+            };
+            const pStyle = priorityColors[p.priority || 'Medium'] || priorityColors['Medium'];
+            const subName = subjects.find(s => s.id === p.subjectId)?.name || p.subjectId || 'General';
+
+            return (
+              <Card key={p.id} style={{ paddingVertical: 14 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
+                  {/* Complete Checkbox */}
+                  <TouchableOpacity onPress={() => markPlan(p)} style={{ marginTop: 2 }}>
+                    <Ionicons
+                      name={p.done ? 'checkmark-circle' : 'ellipse-outline'}
+                      size={24}
+                      color={p.done ? C.green : C.blue}
+                    />
+                  </TouchableOpacity>
+
+                  <View style={{ flex: 1 }}>
+                    {/* Header tags */}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                      <Text
+                        style={{
+                          fontSize: 10,
+                          fontWeight: '700',
+                          color: pStyle.fg,
+                          backgroundColor: pStyle.bg,
+                          paddingHorizontal: 7,
+                          paddingVertical: 2,
+                          borderRadius: 6
+                        }}
+                      >
+                        {p.priority || 'Medium'}
+                      </Text>
+                      <Text
+                        style={{
+                          fontSize: 10,
+                          fontWeight: '600',
+                          color: C.blue,
+                          backgroundColor: C.soft,
+                          paddingHorizontal: 7,
+                          paddingVertical: 2,
+                          borderRadius: 6
+                        }}
+                      >
+                        {subName}
+                      </Text>
+                      {p.date && (
+                        <Text style={txt(10, false, C.muted)}>
+                          {p.date === today() ? 'Today' : p.date}
+                        </Text>
+                      )}
+                    </View>
+
+                    {/* Title */}
+                    <Text
+                      style={[
+                        txt(14, true),
+                        p.done ? { textDecorationLine: 'line-through', color: C.muted } : null
+                      ]}
+                    >
+                      {p.title}
+                    </Text>
+
+                    <Text style={[txt(11, false, C.muted), { marginTop: 4 }]}>
+                      {p.minutes} mins - {p.done ? 'Completed' : 'Pending'}
+                    </Text>
+                  </View>
+
+                  {/* Actions */}
+                  <View style={{ alignItems: 'flex-end', gap: 6 }}>
+                    {!p.done && (
+                      <TouchableOpacity
+                        onPress={() => startPlanFocus(p)}
+                        style={{
+                          backgroundColor: C.blue,
+                          paddingHorizontal: 11,
+                          paddingVertical: 6,
+                          borderRadius: 8
+                        }}
+                      >
+                        <Text style={txt(11, true, C.white)}>Focus</Text>
+                      </TouchableOpacity>
+                    )}
+                    <TouchableOpacity onPress={() => deletePlan(p)} style={{ padding: 4 }}>
+                      <Ionicons name="trash-outline" size={17} color={C.muted} />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </Card>
+            );
+          })
+        )}
+
+        {/* Add Study Block Form */}
+        <Card style={{ marginTop: 8 }}>
+          <Text style={txt(16, true)}>+ Add Study Block</Text>
+          <Text style={[txt(11, false, C.muted), { marginTop: 2, marginBottom: 12 }]}>
+            Schedule focus intervals aligned with your syllabus.
+          </Text>
+
+          {/* Subject Selector */}
+          <Text style={txt(11, true, C.muted)}>SELECT SUBJECT</Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 6, marginBottom: 8 }}>
+            {subjects.map(s => (
+              <Chip
+                key={s.id}
+                label={s.name}
+                active={planSubject === s.id}
+                onPress={() => setPlanSubject(s.id)}
+              />
+            ))}
+          </View>
+
+          {/* Quick Syllabus Topic Suggestions */}
+          {suggestedTopics.length > 0 && (
+            <View style={{ marginBottom: 10 }}>
+              <Text style={txt(11, true, C.muted)}>QUICK PICK FROM UNFINISHED SYLLABUS</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 6 }}>
+                {suggestedTopics.map(t => (
+                  <TouchableOpacity
+                    key={t.id}
+                    onPress={() => setPlanTitle(t.name)}
+                    style={{
+                      backgroundColor: C.soft,
+                      paddingHorizontal: 10,
+                      paddingVertical: 6,
+                      borderRadius: 12,
+                      marginRight: 6,
+                      marginBottom: 6
+                    }}
+                  >
+                    <Text style={txt(11, false, C.blue)}>+ {t.name}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {/* Title Input */}
+          <Text style={txt(11, true, C.muted)}>TOPIC OR CHAPTER TITLE</Text>
+          <TextInput
+            placeholder="e.g. Fundamental Rights (Art 14-18)"
+            style={input}
+            value={planTitle}
+            onChangeText={setPlanTitle}
+          />
+
+          {/* Duration Chips */}
+          <Text style={[txt(11, true, C.muted), { marginTop: 12 }]}>TARGET DURATION (MINUTES)</Text>
+          <View style={{ flexDirection: 'row', marginTop: 6 }}>
+            {['30', '45', '60', '90'].map(m => (
+              <Chip
+                key={m}
+                label={`${m}m`}
+                active={planMinutes === m}
+                onPress={() => setPlanMinutes(m)}
+              />
+            ))}
+          </View>
+
+          {/* Priority & Date Selector */}
+          <View style={{ flexDirection: 'row', gap: 12, marginTop: 4 }}>
+            <View style={{ flex: 1 }}>
+              <Text style={txt(11, true, C.muted)}>PRIORITY</Text>
+              <View style={{ flexDirection: 'row', marginTop: 6 }}>
+                {['High', 'Medium', 'Low'].map(p => (
+                  <Chip
+                    key={p}
+                    label={p}
+                    active={planPriority === p}
+                    onPress={() => setPlanPriority(p)}
+                  />
+                ))}
+              </View>
+            </View>
 
             <View style={{ flex: 1 }}>
-              <Text style={txt(15, true)}>{plan.title}</Text>
-              <Text style={txt(12, false, C.muted)}>
-                {plan.date} â€¢ {plan.minutes} mins â€¢{' '}
-                {plan.done ? 'Completed' : 'Scheduled'}
-              </Text>
+              <Text style={txt(11, true, C.muted)}>DATE</Text>
+              <View style={{ flexDirection: 'row', marginTop: 6 }}>
+                {['today', 'tomorrow'].map(d => (
+                  <Chip
+                    key={d}
+                    label={d === 'today' ? 'Today' : 'Tomorrow'}
+                    active={planDateType === d}
+                    onPress={() => setPlanDateType(d)}
+                  />
+                ))}
+              </View>
             </View>
-          </TouchableOpacity>
+          </View>
+
+          <Button label="+ Schedule Study Task" onPress={addPlan} />
         </Card>
-      ))}
+      </>
+    );
+  };
 
-      <Card>
-        <Text style={txt(16, true)}>Add Study Block</Text>
+  // ---------------- ANALYTICS TAB ----------------
 
-        <TextInput
-          placeholder="Topic or chapter"
-          style={input}
-          value={planTitle}
-          onChangeText={setPlanTitle}
-        />
-
-        <TextInput
-          keyboardType="numeric"
-          placeholder="Minutes"
-          style={input}
-          value={planMinutes}
-          onChangeText={setPlanMinutes}
-        />
-
-        <Button label="+ Add to Planner" onPress={addPlan} />
-      </Card>
-
-      <Card>
-        <Text style={txt(15, true)}>Workload Capacity</Text>
-
-        <Text style={[txt(12, false, C.muted), { marginTop: 7 }]}>
-          {plans
-            .filter(plan => plan.date === today() && !plan.done)
-            .reduce((sum, plan) => sum + plan.minutes, 0)}{' '}
-          minutes planned today â€¢ 8h capacity
-        </Text>
-      </Card>
-    </>
-  );
-
-  
   const Analytics = () => {
     const [analyticsTab, setAnalyticsTab] = useState('Overview');
     const allDaily = Array.isArray(analytics.daily) ? analytics.daily : [];
@@ -2264,7 +2790,7 @@ borderColor: [
         )}
 
 
-        
+
         {analyticsTab === 'Subjects' && (
         <Card>
           <Text style={txt(17, true)}>Subject Breakdown</Text>
@@ -2687,243 +3213,205 @@ borderColor: [
       >
         <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={C.bg} />
 
+
         {!focusMode && (
-          <View
-            style={{
-              paddingHorizontal: 19,
-              paddingVertical: 14,
-              backgroundColor: C.white,
-              flexDirection: 'row',
-              alignItems: 'center',
-              borderBottomWidth: 1,
-              borderColor: C.line
-            }}
-          >
+
+        <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12 }}>
+        <View style={{ flex: 1, marginLeft: 10 }}>
+          <Text style={txt(15, true)}>Abhyas Tracker</Text>
+          <Text style={txt(10, false, C.muted)}>{tab}</Text>
+        </View>
+
+        <TouchableOpacity
+          onPress={() => setNotifOpen(!notifOpen)}
+          style={{ padding: 12 }}
+        >
+          <Ionicons
+            name="notifications-outline"
+            size={23}
+            color={C.ink}
+          />
+
+          {unread.length > 0 && (
             <View
               style={{
-                width: 35,
-                height: 35,
-                borderRadius: 10,
-                backgroundColor: C.soft,
-                justifyContent: 'center',
-                alignItems: 'center'
+                height: 8,
+                width: 8,
+                borderRadius: 5,
+                backgroundColor: '#e44242',
+                position: 'absolute',
+                right: 9,
+                top: 8
               }}
-            >
-              <Ionicons name="book-outline" color={C.blue} size={20} />
-            </View>
-
-            <View style={{ flex: 1, marginLeft: 10 }}>
-              <Text style={txt(15, true)}>Abhyas Tracker</Text>
-              <Text style={txt(10, false, C.muted)}>{tab}</Text>
-            </View>
-
-            <TouchableOpacity
-              onPress={() => setNotifOpen(!notifOpen)}
-              style={{ padding: 10 }}
-              accessibilityLabel="Notifications"
-            >
-              <Ionicons
-                name="notifications-outline"
-                size={23}
-                color={C.ink}
-              />
-
-              {unread.length > 0 && (
-                <View
-                  style={{
-                    height: 8,
-                    width: 8,
-                    borderRadius: 5,
-                    backgroundColor: '#e44242',
-                    position: 'absolute',
-                    right: 7,
-                    top: 6
-                  }}
-                />
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => {
-                setNotifOpen(false);
-                setTab('Settings');
-              }}
-              style={{ padding: 8 }}
-              accessibilityLabel="Settings"
-            >
-              <Ionicons
-                name={tab === 'Settings' ? 'settings' : 'settings-outline'}
-                size={22}
-                color={tab === 'Settings' ? C.blue : C.ink}
-              />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() =>
-                Alert.alert('Account', `${user?.name || ''}\n${user?.email || ''}`, [
-                  {
-                    text: 'Settings',
-                    onPress: () => {
-                      setNotifOpen(false);
-                      setTab('Settings');
-                    }
-                  },
-                  {
-                    text: 'Sign Out',
-                    onPress: handleSignOut
-                  },
-                  { text: 'Cancel', style: 'cancel' }
-                ])
-              }
-              style={{ padding: 8 }}
-              accessibilityLabel="Account Options"
-            >
-              <Ionicons
-                name="person-circle-outline"
-                size={24}
-                color={C.blue}
-              />
-            </TouchableOpacity>
-          </View>
-        )}
-        <ScrollView
-          style={{ flex: 1, backgroundColor: C.bg }}
-          contentContainerStyle={{ padding: 18, paddingBottom: 30 }}
-        >
-          {notifOpen ? (
-            <>
-              <TouchableOpacity onPress={() => setNotifOpen(false)}>
-                <Text style={txt(12, true, C.blue)}>← Back to {tab}</Text>
-              </TouchableOpacity>
-
-              <Title sub="Your revision and study reminders">
-                Notifications
-              </Title>
-
-              {notes.map(note => (
-                <Card key={note.id}>
-                  <Text style={txt(11, true, C.blue)}>
-                    SPACED REPETITION PROTOCOL
-                  </Text>
-
-                  <Text style={[txt(17, true), { marginTop: 8 }]}>
-                    {note.title}
-                  </Text>
-
-                  <Text
-                    style={[
-                      txt(13, false, C.muted),
-                      { marginTop: 8 }
-                    ]}
-                  >
-                    {note.message}
-                  </Text>
-
-                  <Button
-                    label={
-                      (note.readBy || []).includes(user.id)
-                        ? 'Read ✓'
-                        : 'Mark as Read'
-                    }
-                    subtle
-                    onPress={() => markNote(note)}
-                  />
-                </Card>
-              ))}
-            </>
-          ) : tab === 'Dashboard' ? (
-            <Dashboard />
-          ) : tab === 'Timer' ? (
-            <Timer
-              elapsed={elapsed}
-              running={running}
-              mode={mode}
-              setMode={setMode}
-              startSession={startSession}
-              pauseSession={pauseSession}
-              finish={finish}
-              resetSession={resetSession}
-              saving={savingSession.current}
-              selected={selected}
-              subjects={subjects}
-              setSelected={setSelected}
-              customMinutes={customMinutes}
-              setCustomMinutes={setCustomMinutes}
-              focusMode={focusMode}
-              setFocusMode={setFocusMode}
-              requestExitFocus={() => setExitFocusConfirmOpen(true)}
-              theme={C}
-              isDarkMode={isDarkMode}
             />
-          ) : tab === 'Syllabus' ? (
-            <Syllabus />
-          ) : tab === 'Planner' ? (
-            <Planner />
-          ) : tab === 'Analytics' ? (
-            <Analytics />
-          ) : tab === 'Ticket Support' ? (
-            <TicketSupportScreen
-              user={user}
-              theme={C}
-              isDarkMode={isDarkMode}
-              onBack={() => setTab('Dashboard')}
-              req={req}
-            />
-          ) : tab === 'Settings' ? (
-            <SettingsScreen
-              user={user}
-              isDarkMode={isDarkMode}
-              toggleTheme={toggleTheme}
-              theme={C}
-              onBack={() => setTab('Dashboard')}
-              onSignOut={handleSignOut}
-              req={req}
-            />
-          ) : (
-            <Dashboard />
           )}
-        </ScrollView>
-        {!focusMode && (
-          <View
-            style={{
-              backgroundColor: C.white,
-              borderTopWidth: 1,
-              borderColor: C.line,
-              flexDirection: 'row',
-              paddingVertical: 10
-            }}
-          >
-            {tabs.map(([tabName, iconName]) => (
-              <TouchableOpacity
-                key={tabName}
-                style={{ flex: 1, alignItems: 'center' }}
-                onPress={() => {
-                  setTab(tabName);
-                  setNotifOpen(false);
-                  refresh();
-                }}
-                accessibilityLabel={`${tabName} tab`}
-              >
-                <Ionicons
-                  name={iconName}
-                  size={23}
-                  color={tab === tabName ? C.blue : (isDarkMode ? '#64748b' : '#667080')}
-                />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() =>
+            Alert.alert('Account', `${user.name}\n${user.email}`, [
+              {
+                text: 'Sign Out',
+                onPress: async () => {
+                  if (savingSession.current) {
+                    Alert.alert(
+                      'Save in progress',
+                      'Wait until the session save finishes before signing out.'
+                    );
+                    return;
+                  }
+
+                  // Do not silently discard an active timer.
+                  if (running || elapsed > 0) {
+                    Alert.alert(
+                      'Study session in progress',
+                      'Finish or reset your unsaved session before signing out.'
+                    );
+                    return;
+                  }
+
+                  setRunning(false);
+                  await AsyncStorage.removeItem('abhyasToken');
+                  setToken('');
+                  setUser(null);
+                }
+              },
+              { text: 'Cancel', style: 'cancel' }
+            ])
+          }
+          style={{ padding: 9 }}
+        >
+          <Ionicons
+            name="person-circle-outline"
+            size={24}
+            color={C.blue}
+          />
+        </TouchableOpacity>
+      </View>
+      )}
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: 18, paddingBottom: 30 }}
+      >
+        {notifOpen ? (
+          <>
+            <TouchableOpacity onPress={() => setNotifOpen(false)}>
+               <Text style={txt(12, true, C.blue)}>Back to {tab}</Text>
+            </TouchableOpacity>
+
+            <Title sub="Your revision and study reminders">
+              Notifications
+            </Title>
+
+            {notes.map(note => (
+              <Card key={note.id}>
+                <Text style={txt(11, true, C.blue)}>
+                  SPACED REPETITION PROTOCOL
+                </Text>
+
+                <Text style={[txt(17, true), { marginTop: 8 }]}>
+                  {note.title}
+                </Text>
 
                 <Text
-                  numberOfLines={1}
-                  style={txt(
-                    10,
-                    tab === tabName,
-                    tab === tabName ? C.blue : C.muted
-                  )}
+                  style={[
+                    txt(13, false, C.muted),
+                    { marginTop: 8 }
+                  ]}
                 >
-                  {tabName}
+                  {note.message}
                 </Text>
-              </TouchableOpacity>
+
+                <Button
+                  label={
+                    (note.readBy || []).includes(user.id)
+                      ? 'Read'
+                      : 'Mark as Read'
+                  }
+                  subtle
+                  onPress={() => markNote(note)}
+                />
+              </Card>
             ))}
-          </View>
+          </>
+        ) : tab === 'Dashboard' ? (
+          <Dashboard />
+        ) : tab === 'Timer' ? (
+  <Timer
+    elapsed={elapsed}
+    running={running}
+    mode={mode}
+    setMode={setMode}
+    startSession={startSession}
+    pauseSession={pauseSession}
+    finish={finish}
+    resetSession={resetSession}
+    saving={savingSession.current}
+    selected={selected}
+    subjects={subjects}
+    setSelected={setSelected}
+    customMinutes={customMinutes}
+    setCustomMinutes={setCustomMinutes}
+    focusMode={focusMode}
+    setFocusMode={setFocusMode}
+    zenMode={zenMode}
+    setZenMode={setZenMode}
+    deepZenUnlocked={deepZenUnlocked}
+    setDeepZenUnlocked={setDeepZenUnlocked}
+    deepZenLocked={deepZenLocked}
+    requestExitFocus={() => setExitFocusConfirmOpen(true)}
+  />
+                ) : tab === 'Syllabus' ? (
+          <Syllabus />
+        ) : tab === 'Planner' ? (
+          <Planner />
+        ) : tab === 'Ticket Support' ? (
+          <TicketSupportScreen
+            user={user}
+            theme={C}
+            isDarkMode={isDarkMode}
+            req={req}
+            onBack={() => setTab('Dashboard')}
+          />
+        ) : (
+          <Analytics />
         )}
+      </ScrollView>
+      {!focusMode && (
+      <View
+        style={{
+          backgroundColor: C.white,
+          borderTopWidth: 1,
+          borderColor: C.line,
+          flexDirection: 'row',
+          paddingVertical: 10
+        }}
+      >
+        {tabs.map(([tabName, iconName]) => (
+          <TouchableOpacity
+            key={tabName}
+            style={{ flex: 1, alignItems: 'center' }}
+            onPress={() => handleTabChange(tabName)}
+          >
+            <Ionicons
+              name={iconName}
+              size={23}
+              color={tab === tabName ? C.blue : '#667080'}
+            />
+
+            <Text
+              style={txt(
+                10,
+                tab === tabName,
+                tab === tabName ? C.blue : C.muted
+              )}
+            >
+              {tabName}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+      )}
 
         {/* Reset confirmation dialog: inside the main SafeAreaView. */}
         {resetConfirmOpen && (
@@ -3005,6 +3493,7 @@ borderColor: [
             </View>
           </View>
         )}
+
         {/* Exit Focus Mode confirmation dialog */}
         {exitFocusConfirmOpen && (
           <View
@@ -3046,7 +3535,94 @@ borderColor: [
                   lineHeight: 21,
                 }}
               >
-                Are you sure you want to leave Focus Mode and return to normal navigation?
+                Are you sure you want to exit Focus Mode?
+              </Text>
+
+              <View style={{ flexDirection: 'row', gap: 12 }}>
+                <TouchableOpacity
+                  onPress={() => setExitFocusConfirmOpen(false)}
+                  style={{
+                    flex: 1,
+                    padding: 13,
+                    borderRadius: 10,
+                    backgroundColor: C.soft,
+                    alignItems: 'center',
+                  }}
+                >
+                  <Text style={{ color: C.blue, fontWeight: '600' }}>
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => {
+                    if (deepZenSessionActive) {
+                      setExitFocusConfirmOpen(false);
+                      return;
+                    }
+
+                    setExitFocusConfirmOpen(false);
+                    setFocusMode(false);
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: 13,
+                    borderRadius: 10,
+                    backgroundColor: C.blue,
+                    alignItems: 'center',
+                  }}
+                >
+                  <Text style={{ color: C.white, fontWeight: '600' }}>
+                    Exit
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* Exit Focus Mode confirmation dialog */}
+        {exitFocusConfirmOpen && (
+          <View
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(15, 23, 42, 0.5)',
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: 24,
+              zIndex: 1000,
+              elevation: 21,
+            }}
+          >
+            <View
+              style={{
+                width: '100%',
+                maxWidth: 380,
+                backgroundColor: C.white,
+                borderRadius: 18,
+                padding: 24,
+                borderWidth: 1,
+                borderColor: C.line,
+              }}
+            >
+              <Text style={{ fontSize: 20, fontWeight: '700', color: C.ink }}>
+                Exit Focus Mode?
+              </Text>
+
+              <Text
+                style={{
+                  marginTop: 10,
+                  marginBottom: 24,
+                  color: C.muted,
+                  fontSize: 14,
+                  lineHeight: 21,
+                }}
+              >
+                Are you sure you want to exit Focus Mode?
               </Text>
 
               <View style={{ flexDirection: 'row', gap: 12 }}>
@@ -3067,6 +3643,11 @@ borderColor: [
 
                 <TouchableOpacity
                   onPress={() => {
+                    if (deepZenSessionActive) {
+                      setExitFocusConfirmOpen(false);
+                      return;
+                    }
+
                     setExitFocusConfirmOpen(false);
                     setFocusMode(false);
                   }}
@@ -3079,16 +3660,16 @@ borderColor: [
                   }}
                 >
                   <Text style={{ color: C.white, fontWeight: '600' }}>
-                    Exit Focus Mode
+                    Yes, Exit
                   </Text>
                 </TouchableOpacity>
               </View>
             </View>
           </View>
         )}
+
+
       </SafeAreaView>
     </ThemeContext.Provider>
   );
 }
-
-
