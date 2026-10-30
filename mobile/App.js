@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+﻿import React, { useEffect, useRef, useState, useMemo } from 'react';
 import {
   AppState,
   View,
@@ -18,8 +18,10 @@ import Svg, { Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import Timer from './Timer';
 import SettingsScreen from './SettingsScreen';
+import ReminderSettingsScreen from './ReminderSettingsScreen';
 import TicketSupportScreen from './TicketSupportScreen';
 import NotificationsScreen from './NotificationsScreen';
+import StudentProfileScreen from './StudentProfileScreen';
 
 const LIGHT_THEME = {
   bg: '#f7f9fe',
@@ -115,10 +117,10 @@ const ThemeContext = React.createContext({
 const useTheme = () => React.useContext(ThemeContext);
 
 const API =
-  process.env.EXPO_PUBLIC_API_URL ||
-  (Platform.OS === 'android'
-    ? 'http://192.168.1.2:4000/api'
-    : 'http://localhost:4000/api');
+  Platform.OS === 'web'
+    ? 'http://localhost:4000/api'
+    : (process.env.EXPO_PUBLIC_API_URL ||
+       'http://10.212.208.98:4000/api');
 
 const today = () => new Date().toISOString().slice(0, 10);
 const tomorrow = () => {
@@ -325,6 +327,9 @@ const deepZenSessionActive =
   const [planPriority, setPlanPriority] = useState('Medium');
   const [planDateType, setPlanDateType] = useState('today');
   const [notifOpen, setNotifOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [remindersOpen, setRemindersOpen] = useState(false);
 
   // Timer and save reliability references.
   const interval = useRef(null);
@@ -546,9 +551,20 @@ useEffect(() => {
     color
   });
 
+  
+  const showSignOutMessage = (title, message) => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      window.alert(`${title}\n\n${message}`);
+    } else {
+      Alert.alert(title, message);
+    }
+  };
+
   const handleSignOut = async () => {
+    console.log('[SIGN OUT] Button handler called');
+
     if (savingSession.current) {
-      Alert.alert(
+      showSignOutMessage(
         'Save in progress',
         'Wait until the session save finishes before signing out.'
       );
@@ -556,19 +572,38 @@ useEffect(() => {
     }
 
     if (running || elapsed > 0) {
-      Alert.alert(
+      showSignOutMessage(
         'Study session in progress',
         'Finish or reset your unsaved session before signing out.'
       );
       return;
     }
 
-    setRunning(false);
-    await AsyncStorage.removeItem('abhyasToken');
-    setToken('');
-    setUser(null);
-    setTab('Dashboard');
+    try {
+      console.log('[SIGN OUT] Clearing saved authentication');
+
+      await AsyncStorage.removeItem('abhyasToken');
+
+      setRunning(false);
+      setProfileOpen(false);
+      setSettingsOpen(false);
+      setRemindersOpen(false);
+      setNotifOpen(false);
+      setToken('');
+      setUser(null);
+      setTab('Dashboard');
+
+      console.log('[SIGN OUT] Authentication cleared');
+    } catch (error) {
+      console.error('[SIGN OUT] Failed:', error);
+
+      showSignOutMessage(
+        'Sign-out failed',
+        error?.message || 'Your saved sign-in data could not be cleared. Please try again.'
+      );
+    }
   };
+
 
   async function req(route, method = 'GET', body, t = token) {
     const controller = new AbortController();
@@ -1344,7 +1379,7 @@ useEffect(() => {
             marginBottom: 12
           }}
         >
-          <Chip label="🔥 14-Day Streak" active />
+          <Chip label="ðŸ”¥ 14-Day Streak" active />
           <Chip label="UPSC / MPSC 2026" />
         </View>
 
@@ -1501,7 +1536,7 @@ useEffect(() => {
           )}
 
           <Button
-            label="? Start Studying Now"
+            label="📚 Start Studying Now"
             onPress={() => setTab('Timer')}
           />
         </Card>
@@ -1655,7 +1690,7 @@ useEffect(() => {
           >
             <Text style={txt(15, true, C.ink)}>Syllabus Milestone</Text>
             <TouchableOpacity onPress={() => setTab('Syllabus')}>
-              <Text style={txt(11, true, C.blue)}>View All →</Text>
+              <Text style={txt(11, true, C.blue)}>View All â†’</Text>
             </TouchableOpacity>
           </View>
 
@@ -3249,37 +3284,10 @@ borderColor: [
         </TouchableOpacity>
 
         <TouchableOpacity
-          onPress={() =>
-            Alert.alert('Account', `${user.name}\n${user.email}`, [
-              {
-                text: 'Sign Out',
-                onPress: async () => {
-                  if (savingSession.current) {
-                    Alert.alert(
-                      'Save in progress',
-                      'Wait until the session save finishes before signing out.'
-                    );
-                    return;
-                  }
-
-                  // Do not silently discard an active timer.
-                  if (running || elapsed > 0) {
-                    Alert.alert(
-                      'Study session in progress',
-                      'Finish or reset your unsaved session before signing out.'
-                    );
-                    return;
-                  }
-
-                  setRunning(false);
-                  await AsyncStorage.removeItem('abhyasToken');
-                  setToken('');
-                  setUser(null);
-                }
-              },
-              { text: 'Cancel', style: 'cancel' }
-            ])
-          }
+          onPress={() => {
+  setNotifOpen(false);
+  setProfileOpen(true);
+}}
           style={{ padding: 9 }}
         >
           <Ionicons
@@ -3294,7 +3302,30 @@ borderColor: [
         style={{ flex: 1 }}
         contentContainerStyle={{ padding: 18, paddingBottom: 30 }}
       >
-        {notifOpen ? (
+        {remindersOpen ? (
+          <ReminderSettingsScreen onBack={() => setRemindersOpen(false)} />
+        ) : settingsOpen ? (
+          <SettingsScreen
+            user={user}
+            isDarkMode={isDarkMode}
+            toggleTheme={toggleTheme}
+            theme={C}
+            onBack={() => setSettingsOpen(false)}
+            onSignOut={handleSignOut}
+            req={req}
+          />
+        ) : profileOpen ? (
+          <StudentProfileScreen
+            user={user}
+            onBack={() => setProfileOpen(false)}
+            onSignOut={handleSignOut}
+            onOpenSettings={() => setSettingsOpen(true)}
+            onOpenReminders={() => setRemindersOpen(true)}
+            onProfileUpdated={(updatedUser) => setUser(updatedUser)}
+            studyGoal={6}
+            studyStreak={0}
+          />
+        ) : notifOpen ? (
           <NotificationsScreen
             notes={notes}
             user={user}
@@ -3641,3 +3672,6 @@ borderColor: [
     </ThemeContext.Provider>
   );
 }
+
+
+
