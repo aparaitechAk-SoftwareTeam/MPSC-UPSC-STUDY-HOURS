@@ -1379,7 +1379,7 @@ useEffect(() => {
             marginBottom: 12
           }}
         >
-          <Chip label="ðŸ”¥ 14-Day Streak" active />
+          <Chip label="🔥 14-Day Streak" active />
           <Chip label="UPSC / MPSC 2026" />
         </View>
 
