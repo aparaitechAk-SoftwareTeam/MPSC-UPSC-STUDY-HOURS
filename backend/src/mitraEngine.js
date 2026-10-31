@@ -149,6 +149,91 @@ function processMitraMessage({ message = '', lang = 'en', user = null, sessions 
     };
   }
 
+  // 1b. Daily Mood Check-In Handlers
+  if (cleanMsg.includes('energized') || cleanMsg.includes('जोश') || cleanMsg.includes('उत्साही') || cleanMsg === '⚡ energized') {
+    return {
+      text: selectedLang === 'mr'
+        ? `⚡ **उच्च ऊर्जा मोड चालू!**\n\nछान! आज तुमचा मेंदू अतिशय ताजा आहे. आत्ताच एखादा अवघड विषय (Polity किंवा Economy) हातात घ्या आणि ४५ मिनिटांचा खोल अभ्यास करा.\n\nचला, वेळेचा पुरेपूर उपयोग करूया!`
+        : selectedLang === 'hi'
+        ? `⚡ **हाई एनर्जी मोड सक्रिय!**\n\nशानदार! आपका दिमाग पूरी तरह एक्टिव है। अभी किसी कठिन विषय (राजव्यवस्था या अर्थव्यवस्था) से 45 मिनट का डीप वर्क शुरू करें.\n\nलक्ष्य की ओर मजबूत कदम बढ़ाइए!`
+        : `⚡ **High Energy Mode Activated!**\n\nAwesome! Your focus and mental stamina are at their peak right now. Dive into a challenging core topic (like Polity or Economy) for an uninterrupted 45-minute sprint.\n\nLet's make this session count!`,
+      action: 'start_pomodoro',
+      suggestedActionLabel: '▶ Start 45m Sprint'
+    };
+  }
+
+  if (cleanMsg.includes('focused') || cleanMsg.includes('एकाग्र') || cleanMsg === '😊 focused') {
+    return {
+      text: selectedLang === 'mr'
+        ? `😊 **शांत व एकाग्र मन!**\n\nतयारीसाठी ही सर्वोत्तम मानसिक अवस्था आहे. मोबाईल सायलेंट करा, समोर एकच धडा ठेवा आणि अभ्यासाला लागा. सातत्य हेच यशाचे रहस्य आहे!`
+        : selectedLang === 'hi'
+        ? `😊 **एकाग्र और शांत मन!**\n\nयह पढ़ाई के लिए सबसे बेहतरीन मनोदशा है। फोन को दूर रखें, आज का 1 मुख्य लक्ष्य सामने रखें और शुरुआत करें।`
+        : `😊 **Calm & Focused Mindset!**\n\nThis is the ideal state for deep learning. Put your phone in another room, pick your #1 syllabus target for today, and let's lock in!`,
+      action: 'start_pomodoro',
+      suggestedActionLabel: '▶ Start Focus Timer'
+    };
+  }
+
+  if (cleanMsg.includes('tired') || cleanMsg.includes('थकलो') || cleanMsg.includes('थकावट') || cleanMsg === '😴 tired') {
+    return {
+      text: selectedLang === 'mr'
+        ? `😴 **थकवा जाणवतोय? काही हरकत नाही!**\n\nस्वतःवर जबरदस्ती करू नका. एक ग्लास थंड पाणी प्या, ५ मिनिटे स्ट्रेचिंग करा. आज कठीण थेअरी ऐवजी फक्त हलके MCQs किंवा PYQs सोडवा. थोडा अभ्यासही शून्य अभ्यासापेक्षा खूप चांगला असतो!`
+        : selectedLang === 'hi'
+        ? `😴 **थकावट महसूस हो रही है? कोई बात नहीं!**\n\nखुद पर ज्यादा दबाव न डालें। थोड़ा पानी पिएं, 5 मिनट वॉक करें। भारी किताबों के बजाय सिर्फ हल्के MCQs या करंट अफेयर्स पढ़ें। कुछ पढ़ाई भी शून्य से बेहतर होती है!`
+        : `😴 **Feeling Tired? That's completely normal!**\n\nDon't force heavy theoretical concepts right now. Drink a glass of water, do a quick 5-minute stretch, and switch to lighter tasks like MCQs, PYQs, or audio editorials. Even 20 mins beats 0 mins!`,
+      action: 'start_pomodoro',
+      suggestedActionLabel: '▶ Easy 20m Session'
+    };
+  }
+
+  if (cleanMsg.includes('anxious') || cleanMsg.includes('ताण') || cleanMsg.includes('घबराट') || cleanMsg === '😰 anxious') {
+    return {
+      text: selectedLang === 'mr'
+        ? `😰 **परीक्षेचा ताण आलाय? मी तुमच्या सोबत आहे.**\n\nUPSC आणि MPSC चा आवाका मोठा असल्याने भीती वाटणे साहजिक आहे. पण लक्षात ठेवा: परीक्षा संपूर्ण सिलॅबस एकदम सोडवून नव्हे, तर दररोज एकेक टॉपिक संपवून जिंकली जाते.\n\nचला, माझ्यासोबत ४ सेकंद श्वास आत घ्या... ७ सेकंद रोखा... ८ सेकंद हळूच सोडा. सर्व काही ठीक होईल! ❤️`
+        : selectedLang === 'hi'
+        ? `😰 **परीक्षा का तनाव? मैं आपके साथ हूँ।**\n\nइतना बड़ा सिलेबस देखकर डर लगना स्वाभाविक है। लेकिन याद रखिए: परीक्षा एक दिन में नहीं, रोज के एक-एक छोटे कदम से निकलती है।\n\nमेरे साथ 4-7-8 गहरी सांस लीजिए. आप बहुत काबिल हैं और यह दौर भी निकल जाएगा! ❤️`
+        : `😰 **Feeling Anxious? Take a gentle breath with me.**\n\nExam anxiety is simply a sign that you care deeply about your dreams. But you don't have to conquer the whole exam today—only today's 1 small chapter.\n\nLet's do a 4-7-8 calming breath: Inhale for 4s... hold for 7s... exhale slowly for 8s. You are stronger than your anxiety! ❤️`,
+      action: 'relax_exercise'
+    };
+  }
+
+  // 1c. Study Comeback Mode (Restarting after missing days)
+  if (cleanMsg.includes('comeback') || cleanMsg.includes('missed') || cleanMsg.includes('restart') || cleanMsg.includes('गॅप') || cleanMsg.includes('पुन्हा सुरुवात')) {
+    return {
+      text: selectedLang === 'mr'
+        ? `🔄 **अभ्यास कमबॅक मोड!**\n\nकाही दिवस अभ्यास सुटला म्हणून स्वतःला दोष देऊ नका. सर्व यशस्वी विद्यार्थ्यांच्या प्रवासात असे ब्रेक येतात. महत्त्वाचे आहे परत उभे राहणे!\n\nआज एकदम १० तास अभ्यासाचा प्रयत्न करू नका. आज फक्त **२० ते २५ मिनिटे** तुमच्या आवडीचा विषय वाचा. सवय पूर्ववत करणे हेच आजचे मुख्य ध्येय आहे!`
+        : selectedLang === 'hi'
+        ? `🔄 **स्टडी कमबैक मोड!**\n\nकुछ दिनों का गैप आ गया? कोई बात नहीं, यह हर टॉपर के साथ होता है। सबसे महत्वपूर्ण है वापसी करना!\n\nआज 10 घंटे पढ़ने का दबाव मत लीजिए। आज केवल **20 से 25 मिनट** किसी पसंदीदा विषय से शुरुआत कीजिए। आदत दोबारा बनाना ही आज की जीत है!`
+        : `🔄 **Study Comeback Mode Activated!**\n\nMissed a few days of study? That is completely human and happens to every single ranker. The magic is in the comeback!\n\nDon't punish yourself with a 10-hour target today. Our ONLY goal today is **just 20 to 25 minutes** on your favorite subject to rekindle your study rhythm. Welcome back!`,
+      action: 'start_pomodoro',
+      suggestedActionLabel: '▶ 20m Comeback Session'
+    };
+  }
+
+  // 1d. Explain Like I'm 10 (ELI10)
+  if (cleanMsg.includes("explain like i'm 10") || cleanMsg.includes("explain like i am 10") || cleanMsg.includes('eli10') || cleanMsg.includes('explain simply') || cleanMsg.includes('simple words') || cleanMsg.includes('सोप्या भाषेत') || cleanMsg.includes('सरल शब्दों') || cleanMsg.includes('eli 10') || cleanMsg.includes("explain like i'm")) {
+    return {
+      text: selectedLang === 'mr'
+        ? `👶 **सोप्या भाषेत समजून घ्या: भारतीय राज्यव्यवस्था (Indian Polity)**\n\nआपल्या देशाला एका मोठ्या कुटुंबासारखे समजा:\n\n• **राज्यघटना (Constitution):** संपूर्ण घराचे मुख्य नियमपुस्तक, जे घरातील सर्वांना पाळावे लागते.\n• **संसद (Parliament):** कुटुंबाची बैठक, जिथे सर्व प्रतिनिधी एकत्र येऊन नवीन नियमांवर चर्चा करतात.\n• **कार्यकारिणी (PM & Ministers):** नियम पुस्तकानुसार घराची प्रत्यक्ष कामे सांभाळणारे.\n• **न्यायव्यवस्था (Supreme Court):** खेळातील निष्पक्ष पंच (Umpire), जो नियम कोणी मोडले का हे पाहतो!\n\n💡 *अशा सोप्या उदाहरणांनी विषय कायम लक्षात राहतात!*`
+        : selectedLang === 'hi'
+        ? `👶 **सरल शब्दों में: भारतीय राजव्यवस्था (Indian Polity)**\n\nकल्पना कीजिए कि हमारा देश एक बहुत बड़ा संयुक्त परिवार है:\n\n• **संविधान (Constitution):** घर की मुख्य नियम-पुस्तिका, जिसका सम्मान सबको करना है.\n• **संसद (Parliament):** पारिवारिक सभा, जहां सब मिलकर घर के नए नियम बनाते हैं.\n• **कार्यपालिका (PM & मंत्री):** नियमों के अनुसार देश का काम चलाने वाले.\n• **न्यायपालिका (Courts):** निष्पक्ष रेफरी (Umpire), जो देखते हैं कि कोई नियम न तोड़े!\n\n💡 *सरल उदाहरणों से कॉन्सेप्ट हमेशा के लिए याद हो जाते हैं!*`
+        : `👶 **Explain Like I'm 10: Indian Polity & Governance**\n\nImagine our country as a huge family living in one big home:\n\n• **The Constitution:** The master rulebook of the house that *everyone* must respect.\n• **The Parliament:** The family meeting room where representatives gather to discuss and write new rules.\n• **The Executive (PM & Council):** The managers who make sure daily work gets done according to the rules.\n• **The Judiciary (Courts):** The fair sports referees who make sure nobody breaks the rulebook!\n\n💡 *Clear, intuitive, and exam-ready!*`,
+      action: 'study_concept'
+    };
+  }
+
+  // 1e. Revision Reminder & Spaced Repetition
+  if (cleanMsg.includes('revision') || cleanMsg.includes('रिव्हिजन') || cleanMsg.includes('उजळणी') || cleanMsg.includes('रिवीजन')) {
+    return {
+      text: selectedLang === 'mr'
+        ? `🔁 **स्मरणशक्ती वाढवणारे रिव्हिजन तंत्र (Spaced Repetition):**\n\n• **पहिला दिवस:** आज वाचलेले उद्या सकाळी १० मिनिटांत जलद नजरेखालून घाला.\n• **सातवा दिवस:** आठवड्याभरात वाचलेल्या महत्त्वाच्या मुद्द्यांची उजळणी.\n• **अॅक्टिव्ह रिकॉल:** पुस्तक बंद करून स्वतःला विचारा—*"या टॉपिकमधील ५ महत्त्वाचे मुद्दे कोणते?"*\n\n💡 *तुम्हाला आज कोणत्या विषयाचे रिव्हिजन करायचे आहे?*`
+        : selectedLang === 'hi'
+        ? `🔁 **वैज्ञानिक रिवीजन फॉर्मूला (Spaced Repetition):**\n\n• **डे 1:** आज पढ़ी हुई चीजों को कल सुबह 10 मिनट में सिर्फ एक बार सरसरी निगाह से देखें.\n• **डे 7:** पूरे हफ्ते के महत्वपूर्ण नोट्स की क्विक समीक्षा.\n• **एक्टिव रिकॉल:** किताब बंद करके याद करें कि मुख्य 5 पॉइंट्स क्या थे.\n\n💡 *आज आप किस विषय का रिवीजन करना चाहते हैं?*`
+        : `🔁 **Spaced Repetition Revision Protocol:**\n\n• **Day 1 Recap:** Spend the first 10 mins of each morning reviewing yesterday's notes.\n• **Day 7 Review:** Weekly sweep of key summaries and diagrams.\n• **Active Recall:** Close the book and test yourself: *"Can I explain this topic in 3 minutes without looking?"*\n\n💡 *What subject would you like to revise today?*`,
+      action: 'open_planner'
+    };
+  }
+
   // 2. Emotional Support & Motivation
   const isEmotional = EMOTIONAL_KEYWORDS.some(k => cleanMsg.includes(k.toLowerCase()));
   if (isEmotional) {

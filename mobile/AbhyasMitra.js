@@ -11,66 +11,97 @@ import {
   Platform,
   Linking,
   StyleSheet,
-  ActivityIndicator
+  ActivityIndicator,
+  Image
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { smartApiFetch } from './api';
 
-// Multilingual labels for Mitra UI matching user requirements
+// 3D Robot Mascot Image
+const MASCOT_IMG = require('./assets/mitra_mascot.jpg');
+
+// Multilingual labels matching exact user requirements
 const UI_TEXT = {
   en: {
     title: 'Abhyas Mitra',
     subtitle: 'Online • Always with you',
-    placeholder: 'Talk to your study companion...',
-    greeting: "Hi there! I'm your Abhyas Mitra study buddy. How can I support your UPSC/MPSC journey today? ❤️",
+    placeholder: 'Talk to Abhyas Mitra...',
+    moodTitle: 'Daily Mood Check-in',
+    moodSubtitle: 'How are you feeling today?',
+    moods: [
+      { id: 'energized', label: '⚡ Energized', color: '#0284c7', bg: '#e0f2fe', border: '#7dd3fc' },
+      { id: 'focused', label: '😊 Focused', color: '#b45309', bg: '#fef3c7', border: '#fcd34d' },
+      { id: 'tired', label: '😴 Tired', color: '#059669', bg: '#d1fae5', border: '#6ee7b7' },
+      { id: 'anxious', label: '😰 Anxious', color: '#dc2626', bg: '#fee2e2', border: '#fca5a5' }
+    ],
+    greeting: (name, completed, total) =>
+      `Welcome ${name || 'Aspirant'}! You have completed ${completed} of ${total || 5} topics. How can I help your preparation today? ❤️`,
     features: {
-      study: '📖 Study Buddy',
-      emotion: '❤️ Emotional Support',
-      planning: '📅 Study Planning',
-      focus: '⏱️ Focus Friend',
-      progress: '📊 My Progress',
-      quiz: '🎯 Quick Quiz',
-      help: '💡 App Help'
+      study: '📚 Study Buddy',
+      quiz: '📝 Daily Quiz',
+      anxiety: '❤️ Anxiety Support',
+      comeback: '🔄 Study Comeback',
+      eli10: "👶 Explain Like I'm 10",
+      revision: '🔁 Revision Reminder',
+      planning: '📅 Study Planner'
     },
-    helplineBtn: '📞 Call Tele-MANAS: 14416',
+    helplineBtn: '📞 Call Tele-MANAS: 14416 (Free 24/7)',
     openPlannerBtn: '📅 Open Study Planner',
     startTimerBtn: '▶ Start Focus Timer',
-    privacyNote: '100% Free & Private • Predefined UPSC/MPSC knowledge'
+    privacyNote: '100% Free & Private • Rule-based study companion'
   },
   mr: {
     title: 'अभ्यास मित्र',
     subtitle: 'ऑनलाइन • सदैव तुमच्यासोबत',
-    placeholder: 'तुमच्या अभ्यास मित्राशी बोला...',
-    greeting: 'नमस्कार! मी तुमचा अभ्यास मित्र आहे. आज तुमच्या UPSC/MPSC अभ्यासात मी काय मदत करू? ❤️',
+    placeholder: 'अभ्यास मित्राशी बोला...',
+    moodTitle: 'दैनिक मूड चेक-इन',
+    moodSubtitle: 'आज तुम्हाला कसे वाटते आहे?',
+    moods: [
+      { id: 'energized', label: '⚡ उत्साही', color: '#0284c7', bg: '#e0f2fe', border: '#7dd3fc' },
+      { id: 'focused', label: '😊 एकाग्र', color: '#b45309', bg: '#fef3c7', border: '#fcd34d' },
+      { id: 'tired', label: '😴 थकवा', color: '#059669', bg: '#d1fae5', border: '#6ee7b7' },
+      { id: 'anxious', label: '😰 ताण', color: '#dc2626', bg: '#fee2e2', border: '#fca5a5' }
+    ],
+    greeting: (name, completed, total) =>
+      `स्वागत आहे ${name || 'मित्रा'}! तुम्ही ${completed} पैकी ५ विषय पूर्ण केले आहेत. आज अभ्यासात मी काय मदत करू? ❤️`,
     features: {
-      study: '📖 अभ्यास मित्र',
-      emotion: '❤️ भावनिक आधार',
-      planning: '📅 अभ्यास नियोजन',
-      focus: '⏱️ एकाग्रता साथी',
-      progress: '📊 माझी प्रगती',
-      quiz: '🎯 झटपट प्रश्नमंजुषा',
-      help: '💡 अॅप मदत'
+      study: '📚 अभ्यास मित्र',
+      quiz: '📝 दैनिक प्रश्नमंजुषा',
+      anxiety: '❤️ ताण निवारण',
+      comeback: '🔄 अभ्यास कमबॅक',
+      eli10: '👶 सोप्या भाषेत (ELI10)',
+      revision: '🔁 उजळणी आठवण',
+      planning: '📅 अभ्यास नियोजन'
     },
-    helplineBtn: '📞 टेली-मानस संपर्क: 14416',
+    helplineBtn: '📞 टेली-मानस हेल्पलाइन: 14416 (मोफत)',
     openPlannerBtn: '📅 प्लॅनर उघडा',
     startTimerBtn: '▶ टायमर सुरू करा',
-    privacyNote: '१००% मोफत व सुरक्षित • मार्गदर्शक'
+    privacyNote: '१००% मोफत व सुरक्षित • अभ्यास साथीदार'
   },
   hi: {
     title: 'अभ्यास मित्र',
     subtitle: 'ऑनलाइन • सदैव आपके साथ',
-    placeholder: 'अपने अभ्यास मित्र से बात करें...',
-    greeting: 'नमस्ते! मैं आपका अभ्यास मित्र हूँ। आज आपकी UPSC/MPSC तैयारी में मैं क्या सहायता कर सकता हूँ? ❤️',
+    placeholder: 'अभ्यास मित्र से बात करें...',
+    moodTitle: 'दैनिक मूड चेक-इन',
+    moodSubtitle: 'आज आप कैसा महसूस कर रहे हैं?',
+    moods: [
+      { id: 'energized', label: '⚡ ऊर्जान्वित', color: '#0284c7', bg: '#e0f2fe', border: '#7dd3fc' },
+      { id: 'focused', label: '😊 एकाग्र', color: '#b45309', bg: '#fef3c7', border: '#fcd34d' },
+      { id: 'tired', label: '😴 थकावट', color: '#059669', bg: '#d1fae5', border: '#6ee7b7' },
+      { id: 'anxious', label: '😰 तनाव', color: '#dc2626', bg: '#fee2e2', border: '#fca5a5' }
+    ],
+    greeting: (name, completed, total) =>
+      `नमस्ते ${name || 'साथी'}! आपने ${completed} में से ५ टॉपिक पूरे कर लिए हैं। आज आपकी तैयारी में मैं क्या मदद करूँ? ❤️`,
     features: {
-      study: '📖 स्टडी बडी',
-      emotion: '❤️ भावनात्मक संबल',
-      planning: '📅 स्टडी प्लानिंग',
-      focus: '⏱️ फोकस फ्रेंड',
-      progress: '📊 मेरी प्रगति',
-      quiz: '🎯 त्वरित क्विज़',
-      help: '💡 ऐप गाइड'
+      study: '📚 स्टडी बडी',
+      quiz: '📝 दैनिक क्विज़',
+      anxiety: '❤️ तनाव मुक्ति',
+      comeback: '🔄 स्टडी कमबैक',
+      eli10: '👶 सरल शब्दों में (ELI10)',
+      revision: '🔁 रिवीजन रिमाइंडर',
+      planning: '📅 स्टडी प्लानर'
     },
-    helplineBtn: '📞 टेली-मानस हेल्पलाइन: 14416',
+    helplineBtn: '📞 टेली-मानस हेल्पलाइन: 14416 (निःशुल्क)',
     openPlannerBtn: '📅 प्लानर खोलें',
     startTimerBtn: '▶ टाइमर शुरू करें',
     privacyNote: '100% निःशुल्क और सुरक्षित • सच्चा साथी'
@@ -78,7 +109,7 @@ const UI_TEXT = {
 };
 
 export default function AbhyasMitra({
-  isDark = true,
+  isDark = false,
   currentLang = 'en',
   onLangChange,
   token,
@@ -102,13 +133,15 @@ export default function AbhyasMitra({
   }, [currentLang]);
 
   const t = UI_TEXT[activeLang] || UI_TEXT.en;
+  const userName = user?.name ? user.name.split(' ')[0] : 'Bhumika';
+  const completedPlansCount = (plans || []).filter(p => p.done).length;
 
   // Initial welcome message
   const [messages, setMessages] = useState([
     {
       id: 'welcome_1',
       sender: 'mitra',
-      text: t.greeting,
+      text: t.greeting(userName, completedPlansCount, (plans || []).length || 5),
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
@@ -126,7 +159,11 @@ export default function AbhyasMitra({
     setActiveLang(newLang);
     if (onLangChange) onLangChange(newLang);
 
-    const welcomeText = (UI_TEXT[newLang] || UI_TEXT.en).greeting;
+    const welcomeText = (UI_TEXT[newLang] || UI_TEXT.en).greeting(
+      userName,
+      completedPlansCount,
+      (plans || []).length || 5
+    );
     setMessages(prev => [
       ...prev,
       {
@@ -226,17 +263,20 @@ export default function AbhyasMitra({
     }
   };
 
-  // Color Palette specifically tailored to match the mockup image
+  // Color Palette specifically tailored to match the mockup image:
+  // Clean white card background with navy blue header and gold accents
   const colors = {
-    screenBg: isDark ? '#080E1E' : '#F4F7FC',
-    headerBg: isDark ? '#0D152A' : '#FFFFFF',
+    screenBg: isDark ? '#080E1E' : '#F8FAFC',
+    cardBg: isDark ? '#111B33' : '#FFFFFF',
+    headerBg: '#0B1736', // Deep navy blue header matching mockup
+    headerGold: '#F59E0B',
     border: isDark ? '#1C2744' : '#E2E8F0',
-    titleText: isDark ? '#FFFFFF' : '#0F172A',
-    subtitleText: isDark ? '#22C55E' : '#16A34A',
+    titleText: '#FFFFFF',
+    subtitleText: '#94A3B8',
     userBubble: '#2457C5',
     userBubbleBorder: '#3B82F6',
     userText: '#FFFFFF',
-    mitraBubble: isDark ? '#141D35' : '#FFFFFF',
+    mitraBubble: isDark ? '#141D35' : '#F1F5F9',
     mitraBubbleBorder: isDark ? '#223259' : '#E2E8F0',
     mitraText: isDark ? '#F1F5F9' : '#1E293B',
     muted: isDark ? '#8A99B5' : '#64748B',
@@ -246,7 +286,7 @@ export default function AbhyasMitra({
     inputBg: isDark ? '#0D152A' : '#FFFFFF',
     inputBorder: isDark ? '#223259' : '#CBD5E1',
     inputText: isDark ? '#FFFFFF' : '#0F172A',
-    sendBg: '#2563EB'
+    sendBg: '#38BDF8'
   };
 
   return (
@@ -261,7 +301,11 @@ export default function AbhyasMitra({
           {/* Subtle Outer Glow Halo */}
           <View style={styles.fabGlowRing} />
           <View style={styles.fabInnerCircle}>
-            <Text style={{ fontSize: 26 }}>🤖</Text>
+            <Image
+              source={MASCOT_IMG}
+              style={styles.fabMascotImage}
+              resizeMode="cover"
+            />
             {/* Glowing Green Online Indicator */}
             <View style={styles.fabOnlineDot} />
           </View>
@@ -280,8 +324,8 @@ export default function AbhyasMitra({
             style={{ flex: 1 }}
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           >
-            {/* Top Navigation Header matching Mockup */}
-            <View style={[styles.header, { backgroundColor: colors.headerBg, borderColor: colors.border }]}>
+            {/* Top Navigation Header matching Mockup: Deep Navy Blue */}
+            <View style={[styles.header, { backgroundColor: colors.headerBg }]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 {/* Back Arrow button */}
                 <TouchableOpacity
@@ -289,14 +333,16 @@ export default function AbhyasMitra({
                   style={styles.backBtn}
                   hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                 >
-                  <Ionicons name="chevron-back" size={24} color={isDark ? '#CBD5E1' : '#334155'} />
+                  <Ionicons name="chevron-back" size={24} color="#CBD5E1" />
                 </TouchableOpacity>
 
-                {/* Mascot Avatar with Online Dot */}
+                {/* 3D Robot Mascot Avatar with Online Dot */}
                 <View style={styles.avatarWrapper}>
-                  <View style={styles.avatarCircle}>
-                    <Text style={{ fontSize: 20 }}>🤖</Text>
-                  </View>
+                  <Image
+                    source={MASCOT_IMG}
+                    style={styles.avatarMascotImage}
+                    resizeMode="cover"
+                  />
                   <View style={styles.avatarOnlineDot} />
                 </View>
 
@@ -305,13 +351,13 @@ export default function AbhyasMitra({
                   <Text style={[styles.headerTitle, { color: colors.titleText }]}>{t.title}</Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 1 }}>
                     <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#22c55e' }} />
-                    <Text style={[styles.headerSubtitle, { color: isDark ? '#94A3B8' : '#64748B' }]}>{t.subtitle}</Text>
+                    <Text style={[styles.headerSubtitle, { color: colors.subtitleText }]}>{t.subtitle}</Text>
                   </View>
                 </View>
               </View>
 
               {/* Language Selector Pills [ EN | म | हि ] */}
-              <View style={[styles.langContainer, { borderColor: colors.border, backgroundColor: isDark ? '#080E1E' : '#F1F5F9' }]}>
+              <View style={styles.langContainer}>
                 {[
                   ['en', 'EN'],
                   ['mr', 'म'],
@@ -330,13 +376,13 @@ export default function AbhyasMitra({
                         <Text
                           style={[
                             styles.langPillText,
-                            { color: isActive ? '#FFFFFF' : (isDark ? '#94A3B8' : '#64748B') }
+                            { color: isActive ? '#0B1736' : '#94A3B8' }
                           ]}
                         >
                           {label}
                         </Text>
                       </TouchableOpacity>
-                      {idx < 2 && <Text style={{ color: isDark ? '#2E3D63' : '#CBD5E1', fontSize: 11 }}>|</Text>}
+                      {idx < 2 && <Text style={{ color: '#334155', fontSize: 11 }}>|</Text>}
                     </React.Fragment>
                   );
                 })}
@@ -350,6 +396,31 @@ export default function AbhyasMitra({
               contentContainerStyle={styles.messagesContainer}
               keyboardShouldPersistTaps="handled"
             >
+              {/* Feature 1: Interactive Daily Mood Check-In Widget matching UI */}
+              <View style={[styles.moodCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+                <Text style={[styles.moodCardTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
+                  {t.moodTitle}
+                </Text>
+                <Text style={[styles.moodCardSubtitle, { color: colors.muted }]}>
+                  {t.moodSubtitle}
+                </Text>
+                <View style={styles.moodButtonsRow}>
+                  {t.moods.map(m => (
+                    <TouchableOpacity
+                      key={m.id}
+                      onPress={() => sendMessage(m.label)}
+                      style={[
+                        styles.moodButton,
+                        { backgroundColor: m.bg, borderColor: m.border }
+                      ]}
+                    >
+                      <Text style={[styles.moodButtonText, { color: m.color }]}>{m.label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              {/* Message Bubbles */}
               {messages.map(msg => {
                 const isUser = msg.sender === 'user';
                 return (
@@ -362,7 +433,11 @@ export default function AbhyasMitra({
                   >
                     {!isUser && (
                       <View style={styles.botAvatarMini}>
-                        <Text style={{ fontSize: 14 }}>🤖</Text>
+                        <Image
+                          source={MASCOT_IMG}
+                          style={styles.botAvatarMiniImg}
+                          resizeMode="cover"
+                        />
                       </View>
                     )}
 
@@ -442,10 +517,10 @@ export default function AbhyasMitra({
               {loading && (
                 <View style={[styles.messageRow, { justifyContent: 'flex-start' }]}>
                   <View style={styles.botAvatarMini}>
-                    <Text style={{ fontSize: 14 }}>🤖</Text>
+                    <Image source={MASCOT_IMG} style={styles.botAvatarMiniImg} />
                   </View>
                   <View style={[styles.bubble, { backgroundColor: colors.mitraBubble, borderColor: colors.mitraBubbleBorder, paddingVertical: 12 }]}>
-                    <ActivityIndicator size="small" color="#3B82F6" />
+                    <ActivityIndicator size="small" color="#2563EB" />
                   </View>
                 </View>
               )}
@@ -453,7 +528,11 @@ export default function AbhyasMitra({
 
             {/* Feature Action Chips: Styled neatly matching the mockup image */}
             <View style={[styles.chipsContainer, { backgroundColor: colors.screenBg, borderColor: colors.border }]}>
-              <View style={styles.chipsGrid}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.chipsScrollRow}
+              >
                 <TouchableOpacity
                   onPress={() => sendMessage(activeLang === 'mr' ? 'मूलभूत हक्क समजावून सांगा' : activeLang === 'hi' ? 'मौलिक अधिकार क्या हैं?' : 'Explain Fundamental Rights')}
                   style={[styles.chipPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
@@ -462,33 +541,47 @@ export default function AbhyasMitra({
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  onPress={() => sendMessage(activeLang === 'mr' ? 'माझा दिवस वाया गेला. खूप ताण आलाय.' : activeLang === 'hi' ? 'मेरा पूरा दिन बर्बाद हो गया। बहुत तनाव है।' : 'I wasted my whole day. I feel so guilty.')}
+                  onPress={() => sendMessage(activeLang === 'mr' ? 'एक झटपट प्रश्न विचारा' : activeLang === 'hi' ? 'एक त्वरित क्विज़ प्रश्न पूछें' : 'Give me a quick quiz')}
                   style={[styles.chipPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
                 >
-                  <Text style={[styles.chipText, { color: colors.chipText }]}>{t.features.emotion}</Text>
+                  <Text style={[styles.chipText, { color: colors.chipText }]}>{t.features.quiz}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  onPress={() => sendMessage(activeLang === 'mr' ? 'अभ्यास वेळापत्रक कसे बनवू?' : activeLang === 'hi' ? 'स्टडी टाइमटेबल कैसे बनाऊं?' : 'How should I plan my study routine?')}
+                  onPress={() => sendMessage(activeLang === 'mr' ? 'परीक्षेचा खूप ताण आलाय' : activeLang === 'hi' ? 'परीक्षा का बहुत तनाव है' : 'I have exam anxiety')}
+                  style={[styles.chipPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
+                >
+                  <Text style={[styles.chipText, { color: colors.chipText }]}>{t.features.anxiety}</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => sendMessage(activeLang === 'mr' ? 'अभ्यास कमबॅक कसा करू?' : activeLang === 'hi' ? 'स्टडी कमबैक कैसे करूँ?' : 'How to do a study comeback?')}
+                  style={[styles.chipPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
+                >
+                  <Text style={[styles.chipText, { color: colors.chipText }]}>{t.features.comeback}</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => sendMessage(activeLang === 'mr' ? 'सोप्या भाषेत समजावून सांगा' : activeLang === 'hi' ? 'सरल शब्दों में समझाइए' : "Explain Like I'm 10")}
+                  style={[styles.chipPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
+                >
+                  <Text style={[styles.chipText, { color: colors.chipText }]}>{t.features.eli10}</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => sendMessage(activeLang === 'mr' ? 'रिव्हिजन कशी करू?' : activeLang === 'hi' ? 'रिवीजन कैसे करूँ?' : 'Revision reminders and spaced repetition')}
+                  style={[styles.chipPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
+                >
+                  <Text style={[styles.chipText, { color: colors.chipText }]}>{t.features.revision}</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => sendMessage(activeLang === 'mr' ? 'अभ्यास वेळापत्रक नियोजन' : activeLang === 'hi' ? 'स्टडी टाइमटेबल प्लानिंग' : 'Study planner routine')}
                   style={[styles.chipPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
                 >
                   <Text style={[styles.chipText, { color: colors.chipText }]}>{t.features.planning}</Text>
                 </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => sendMessage(activeLang === 'mr' ? 'एकाग्रता कशी वाढवू? पोमोडोरो तंत्र' : activeLang === 'hi' ? 'फोकस कैसे करें? पोमोडोरो तकनीक' : 'How to use Pomodoro focus?')}
-                  style={[styles.chipPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
-                >
-                  <Text style={[styles.chipText, { color: colors.chipText }]}>{t.features.focus}</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => sendMessage(activeLang === 'mr' ? 'आज माझा किती अभ्यास झाला?' : activeLang === 'hi' ? 'आज मेरी कितनी पढ़ाई हुई?' : 'How much did I study today?')}
-                  style={[styles.chipPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
-                >
-                  <Text style={[styles.chipText, { color: colors.chipText }]}>{t.features.progress}</Text>
-                </TouchableOpacity>
-              </View>
+              </ScrollView>
             </View>
 
             {/* Bottom Input Area matching Mockup */}
@@ -509,12 +602,12 @@ export default function AbhyasMitra({
                   style={[
                     styles.sendIconButton,
                     {
-                      backgroundColor: inputText.trim() && !loading ? '#2563EB' : 'transparent',
-                      opacity: inputText.trim() && !loading ? 1 : 0.4
+                      backgroundColor: inputText.trim() && !loading ? '#38BDF8' : '#94A3B8',
+                      opacity: inputText.trim() && !loading ? 1 : 0.6
                     }
                   ]}
                 >
-                  <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+                  <Ionicons name="paper-plane" size={16} color="#FFFFFF" />
                 </TouchableOpacity>
               </View>
             </View>
@@ -598,19 +691,25 @@ const styles = StyleSheet.create({
     shadowRadius: 12
   },
   fabInnerCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#2563EB',
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: '#0B1736',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#60A5FA',
+    borderColor: '#38BDF8',
+    overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 6,
     elevation: 8
+  },
+  fabMascotImage: {
+    width: 54,
+    height: 54,
+    borderRadius: 27
   },
   fabOnlineDot: {
     position: 'absolute',
@@ -632,7 +731,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: 1
+    borderBottomWidth: 1,
+    borderBottomColor: '#1E293B'
   },
   backBtn: {
     padding: 4,
@@ -641,15 +741,12 @@ const styles = StyleSheet.create({
   avatarWrapper: {
     position: 'relative'
   },
-  avatarCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#1E293B',
-    justifyContent: 'center',
-    alignItems: 'center',
+  avatarMascotImage: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     borderWidth: 1.5,
-    borderColor: '#3B82F6'
+    borderColor: '#38BDF8'
   },
   avatarOnlineDot: {
     position: 'absolute',
@@ -660,10 +757,10 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     backgroundColor: '#22C55E',
     borderWidth: 1.5,
-    borderColor: '#0D152A'
+    borderColor: '#0B1736'
   },
   headerTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700'
   },
   headerSubtitle: {
@@ -673,19 +770,21 @@ const styles = StyleSheet.create({
   langContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 1,
-    paddingHorizontal: 6,
+    borderColor: '#334155',
+    backgroundColor: '#080E1E',
+    paddingHorizontal: 8,
     paddingVertical: 3,
-    gap: 4
+    gap: 5
   },
   langPill: {
     paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6
+    paddingVertical: 3,
+    borderRadius: 8
   },
   langPillActive: {
-    backgroundColor: '#2563EB'
+    backgroundColor: '#F8FAFC'
   },
   langPillText: {
     fontSize: 12,
@@ -695,6 +794,36 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 14
   },
+  moodCard: {
+    padding: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    marginBottom: 6
+  },
+  moodCardTitle: {
+    fontSize: 14,
+    fontWeight: '700'
+  },
+  moodCardSubtitle: {
+    fontSize: 12,
+    marginTop: 2,
+    marginBottom: 10
+  },
+  moodButtonsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8
+  },
+  moodButton: {
+    paddingHorizontal: 11,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1
+  },
+  moodButtonText: {
+    fontSize: 12,
+    fontWeight: '700'
+  },
   messageRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -702,15 +831,17 @@ const styles = StyleSheet.create({
     marginBottom: 4
   },
   botAvatarMini: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#1E293B',
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#3B82F6',
+    borderColor: '#38BDF8',
     marginTop: 2
+  },
+  botAvatarMiniImg: {
+    width: '100%',
+    height: '100%'
   },
   bubble: {
     paddingHorizontal: 16,
@@ -759,13 +890,12 @@ const styles = StyleSheet.create({
     fontWeight: '700'
   },
   chipsContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     borderTopWidth: 1
   },
-  chipsGrid: {
+  chipsScrollRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 8
   },
   chipPill: {
@@ -789,7 +919,7 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 24,
     borderWidth: 1,
-    paddingHorizontal: 16
+    paddingHorizontal: 14
   },
   textInput: {
     flex: 1,
