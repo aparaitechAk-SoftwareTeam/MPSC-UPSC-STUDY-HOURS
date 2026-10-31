@@ -166,7 +166,9 @@ export default function AbhyasMitra({
   const [activeLang, setActiveLang] = useState(currentLang || 'en');
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showFeaturesDrawer, setShowFeaturesDrawer] = useState(true);
+  const [showMoodBanner, setShowMoodBanner] = useState(true);
+  const [showFeaturesBar, setShowFeaturesBar] = useState(true);
+  const [featuresGridModal, setFeaturesGridModal] = useState(false);
   const [voiceSettingsOpen, setVoiceSettingsOpen] = useState(false);
   const [autoReadAloud, setAutoReadAloud] = useState(false);
   const [voiceGender, setVoiceGender] = useState('female'); // 'female' | 'male'
@@ -562,6 +564,18 @@ export default function AbhyasMitra({
               </View>
 
               <View style={styles.headerRight}>
+                {/* Daily Mood Check-In Toggle */}
+                <TouchableOpacity
+                  onPress={() => setShowMoodBanner(!showMoodBanner)}
+                  style={[styles.headerVoiceBtn, showMoodBanner && { backgroundColor: '#1E3A8A' }]}
+                >
+                  <Ionicons
+                    name={showMoodBanner ? 'happy' : 'happy-outline'}
+                    size={16}
+                    color={showMoodBanner ? '#38BDF8' : '#94A3B8'}
+                  />
+                </TouchableOpacity>
+
                 {/* Voice Settings Toggle Icon */}
                 <TouchableOpacity
                   onPress={() => setVoiceSettingsOpen(!voiceSettingsOpen)}
@@ -677,29 +691,47 @@ export default function AbhyasMitra({
               contentContainerStyle={styles.messagesContainer}
               keyboardShouldPersistTaps="handled"
             >
-              {/* Daily Mood Check-In Widget: Wrapped nicely so no overflow occurs */}
-              <View style={[styles.moodCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
-                <Text style={[styles.moodCardTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
-                  {t.moodTitle}
-                </Text>
-                <Text style={[styles.moodCardSubtitle, { color: colors.muted }]}>
-                  {t.moodSubtitle}
-                </Text>
-                <View style={styles.moodButtonsRow}>
-                  {t.moods.map(m => (
+              {/* Daily Mood Check-In Widget: Ultra-Compact & Dismissible Banner */}
+              {showMoodBanner && (
+                <View style={[styles.compactMoodBanner, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+                  <View style={styles.compactMoodHeader}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                      <Text style={{ fontSize: 12 }}>💡</Text>
+                      <Text style={[styles.compactMoodTitle, { color: isDark ? '#F1F5F9' : '#0F172A' }]}>
+                        {t.moodTitle}
+                      </Text>
+                    </View>
                     <TouchableOpacity
-                      key={m.id}
-                      onPress={() => sendMessage(m.label)}
-                      style={[
-                        styles.moodButton,
-                        { backgroundColor: m.bg, borderColor: m.border }
-                      ]}
+                      onPress={() => setShowMoodBanner(false)}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
-                      <Text style={[styles.moodButtonText, { color: m.color }]}>{m.label}</Text>
+                      <Ionicons name="close" size={13} color={colors.muted} />
                     </TouchableOpacity>
-                  ))}
+                  </View>
+
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.compactMoodList}
+                  >
+                    {t.moods.map(m => (
+                      <TouchableOpacity
+                        key={m.id}
+                        onPress={() => {
+                          setShowMoodBanner(false);
+                          sendMessage(m.label);
+                        }}
+                        style={[
+                          styles.compactMoodButton,
+                          { backgroundColor: m.bg, borderColor: m.border }
+                        ]}
+                      >
+                        <Text style={[styles.compactMoodButtonText, { color: m.color }]}>{m.label}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
                 </View>
-              </View>
+              )}
 
               {/* Message Bubbles */}
               {messages.map(msg => {
@@ -829,76 +861,102 @@ export default function AbhyasMitra({
               )}
             </ScrollView>
 
-            {/* Quick Actions Drawer: Responsive 2-Row Wrapped Grid (No overflow!) */}
-            <View style={[styles.chipsContainer, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
-              <View style={styles.chipsHeaderRow}>
-                <Text style={[styles.chipsHeaderTitle, { color: isDark ? '#CBD5E1' : '#475569' }]}>
-                  {t.quickActionsLabel}
-                </Text>
-                <TouchableOpacity onPress={() => setShowFeaturesDrawer(!showFeaturesDrawer)}>
-                  <Text style={[styles.chipsHeaderToggle, { color: '#2563EB' }]}>
-                    {showFeaturesDrawer ? t.collapse : t.expand}
-                  </Text>
+            {/* Quick Actions Strip: Sleek 1-Row Horizontal Slider (Takes ONLY ~30px!) */}
+            {showFeaturesBar && (
+              <View style={[styles.compactFeaturesStrip, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+                <TouchableOpacity
+                  onPress={() => setFeaturesGridModal(true)}
+                  style={[styles.featureGridIconBtn, { backgroundColor: isDark ? '#1E293B' : '#EFF6FF' }]}
+                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                >
+                  <Ionicons name="grid-outline" size={11} color="#2563EB" />
+                  <Text style={styles.featureGridCountText}>7</Text>
                 </TouchableOpacity>
-              </View>
 
-              {showFeaturesDrawer && (
-                <View style={styles.chipsWrapGrid}>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.compactChipsScroll}
+                >
                   <TouchableOpacity
                     onPress={() => sendMessage(activeLang === 'mr' ? 'मूलभूत हक्क समजावून सांगा' : activeLang === 'hi' ? 'मौलिक अधिकार क्या हैं?' : 'Explain Fundamental Rights')}
-                    style={[styles.chipPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
+                    style={[styles.slimPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
                   >
-                    <Text style={[styles.chipText, { color: colors.chipText }]}>{t.features.study}</Text>
+                    <Text style={[styles.slimPillText, { color: colors.chipText }]}>{t.features.study}</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
                     onPress={() => sendMessage(activeLang === 'mr' ? 'एक झटपट प्रश्न विचारा' : activeLang === 'hi' ? 'एक त्वरित क्विज़ प्रश्न पूछें' : 'Give me a quick quiz')}
-                    style={[styles.chipPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
+                    style={[styles.slimPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
                   >
-                    <Text style={[styles.chipText, { color: colors.chipText }]}>{t.features.quiz}</Text>
+                    <Text style={[styles.slimPillText, { color: colors.chipText }]}>{t.features.quiz}</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
                     onPress={() => sendMessage(activeLang === 'mr' ? 'परीक्षेचा खूप ताण आलाय' : activeLang === 'hi' ? 'परीक्षा का बहुत तनाव है' : 'I have exam anxiety')}
-                    style={[styles.chipPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
+                    style={[styles.slimPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
                   >
-                    <Text style={[styles.chipText, { color: colors.chipText }]}>{t.features.anxiety}</Text>
+                    <Text style={[styles.slimPillText, { color: colors.chipText }]}>{t.features.anxiety}</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
                     onPress={() => sendMessage(activeLang === 'mr' ? 'अभ्यास कमबॅक कसा करू?' : activeLang === 'hi' ? 'स्टडी कमबैक कैसे करूँ?' : 'How to do a study comeback?')}
-                    style={[styles.chipPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
+                    style={[styles.slimPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
                   >
-                    <Text style={[styles.chipText, { color: colors.chipText }]}>{t.features.comeback}</Text>
+                    <Text style={[styles.slimPillText, { color: colors.chipText }]}>{t.features.comeback}</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
                     onPress={() => sendMessage(activeLang === 'mr' ? 'सोप्या भाषेत समजावून सांगा' : activeLang === 'hi' ? 'सरल शब्दों में समझाइए' : "Explain Like I'm 10")}
-                    style={[styles.chipPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
+                    style={[styles.slimPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
                   >
-                    <Text style={[styles.chipText, { color: colors.chipText }]}>{t.features.eli10}</Text>
+                    <Text style={[styles.slimPillText, { color: colors.chipText }]}>{t.features.eli10}</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
                     onPress={() => sendMessage(activeLang === 'mr' ? 'रिव्हिजन कशी करू?' : activeLang === 'hi' ? 'रिवीजन कैसे करूँ?' : 'Revision reminders and spaced repetition')}
-                    style={[styles.chipPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
+                    style={[styles.slimPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
                   >
-                    <Text style={[styles.chipText, { color: colors.chipText }]}>{t.features.revision}</Text>
+                    <Text style={[styles.slimPillText, { color: colors.chipText }]}>{t.features.revision}</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
                     onPress={() => sendMessage(activeLang === 'mr' ? 'अभ्यास वेळापत्रक नियोजन' : activeLang === 'hi' ? 'स्टडी टाइमटेबल प्लानिंग' : 'Study planner routine')}
-                    style={[styles.chipPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
+                    style={[styles.slimPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
                   >
-                    <Text style={[styles.chipText, { color: colors.chipText }]}>{t.features.planning}</Text>
+                    <Text style={[styles.slimPillText, { color: colors.chipText }]}>{t.features.planning}</Text>
                   </TouchableOpacity>
-                </View>
-              )}
-            </View>
+                </ScrollView>
 
-            {/* Bottom Input Area: Includes Microphone Voice Input */}
+                <TouchableOpacity
+                  onPress={() => setShowFeaturesBar(false)}
+                  style={styles.closeStripBtn}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Ionicons name="close" size={13} color={colors.muted} />
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* Bottom Input Area: Compact & Space-Efficient */}
             <View style={[styles.inputBar, { backgroundColor: colors.screenBg, borderColor: colors.border }]}>
               <View style={[styles.inputPill, { backgroundColor: colors.inputBg, borderColor: colors.inputBorder }]}>
+                {/* Feature Launcher Button */}
+                <TouchableOpacity
+                  onPress={() => setShowFeaturesBar(!showFeaturesBar)}
+                  style={[
+                    styles.actionToggleBtn,
+                    showFeaturesBar && { backgroundColor: isDark ? '#1E3A8A' : '#EFF6FF' }
+                  ]}
+                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                >
+                  <Ionicons
+                    name={showFeaturesBar ? 'sparkles' : 'sparkles-outline'}
+                    size={16}
+                    color={showFeaturesBar ? '#2563EB' : '#94A3B8'}
+                  />
+                </TouchableOpacity>
+
                 {/* Microphone Voice Input Button */}
                 <TouchableOpacity
                   onPress={toggleListening}
@@ -906,11 +964,11 @@ export default function AbhyasMitra({
                     styles.micButton,
                     isListening && { backgroundColor: '#DC2626' }
                   ]}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                 >
                   <Ionicons
                     name={isListening ? 'mic' : 'mic-outline'}
-                    size={18}
+                    size={16}
                     color={isListening ? '#FFFFFF' : '#2563EB'}
                   />
                 </TouchableOpacity>
@@ -937,11 +995,69 @@ export default function AbhyasMitra({
                     }
                   ]}
                 >
-                  <Ionicons name="paper-plane" size={15} color="#FFFFFF" />
+                  <Ionicons name="paper-plane" size={14} color="#FFFFFF" />
                 </TouchableOpacity>
               </View>
             </View>
           </KeyboardAvoidingView>
+
+          {/* Full 7-Features Clean Modal Sheet (Floating Overlay - Zero Screen Squashing) */}
+          <Modal
+            visible={featuresGridModal}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={() => setFeaturesGridModal(false)}
+          >
+            <View style={styles.sheetOverlay}>
+              <TouchableOpacity
+                style={styles.sheetBackdrop}
+                activeOpacity={1}
+                onPress={() => setFeaturesGridModal(false)}
+              />
+              <View style={[styles.sheetContent, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+                <View style={styles.sheetHeader}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Ionicons name="sparkles" size={17} color="#2563EB" />
+                    <Text style={[styles.sheetTitle, { color: isDark ? '#F8FAFC' : '#0F172A' }]}>
+                      {t.quickActionsLabel}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => setFeaturesGridModal(false)}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Ionicons name="close-circle" size={20} color={colors.muted} />
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.gridContainer}>
+                  {[
+                    { key: 'study', title: t.features.study, prompt: activeLang === 'mr' ? 'मूलभूत हक्क समजावून सांगा' : activeLang === 'hi' ? 'मौलिक अधिकार क्या हैं?' : 'Explain Fundamental Rights', icon: 'book-outline', color: '#2563EB', bg: '#EFF6FF' },
+                    { key: 'quiz', title: t.features.quiz, prompt: activeLang === 'mr' ? 'एक झटपट प्रश्न विचारा' : activeLang === 'hi' ? 'एक त्वरित क्विज़ प्रश्न पूछें' : 'Give me a quick quiz', icon: 'help-circle-outline', color: '#059669', bg: '#ECFDF5' },
+                    { key: 'anxiety', title: t.features.anxiety, prompt: activeLang === 'mr' ? 'परीक्षेचा खूप ताण आलाय' : activeLang === 'hi' ? 'परीक्षा का बहुत तनाव है' : 'I have exam anxiety', icon: 'heart-outline', color: '#DC2626', bg: '#FEF2F2' },
+                    { key: 'comeback', title: t.features.comeback, prompt: activeLang === 'mr' ? 'अभ्यास कमबॅक कसा करू?' : activeLang === 'hi' ? 'स्टडी कमबैक कैसे करूँ?' : 'How to do a study comeback?', icon: 'refresh-outline', color: '#7C3AED', bg: '#F5F3FF' },
+                    { key: 'eli10', title: t.features.eli10, prompt: activeLang === 'mr' ? 'सोप्या भाषेत समजावून सांगा' : activeLang === 'hi' ? 'सरल शब्दों में समझाइए' : "Explain Like I'm 10", icon: 'bulb-outline', color: '#D97706', bg: '#FFFBEB' },
+                    { key: 'revision', title: t.features.revision, prompt: activeLang === 'mr' ? 'रिव्हिजन कशी करू?' : activeLang === 'hi' ? 'रिवीजन कैसे करूँ?' : 'Revision reminders and spaced repetition', icon: 'repeat-outline', color: '#0891B2', bg: '#ECFEFF' },
+                    { key: 'planning', title: t.features.planning, prompt: activeLang === 'mr' ? 'अभ्यास वेळापत्रक नियोजन' : activeLang === 'hi' ? 'स्टडी टाइमटेबल प्लानिंग' : 'Study planner routine', icon: 'calendar-outline', color: '#4F46E5', bg: '#EEF2FF' }
+                  ].map(item => (
+                    <TouchableOpacity
+                      key={item.key}
+                      onPress={() => {
+                        setFeaturesGridModal(false);
+                        sendMessage(item.prompt);
+                      }}
+                      style={[styles.gridCard, { backgroundColor: isDark ? '#1E293B' : item.bg, borderColor: isDark ? '#334155' : '#E2E8F0' }]}
+                    >
+                      <Ionicons name={item.icon} size={18} color={item.color} />
+                      <Text style={[styles.gridCardTitle, { color: isDark ? '#F1F5F9' : '#1E293B' }]} numberOfLines={2}>
+                        {item.title}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            </View>
+          </Modal>
         </SafeAreaView>
       </Modal>
     </>
@@ -1217,49 +1333,53 @@ const styles = StyleSheet.create({
     flex: 1
   },
   messagesContainer: {
-    padding: 12,
-    gap: 12
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    gap: 8
   },
-  moodCard: {
-    padding: 12,
-    borderRadius: 14,
+  // Compact Mood Banner
+  compactMoodBanner: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
     borderWidth: 1,
     marginBottom: 4
   },
-  moodCardTitle: {
-    fontSize: 13,
+  compactMoodHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4
+  },
+  compactMoodTitle: {
+    fontSize: 11,
     fontWeight: '700'
   },
-  moodCardSubtitle: {
-    fontSize: 11,
-    marginTop: 2,
-    marginBottom: 8
-  },
-  moodButtonsRow: {
+  compactMoodList: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6
+    gap: 6,
+    paddingRight: 6
   },
-  moodButton: {
+  compactMoodButton: {
     paddingHorizontal: 9,
-    paddingVertical: 5,
-    borderRadius: 16,
+    paddingVertical: 3.5,
+    borderRadius: 14,
     borderWidth: 1
   },
-  moodButtonText: {
-    fontSize: 11,
+  compactMoodButtonText: {
+    fontSize: 10.5,
     fontWeight: '700'
   },
   messageRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 6,
-    marginBottom: 4
+    marginBottom: 2
   },
   botAvatarMini: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#38BDF8',
@@ -1270,28 +1390,28 @@ const styles = StyleSheet.create({
     height: '100%'
   },
   bubble: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 14,
     borderWidth: 1
   },
   messageText: {
-    fontSize: 13,
-    lineHeight: 20
+    fontSize: 12.5,
+    lineHeight: 18.5
   },
   speechBubbleBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 12,
+    gap: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: '#BFDBFE',
     backgroundColor: '#EFF6FF'
   },
   speechBubbleText: {
-    fontSize: 10,
+    fontSize: 9.5,
     fontWeight: '700'
   },
   timeText: {
@@ -1301,102 +1421,167 @@ const styles = StyleSheet.create({
   actionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: 8,
-    marginTop: 6,
+    marginTop: 4,
     alignSelf: 'flex-start'
   },
   actionBtnText: {
     color: '#FFFFFF',
-    fontSize: 11,
+    fontSize: 10.5,
     fontWeight: '700'
   },
   emergencyBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 5,
     backgroundColor: '#DC2626',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
     borderRadius: 8,
-    marginTop: 6,
+    marginTop: 4,
     alignSelf: 'flex-start'
   },
   emergencyBtnText: {
     color: '#FFFFFF',
-    fontSize: 11,
+    fontSize: 10.5,
     fontWeight: '700'
   },
-  chipsContainer: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderTopWidth: 1
-  },
-  chipsHeaderRow: {
+  // Sleek 1-Row Horizontal Features Strip (ONLY 30px high)
+  compactFeaturesStrip: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 6
-  },
-  chipsHeaderTitle: {
-    fontSize: 11,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.4
-  },
-  chipsHeaderToggle: {
-    fontSize: 11,
-    fontWeight: '700'
-  },
-  chipsWrapGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderTopWidth: 1,
     gap: 6
   },
-  chipPill: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 14,
+  featureGridIconBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#BFDBFE'
+  },
+  featureGridCountText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#2563EB'
+  },
+  compactChipsScroll: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingRight: 6
+  },
+  slimPill: {
+    paddingHorizontal: 9,
+    paddingVertical: 3.5,
+    borderRadius: 12,
     borderWidth: 1
   },
-  chipText: {
-    fontSize: 11,
+  slimPillText: {
+    fontSize: 10.5,
     fontWeight: '600'
   },
+  closeStripBtn: {
+    padding: 3
+  },
+  // Input Bar
   inputBar: {
-    paddingHorizontal: 12,
-    paddingBottom: Platform.OS === 'ios' ? 10 : 12,
-    paddingTop: 4
+    paddingHorizontal: 8,
+    paddingBottom: Platform.OS === 'ios' ? 8 : 6,
+    paddingTop: 3
   },
   inputPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 44,
-    borderRadius: 22,
+    height: 38,
+    borderRadius: 19,
     borderWidth: 1,
-    paddingHorizontal: 8,
-    gap: 6
+    paddingHorizontal: 6,
+    gap: 4
+  },
+  actionToggleBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center'
   },
   micButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: '#EFF6FF',
     justifyContent: 'center',
     alignItems: 'center'
   },
   textInput: {
     flex: 1,
-    fontSize: 13,
+    fontSize: 12.5,
     paddingVertical: 0
   },
   sendIconButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center'
+  },
+  // Full 7-Features Floating Modal Sheet
+  sheetOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.45)'
+  },
+  sheetBackdrop: {
+    flex: 1
+  },
+  sheetContent: {
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    borderWidth: 1,
+    padding: 14,
+    maxHeight: '65%'
+  },
+  sheetHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0'
+  },
+  sheetTitle: {
+    fontSize: 13,
+    fontWeight: '800'
+  },
+  gridContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'space-between'
+  },
+  gridCard: {
+    width: '48%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 9,
+    borderRadius: 10,
+    borderWidth: 1
+  },
+  gridCardTitle: {
+    fontSize: 11,
+    fontWeight: '700',
+    flexShrink: 1
   }
 });
