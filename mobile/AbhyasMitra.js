@@ -169,7 +169,6 @@ export default function AbhyasMitra({
   const [showMoodBanner, setShowMoodBanner] = useState(true);
   const [showFeaturesBar, setShowFeaturesBar] = useState(true);
   const [featuresGridModal, setFeaturesGridModal] = useState(false);
-  const [voiceSettingsOpen, setVoiceSettingsOpen] = useState(false);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const [chatbotDark, setChatbotDark] = useState(Boolean(isDark));
   const [autoReadAloud, setAutoReadAloud] = useState(false);
@@ -580,7 +579,7 @@ export default function AbhyasMitra({
               </View>
 
               <View style={styles.headerRight}>
-                {/* Dark / Light Mode Toggle Button */}
+                {/* Dark / Light Mode Toggle Button (Single Symbol) */}
                 <TouchableOpacity
                   onPress={() => setChatbotDark(!chatbotDark)}
                   style={[
@@ -596,9 +595,9 @@ export default function AbhyasMitra({
                   />
                 </TouchableOpacity>
 
-                {/* Voice Settings Toggle Icon */}
+                {/* Say Aloud Toggle (Single Symbol: 🔊 / 🔇) */}
                 <TouchableOpacity
-                  onPress={() => setVoiceSettingsOpen(!voiceSettingsOpen)}
+                  onPress={() => setAutoReadAloud(!autoReadAloud)}
                   style={[
                     styles.headerVoiceBtn,
                     { backgroundColor: colors.headerBtnBg, borderColor: colors.headerBtnBorder },
@@ -607,7 +606,7 @@ export default function AbhyasMitra({
                   hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                 >
                   <Ionicons
-                    name={autoReadAloud ? 'volume-high' : 'volume-medium-outline'}
+                    name={autoReadAloud ? 'volume-high' : 'volume-mute-outline'}
                     size={15}
                     color={autoReadAloud ? '#38BDF8' : colors.headerBtnIcon}
                   />
@@ -630,90 +629,6 @@ export default function AbhyasMitra({
                 </TouchableOpacity>
               </View>
             </View>
-
-            {/* Voice & Theme Settings Dropdown Panel */}
-            {voiceSettingsOpen && (
-              <View style={[styles.voiceSettingsPanel, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <Ionicons name="settings-outline" size={18} color="#38BDF8" />
-                    <Text style={[styles.voicePanelTitle, { color: chatbotDark ? '#FFFFFF' : '#0F172A' }]}>
-                      {activeLang === 'mr' ? 'सेटिंग्ज व आवाज' : activeLang === 'hi' ? 'सेटिंग्स और आवाज' : 'Chatbot Settings'}
-                    </Text>
-                  </View>
-                  <TouchableOpacity onPress={() => setVoiceSettingsOpen(false)}>
-                    <Ionicons name="close" size={16} color={colors.muted} />
-                  </TouchableOpacity>
-                </View>
-
-                {/* Dark / Light Theme Mode Switch */}
-                <View style={[styles.voiceRow, { marginBottom: 10 }]}>
-                  <Text style={[styles.voiceLabel, { color: colors.mitraText }]}>
-                    {activeLang === 'mr' ? 'थीम मोड' : activeLang === 'hi' ? 'थीम मोड' : 'Theme Mode'}
-                  </Text>
-                  <View style={{ flexDirection: 'row', gap: 6 }}>
-                    <TouchableOpacity
-                      onPress={() => setChatbotDark(false)}
-                      style={[
-                        styles.genderChip,
-                        !chatbotDark && styles.genderChipActive,
-                        { borderColor: colors.border }
-                      ]}
-                    >
-                      <Text style={[styles.genderChipText, !chatbotDark && { color: '#FFFFFF' }]}>
-                        ☀️ Light
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => setChatbotDark(true)}
-                      style={[
-                        styles.genderChip,
-                        chatbotDark && styles.genderChipActive,
-                        { borderColor: colors.border }
-                      ]}
-                    >
-                      <Text style={[styles.genderChipText, chatbotDark && { color: '#FFFFFF' }]}>
-                        🌙 Dark
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-
-                {/* Auto read aloud switch */}
-                <View style={styles.voiceRow}>
-                  <Text style={[styles.voiceLabel, { color: colors.mitraText }]}>{t.voiceAutoRead}</Text>
-                  <TouchableOpacity
-                    onPress={() => setAutoReadAloud(!autoReadAloud)}
-                    style={[styles.toggleSwitch, autoReadAloud ? { backgroundColor: '#2563EB' } : { backgroundColor: '#CBD5E1' }]}
-                  >
-                    <View style={[styles.toggleThumb, autoReadAloud ? { transform: [{ translateX: 18 }] } : { transform: [{ translateX: 0 }] }]} />
-                  </TouchableOpacity>
-                </View>
-
-                {/* Voice Gender Selection */}
-                <View style={[styles.voiceRow, { marginTop: 8 }]}>
-                  <Text style={[styles.voiceLabel, { color: colors.mitraText }]}>{t.voiceGender}</Text>
-                  <View style={{ flexDirection: 'row', gap: 6 }}>
-                    <TouchableOpacity
-                      onPress={() => setVoiceGender('female')}
-                      style={[styles.genderChip, voiceGender === 'female' && styles.genderChipActive, { borderColor: colors.border }]}
-                    >
-                      <Text style={[styles.genderChipText, voiceGender === 'female' && { color: '#FFFFFF' }]}>
-                        {t.female}
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => setVoiceGender('male')}
-                      style={[styles.genderChip, voiceGender === 'male' && styles.genderChipActive, { borderColor: colors.border }]}
-                    >
-                      <Text style={[styles.genderChipText, voiceGender === 'male' && { color: '#FFFFFF' }]}>
-                        {t.male}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </View>
-            )}
 
             {/* Active Speech Recognition Banner */}
             {isListening && (
@@ -814,16 +729,17 @@ export default function AbhyasMitra({
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
                           <TouchableOpacity
                             onPress={() => speakText(msg.text, msg.id)}
-                            style={[styles.speechBubbleBtn, isSpeakingThis && { backgroundColor: '#FEE2E2', borderColor: '#FCA5A5' }]}
+                            style={[
+                              styles.speechBubbleBtn,
+                              isSpeakingThis && { backgroundColor: '#FEE2E2', borderColor: '#FCA5A5' }
+                            ]}
+                            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                           >
                             <Ionicons
                               name={isSpeakingThis ? 'stop-circle' : 'volume-medium'}
-                              size={13}
+                              size={14}
                               color={isSpeakingThis ? '#DC2626' : '#2563EB'}
                             />
-                            <Text style={[styles.speechBubbleText, { color: isSpeakingThis ? '#DC2626' : '#2563EB' }]}>
-                              {isSpeakingThis ? t.stop : t.listen}
-                            </Text>
                           </TouchableOpacity>
 
                           <Text style={[styles.timeText, { color: colors.muted }]}>
@@ -1473,19 +1389,14 @@ const styles = StyleSheet.create({
     lineHeight: 18.5
   },
   speechBubbleBtn: {
-    flexDirection: 'row',
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: 3,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 10,
     borderWidth: 1,
     borderColor: '#BFDBFE',
     backgroundColor: '#EFF6FF'
-  },
-  speechBubbleText: {
-    fontSize: 9.5,
-    fontWeight: '700'
   },
   timeText: {
     fontSize: 9,
