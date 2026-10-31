@@ -15,6 +15,7 @@ import {
   Image
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Speech from 'expo-speech';
 import { smartApiFetch } from './api';
 
 // 3D Robot Mascot Image
@@ -24,8 +25,8 @@ const MASCOT_IMG = require('./assets/mitra_mascot.jpg');
 const UI_TEXT = {
   en: {
     title: 'Abhyas Mitra',
-    subtitle: 'Online • Always with you',
-    placeholder: 'Talk to Abhyas Mitra...',
+    subtitle: 'Always with you',
+    placeholder: 'Talk or tap mic to speak...',
     moodTitle: 'Daily Mood Check-in',
     moodSubtitle: 'How are you feeling today?',
     moods: [
@@ -45,15 +46,26 @@ const UI_TEXT = {
       revision: '🔁 Revision Reminder',
       planning: '📅 Study Planner'
     },
+    quickActionsLabel: 'Quick Actions (7 Features)',
+    collapse: 'Show Less ▴',
+    expand: 'View All ▾',
     helplineBtn: '📞 Call Tele-MANAS: 14416 (Free 24/7)',
     openPlannerBtn: '📅 Open Study Planner',
     startTimerBtn: '▶ Start Focus Timer',
-    privacyNote: '100% Free & Private • Rule-based study companion'
+    privacyNote: '100% Free & Private • Rule-based study companion',
+    voiceSettings: 'Voice Settings',
+    voiceAutoRead: 'Read answers aloud',
+    voiceGender: 'Voice Pitch',
+    female: 'Female',
+    male: 'Male',
+    listening: '🎙️ Listening... Speak your question now',
+    listen: '🔊 Listen',
+    stop: '⏹️ Stop'
   },
   mr: {
     title: 'अभ्यास मित्र',
-    subtitle: 'ऑनलाइन • सदैव तुमच्यासोबत',
-    placeholder: 'अभ्यास मित्राशी बोला...',
+    subtitle: 'सदैव तुमच्यासोबत',
+    placeholder: 'टाईप करा किंवा बोला...',
     moodTitle: 'दैनिक मूड चेक-इन',
     moodSubtitle: 'आज तुम्हाला कसे वाटते आहे?',
     moods: [
@@ -73,15 +85,26 @@ const UI_TEXT = {
       revision: '🔁 उजळणी आठवण',
       planning: '📅 अभ्यास नियोजन'
     },
+    quickActionsLabel: 'मुख्य वैशिष्ट्ये (७ फीचर्स)',
+    collapse: 'कमी करा ▴',
+    expand: 'सर्व ७ पहा ▾',
     helplineBtn: '📞 टेली-मानस हेल्पलाइन: 14416 (मोफत)',
     openPlannerBtn: '📅 प्लॅनर उघडा',
     startTimerBtn: '▶ टायमर सुरू करा',
-    privacyNote: '१००% मोफत व सुरक्षित • अभ्यास साथीदार'
+    privacyNote: '१००% मोफत व सुरक्षित • अभ्यास साथीदार',
+    voiceSettings: 'आवाज सेटिंग्ज',
+    voiceAutoRead: 'उत्तरे मोठ्याने वाचा',
+    voiceGender: 'आवाज प्रकार',
+    female: 'स्त्री आवाज',
+    male: 'पुरुष आवाज',
+    listening: '🎙️ ऐकत आहे... तुमचा प्रश्न बोला',
+    listen: '🔊 ऐका',
+    stop: '⏹️ थांबवा'
   },
   hi: {
     title: 'अभ्यास मित्र',
-    subtitle: 'ऑनलाइन • सदैव आपके साथ',
-    placeholder: 'अभ्यास मित्र से बात करें...',
+    subtitle: 'सदैव आपके साथ',
+    placeholder: 'टाइप करें या बोलें...',
     moodTitle: 'दैनिक मूड चेक-इन',
     moodSubtitle: 'आज आप कैसा महसूस कर रहे हैं?',
     moods: [
@@ -101,12 +124,32 @@ const UI_TEXT = {
       revision: '🔁 रिवीजन रिमाइंडर',
       planning: '📅 स्टडी प्लानर'
     },
+    quickActionsLabel: 'मुख्य सुविधाएं (७ फीचर्स)',
+    collapse: 'कम दिखाएं ▴',
+    expand: 'सभी ७ देखें ▾',
     helplineBtn: '📞 टेली-मानस हेल्पलाइन: 14416 (निःशुल्क)',
     openPlannerBtn: '📅 प्लानर खोलें',
     startTimerBtn: '▶ टाइमर शुरू करें',
-    privacyNote: '100% निःशुल्क और सुरक्षित • सच्चा साथी'
+    privacyNote: '100% निःशुल्क और सुरक्षित • सच्चा साथी',
+    voiceSettings: 'ध्वनि सेटिंग्स',
+    voiceAutoRead: 'उत्तर बोलकर सुनाएं',
+    voiceGender: 'आवाज का प्रकार',
+    female: 'महिला आवाज',
+    male: 'पुरुष आवाज',
+    listening: '🎙️ सुन रहा हूँ... अपना सवाल बोलिए',
+    listen: '🔊 सुनें',
+    stop: '⏹️ रोकें'
   }
 };
+
+// Clean markdown text before speaking aloud
+function cleanTextForSpeech(text) {
+  return String(text || '')
+    .replace(/[#*_~`•▶\-\[\]\(\)]/g, ' ')
+    .replace(/http\S+/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
 export default function AbhyasMitra({
   isDark = false,
@@ -123,6 +166,13 @@ export default function AbhyasMitra({
   const [activeLang, setActiveLang] = useState(currentLang || 'en');
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showFeaturesDrawer, setShowFeaturesDrawer] = useState(true);
+  const [voiceSettingsOpen, setVoiceSettingsOpen] = useState(false);
+  const [autoReadAloud, setAutoReadAloud] = useState(false);
+  const [voiceGender, setVoiceGender] = useState('female'); // 'female' | 'male'
+  const [isSpeakingId, setIsSpeakingId] = useState(null);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef(null);
   const scrollRef = useRef(null);
 
   // Sync active language with parent if updated
@@ -155,7 +205,150 @@ export default function AbhyasMitra({
     }
   }, [messages, isOpen]);
 
+  // Clean speech when closing or changing message
+  useEffect(() => {
+    if (!isOpen) {
+      stopVoice();
+      stopListening();
+    }
+  }, [isOpen]);
+
+  // Text-To-Speech Function (Works on Web & Android)
+  const speakText = (text, messageId = null) => {
+    const clean = cleanTextForSpeech(text);
+    if (!clean) return;
+
+    // If already speaking this message, stop it
+    if (isSpeakingId === messageId && messageId !== null) {
+      stopVoice();
+      return;
+    }
+
+    stopVoice();
+    setIsSpeakingId(messageId);
+
+    const langCode = activeLang === 'mr' ? 'mr-IN' : activeLang === 'hi' ? 'hi-IN' : 'en-IN';
+    const pitch = voiceGender === 'female' ? 1.15 : 0.85;
+
+    // 1. Web Speech Synthesis
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      try {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(clean);
+        utterance.lang = langCode;
+        utterance.pitch = pitch;
+        utterance.rate = 0.98;
+
+        const voices = window.speechSynthesis.getVoices();
+        if (voices && voices.length > 0) {
+          const match = voices.find(v => v.lang.startsWith(langCode.slice(0, 2)) || v.lang === langCode);
+          if (match) utterance.voice = match;
+        }
+
+        utterance.onend = () => setIsSpeakingId(null);
+        utterance.onerror = () => setIsSpeakingId(null);
+
+        window.speechSynthesis.speak(utterance);
+        return;
+      } catch (e) {
+        console.warn('Web speech error:', e);
+      }
+    }
+
+    // 2. Native Expo Speech
+    try {
+      Speech.stop();
+      Speech.speak(clean, {
+        language: langCode,
+        pitch,
+        rate: 0.98,
+        onDone: () => setIsSpeakingId(null),
+        onError: () => setIsSpeakingId(null)
+      });
+    } catch (e) {
+      console.warn('Expo speech error:', e);
+      setIsSpeakingId(null);
+    }
+  };
+
+  const stopVoice = () => {
+    setIsSpeakingId(null);
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      try { window.speechSynthesis.cancel(); } catch {}
+    }
+    try { Speech.stop(); } catch {}
+  };
+
+  // Speech-To-Text Function (Microphone Input)
+  const toggleListening = () => {
+    if (isListening) {
+      stopListening();
+      return;
+    }
+
+    // Web Speech Recognition
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        try {
+          stopVoice();
+          const recognition = new SpeechRecognition();
+          recognition.continuous = false;
+          recognition.interimResults = false;
+          recognition.lang = activeLang === 'mr' ? 'mr-IN' : activeLang === 'hi' ? 'hi-IN' : 'en-IN';
+
+          recognition.onstart = () => {
+            setIsListening(true);
+          };
+
+          recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            if (transcript && transcript.trim()) {
+              setInputText(transcript.trim());
+              sendMessage(transcript.trim());
+            }
+          };
+
+          recognition.onerror = () => {
+            setIsListening(false);
+          };
+
+          recognition.onend = () => {
+            setIsListening(false);
+          };
+
+          recognitionRef.current = recognition;
+          recognition.start();
+          return;
+        } catch (e) {
+          console.warn('Speech recognition error:', e);
+          setIsListening(false);
+        }
+      }
+    }
+
+    // Notice if microphone recognition is unavailable in current web context
+    alert(
+      activeLang === 'mr'
+        ? 'मायक्रोफोन इनपुटसाठी क्रोम/एज ब्राउझरमध्ये व्हॉइस परवानगी आवश्यक आहे.'
+        : activeLang === 'hi'
+        ? 'माइक्रोफोन इनपुट के लिए क्रोम/एज ब्राउज़र में अनुमति आवश्यक है.'
+        : 'Microphone voice input is supported in Chrome, Edge, and Android speech services.'
+    );
+  };
+
+  const stopListening = () => {
+    setIsListening(false);
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch {}
+      recognitionRef.current = null;
+    }
+  };
+
   const handleLanguageSwitch = (newLang) => {
+    stopVoice();
     setActiveLang(newLang);
     if (onLangChange) onLangChange(newLang);
 
@@ -176,6 +369,9 @@ export default function AbhyasMitra({
   };
 
   const sendMessage = async (customText = null) => {
+    stopVoice();
+    stopListening();
+
     const textToSend = customText || inputText;
     if (!textToSend || !textToSend.trim() || loading) return;
 
@@ -205,10 +401,11 @@ export default function AbhyasMitra({
 
       const data = await res.json();
       if (data && data.reply) {
+        const newMsgId = 'm_' + Date.now();
         setMessages(prev => [
           ...prev,
           {
-            id: 'm_' + Date.now(),
+            id: newMsgId,
             sender: 'mitra',
             text: data.reply,
             action: data.action,
@@ -217,16 +414,22 @@ export default function AbhyasMitra({
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
           }
         ]);
+
+        // Auto read aloud if enabled
+        if (autoReadAloud) {
+          setTimeout(() => speakText(data.reply, newMsgId), 250);
+        }
       } else {
         throw new Error('No reply');
       }
     } catch (err) {
       // Offline fallback: Generates empathetic local response if backend is offline
       const fallbackReply = generateClientFallback(userMsg.text, activeLang, sessions, plans);
+      const newMsgId = 'm_fallback_' + Date.now();
       setMessages(prev => [
         ...prev,
         {
-          id: 'm_fallback_' + Date.now(),
+          id: newMsgId,
           sender: 'mitra',
           text: fallbackReply.text,
           action: fallbackReply.action,
@@ -234,12 +437,17 @@ export default function AbhyasMitra({
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }
       ]);
+
+      if (autoReadAloud) {
+        setTimeout(() => speakText(fallbackReply.text, newMsgId), 250);
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const handleAction = (action) => {
+    stopVoice();
     if (action === 'emergency_support') {
       Linking.openURL('tel:14416').catch(() => {
         Linking.openURL('tel:112');
@@ -263,13 +471,11 @@ export default function AbhyasMitra({
     }
   };
 
-  // Color Palette specifically tailored to match the mockup image:
-  // Clean white card background with navy blue header and gold accents
+  // Color Palette tailored to clean frame
   const colors = {
     screenBg: isDark ? '#080E1E' : '#F8FAFC',
     cardBg: isDark ? '#111B33' : '#FFFFFF',
-    headerBg: '#0B1736', // Deep navy blue header matching mockup
-    headerGold: '#F59E0B',
+    headerBg: '#0B1736',
     border: isDark ? '#1C2744' : '#E2E8F0',
     titleText: '#FFFFFF',
     subtitleText: '#94A3B8',
@@ -298,7 +504,6 @@ export default function AbhyasMitra({
           activeOpacity={0.88}
           style={styles.fabButton}
         >
-          {/* Subtle Outer Glow Halo */}
           <View style={styles.fabGlowRing} />
           <View style={styles.fabInnerCircle}>
             <Image
@@ -306,7 +511,6 @@ export default function AbhyasMitra({
               style={styles.fabMascotImage}
               resizeMode="cover"
             />
-            {/* Glowing Green Online Indicator */}
             <View style={styles.fabOnlineDot} />
           </View>
         </TouchableOpacity>
@@ -324,19 +528,17 @@ export default function AbhyasMitra({
             style={{ flex: 1 }}
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           >
-            {/* Top Navigation Header matching Mockup: Deep Navy Blue */}
+            {/* Top Navigation Header: Ultra-clean and compact for narrow frames */}
             <View style={[styles.header, { backgroundColor: colors.headerBg }]}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                {/* Back Arrow button */}
+              <View style={styles.headerLeft}>
                 <TouchableOpacity
                   onPress={() => setIsOpen(false)}
                   style={styles.backBtn}
                   hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                 >
-                  <Ionicons name="chevron-back" size={24} color="#CBD5E1" />
+                  <Ionicons name="chevron-back" size={22} color="#CBD5E1" />
                 </TouchableOpacity>
 
-                {/* 3D Robot Mascot Avatar with Online Dot */}
                 <View style={styles.avatarWrapper}>
                   <Image
                     source={MASCOT_IMG}
@@ -346,48 +548,127 @@ export default function AbhyasMitra({
                   <View style={styles.avatarOnlineDot} />
                 </View>
 
-                {/* Bot Title & Status */}
-                <View>
-                  <Text style={[styles.headerTitle, { color: colors.titleText }]}>{t.title}</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 1 }}>
+                <View style={{ flexShrink: 1 }}>
+                  <Text style={[styles.headerTitle, { color: colors.titleText }]} numberOfLines={1}>
+                    {t.title}
+                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 1 }}>
                     <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#22c55e' }} />
-                    <Text style={[styles.headerSubtitle, { color: colors.subtitleText }]}>{t.subtitle}</Text>
+                    <Text style={[styles.headerSubtitle, { color: colors.subtitleText }]} numberOfLines={1}>
+                      {t.subtitle}
+                    </Text>
                   </View>
                 </View>
               </View>
 
-              {/* Language Selector Pills [ EN | म | हि ] */}
-              <View style={styles.langContainer}>
-                {[
-                  ['en', 'EN'],
-                  ['mr', 'म'],
-                  ['hi', 'हि']
-                ].map(([code, label], idx) => {
-                  const isActive = activeLang === code;
-                  return (
-                    <React.Fragment key={code}>
-                      <TouchableOpacity
-                        onPress={() => handleLanguageSwitch(code)}
-                        style={[
-                          styles.langPill,
-                          isActive && styles.langPillActive
-                        ]}
-                      >
-                        <Text
+              <View style={styles.headerRight}>
+                {/* Voice Settings Toggle Icon */}
+                <TouchableOpacity
+                  onPress={() => setVoiceSettingsOpen(!voiceSettingsOpen)}
+                  style={[styles.headerVoiceBtn, autoReadAloud && { backgroundColor: '#1E3A8A' }]}
+                >
+                  <Ionicons
+                    name={autoReadAloud ? 'volume-high' : 'volume-medium-outline'}
+                    size={16}
+                    color={autoReadAloud ? '#38BDF8' : '#94A3B8'}
+                  />
+                </TouchableOpacity>
+
+                {/* Compact Language Selector Pills [ EN | म | हि ] */}
+                <View style={styles.langContainer}>
+                  {[
+                    ['en', 'EN'],
+                    ['mr', 'म'],
+                    ['hi', 'हि']
+                  ].map(([code, label], idx) => {
+                    const isActive = activeLang === code;
+                    return (
+                      <React.Fragment key={code}>
+                        <TouchableOpacity
+                          onPress={() => handleLanguageSwitch(code)}
                           style={[
-                            styles.langPillText,
-                            { color: isActive ? '#0B1736' : '#94A3B8' }
+                            styles.langPill,
+                            isActive && styles.langPillActive
                           ]}
                         >
-                          {label}
-                        </Text>
-                      </TouchableOpacity>
-                      {idx < 2 && <Text style={{ color: '#334155', fontSize: 11 }}>|</Text>}
-                    </React.Fragment>
-                  );
-                })}
+                          <Text
+                            style={[
+                              styles.langPillText,
+                              { color: isActive ? '#0B1736' : '#94A3B8' }
+                            ]}
+                          >
+                            {label}
+                          </Text>
+                        </TouchableOpacity>
+                        {idx < 2 && <Text style={{ color: '#334155', fontSize: 10 }}>|</Text>}
+                      </React.Fragment>
+                    );
+                  })}
+                </View>
               </View>
             </View>
+
+            {/* Voice Assistant Settings Dropdown Panel */}
+            {voiceSettingsOpen && (
+              <View style={[styles.voiceSettingsPanel, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Ionicons name="mic-circle-outline" size={18} color="#38BDF8" />
+                    <Text style={[styles.voicePanelTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
+                      {t.voiceSettings}
+                    </Text>
+                  </View>
+                  <TouchableOpacity onPress={() => setVoiceSettingsOpen(false)}>
+                    <Ionicons name="close" size={16} color={colors.muted} />
+                  </TouchableOpacity>
+                </View>
+
+                {/* Auto read aloud switch */}
+                <View style={styles.voiceRow}>
+                  <Text style={[styles.voiceLabel, { color: colors.mitraText }]}>{t.voiceAutoRead}</Text>
+                  <TouchableOpacity
+                    onPress={() => setAutoReadAloud(!autoReadAloud)}
+                    style={[styles.toggleSwitch, autoReadAloud ? { backgroundColor: '#2563EB' } : { backgroundColor: '#CBD5E1' }]}
+                  >
+                    <View style={[styles.toggleThumb, autoReadAloud ? { transform: [{ translateX: 18 }] } : { transform: [{ translateX: 0 }] }]} />
+                  </TouchableOpacity>
+                </View>
+
+                {/* Voice Gender Selection */}
+                <View style={[styles.voiceRow, { marginTop: 8 }]}>
+                  <Text style={[styles.voiceLabel, { color: colors.mitraText }]}>{t.voiceGender}</Text>
+                  <View style={{ flexDirection: 'row', gap: 6 }}>
+                    <TouchableOpacity
+                      onPress={() => setVoiceGender('female')}
+                      style={[styles.genderChip, voiceGender === 'female' && styles.genderChipActive]}
+                    >
+                      <Text style={[styles.genderChipText, voiceGender === 'female' && { color: '#FFFFFF' }]}>
+                        {t.female}
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => setVoiceGender('male')}
+                      style={[styles.genderChip, voiceGender === 'male' && styles.genderChipActive]}
+                    >
+                      <Text style={[styles.genderChipText, voiceGender === 'male' && { color: '#FFFFFF' }]}>
+                        {t.male}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            )}
+
+            {/* Active Speech Recognition Banner */}
+            {isListening && (
+              <View style={styles.listeningBanner}>
+                <View style={styles.pulseDot} />
+                <Text style={styles.listeningText}>{t.listening}</Text>
+                <TouchableOpacity onPress={stopListening} style={{ padding: 4 }}>
+                  <Ionicons name="close-circle" size={18} color="#FFFFFF" />
+                </TouchableOpacity>
+              </View>
+            )}
 
             {/* Conversation Feed */}
             <ScrollView
@@ -396,7 +677,7 @@ export default function AbhyasMitra({
               contentContainerStyle={styles.messagesContainer}
               keyboardShouldPersistTaps="handled"
             >
-              {/* Feature 1: Interactive Daily Mood Check-In Widget matching UI */}
+              {/* Daily Mood Check-In Widget: Wrapped nicely so no overflow occurs */}
               <View style={[styles.moodCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
                 <Text style={[styles.moodCardTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
                   {t.moodTitle}
@@ -423,6 +704,8 @@ export default function AbhyasMitra({
               {/* Message Bubbles */}
               {messages.map(msg => {
                 const isUser = msg.sender === 'user';
+                const isSpeakingThis = isSpeakingId === msg.id;
+
                 return (
                   <View
                     key={msg.id}
@@ -441,7 +724,7 @@ export default function AbhyasMitra({
                       </View>
                     )}
 
-                    <View style={{ maxWidth: '82%' }}>
+                    <View style={{ maxWidth: '84%' }}>
                       <View
                         style={[
                           styles.bubble,
@@ -467,6 +750,29 @@ export default function AbhyasMitra({
                           {msg.text}
                         </Text>
                       </View>
+
+                      {/* Bot Message Voice Play/Stop Button */}
+                      {!isUser && (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                          <TouchableOpacity
+                            onPress={() => speakText(msg.text, msg.id)}
+                            style={[styles.speechBubbleBtn, isSpeakingThis && { backgroundColor: '#FEE2E2', borderColor: '#FCA5A5' }]}
+                          >
+                            <Ionicons
+                              name={isSpeakingThis ? 'stop-circle' : 'volume-medium'}
+                              size={13}
+                              color={isSpeakingThis ? '#DC2626' : '#2563EB'}
+                            />
+                            <Text style={[styles.speechBubbleText, { color: isSpeakingThis ? '#DC2626' : '#2563EB' }]}>
+                              {isSpeakingThis ? t.stop : t.listen}
+                            </Text>
+                          </TouchableOpacity>
+
+                          <Text style={[styles.timeText, { color: colors.muted }]}>
+                            {msg.timestamp}
+                          </Text>
+                        </View>
+                      )}
 
                       {/* Interactive Action Buttons */}
                       {msg.action === 'emergency_support' && (
@@ -501,14 +807,11 @@ export default function AbhyasMitra({
                         </TouchableOpacity>
                       )}
 
-                      <Text
-                        style={[
-                          styles.timeText,
-                          { color: colors.muted, textAlign: isUser ? 'right' : 'left' }
-                        ]}
-                      >
-                        {msg.timestamp}
-                      </Text>
+                      {isUser && (
+                        <Text style={[styles.timeText, { color: colors.muted, textAlign: 'right' }]}>
+                          {msg.timestamp}
+                        </Text>
+                      )}
                     </View>
                   </View>
                 );
@@ -526,67 +829,92 @@ export default function AbhyasMitra({
               )}
             </ScrollView>
 
-            {/* Feature Action Chips: Styled neatly matching the mockup image */}
-            <View style={[styles.chipsContainer, { backgroundColor: colors.screenBg, borderColor: colors.border }]}>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.chipsScrollRow}
-              >
-                <TouchableOpacity
-                  onPress={() => sendMessage(activeLang === 'mr' ? 'मूलभूत हक्क समजावून सांगा' : activeLang === 'hi' ? 'मौलिक अधिकार क्या हैं?' : 'Explain Fundamental Rights')}
-                  style={[styles.chipPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
-                >
-                  <Text style={[styles.chipText, { color: colors.chipText }]}>{t.features.study}</Text>
+            {/* Quick Actions Drawer: Responsive 2-Row Wrapped Grid (No overflow!) */}
+            <View style={[styles.chipsContainer, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+              <View style={styles.chipsHeaderRow}>
+                <Text style={[styles.chipsHeaderTitle, { color: isDark ? '#CBD5E1' : '#475569' }]}>
+                  {t.quickActionsLabel}
+                </Text>
+                <TouchableOpacity onPress={() => setShowFeaturesDrawer(!showFeaturesDrawer)}>
+                  <Text style={[styles.chipsHeaderToggle, { color: '#2563EB' }]}>
+                    {showFeaturesDrawer ? t.collapse : t.expand}
+                  </Text>
                 </TouchableOpacity>
+              </View>
 
-                <TouchableOpacity
-                  onPress={() => sendMessage(activeLang === 'mr' ? 'एक झटपट प्रश्न विचारा' : activeLang === 'hi' ? 'एक त्वरित क्विज़ प्रश्न पूछें' : 'Give me a quick quiz')}
-                  style={[styles.chipPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
-                >
-                  <Text style={[styles.chipText, { color: colors.chipText }]}>{t.features.quiz}</Text>
-                </TouchableOpacity>
+              {showFeaturesDrawer && (
+                <View style={styles.chipsWrapGrid}>
+                  <TouchableOpacity
+                    onPress={() => sendMessage(activeLang === 'mr' ? 'मूलभूत हक्क समजावून सांगा' : activeLang === 'hi' ? 'मौलिक अधिकार क्या हैं?' : 'Explain Fundamental Rights')}
+                    style={[styles.chipPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
+                  >
+                    <Text style={[styles.chipText, { color: colors.chipText }]}>{t.features.study}</Text>
+                  </TouchableOpacity>
 
-                <TouchableOpacity
-                  onPress={() => sendMessage(activeLang === 'mr' ? 'परीक्षेचा खूप ताण आलाय' : activeLang === 'hi' ? 'परीक्षा का बहुत तनाव है' : 'I have exam anxiety')}
-                  style={[styles.chipPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
-                >
-                  <Text style={[styles.chipText, { color: colors.chipText }]}>{t.features.anxiety}</Text>
-                </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => sendMessage(activeLang === 'mr' ? 'एक झटपट प्रश्न विचारा' : activeLang === 'hi' ? 'एक त्वरित क्विज़ प्रश्न पूछें' : 'Give me a quick quiz')}
+                    style={[styles.chipPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
+                  >
+                    <Text style={[styles.chipText, { color: colors.chipText }]}>{t.features.quiz}</Text>
+                  </TouchableOpacity>
 
-                <TouchableOpacity
-                  onPress={() => sendMessage(activeLang === 'mr' ? 'अभ्यास कमबॅक कसा करू?' : activeLang === 'hi' ? 'स्टडी कमबैक कैसे करूँ?' : 'How to do a study comeback?')}
-                  style={[styles.chipPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
-                >
-                  <Text style={[styles.chipText, { color: colors.chipText }]}>{t.features.comeback}</Text>
-                </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => sendMessage(activeLang === 'mr' ? 'परीक्षेचा खूप ताण आलाय' : activeLang === 'hi' ? 'परीक्षा का बहुत तनाव है' : 'I have exam anxiety')}
+                    style={[styles.chipPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
+                  >
+                    <Text style={[styles.chipText, { color: colors.chipText }]}>{t.features.anxiety}</Text>
+                  </TouchableOpacity>
 
-                <TouchableOpacity
-                  onPress={() => sendMessage(activeLang === 'mr' ? 'सोप्या भाषेत समजावून सांगा' : activeLang === 'hi' ? 'सरल शब्दों में समझाइए' : "Explain Like I'm 10")}
-                  style={[styles.chipPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
-                >
-                  <Text style={[styles.chipText, { color: colors.chipText }]}>{t.features.eli10}</Text>
-                </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => sendMessage(activeLang === 'mr' ? 'अभ्यास कमबॅक कसा करू?' : activeLang === 'hi' ? 'स्टडी कमबैक कैसे करूँ?' : 'How to do a study comeback?')}
+                    style={[styles.chipPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
+                  >
+                    <Text style={[styles.chipText, { color: colors.chipText }]}>{t.features.comeback}</Text>
+                  </TouchableOpacity>
 
-                <TouchableOpacity
-                  onPress={() => sendMessage(activeLang === 'mr' ? 'रिव्हिजन कशी करू?' : activeLang === 'hi' ? 'रिवीजन कैसे करूँ?' : 'Revision reminders and spaced repetition')}
-                  style={[styles.chipPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
-                >
-                  <Text style={[styles.chipText, { color: colors.chipText }]}>{t.features.revision}</Text>
-                </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => sendMessage(activeLang === 'mr' ? 'सोप्या भाषेत समजावून सांगा' : activeLang === 'hi' ? 'सरल शब्दों में समझाइए' : "Explain Like I'm 10")}
+                    style={[styles.chipPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
+                  >
+                    <Text style={[styles.chipText, { color: colors.chipText }]}>{t.features.eli10}</Text>
+                  </TouchableOpacity>
 
-                <TouchableOpacity
-                  onPress={() => sendMessage(activeLang === 'mr' ? 'अभ्यास वेळापत्रक नियोजन' : activeLang === 'hi' ? 'स्टडी टाइमटेबल प्लानिंग' : 'Study planner routine')}
-                  style={[styles.chipPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
-                >
-                  <Text style={[styles.chipText, { color: colors.chipText }]}>{t.features.planning}</Text>
-                </TouchableOpacity>
-              </ScrollView>
+                  <TouchableOpacity
+                    onPress={() => sendMessage(activeLang === 'mr' ? 'रिव्हिजन कशी करू?' : activeLang === 'hi' ? 'रिवीजन कैसे करूँ?' : 'Revision reminders and spaced repetition')}
+                    style={[styles.chipPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
+                  >
+                    <Text style={[styles.chipText, { color: colors.chipText }]}>{t.features.revision}</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={() => sendMessage(activeLang === 'mr' ? 'अभ्यास वेळापत्रक नियोजन' : activeLang === 'hi' ? 'स्टडी टाइमटेबल प्लानिंग' : 'Study planner routine')}
+                    style={[styles.chipPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
+                  >
+                    <Text style={[styles.chipText, { color: colors.chipText }]}>{t.features.planning}</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
 
-            {/* Bottom Input Area matching Mockup */}
+            {/* Bottom Input Area: Includes Microphone Voice Input */}
             <View style={[styles.inputBar, { backgroundColor: colors.screenBg, borderColor: colors.border }]}>
               <View style={[styles.inputPill, { backgroundColor: colors.inputBg, borderColor: colors.inputBorder }]}>
+                {/* Microphone Voice Input Button */}
+                <TouchableOpacity
+                  onPress={toggleListening}
+                  style={[
+                    styles.micButton,
+                    isListening && { backgroundColor: '#DC2626' }
+                  ]}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Ionicons
+                    name={isListening ? 'mic' : 'mic-outline'}
+                    size={18}
+                    color={isListening ? '#FFFFFF' : '#2563EB'}
+                  />
+                </TouchableOpacity>
+
                 <TextInput
                   value={inputText}
                   onChangeText={setInputText}
@@ -596,18 +924,20 @@ export default function AbhyasMitra({
                   onSubmitEditing={() => sendMessage()}
                   returnKeyType="send"
                 />
+
+                {/* Send Button */}
                 <TouchableOpacity
                   onPress={() => sendMessage()}
                   disabled={!inputText.trim() || loading}
                   style={[
                     styles.sendIconButton,
                     {
-                      backgroundColor: inputText.trim() && !loading ? '#38BDF8' : '#94A3B8',
+                      backgroundColor: inputText.trim() && !loading ? '#2563EB' : '#CBD5E1',
                       opacity: inputText.trim() && !loading ? 1 : 0.6
                     }
                   ]}
                 >
-                  <Ionicons name="paper-plane" size={16} color="#FFFFFF" />
+                  <Ionicons name="paper-plane" size={15} color="#FFFFFF" />
                 </TouchableOpacity>
               </View>
             </View>
@@ -664,7 +994,7 @@ function generateClientFallback(msg, lang, sessions, plans) {
 }
 
 // -------------------------------------------------------------
-// Component Styles matching exact Mockup Image
+// Component Styles: Responsive & Frame-Safe for ALL Screen Sizes
 // -------------------------------------------------------------
 const styles = StyleSheet.create({
   fabContainer: {
@@ -729,22 +1059,33 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#1E293B'
   },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+    marginRight: 6
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6
+  },
   backBtn: {
-    padding: 4,
-    marginRight: 2
+    padding: 2
   },
   avatarWrapper: {
     position: 'relative'
   },
   avatarMascotImage: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     borderWidth: 1.5,
     borderColor: '#38BDF8'
   },
@@ -752,88 +1093,173 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     right: 0,
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: 9,
+    height: 9,
+    borderRadius: 4.5,
     backgroundColor: '#22C55E',
     borderWidth: 1.5,
     borderColor: '#0B1736'
   },
   headerTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700'
   },
   headerSubtitle: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '500'
+  },
+  headerVoiceBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#1E293B',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#334155'
   },
   langContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 16,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: '#334155',
     backgroundColor: '#080E1E',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    gap: 5
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    gap: 4
   },
   langPill: {
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 8
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    borderRadius: 6
   },
   langPillActive: {
     backgroundColor: '#F8FAFC'
   },
   langPillText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700'
   },
+  voiceSettingsPanel: {
+    marginHorizontal: 12,
+    marginTop: 8,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 6
+  },
+  voicePanelTitle: {
+    fontSize: 13,
+    fontWeight: '700'
+  },
+  voiceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center'
+  },
+  voiceLabel: {
+    fontSize: 12,
+    fontWeight: '500'
+  },
+  toggleSwitch: {
+    width: 42,
+    height: 24,
+    borderRadius: 12,
+    padding: 2,
+    justifyContent: 'center'
+  },
+  toggleThumb: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+    elevation: 2
+  },
+  genderChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#CBD5E1'
+  },
+  genderChipActive: {
+    backgroundColor: '#2563EB',
+    borderColor: '#2563EB'
+  },
+  genderChipText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#64748B'
+  },
+  listeningBanner: {
+    backgroundColor: '#DC2626',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 6
+  },
+  pulseDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#FFFFFF',
+    marginRight: 6
+  },
+  listeningText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+    flex: 1
+  },
   messagesContainer: {
-    padding: 16,
-    gap: 14
+    padding: 12,
+    gap: 12
   },
   moodCard: {
-    padding: 14,
-    borderRadius: 16,
+    padding: 12,
+    borderRadius: 14,
     borderWidth: 1,
-    marginBottom: 6
+    marginBottom: 4
   },
   moodCardTitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700'
   },
   moodCardSubtitle: {
-    fontSize: 12,
+    fontSize: 11,
     marginTop: 2,
-    marginBottom: 10
+    marginBottom: 8
   },
   moodButtonsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8
+    gap: 6
   },
   moodButton: {
-    paddingHorizontal: 11,
-    paddingVertical: 6,
-    borderRadius: 20,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 16,
     borderWidth: 1
   },
   moodButtonText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700'
   },
   messageRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 8,
+    gap: 6,
     marginBottom: 4
   },
   botAvatarMini: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#38BDF8',
@@ -844,33 +1270,47 @@ const styles = StyleSheet.create({
     height: '100%'
   },
   bubble: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 16,
     borderWidth: 1
   },
   messageText: {
-    fontSize: 14,
-    lineHeight: 22
+    fontSize: 13,
+    lineHeight: 20
+  },
+  speechBubbleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    backgroundColor: '#EFF6FF'
+  },
+  speechBubbleText: {
+    fontSize: 10,
+    fontWeight: '700'
   },
   timeText: {
-    fontSize: 10,
-    marginTop: 4,
-    paddingHorizontal: 4
+    fontSize: 9,
+    paddingHorizontal: 2
   },
   actionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 10,
-    marginTop: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 8,
+    marginTop: 6,
     alignSelf: 'flex-start'
   },
   actionBtnText: {
     color: '#FFFFFF',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700'
   },
   emergencyBtn: {
@@ -878,52 +1318,78 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     backgroundColor: '#DC2626',
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: 10,
-    marginTop: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginTop: 6,
     alignSelf: 'flex-start'
   },
   emergencyBtnText: {
     color: '#FFFFFF',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700'
   },
   chipsContainer: {
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
     paddingVertical: 8,
     borderTopWidth: 1
   },
-  chipsScrollRow: {
+  chipsHeaderRow: {
     flexDirection: 'row',
-    gap: 8
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6
+  },
+  chipsHeaderTitle: {
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4
+  },
+  chipsHeaderToggle: {
+    fontSize: 11,
+    fontWeight: '700'
+  },
+  chipsWrapGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6
   },
   chipPill: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 14,
     borderWidth: 1
   },
   chipText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600'
   },
   inputBar: {
-    paddingHorizontal: 16,
-    paddingBottom: Platform.OS === 'ios' ? 10 : 14,
+    paddingHorizontal: 12,
+    paddingBottom: Platform.OS === 'ios' ? 10 : 12,
     paddingTop: 4
   },
   inputPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 48,
-    borderRadius: 24,
+    height: 44,
+    borderRadius: 22,
     borderWidth: 1,
-    paddingHorizontal: 14
+    paddingHorizontal: 8,
+    gap: 6
+  },
+  micButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#EFF6FF',
+    justifyContent: 'center',
+    alignItems: 'center'
   },
   textInput: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 13,
     paddingVertical: 0
   },
   sendIconButton: {
