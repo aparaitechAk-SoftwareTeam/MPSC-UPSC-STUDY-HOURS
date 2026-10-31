@@ -171,6 +171,7 @@ export default function AbhyasMitra({
   const [featuresGridModal, setFeaturesGridModal] = useState(false);
   const [voiceSettingsOpen, setVoiceSettingsOpen] = useState(false);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
+  const [chatbotDark, setChatbotDark] = useState(Boolean(isDark));
   const [autoReadAloud, setAutoReadAloud] = useState(false);
   const [voiceGender, setVoiceGender] = useState('female'); // 'female' | 'male'
   const [isSpeakingId, setIsSpeakingId] = useState(null);
@@ -178,12 +179,16 @@ export default function AbhyasMitra({
   const recognitionRef = useRef(null);
   const scrollRef = useRef(null);
 
-  // Sync active language with parent if updated
+  // Sync active language and theme with parent if updated
   useEffect(() => {
     if (currentLang && ['en', 'mr', 'hi'].includes(currentLang)) {
       setActiveLang(currentLang);
     }
   }, [currentLang]);
+
+  useEffect(() => {
+    setChatbotDark(Boolean(isDark));
+  }, [isDark]);
 
   const t = UI_TEXT[activeLang] || UI_TEXT.en;
   const userName = user?.name ? user.name.split(' ')[0] : 'Bhumika';
@@ -475,28 +480,37 @@ export default function AbhyasMitra({
     }
   };
 
-  // Color Palette tailored to clean frame
+  // Color Palette tailored to Complete Light & Dark Modes
   const colors = {
-    screenBg: isDark ? '#080E1E' : '#F8FAFC',
-    cardBg: isDark ? '#111B33' : '#FFFFFF',
-    headerBg: '#0B1736',
-    border: isDark ? '#1C2744' : '#E2E8F0',
-    titleText: '#FFFFFF',
-    subtitleText: '#94A3B8',
-    userBubble: '#2457C5',
+    screenBg: chatbotDark ? '#080E1E' : '#F8FAFC',
+    cardBg: chatbotDark ? '#111B33' : '#FFFFFF',
+    headerBg: chatbotDark ? '#0B1736' : '#FFFFFF',
+    headerBorder: chatbotDark ? '#1E293B' : '#E2E8F0',
+    titleText: chatbotDark ? '#FFFFFF' : '#0F172A',
+    subtitleText: chatbotDark ? '#94A3B8' : '#64748B',
+    backBtnColor: chatbotDark ? '#CBD5E1' : '#1E293B',
+    headerBtnBg: chatbotDark ? '#1E293B' : '#F1F5F9',
+    headerBtnBorder: chatbotDark ? '#334155' : '#CBD5E1',
+    headerBtnIcon: chatbotDark ? '#94A3B8' : '#475569',
+    singleLangBadgeBg: chatbotDark ? '#0F1D3D' : '#F1F5F9',
+    singleLangBadgeBorder: chatbotDark ? '#334155' : '#CBD5E1',
+    singleLangBadgeText: chatbotDark ? '#F8FAFC' : '#0F172A',
+    border: chatbotDark ? '#1E293B' : '#E2E8F0',
+    userBubble: '#2563EB',
     userBubbleBorder: '#3B82F6',
     userText: '#FFFFFF',
-    mitraBubble: isDark ? '#141D35' : '#F1F5F9',
-    mitraBubbleBorder: isDark ? '#223259' : '#E2E8F0',
-    mitraText: isDark ? '#F1F5F9' : '#1E293B',
-    muted: isDark ? '#8A99B5' : '#64748B',
-    chipBg: isDark ? '#121A30' : '#FFFFFF',
-    chipBorder: isDark ? '#223055' : '#CBD5E1',
-    chipText: isDark ? '#D8E2F5' : '#1E293B',
-    inputBg: isDark ? '#0D152A' : '#FFFFFF',
-    inputBorder: isDark ? '#223259' : '#CBD5E1',
-    inputText: isDark ? '#FFFFFF' : '#0F172A',
-    sendBg: '#38BDF8'
+    mitraBubble: chatbotDark ? '#141D35' : '#FFFFFF',
+    mitraBubbleBorder: chatbotDark ? '#223259' : '#E2E8F0',
+    mitraText: chatbotDark ? '#F1F5F9' : '#0F172A',
+    muted: chatbotDark ? '#8A99B5' : '#64748B',
+    chipBg: chatbotDark ? '#111B33' : '#FFFFFF',
+    chipBorder: chatbotDark ? '#223055' : '#CBD5E1',
+    chipText: chatbotDark ? '#D8E2F5' : '#1E293B',
+    inputBg: chatbotDark ? '#0D152A' : '#FFFFFF',
+    inputBorder: chatbotDark ? '#223259' : '#CBD5E1',
+    inputText: chatbotDark ? '#FFFFFF' : '#0F172A',
+    placeholder: chatbotDark ? '#64748B' : '#94A3B8',
+    sendBg: '#2563EB'
   };
 
   return (
@@ -533,14 +547,14 @@ export default function AbhyasMitra({
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           >
             {/* Top Navigation Header: Ultra-clean and compact for narrow frames */}
-            <View style={[styles.header, { backgroundColor: colors.headerBg }]}>
+            <View style={[styles.header, { backgroundColor: colors.headerBg, borderBottomColor: colors.headerBorder }]}>
               <View style={styles.headerLeft}>
                 <TouchableOpacity
                   onPress={() => setIsOpen(false)}
                   style={styles.backBtn}
                   hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                 >
-                  <Ionicons name="chevron-back" size={22} color="#CBD5E1" />
+                  <Ionicons name="chevron-back" size={22} color={colors.backBtnColor} />
                 </TouchableOpacity>
 
                 <View style={styles.avatarWrapper}>
@@ -566,47 +580,103 @@ export default function AbhyasMitra({
               </View>
 
               <View style={styles.headerRight}>
+                {/* Dark / Light Mode Toggle Button */}
+                <TouchableOpacity
+                  onPress={() => setChatbotDark(!chatbotDark)}
+                  style={[
+                    styles.headerVoiceBtn,
+                    { backgroundColor: colors.headerBtnBg, borderColor: colors.headerBtnBorder }
+                  ]}
+                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                >
+                  <Ionicons
+                    name={chatbotDark ? 'sunny' : 'moon'}
+                    size={15}
+                    color={chatbotDark ? '#F59E0B' : '#475569'}
+                  />
+                </TouchableOpacity>
+
                 {/* Voice Settings Toggle Icon */}
                 <TouchableOpacity
                   onPress={() => setVoiceSettingsOpen(!voiceSettingsOpen)}
-                  style={[styles.headerVoiceBtn, autoReadAloud && { backgroundColor: '#1E3A8A' }]}
+                  style={[
+                    styles.headerVoiceBtn,
+                    { backgroundColor: colors.headerBtnBg, borderColor: colors.headerBtnBorder },
+                    autoReadAloud && { backgroundColor: '#1E3A8A' }
+                  ]}
                   hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                 >
                   <Ionicons
                     name={autoReadAloud ? 'volume-high' : 'volume-medium-outline'}
                     size={15}
-                    color={autoReadAloud ? '#38BDF8' : '#94A3B8'}
+                    color={autoReadAloud ? '#38BDF8' : colors.headerBtnIcon}
                   />
                 </TouchableOpacity>
 
                 {/* Single Compact Language Dropdown Pill: [ 🌐 EN ▾ ] */}
                 <TouchableOpacity
                   onPress={() => setLangMenuOpen(true)}
-                  style={styles.singleLangBadge}
+                  style={[
+                    styles.singleLangBadge,
+                    { backgroundColor: colors.singleLangBadgeBg, borderColor: colors.singleLangBadgeBorder }
+                  ]}
                   hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                 >
                   <Ionicons name="globe-outline" size={12} color="#38BDF8" />
-                  <Text style={styles.singleLangBadgeText}>
+                  <Text style={[styles.singleLangBadgeText, { color: colors.singleLangBadgeText }]}>
                     {activeLang === 'en' ? 'EN' : activeLang === 'mr' ? 'मराठी' : 'हिंदी'}
                   </Text>
-                  <Ionicons name="chevron-down" size={10} color="#94A3B8" />
+                  <Ionicons name="chevron-down" size={10} color={colors.muted} />
                 </TouchableOpacity>
               </View>
             </View>
 
-            {/* Voice Assistant Settings Dropdown Panel */}
+            {/* Voice & Theme Settings Dropdown Panel */}
             {voiceSettingsOpen && (
               <View style={[styles.voiceSettingsPanel, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <Ionicons name="mic-circle-outline" size={18} color="#38BDF8" />
-                    <Text style={[styles.voicePanelTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
-                      {t.voiceSettings}
+                    <Ionicons name="settings-outline" size={18} color="#38BDF8" />
+                    <Text style={[styles.voicePanelTitle, { color: chatbotDark ? '#FFFFFF' : '#0F172A' }]}>
+                      {activeLang === 'mr' ? 'सेटिंग्ज व आवाज' : activeLang === 'hi' ? 'सेटिंग्स और आवाज' : 'Chatbot Settings'}
                     </Text>
                   </View>
                   <TouchableOpacity onPress={() => setVoiceSettingsOpen(false)}>
                     <Ionicons name="close" size={16} color={colors.muted} />
                   </TouchableOpacity>
+                </View>
+
+                {/* Dark / Light Theme Mode Switch */}
+                <View style={[styles.voiceRow, { marginBottom: 10 }]}>
+                  <Text style={[styles.voiceLabel, { color: colors.mitraText }]}>
+                    {activeLang === 'mr' ? 'थीम मोड' : activeLang === 'hi' ? 'थीम मोड' : 'Theme Mode'}
+                  </Text>
+                  <View style={{ flexDirection: 'row', gap: 6 }}>
+                    <TouchableOpacity
+                      onPress={() => setChatbotDark(false)}
+                      style={[
+                        styles.genderChip,
+                        !chatbotDark && styles.genderChipActive,
+                        { borderColor: colors.border }
+                      ]}
+                    >
+                      <Text style={[styles.genderChipText, !chatbotDark && { color: '#FFFFFF' }]}>
+                        ☀️ Light
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => setChatbotDark(true)}
+                      style={[
+                        styles.genderChip,
+                        chatbotDark && styles.genderChipActive,
+                        { borderColor: colors.border }
+                      ]}
+                    >
+                      <Text style={[styles.genderChipText, chatbotDark && { color: '#FFFFFF' }]}>
+                        🌙 Dark
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
 
                 {/* Auto read aloud switch */}
@@ -626,7 +696,7 @@ export default function AbhyasMitra({
                   <View style={{ flexDirection: 'row', gap: 6 }}>
                     <TouchableOpacity
                       onPress={() => setVoiceGender('female')}
-                      style={[styles.genderChip, voiceGender === 'female' && styles.genderChipActive]}
+                      style={[styles.genderChip, voiceGender === 'female' && styles.genderChipActive, { borderColor: colors.border }]}
                     >
                       <Text style={[styles.genderChipText, voiceGender === 'female' && { color: '#FFFFFF' }]}>
                         {t.female}
@@ -634,7 +704,7 @@ export default function AbhyasMitra({
                     </TouchableOpacity>
                     <TouchableOpacity
                       onPress={() => setVoiceGender('male')}
-                      style={[styles.genderChip, voiceGender === 'male' && styles.genderChipActive]}
+                      style={[styles.genderChip, voiceGender === 'male' && styles.genderChipActive, { borderColor: colors.border }]}
                     >
                       <Text style={[styles.genderChipText, voiceGender === 'male' && { color: '#FFFFFF' }]}>
                         {t.male}
@@ -974,7 +1044,7 @@ export default function AbhyasMitra({
                 <View style={styles.sheetHeader}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                     <Ionicons name="sparkles" size={17} color="#2563EB" />
-                    <Text style={[styles.sheetTitle, { color: isDark ? '#F8FAFC' : '#0F172A' }]}>
+                    <Text style={[styles.sheetTitle, { color: chatbotDark ? '#F8FAFC' : '#0F172A' }]}>
                       {t.quickActionsLabel}
                     </Text>
                   </View>
@@ -1002,10 +1072,10 @@ export default function AbhyasMitra({
                         setFeaturesGridModal(false);
                         sendMessage(item.prompt);
                       }}
-                      style={[styles.gridCard, { backgroundColor: isDark ? '#1E293B' : item.bg, borderColor: isDark ? '#334155' : '#E2E8F0' }]}
+                      style={[styles.gridCard, { backgroundColor: chatbotDark ? '#1E293B' : item.bg, borderColor: chatbotDark ? '#334155' : '#E2E8F0' }]}
                     >
                       <Ionicons name={item.icon} size={18} color={item.color} />
-                      <Text style={[styles.gridCardTitle, { color: isDark ? '#F1F5F9' : '#1E293B' }]} numberOfLines={2}>
+                      <Text style={[styles.gridCardTitle, { color: chatbotDark ? '#F1F5F9' : '#1E293B' }]} numberOfLines={2}>
                         {item.title}
                       </Text>
                     </TouchableOpacity>
@@ -1031,7 +1101,7 @@ export default function AbhyasMitra({
                 <View style={styles.langModalHeader}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                     <Ionicons name="globe-outline" size={16} color="#38BDF8" />
-                    <Text style={[styles.langModalHeading, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
+                    <Text style={[styles.langModalHeading, { color: chatbotDark ? '#FFFFFF' : '#0F172A' }]}>
                       {activeLang === 'mr' ? 'भाषा निवडा' : activeLang === 'hi' ? 'भाषा चुनें' : 'Select Language'}
                     </Text>
                   </View>
@@ -1055,7 +1125,7 @@ export default function AbhyasMitra({
                       }}
                       style={[
                         styles.langModalOption,
-                        isActive && { backgroundColor: isDark ? '#1E293B' : '#EFF6FF', borderColor: '#2563EB' }
+                        isActive && { backgroundColor: chatbotDark ? '#1E293B' : '#EFF6FF', borderColor: '#2563EB' }
                       ]}
                     >
                       <View>
