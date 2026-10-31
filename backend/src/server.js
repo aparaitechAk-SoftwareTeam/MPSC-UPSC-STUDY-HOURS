@@ -923,6 +923,59 @@ app.patch('/api/notifications/:id/read', auth(), async (req, res) => {
 });
 
 // -------------------------------------------------------------
+// Abhyas Mitra - Study Companion Chat Endpoint
+// -------------------------------------------------------------
+const { processMitraMessage } = require('./mitraEngine');
+
+app.post('/api/mitra/chat', auth(), async (req, res) => {
+    try {
+        const { message, lang = 'en' } = req.body || {};
+        if (!message || !String(message).trim()) {
+            return res.status(400).json({ error: 'Message is required' });
+        }
+
+        // Fetch student's real study data to give personalized context
+        const [sessions, plans, topicProgress] = await Promise.all([
+            withDb(
+                () => Session.find({ userId: req.user.id }).lean(),
+                () => (readJsonDb().sessions || []).filter(s => s.userId === req.user.id)
+            ),
+            withDb(
+                () => Plan.find({ userId: req.user.id }).lean(),
+                () => (readJsonDb().plans || []).filter(p => p.userId === req.user.id)
+            ),
+            withDb(
+                () => TopicProgress.find({ userId: req.user.id }).lean(),
+                () => (readJsonDb().topicProgress || []).filter(tp => tp.userId === req.user.id)
+            )
+        ]);
+
+        const reply = processMitraMessage({
+            message,
+            lang,
+            user: req.user,
+            sessions: (sessions || []).map(cleanDoc),
+            plans: (plans || []).map(cleanDoc),
+            topicProgress: (topicProgress || []).map(cleanDoc)
+        });
+
+        res.json({
+            ok: true,
+            reply: reply.text,
+            action: reply.action || null,
+            suggestedActionLabel: reply.suggestedActionLabel || null,
+            helpline: reply.helpline || null,
+            quizAnswer: reply.quizAnswer || null,
+            explanation: reply.explanation || null,
+            timestamp: new Date().toISOString()
+        });
+    } catch (err) {
+        console.error('[Abhyas Mitra] Error processing message:', err);
+        res.status(500).json({ error: 'Abhyas Mitra is momentarily unavailable. Please try again.' });
+    }
+});
+
+// -------------------------------------------------------------
 // Support Tickets Routes (Student)
 // -------------------------------------------------------------
 app.get('/api/tickets', auth(), async (req, res) => {

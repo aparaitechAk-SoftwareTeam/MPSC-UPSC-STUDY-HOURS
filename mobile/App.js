@@ -22,6 +22,7 @@ import Svg, { Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { translations, AVAILABLE_LANGUAGES, getTranslation, getSubjectName, getTopicName, getChapterName, getTaskTitle, getStatusLabel } from './translations';
 import TicketSupportScreen from './TicketSupportScreen';
+import AbhyasMitra from './AbhyasMitra';
 
 const LIGHT_THEME = {
   isDark: false,
@@ -5605,6 +5606,26 @@ export default function App() {
             );
           })}
         </View>
+        )}
+
+        {/* Abhyas Mitra - Friendly UPSC & MPSC Study Companion Chatbot */}
+        {!focusMode && (
+          <AbhyasMitra
+            isDark={isDark}
+            currentLang={lang}
+            onLangChange={changeLanguage}
+            token={token}
+            user={user}
+            sessions={sessions}
+            plans={plans}
+            onNavigateTab={(tName) => {
+              setTab(tName);
+              refresh();
+            }}
+            onStartTimer={(subId, topicTitle) => {
+              handleStartFocus(subId, topicTitle);
+            }}
+          />
         )}
 
         {/* Exit Focus Mode Confirmation Dialog (Aditya's Feature) */}
