@@ -30,46 +30,46 @@ const UI_TEXT = {
     moodTitle: 'Daily Mood Check-in',
     moodSubtitle: 'How are you feeling today?',
     moods: [
-      { id: 'energized', label: '⚡ Energized', color: '#0284c7', bg: '#e0f2fe', border: '#7dd3fc' },
-      { id: 'focused', label: '😊 Focused', color: '#b45309', bg: '#fef3c7', border: '#fcd34d' },
-      { id: 'tired', label: '😴 Tired', color: '#059669', bg: '#d1fae5', border: '#6ee7b7' },
-      { id: 'anxious', label: '😰 Anxious', color: '#dc2626', bg: '#fee2e2', border: '#fca5a5' }
+      { id: 'energized', label: 'Energized' },
+      { id: 'focused', label: 'Focused' },
+      { id: 'tired', label: 'Tired' },
+      { id: 'anxious', label: 'Anxious' }
     ],
     greeting: (name) =>
       `Hello, ${name || 'Aspirant'}! 👋\n\nI'm Abhyas Mitra, your friendly UPSC & MPSC preparation companion.\n\nWhat shall we work on today?`,
-    starters: {
-      study: '📚 Study Help',
-      plan: '📅 Study Planning'
-    },
     features: {
-      study: '📚 Study Help',
-      planning: '📅 Study Planning',
-      anxiety: '❤️ Anxiety Support',
-      comeback: '🔄 Study Comeback',
-      eli10: "👶 Explain Like I'm 10",
-      revision: '🔁 Revision Reminder'
+      study: 'Study Help',
+      planning: 'Study Planning',
+      anxiety: 'Anxiety Support',
+      comeback: 'Study Comeback',
+      eli10: "Explain Like I'm 10",
+      revision: 'Revision Reminder'
     },
     quickActionsLabel: 'Quick Actions (6 Features)',
     collapse: 'Show Less ▴',
     expand: 'View All ▾',
     helplineBtn: '📞 Call Tele-MANAS: 14416 (Free 24/7)',
-    openPlannerBtn: '📅 Open Study Planner',
-    startTimerBtn: '▶ Start Focus Timer',
+    openPlannerBtn: 'Open Study Planner',
+    startTimerBtn: 'Start Focus Timer',
     privacyNote: '100% Free & Private • Rule-based study companion',
-    voiceSettings: 'Voice Settings',
-    voiceAutoRead: 'Read answers aloud',
-    voiceGender: 'Voice Pitch',
-    female: 'Female',
-    male: 'Male',
-    listening: '🎙️ Listening in English... Speak your question now',
-    listen: '🔊 Listen',
-    stop: '⏹️ Stop',
-    thinking: 'Mitra is thinking...',
-    readingAloud: 'Reading response aloud...',
-    clearChat: 'Clear',
+    settings: 'Settings',
+    appearance: 'Theme Mode',
+    darkMode: 'Dark Mode',
+    lightMode: 'Light Mode',
+    chatHistory: 'Conversation History',
+    chatHistorySub: 'Keep conversation on your device',
+    voiceReading: 'Voice Auto-Read',
+    voiceReadingSub: 'Read answers aloud automatically',
+    clearChat: 'Clear Conversation',
+    clearChatSub: 'Reset messages and start fresh',
     clearConfirmTitle: 'Clear conversation?',
     clearConfirmMsg: 'This will reset your messages and start a fresh study session.',
     cancel: 'Cancel',
+    listening: 'Listening in English... Speak your question now',
+    listen: 'Listen',
+    stop: 'Stop',
+    thinking: 'Mitra is thinking...',
+    readingAloud: 'Reading response aloud...',
     privacyNotice: '🔒 100% Free & Private • Processed locally • No audio saved'
   },
   mr: {
@@ -79,46 +79,46 @@ const UI_TEXT = {
     moodTitle: 'दैनिक मूड चेक-इन',
     moodSubtitle: 'आज तुम्हाला कसे वाटते आहे?',
     moods: [
-      { id: 'energized', label: '⚡ उत्साही', color: '#0284c7', bg: '#e0f2fe', border: '#7dd3fc' },
-      { id: 'focused', label: '😊 एकाग्र', color: '#b45309', bg: '#fef3c7', border: '#fcd34d' },
-      { id: 'tired', label: '😴 थकवा', color: '#059669', bg: '#d1fae5', border: '#6ee7b7' },
-      { id: 'anxious', label: '😰 ताण', color: '#dc2626', bg: '#fee2e2', border: '#fca5a5' }
+      { id: 'energized', label: 'उत्साही' },
+      { id: 'focused', label: 'एकाग्र' },
+      { id: 'tired', label: 'थकवा' },
+      { id: 'anxious', label: 'ताण' }
     ],
     greeting: (name) =>
       `नमस्ते, ${name || 'मित्रा'}! 👋\n\nमी अभ्यास मित्र, तुमचा मैत्रीपूर्ण UPSC व MPSC अभ्यास साथीदार.\n\nआज आपण कशावर काम करूया?`,
-    starters: {
-      study: '📚 अभ्यास मदत',
-      plan: '📅 अभ्यास नियोजन'
-    },
     features: {
-      study: '📚 अभ्यास मदत',
-      planning: '📅 अभ्यास नियोजन',
-      anxiety: '❤️ ताण निवारण',
-      comeback: '🔄 अभ्यास कमबॅक',
-      eli10: '👶 सोप्या भाषेत (ELI10)',
-      revision: '🔁 उजळणी आठवण'
+      study: 'अभ्यास मदत',
+      planning: 'अभ्यास नियोजन',
+      anxiety: 'ताण निवारण',
+      comeback: 'अभ्यास कमबॅक',
+      eli10: 'सोप्या भाषेत (ELI10)',
+      revision: 'उजळणी आठवण'
     },
     quickActionsLabel: 'मुख्य वैशिष्ट्ये (६ फीचर्स)',
     collapse: 'कमी करा ▴',
     expand: 'सर्व ६ पहा ▾',
     helplineBtn: '📞 टेली-मानस हेल्पलाइन: 14416 (मोफत)',
-    openPlannerBtn: '📅 प्लॅनर उघडा',
-    startTimerBtn: '▶ टायमर सुरू करा',
+    openPlannerBtn: 'प्लॅनर उघडा',
+    startTimerBtn: 'टायमर सुरू करा',
     privacyNote: '१००% मोफत व सुरक्षित • अभ्यास साथीदार',
-    voiceSettings: 'आवाज सेटिंग्ज',
-    voiceAutoRead: 'उत्तरे मोठ्याने वाचा',
-    voiceGender: 'आवाज प्रकार',
-    female: 'स्त्री आवाज',
-    male: 'पुरुष आवाज',
-    listening: '🎙️ मराठीत ऐकत आहे... तुमचा प्रश्न बोला',
-    listen: '🔊 ऐका',
-    stop: '⏹️ थांबवा',
-    thinking: 'मित्र विचार करत आहे...',
-    readingAloud: 'उत्तर वाचून दाखवत आहे...',
-    clearChat: 'रीसेट',
+    settings: 'सेटिंग्ज',
+    appearance: 'थीम मोड',
+    darkMode: 'डार्क मोड',
+    lightMode: 'लाइट मोड',
+    chatHistory: 'संभाषण इतिहास',
+    chatHistorySub: 'डिव्हाइसवर संभाषण सुरक्षित ठेवा',
+    voiceReading: 'व्हॉइस ऑटो-रीड',
+    voiceReadingSub: 'उत्तरे आपोआप वाचून दाखवा',
+    clearChat: 'चॅट साफ करा',
+    clearChatSub: 'नवीन अभ्यास सत्र सुरू करा',
     clearConfirmTitle: 'चॅट साफ करायचे का?',
     clearConfirmMsg: 'यामुळे तुमचे सध्याचे संभाषण साफ होईल व नवीन सत्र सुरू होईल.',
     cancel: 'रद्द करा',
+    listening: 'मराठीत ऐकत आहे... तुमचा प्रश्न बोला',
+    listen: 'ऐका',
+    stop: 'थांबवा',
+    thinking: 'मित्र विचार करत आहे...',
+    readingAloud: 'उत्तर वाचून दाखवत आहे...',
     privacyNotice: '🔒 १००% मोफत व सुरक्षित • डिव्हाइसवर प्रक्रिया • ऑडिओ साठवला जात नाही'
   },
   hi: {
@@ -128,46 +128,46 @@ const UI_TEXT = {
     moodTitle: 'दैनिक मूड चेक-इन',
     moodSubtitle: 'आज आप कैसा महसूस कर रहे हैं?',
     moods: [
-      { id: 'energized', label: '⚡ ऊर्जान्वित', color: '#0284c7', bg: '#e0f2fe', border: '#7dd3fc' },
-      { id: 'focused', label: '😊 एकाग्र', color: '#b45309', bg: '#fef3c7', border: '#fcd34d' },
-      { id: 'tired', label: '😴 थकावट', color: '#059669', bg: '#d1fae5', border: '#6ee7b7' },
-      { id: 'anxious', label: '😰 तनाव', color: '#dc2626', bg: '#fee2e2', border: '#fca5a5' }
+      { id: 'energized', label: 'ऊर्जान्वित' },
+      { id: 'focused', label: 'एकाग्र' },
+      { id: 'tired', label: 'थकावट' },
+      { id: 'anxious', label: 'तनाव' }
     ],
     greeting: (name) =>
       `नमस्ते, ${name || 'साथी'}! 👋\n\nमैं अभ्यास मित्र, आपका आत्मीय UPSC व MPSC तैयारी साथी।\n\nआज हम किस पर काम करें?`,
-    starters: {
-      study: '📚 स्टडी हेल्प',
-      plan: '📅 स्टडी प्लानिंग'
-    },
     features: {
-      study: '📚 स्टडी हेल्प',
-      planning: '📅 स्टडी प्लानिंग',
-      anxiety: '❤️ तनाव मुक्ति',
-      comeback: '🔄 स्टडी कमबैक',
-      eli10: '👶 सरल शब्दों में (ELI10)',
-      revision: '🔁 रिवीजन रिमाइंडर'
+      study: 'स्टडी हेल्प',
+      planning: 'स्टडी प्लानिंग',
+      anxiety: 'तनाव मुक्ति',
+      comeback: 'स्टडी कमबैक',
+      eli10: 'सरल शब्दों में (ELI10)',
+      revision: 'रिवीजन रिमाइंडर'
     },
     quickActionsLabel: 'मुख्य सुविधाएं (६ फीचर्स)',
     collapse: 'कम दिखाएं ▴',
     expand: 'सभी ६ देखें ▾',
     helplineBtn: '📞 टेली-मानस हेल्पलाइन: 14416 (निःशुल्क)',
-    openPlannerBtn: '📅 प्लानर खोलें',
-    startTimerBtn: '▶ टाइमर शुरू करें',
+    openPlannerBtn: 'प्लानर खोलें',
+    startTimerBtn: 'टाइमर शुरू करें',
     privacyNote: '100% निःशुल्क और सुरक्षित • सच्चा साथी',
-    voiceSettings: 'ध्वनि सेटिंग्स',
-    voiceAutoRead: 'उत्तर बोलकर सुनाएं',
-    voiceGender: 'आवाज का प्रकार',
-    female: 'महिला आवाज',
-    male: 'पुरुष आवाज',
-    listening: '🎙️ हिंदी में सुन रहा हूँ... अपना सवाल बोलिए',
-    listen: '🔊 सुनें',
-    stop: '⏹️ रोकें',
-    thinking: 'मित्र विचार कर रहा है...',
-    readingAloud: 'उत्तर सुनाया जा रहा है...',
-    clearChat: 'रीसेट',
+    settings: 'सेटिंग्स',
+    appearance: 'थीम मोड',
+    darkMode: 'डार्क मोड',
+    lightMode: 'लाइट मोड',
+    chatHistory: 'बातचीत इतिहास',
+    chatHistorySub: 'डिवाइस पर बातचीत सुरक्षित रखें',
+    voiceReading: 'वॉयस ऑटो-रीड',
+    voiceReadingSub: 'उत्तर अपने आप बोलकर सुनाएं',
+    clearChat: 'चैट साफ करें',
+    clearChatSub: 'नया स्टडी सत्र शुरू करें',
     clearConfirmTitle: 'चैट साफ करें?',
     clearConfirmMsg: 'इससे वर्तमान बातचीत साफ हो जाएगी और नया सत्र शुरू होगा।',
     cancel: 'रद्द करें',
+    listening: 'हिंदी में सुन रहा हूँ... अपना सवाल बोलिए',
+    listen: 'सुनें',
+    stop: 'रोकें',
+    thinking: 'मित्र विचार कर रहा है...',
+    readingAloud: 'उत्तर सुनाया जा रहा है...',
     privacyNotice: '🔒 100% निःशुल्क और सुरक्षित • डिवाइस पर प्रोसेस • कोई ऑडियो सेव नहीं'
   }
 };
@@ -197,9 +197,11 @@ export default function AbhyasMitra({
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
   const [showMoodBanner, setShowMoodBanner] = useState(true);
-  const [showFeaturesBar, setShowFeaturesBar] = useState(true);
+  const [showFeaturesBar, setShowFeaturesBar] = useState(false);
   const [featuresGridModal, setFeaturesGridModal] = useState(false);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  const [saveChatHistory, setSaveChatHistory] = useState(true);
   const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
   const [chatbotDark, setChatbotDark] = useState(Boolean(isDark));
   const [autoReadAloud, setAutoReadAloud] = useState(false);
@@ -223,29 +225,6 @@ export default function AbhyasMitra({
   const t = UI_TEXT[activeLang] || UI_TEXT.en;
   const userName = user?.name ? user.name.split(' ')[0] : 'Bhumika';
   const completedPlansCount = (plans || []).filter(p => p.done).length;
-
-  const starterChips = [
-    {
-      key: 'study',
-      label: t.starters?.study || '📚 Study Help',
-      prompt:
-        activeLang === 'mr'
-          ? 'मला राज्यशास्त्राचा अभ्यास करायचा आहे, मार्गदर्शन करा.'
-          : activeLang === 'hi'
-          ? 'मुझे भारतीय राजव्यवस्था पढ़ने में सहायता चाहिए।'
-          : 'Help me study Indian Polity and Constitution.'
-    },
-    {
-      key: 'plan',
-      label: t.starters?.plan || '📅 Study Planning',
-      prompt:
-        activeLang === 'mr'
-          ? 'माझ्या आजच्या अभ्यासाचे वेळेनुसार नियोजन तयार करा.'
-          : activeLang === 'hi'
-          ? 'मेरी आज की पढ़ाई का टाइमटेबल बनाइए।'
-          : 'Help me plan my study schedule for today.'
-    }
-  ];
 
   // Initial welcome message
   const [messages, setMessages] = useState([
@@ -644,52 +623,6 @@ export default function AbhyasMitra({
               </View>
 
               <View style={styles.headerRight}>
-                {/* Dark / Light Mode Toggle Button (Single Symbol) */}
-                <TouchableOpacity
-                  onPress={() => setChatbotDark(!chatbotDark)}
-                  style={[
-                    styles.headerVoiceBtn,
-                    { backgroundColor: colors.headerBtnBg, borderColor: colors.headerBtnBorder }
-                  ]}
-                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-                >
-                  <Ionicons
-                    name={chatbotDark ? 'sunny' : 'moon'}
-                    size={15}
-                    color={chatbotDark ? '#F59E0B' : '#475569'}
-                  />
-                </TouchableOpacity>
-
-                {/* Say Aloud Toggle (Single Symbol: 🔊 / 🔇) */}
-                <TouchableOpacity
-                  onPress={() => setAutoReadAloud(!autoReadAloud)}
-                  style={[
-                    styles.headerVoiceBtn,
-                    { backgroundColor: colors.headerBtnBg, borderColor: colors.headerBtnBorder },
-                    autoReadAloud && { backgroundColor: '#1E3A8A' }
-                  ]}
-                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-                >
-                  <Ionicons
-                    name={autoReadAloud ? 'volume-high' : 'volume-mute-outline'}
-                    size={15}
-                    color={autoReadAloud ? '#38BDF8' : colors.headerBtnIcon}
-                  />
-                </TouchableOpacity>
-
-                {/* Clear Chat Reset (Single Symbol: 🗑️) */}
-                <TouchableOpacity
-                  onPress={() => setClearConfirmOpen(true)}
-                  style={[
-                    styles.headerVoiceBtn,
-                    { backgroundColor: colors.headerBtnBg, borderColor: colors.headerBtnBorder }
-                  ]}
-                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-                  accessibilityLabel={t.clearChat}
-                >
-                  <Ionicons name="trash-outline" size={14} color={colors.headerBtnIcon} />
-                </TouchableOpacity>
-
                 {/* Single Compact Language Dropdown Pill: [ 🌐 EN ▾ ] */}
                 <TouchableOpacity
                   onPress={() => setLangMenuOpen(true)}
@@ -704,6 +637,19 @@ export default function AbhyasMitra({
                     {activeLang === 'en' ? 'EN' : activeLang === 'mr' ? 'मराठी' : 'हिंदी'}
                   </Text>
                   <Ionicons name="chevron-down" size={10} color={colors.muted} />
+                </TouchableOpacity>
+
+                {/* Single Settings Button: Opens Theme, Chat History & Clear Chat */}
+                <TouchableOpacity
+                  onPress={() => setSettingsModalOpen(true)}
+                  style={[
+                    styles.headerVoiceBtn,
+                    { backgroundColor: colors.headerBtnBg, borderColor: colors.headerBtnBorder }
+                  ]}
+                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                  accessibilityLabel="Settings"
+                >
+                  <Ionicons name="settings-outline" size={15} color={colors.headerBtnIcon} />
                 </TouchableOpacity>
               </View>
             </View>
@@ -808,30 +754,6 @@ export default function AbhyasMitra({
                         )}
                       </View>
 
-                      {/* 4 Clean Starter Chips under Initial Greeting */}
-                      {!isUser && (msg.id === 'welcome_1' || String(msg.id).startsWith('welcome')) && (
-                        <View style={styles.starterChipsContainer}>
-                          {starterChips.map(chip => (
-                            <TouchableOpacity
-                              key={chip.key}
-                              onPress={() => sendMessage(chip.prompt)}
-                              style={[
-                                styles.starterChip,
-                                {
-                                  backgroundColor: chatbotDark ? '#14203D' : '#F1F5F9',
-                                  borderColor: chatbotDark ? '#233866' : '#CBD5E1'
-                                }
-                              ]}
-                              activeOpacity={0.75}
-                            >
-                              <Text style={[styles.starterChipText, { color: chatbotDark ? '#93C5FD' : '#1E40AF' }]}>
-                                {chip.label}
-                              </Text>
-                            </TouchableOpacity>
-                          ))}
-                        </View>
-                      )}
-
                       {/* Interactive Mood Check-in directly under Mitra's Greeting (Auto-hides once chosen) */}
                       {showMoodBanner && !isUser && (msg.id === 'welcome_1' || String(msg.id).startsWith('welcome')) && (
                         <View style={styles.inlineMoodWrap}>
@@ -848,10 +770,13 @@ export default function AbhyasMitra({
                                 }}
                                 style={[
                                   styles.inlineMoodPill,
-                                  { backgroundColor: m.bg, borderColor: m.border }
+                                  {
+                                    backgroundColor: chatbotDark ? '#14203D' : '#F1F5F9',
+                                    borderColor: chatbotDark ? '#223259' : '#CBD5E1'
+                                  }
                                 ]}
                               >
-                                <Text style={[styles.inlineMoodPillText, { color: m.color }]}>{m.label}</Text>
+                                <Text style={[styles.inlineMoodPillText, { color: colors.titleText }]}>{m.label}</Text>
                               </TouchableOpacity>
                             ))}
                           </View>
@@ -958,6 +883,7 @@ export default function AbhyasMitra({
                     onPress={() => sendMessage(activeLang === 'mr' ? 'मूलभूत हक्क समजावून सांगा' : activeLang === 'hi' ? 'मौलिक अधिकार क्या हैं?' : 'Explain Fundamental Rights')}
                     style={[styles.slimPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
                   >
+                    <Ionicons name="book-outline" size={12} color={chatbotDark ? '#93C5FD' : '#2563EB'} style={{ marginRight: 4 }} />
                     <Text style={[styles.slimPillText, { color: colors.chipText }]}>{t.features.study}</Text>
                   </TouchableOpacity>
 
@@ -965,6 +891,7 @@ export default function AbhyasMitra({
                     onPress={() => sendMessage(activeLang === 'mr' ? 'अभ्यास वेळापत्रक नियोजन' : activeLang === 'hi' ? 'स्टडी टाइमटेबल प्लानिंग' : 'Study planning routine')}
                     style={[styles.slimPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
                   >
+                    <Ionicons name="calendar-outline" size={12} color={chatbotDark ? '#93C5FD' : '#2563EB'} style={{ marginRight: 4 }} />
                     <Text style={[styles.slimPillText, { color: colors.chipText }]}>{t.features.planning}</Text>
                   </TouchableOpacity>
 
@@ -972,6 +899,7 @@ export default function AbhyasMitra({
                     onPress={() => sendMessage(activeLang === 'mr' ? 'परीक्षेचा खूप ताण आलाय' : activeLang === 'hi' ? 'परीक्षा का बहुत तनाव है' : 'I have exam anxiety')}
                     style={[styles.slimPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
                   >
+                    <Ionicons name="heart-outline" size={12} color={chatbotDark ? '#93C5FD' : '#2563EB'} style={{ marginRight: 4 }} />
                     <Text style={[styles.slimPillText, { color: colors.chipText }]}>{t.features.anxiety}</Text>
                   </TouchableOpacity>
 
@@ -979,6 +907,7 @@ export default function AbhyasMitra({
                     onPress={() => sendMessage(activeLang === 'mr' ? 'अभ्यास कमबॅक कसा करू?' : activeLang === 'hi' ? 'स्टडी कमबैक कैसे करूँ?' : 'How to do a study comeback?')}
                     style={[styles.slimPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
                   >
+                    <Ionicons name="refresh-outline" size={12} color={chatbotDark ? '#93C5FD' : '#2563EB'} style={{ marginRight: 4 }} />
                     <Text style={[styles.slimPillText, { color: colors.chipText }]}>{t.features.comeback}</Text>
                   </TouchableOpacity>
 
@@ -986,6 +915,7 @@ export default function AbhyasMitra({
                     onPress={() => sendMessage(activeLang === 'mr' ? 'सोप्या भाषेत समजावून सांगा' : activeLang === 'hi' ? 'सरल शब्दों में समझाइए' : "Explain Like I'm 10")}
                     style={[styles.slimPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
                   >
+                    <Ionicons name="bulb-outline" size={12} color={chatbotDark ? '#93C5FD' : '#2563EB'} style={{ marginRight: 4 }} />
                     <Text style={[styles.slimPillText, { color: colors.chipText }]}>{t.features.eli10}</Text>
                   </TouchableOpacity>
 
@@ -993,6 +923,7 @@ export default function AbhyasMitra({
                     onPress={() => sendMessage(activeLang === 'mr' ? 'रिव्हिजन कशी करू?' : activeLang === 'hi' ? 'रिवीजन कैसे करूँ?' : 'Revision reminders and spaced repetition')}
                     style={[styles.slimPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
                   >
+                    <Ionicons name="repeat-outline" size={12} color={chatbotDark ? '#93C5FD' : '#2563EB'} style={{ marginRight: 4 }} />
                     <Text style={[styles.slimPillText, { color: colors.chipText }]}>{t.features.revision}</Text>
                   </TouchableOpacity>
                 </ScrollView>
@@ -1107,12 +1038,12 @@ export default function AbhyasMitra({
 
                 <View style={styles.gridContainer}>
                   {[
-                    { key: 'study', title: t.features.study, prompt: activeLang === 'mr' ? 'मूलभूत हक्क समजावून सांगा' : activeLang === 'hi' ? 'मौलिक अधिकार क्या हैं?' : 'Explain Fundamental Rights', icon: 'book-outline', color: '#2563EB', bg: '#EFF6FF' },
-                    { key: 'planning', title: t.features.planning, prompt: activeLang === 'mr' ? 'अभ्यास वेळापत्रक नियोजन' : activeLang === 'hi' ? 'स्टडी टाइमटेबल प्लानिंग' : 'Study planner routine', icon: 'calendar-outline', color: '#4F46E5', bg: '#EEF2FF' },
-                    { key: 'anxiety', title: t.features.anxiety, prompt: activeLang === 'mr' ? 'परीक्षेचा खूप ताण आलाय' : activeLang === 'hi' ? 'परीक्षा का बहुत तनाव है' : 'I have exam anxiety', icon: 'heart-outline', color: '#DC2626', bg: '#FEF2F2' },
-                    { key: 'comeback', title: t.features.comeback, prompt: activeLang === 'mr' ? 'अभ्यास कमबॅक कसा करू?' : activeLang === 'hi' ? 'स्टडी कमबैक कैसे करूँ?' : 'How to do a study comeback?', icon: 'refresh-outline', color: '#7C3AED', bg: '#F5F3FF' },
-                    { key: 'eli10', title: t.features.eli10, prompt: activeLang === 'mr' ? 'सोप्या भाषेत समजावून सांगा' : activeLang === 'hi' ? 'सरल शब्दों में समझाइए' : "Explain Like I'm 10", icon: 'bulb-outline', color: '#D97706', bg: '#FFFBEB' },
-                    { key: 'revision', title: t.features.revision, prompt: activeLang === 'mr' ? 'रिव्हिजन कशी करू?' : activeLang === 'hi' ? 'रिवीजन कैसे करूँ?' : 'Revision reminders and spaced repetition', icon: 'repeat-outline', color: '#0891B2', bg: '#ECFEFF' }
+                    { key: 'study', title: t.features.study, prompt: activeLang === 'mr' ? 'मूलभूत हक्क समजावून सांगा' : activeLang === 'hi' ? 'मौलिक अधिकार क्या हैं?' : 'Explain Fundamental Rights', icon: 'book-outline' },
+                    { key: 'planning', title: t.features.planning, prompt: activeLang === 'mr' ? 'अभ्यास वेळापत्रक नियोजन' : activeLang === 'hi' ? 'स्टडी टाइमटेबल प्लानिंग' : 'Study planning routine', icon: 'calendar-outline' },
+                    { key: 'anxiety', title: t.features.anxiety, prompt: activeLang === 'mr' ? 'परीक्षेचा खूप ताण आलाय' : activeLang === 'hi' ? 'परीक्षा का बहुत तनाव है' : 'I have exam anxiety', icon: 'heart-outline' },
+                    { key: 'comeback', title: t.features.comeback, prompt: activeLang === 'mr' ? 'अभ्यास कमबॅक कसा करू?' : activeLang === 'hi' ? 'स्टडी कमबैक कैसे करूँ?' : 'How to do a study comeback?', icon: 'refresh-outline' },
+                    { key: 'eli10', title: t.features.eli10, prompt: activeLang === 'mr' ? 'सोप्या भाषेत समजावून सांगा' : activeLang === 'hi' ? 'सरल शब्दों में समझाइए' : "Explain Like I'm 10", icon: 'bulb-outline' },
+                    { key: 'revision', title: t.features.revision, prompt: activeLang === 'mr' ? 'रिव्हिजन कशी करू?' : activeLang === 'hi' ? 'रिवीजन कैसे करूँ?' : 'Revision reminders and spaced repetition', icon: 'repeat-outline' }
                   ].map(item => (
                     <TouchableOpacity
                       key={item.key}
@@ -1120,15 +1051,139 @@ export default function AbhyasMitra({
                         setFeaturesGridModal(false);
                         sendMessage(item.prompt);
                       }}
-                      style={[styles.gridCard, { backgroundColor: chatbotDark ? '#1E293B' : item.bg, borderColor: chatbotDark ? '#334155' : '#E2E8F0' }]}
+                      style={[
+                        styles.gridCard,
+                        {
+                          backgroundColor: chatbotDark ? '#1E293B' : '#F8FAFC',
+                          borderColor: chatbotDark ? '#334155' : '#E2E8F0'
+                        }
+                      ]}
                     >
-                      <Ionicons name={item.icon} size={18} color={item.color} />
-                      <Text style={[styles.gridCardTitle, { color: chatbotDark ? '#F1F5F9' : '#1E293B' }]} numberOfLines={2}>
+                      <Ionicons name={item.icon} size={18} color="#2563EB" />
+                      <Text style={[styles.gridCardTitle, { color: colors.titleText }]} numberOfLines={2}>
                         {item.title}
                       </Text>
                     </TouchableOpacity>
                   ))}
                 </View>
+              </View>
+            </View>
+          </Modal>
+
+          {/* Single Settings Modal Sheet: Theme Mode, Conversation History, Voice & Clear Chat */}
+          <Modal
+            visible={settingsModalOpen}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={() => setSettingsModalOpen(false)}
+          >
+            <View style={styles.sheetOverlay}>
+              <TouchableOpacity
+                style={styles.sheetBackdrop}
+                activeOpacity={1}
+                onPress={() => setSettingsModalOpen(false)}
+              />
+              <View style={[styles.settingsSheetContent, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+                <View style={[styles.settingsSheetHeader, { borderBottomColor: colors.border }]}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
+                    <Ionicons name="settings-sharp" size={17} color="#2563EB" />
+                    <Text style={[styles.settingsSheetTitle, { color: colors.titleText }]}>
+                      {t.settings}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => setSettingsModalOpen(false)}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Ionicons name="close-circle" size={20} color={colors.muted} />
+                  </TouchableOpacity>
+                </View>
+
+                {/* 1. Theme Mode (Light / Dark) */}
+                <View style={[styles.settingsRow, { borderBottomColor: colors.border }]}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+                    <View style={[styles.settingsIconBox, { backgroundColor: chatbotDark ? '#1E293B' : '#F1F5F9' }]}>
+                      <Ionicons name={chatbotDark ? 'moon' : 'sunny'} size={17} color={chatbotDark ? '#F59E0B' : '#2563EB'} />
+                    </View>
+                    <View>
+                      <Text style={[styles.settingsItemTitle, { color: colors.titleText }]}>{t.appearance}</Text>
+                      <Text style={[styles.settingsItemSub, { color: colors.muted }]}>{chatbotDark ? t.darkMode : t.lightMode}</Text>
+                    </View>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => setChatbotDark(!chatbotDark)}
+                    style={[
+                      styles.aestheticSwitch,
+                      { backgroundColor: chatbotDark ? '#2563EB' : '#E2E8F0', borderColor: chatbotDark ? '#3B82F6' : '#CBD5E1' }
+                    ]}
+                  >
+                    <View style={[styles.aestheticSwitchThumb, chatbotDark ? { alignSelf: 'flex-end' } : { alignSelf: 'flex-start' }]} />
+                  </TouchableOpacity>
+                </View>
+
+                {/* 2. Conversation History */}
+                <View style={[styles.settingsRow, { borderBottomColor: colors.border }]}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+                    <View style={[styles.settingsIconBox, { backgroundColor: chatbotDark ? '#1E293B' : '#F1F5F9' }]}>
+                      <Ionicons name="time-outline" size={17} color="#2563EB" />
+                    </View>
+                    <View>
+                      <Text style={[styles.settingsItemTitle, { color: colors.titleText }]}>{t.chatHistory}</Text>
+                      <Text style={[styles.settingsItemSub, { color: colors.muted }]}>{saveChatHistory ? t.chatHistorySub : 'Disabled'}</Text>
+                    </View>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => setSaveChatHistory(!saveChatHistory)}
+                    style={[
+                      styles.aestheticSwitch,
+                      { backgroundColor: saveChatHistory ? '#2563EB' : '#E2E8F0', borderColor: saveChatHistory ? '#3B82F6' : '#CBD5E1' }
+                    ]}
+                  >
+                    <View style={[styles.aestheticSwitchThumb, saveChatHistory ? { alignSelf: 'flex-end' } : { alignSelf: 'flex-start' }]} />
+                  </TouchableOpacity>
+                </View>
+
+                {/* 3. Voice Auto-Read */}
+                <View style={[styles.settingsRow, { borderBottomColor: colors.border }]}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+                    <View style={[styles.settingsIconBox, { backgroundColor: chatbotDark ? '#1E293B' : '#F1F5F9' }]}>
+                      <Ionicons name="volume-high-outline" size={17} color="#2563EB" />
+                    </View>
+                    <View>
+                      <Text style={[styles.settingsItemTitle, { color: colors.titleText }]}>{t.voiceReading}</Text>
+                      <Text style={[styles.settingsItemSub, { color: colors.muted }]}>{autoReadAloud ? 'Active' : 'Off'}</Text>
+                    </View>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => setAutoReadAloud(!autoReadAloud)}
+                    style={[
+                      styles.aestheticSwitch,
+                      { backgroundColor: autoReadAloud ? '#2563EB' : '#E2E8F0', borderColor: autoReadAloud ? '#3B82F6' : '#CBD5E1' }
+                    ]}
+                  >
+                    <View style={[styles.aestheticSwitchThumb, autoReadAloud ? { alignSelf: 'flex-end' } : { alignSelf: 'flex-start' }]} />
+                  </TouchableOpacity>
+                </View>
+
+                {/* 4. Clear Chat Option */}
+                <TouchableOpacity
+                  onPress={() => {
+                    setSettingsModalOpen(false);
+                    setTimeout(() => setClearConfirmOpen(true), 150);
+                  }}
+                  style={[styles.settingsRow, { borderBottomWidth: 0, paddingBottom: 6 }]}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+                    <View style={[styles.settingsIconBox, { backgroundColor: chatbotDark ? '#2D1515' : '#FEF2F2' }]}>
+                      <Ionicons name="trash-outline" size={17} color="#DC2626" />
+                    </View>
+                    <View>
+                      <Text style={[styles.settingsItemTitle, { color: '#DC2626' }]}>{t.clearChat}</Text>
+                      <Text style={[styles.settingsItemSub, { color: colors.muted }]}>{t.clearChatSub}</Text>
+                    </View>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color={colors.muted} />
+                </TouchableOpacity>
               </View>
             </View>
           </Modal>
@@ -1906,5 +1961,64 @@ const styles = StyleSheet.create({
   confirmModalBtnText: {
     fontSize: 12,
     fontWeight: '700'
+  },
+  // Settings Modal Sheet Styling
+  settingsSheetContent: {
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    borderWidth: 1,
+    padding: 16
+  },
+  settingsSheetHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    marginBottom: 4
+  },
+  settingsSheetTitle: {
+    fontSize: 14,
+    fontWeight: '700'
+  },
+  settingsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderBottomWidth: 1
+  },
+  settingsIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  settingsItemTitle: {
+    fontSize: 12.5,
+    fontWeight: '600'
+  },
+  settingsItemSub: {
+    fontSize: 10,
+    marginTop: 1
+  },
+  aestheticSwitch: {
+    width: 38,
+    height: 22,
+    borderRadius: 11,
+    padding: 2,
+    justifyContent: 'center',
+    borderWidth: 1
+  },
+  aestheticSwitchThumb: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 2
   }
 });
