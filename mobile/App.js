@@ -5301,7 +5301,7 @@ export default function App() {
           <View style={{ flex: 1, marginLeft: 10 }}>
             <Text style={txt(15, true)}>Abhyas Tracker</Text>
             <Text style={txt(10, false, C.muted)}>
-              {tab === 'Dashboard' ? t('dashboard') : tab === 'Timer' ? t('timer') : tab === 'Syllabus' ? t('syllabus') : tab === 'Planner' ? t('planner') : tab === 'Analytics' ? t('analytics') : (tab === 'Ticket Support' || tab === 'Support') ? t('ticketSupport', 'Ticket Support') : tab}
+              UPSC &amp; MPSC • {tab === 'Dashboard' ? t('dashboard') : tab === 'Timer' ? t('timer') : tab === 'Syllabus' ? t('syllabus') : tab === 'Planner' ? t('planner') : tab === 'Analytics' ? t('analytics') : (tab === 'Ticket Support' || tab === 'Support') ? t('ticketSupport', 'Ticket Support') : tab}
             </Text>
           </View>
 

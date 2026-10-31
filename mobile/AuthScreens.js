@@ -754,6 +754,12 @@ export default function AuthScreens({
     return { label: "Basic", color: "#F97316", width: "40%" };
   })();
 
+  useEffect(() => {
+    if (Platform.OS === 'web' && typeof document !== 'undefined') {
+      document.title = 'Abhyas Tracker - UPSC & MPSC';
+    }
+  }, []);
+
   return (
     <AuthThemeContext.Provider value={theme}>
       <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]}>
@@ -813,11 +819,11 @@ export default function AuthScreens({
           >
             {/* Logo & Header */}
             <View style={[styles.logo, { backgroundColor: theme.logoBg, shadowColor: theme.logoBg }]}>
-              <Text style={styles.logoText}>S</Text>
+              <Text style={styles.logoText}>A</Text>
             </View>
-            <Text style={[styles.appName, { color: theme.appName }]}>Study Hours</Text>
+            <Text style={[styles.appName, { color: theme.appName }]}>Abhyas Tracker</Text>
             <Text style={[styles.tagline, { color: theme.tagline }]}>
-              Your journey to UPSC &amp; MPSC success
+              UPSC &amp; MPSC Study Hours &amp; Companion
             </Text>
 
             {/* Error Alert Banner */}
@@ -1088,7 +1094,7 @@ export default function AuthScreens({
                   </TouchableOpacity>
                 </View>
                 <Text style={[styles.subtitle, { color: theme.subtitle }]}>
-                  Start tracking your preparation with Study Hours.
+                  Start tracking your preparation with Abhyas Tracker.
                 </Text>
 
                 <Field
