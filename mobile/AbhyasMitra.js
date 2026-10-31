@@ -25,8 +25,8 @@ const MASCOT_IMG = require('./assets/mitra_mascot.jpg');
 const UI_TEXT = {
   en: {
     title: 'Abhyas Mitra',
-    subtitle: 'Always with you',
-    placeholder: 'Talk or tap mic to speak...',
+    subtitle: 'Online • Study Companion',
+    placeholder: 'Ask a question or tap mic to speak...',
     moodTitle: 'Daily Mood Check-in',
     moodSubtitle: 'How are you feeling today?',
     moods: [
@@ -35,8 +35,14 @@ const UI_TEXT = {
       { id: 'tired', label: '😴 Tired', color: '#059669', bg: '#d1fae5', border: '#6ee7b7' },
       { id: 'anxious', label: '😰 Anxious', color: '#dc2626', bg: '#fee2e2', border: '#fca5a5' }
     ],
-    greeting: (name, completed, total) =>
-      `Welcome ${name || 'Aspirant'}! You have completed ${completed} of ${total || 5} topics. How can I help your preparation today? ❤️`,
+    greeting: (name) =>
+      `Hello, ${name || 'Aspirant'}! 👋\n\nI'm Abhyas Mitra, your friendly UPSC & MPSC preparation companion.\n\nWhat shall we work on today?`,
+    starters: {
+      study: '📚 Study Help',
+      mcq: '📝 Practice MCQs',
+      plan: '📅 Study Planning',
+      motivation: '⚡ Motivation'
+    },
     features: {
       study: '📚 Study Buddy',
       quiz: '📝 Daily Quiz',
@@ -58,14 +64,21 @@ const UI_TEXT = {
     voiceGender: 'Voice Pitch',
     female: 'Female',
     male: 'Male',
-    listening: '🎙️ Listening... Speak your question now',
+    listening: '🎙️ Listening in English... Speak your question now',
     listen: '🔊 Listen',
-    stop: '⏹️ Stop'
+    stop: '⏹️ Stop',
+    thinking: 'Mitra is thinking...',
+    readingAloud: 'Reading response aloud...',
+    clearChat: 'Clear',
+    clearConfirmTitle: 'Clear conversation?',
+    clearConfirmMsg: 'This will reset your messages and start a fresh study session.',
+    cancel: 'Cancel',
+    privacyNotice: '🔒 100% Free & Private • Processed locally • No audio saved'
   },
   mr: {
     title: 'अभ्यास मित्र',
-    subtitle: 'सदैव तुमच्यासोबत',
-    placeholder: 'टाईप करा किंवा बोला...',
+    subtitle: 'सक्रिय • अभ्यास साथीदार',
+    placeholder: 'प्रश्न विचारा किंवा बोला...',
     moodTitle: 'दैनिक मूड चेक-इन',
     moodSubtitle: 'आज तुम्हाला कसे वाटते आहे?',
     moods: [
@@ -74,8 +87,14 @@ const UI_TEXT = {
       { id: 'tired', label: '😴 थकवा', color: '#059669', bg: '#d1fae5', border: '#6ee7b7' },
       { id: 'anxious', label: '😰 ताण', color: '#dc2626', bg: '#fee2e2', border: '#fca5a5' }
     ],
-    greeting: (name, completed, total) =>
-      `स्वागत आहे ${name || 'मित्रा'}! तुम्ही ${completed} पैकी ५ विषय पूर्ण केले आहेत. आज अभ्यासात मी काय मदत करू? ❤️`,
+    greeting: (name) =>
+      `नमस्ते, ${name || 'मित्रा'}! 👋\n\nमी अभ्यास मित्र, तुमचा मैत्रीपूर्ण UPSC व MPSC अभ्यास साथीदार.\n\nआज आपण कशावर काम करूया?`,
+    starters: {
+      study: '📚 अभ्यास मदत',
+      mcq: '📝 MCQ सराव',
+      plan: '📅 अभ्यास नियोजन',
+      motivation: '⚡ प्रेरणा'
+    },
     features: {
       study: '📚 अभ्यास मित्र',
       quiz: '📝 दैनिक प्रश्नमंजुषा',
@@ -97,14 +116,21 @@ const UI_TEXT = {
     voiceGender: 'आवाज प्रकार',
     female: 'स्त्री आवाज',
     male: 'पुरुष आवाज',
-    listening: '🎙️ ऐकत आहे... तुमचा प्रश्न बोला',
+    listening: '🎙️ मराठीत ऐकत आहे... तुमचा प्रश्न बोला',
     listen: '🔊 ऐका',
-    stop: '⏹️ थांबवा'
+    stop: '⏹️ थांबवा',
+    thinking: 'मित्र विचार करत आहे...',
+    readingAloud: 'उत्तर वाचून दाखवत आहे...',
+    clearChat: 'रीसेट',
+    clearConfirmTitle: 'चॅट साफ करायचे का?',
+    clearConfirmMsg: 'यामुळे तुमचे सध्याचे संभाषण साफ होईल व नवीन सत्र सुरू होईल.',
+    cancel: 'रद्द करा',
+    privacyNotice: '🔒 १००% मोफत व सुरक्षित • डिव्हाइसवर प्रक्रिया • ऑडिओ साठवला जात नाही'
   },
   hi: {
     title: 'अभ्यास मित्र',
-    subtitle: 'सदैव आपके साथ',
-    placeholder: 'टाइप करें या बोलें...',
+    subtitle: 'सक्रिय • स्टडी साथी',
+    placeholder: 'सवाल पूछें या बोलें...',
     moodTitle: 'दैनिक मूड चेक-इन',
     moodSubtitle: 'आज आप कैसा महसूस कर रहे हैं?',
     moods: [
@@ -113,8 +139,14 @@ const UI_TEXT = {
       { id: 'tired', label: '😴 थकावट', color: '#059669', bg: '#d1fae5', border: '#6ee7b7' },
       { id: 'anxious', label: '😰 तनाव', color: '#dc2626', bg: '#fee2e2', border: '#fca5a5' }
     ],
-    greeting: (name, completed, total) =>
-      `नमस्ते ${name || 'साथी'}! आपने ${completed} में से ५ टॉपिक पूरे कर लिए हैं। आज आपकी तैयारी में मैं क्या मदद करूँ? ❤️`,
+    greeting: (name) =>
+      `नमस्ते, ${name || 'साथी'}! 👋\n\nमैं अभ्यास मित्र, आपका आत्मीय UPSC व MPSC तैयारी साथी।\n\nआज हम किस पर काम करें?`,
+    starters: {
+      study: '📚 स्टडी हेल्प',
+      mcq: '📝 MCQ अभ्यास',
+      plan: '📅 स्टडी प्लानिंग',
+      motivation: '⚡ मोटिवेशन'
+    },
     features: {
       study: '📚 स्टडी बडी',
       quiz: '📝 दैनिक क्विज़',
@@ -136,9 +168,16 @@ const UI_TEXT = {
     voiceGender: 'आवाज का प्रकार',
     female: 'महिला आवाज',
     male: 'पुरुष आवाज',
-    listening: '🎙️ सुन रहा हूँ... अपना सवाल बोलिए',
+    listening: '🎙️ हिंदी में सुन रहा हूँ... अपना सवाल बोलिए',
     listen: '🔊 सुनें',
-    stop: '⏹️ रोकें'
+    stop: '⏹️ रोकें',
+    thinking: 'मित्र विचार कर रहा है...',
+    readingAloud: 'उत्तर सुनाया जा रहा है...',
+    clearChat: 'रीसेट',
+    clearConfirmTitle: 'चैट साफ करें?',
+    clearConfirmMsg: 'इससे वर्तमान बातचीत साफ हो जाएगी और नया सत्र शुरू होगा।',
+    cancel: 'रद्द करें',
+    privacyNotice: '🔒 100% निःशुल्क और सुरक्षित • डिवाइस पर प्रोसेस • कोई ऑडियो सेव नहीं'
   }
 };
 
@@ -170,6 +209,7 @@ export default function AbhyasMitra({
   const [showFeaturesBar, setShowFeaturesBar] = useState(true);
   const [featuresGridModal, setFeaturesGridModal] = useState(false);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
+  const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
   const [chatbotDark, setChatbotDark] = useState(Boolean(isDark));
   const [autoReadAloud, setAutoReadAloud] = useState(false);
   const [voiceGender, setVoiceGender] = useState('female'); // 'female' | 'male'
@@ -193,15 +233,73 @@ export default function AbhyasMitra({
   const userName = user?.name ? user.name.split(' ')[0] : 'Bhumika';
   const completedPlansCount = (plans || []).filter(p => p.done).length;
 
+  const starterChips = [
+    {
+      key: 'study',
+      label: t.starters?.study || '📚 Study Help',
+      prompt:
+        activeLang === 'mr'
+          ? 'मला राज्यशास्त्राचा अभ्यास करायचा आहे, मार्गदर्शन करा.'
+          : activeLang === 'hi'
+          ? 'मुझे भारतीय राजव्यवस्था पढ़ने में सहायता चाहिए।'
+          : 'Help me study Indian Polity and Constitution.'
+    },
+    {
+      key: 'mcq',
+      label: t.starters?.mcq || '📝 Practice MCQs',
+      prompt:
+        activeLang === 'mr'
+          ? 'मला सराव करण्यासाठी ५ वस्तुनिष्ठ प्रश्न (MCQs) द्या.'
+          : activeLang === 'hi'
+          ? 'मुझे अभ्यास के लिए ५ बहुविकल्पीय प्रश्न (MCQs) दीजिए।'
+          : 'Give me 5 practice MCQs on Indian Polity.'
+    },
+    {
+      key: 'plan',
+      label: t.starters?.plan || '📅 Study Planning',
+      prompt:
+        activeLang === 'mr'
+          ? 'माझ्या आजच्या अभ्यासाचे वेळेनुसार नियोजन तयार करा.'
+          : activeLang === 'hi'
+          ? 'मेरी आज की पढ़ाई का टाइमटेबल बनाइए।'
+          : 'Help me plan my study schedule for today.'
+    },
+    {
+      key: 'motivation',
+      label: t.starters?.motivation || '⚡ Motivation',
+      prompt:
+        activeLang === 'mr'
+          ? 'अभ्यासाचा उत्साह कमी झाला आहे, मला प्रोत्साहन द्या.'
+          : activeLang === 'hi'
+          ? 'पढ़ाई में मन नहीं लग रहा, थोड़ा मोटिवेशन चाहिए।'
+          : 'I need some motivation and focus tips to start studying.'
+    }
+  ];
+
   // Initial welcome message
   const [messages, setMessages] = useState([
     {
       id: 'welcome_1',
       sender: 'mitra',
-      text: t.greeting(userName, completedPlansCount, (plans || []).length || 5),
+      text: t.greeting(userName),
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
+
+  const handleClearChat = () => {
+    stopVoice();
+    stopListening();
+    setMessages([
+      {
+        id: 'welcome_' + Date.now(),
+        sender: 'mitra',
+        text: (UI_TEXT[activeLang] || UI_TEXT.en).greeting(userName),
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }
+    ]);
+    setShowMoodBanner(true);
+    setClearConfirmOpen(false);
+  };
 
   // Scroll to bottom whenever messages change
   useEffect(() => {
@@ -359,11 +457,7 @@ export default function AbhyasMitra({
     setActiveLang(newLang);
     if (onLangChange) onLangChange(newLang);
 
-    const welcomeText = (UI_TEXT[newLang] || UI_TEXT.en).greeting(
-      userName,
-      completedPlansCount,
-      (plans || []).length || 5
-    );
+    const welcomeText = (UI_TEXT[newLang] || UI_TEXT.en).greeting(userName);
     setMessages(prev => [
       ...prev,
       {
@@ -612,6 +706,19 @@ export default function AbhyasMitra({
                   />
                 </TouchableOpacity>
 
+                {/* Clear Chat Reset (Single Symbol: 🗑️) */}
+                <TouchableOpacity
+                  onPress={() => setClearConfirmOpen(true)}
+                  style={[
+                    styles.headerVoiceBtn,
+                    { backgroundColor: colors.headerBtnBg, borderColor: colors.headerBtnBorder }
+                  ]}
+                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                  accessibilityLabel={t.clearChat}
+                >
+                  <Ionicons name="trash-outline" size={14} color={colors.headerBtnIcon} />
+                </TouchableOpacity>
+
                 {/* Single Compact Language Dropdown Pill: [ 🌐 EN ▾ ] */}
                 <TouchableOpacity
                   onPress={() => setLangMenuOpen(true)}
@@ -629,6 +736,26 @@ export default function AbhyasMitra({
                 </TouchableOpacity>
               </View>
             </View>
+
+            {/* Active Voice Playback Floating Bar */}
+            {Boolean(isSpeakingId) && (
+              <View style={[styles.speakingBanner, { backgroundColor: chatbotDark ? '#14203D' : '#EFF6FF', borderBottomColor: chatbotDark ? '#233866' : '#BFDBFE' }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
+                  <Ionicons name="volume-high" size={15} color="#2563EB" />
+                  <Text style={[styles.speakingBannerText, { color: chatbotDark ? '#93C5FD' : '#1D4ED8' }]} numberOfLines={1}>
+                    {t.readingAloud}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  onPress={stopVoice}
+                  style={styles.stopSpeakingBtn}
+                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                >
+                  <Ionicons name="stop" size={11} color="#FFFFFF" />
+                  <Text style={styles.stopSpeakingBtnText}>{t.stop}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
 
             {/* Active Speech Recognition Banner */}
             {isListening && (
@@ -688,15 +815,51 @@ export default function AbhyasMitra({
                               }
                         ]}
                       >
-                        <Text
-                          style={[
-                            styles.messageText,
-                            { color: isUser ? colors.userText : colors.mitraText }
-                          ]}
-                        >
-                          {msg.text}
-                        </Text>
+                        {isUser ? (
+                          <Text style={[styles.messageText, { color: colors.userText }]}>
+                            {msg.text}
+                          </Text>
+                        ) : (
+                          msg.text.split('\n\n').map((para, pIdx, arr) => (
+                            <Text
+                              key={pIdx}
+                              style={[
+                                styles.messageText,
+                                {
+                                  color: colors.mitraText,
+                                  marginBottom: pIdx < arr.length - 1 ? 6 : 0
+                                }
+                              ]}
+                            >
+                              {para}
+                            </Text>
+                          ))
+                        )}
                       </View>
+
+                      {/* 4 Clean Starter Chips under Initial Greeting */}
+                      {!isUser && (msg.id === 'welcome_1' || String(msg.id).startsWith('welcome')) && (
+                        <View style={styles.starterChipsContainer}>
+                          {starterChips.map(chip => (
+                            <TouchableOpacity
+                              key={chip.key}
+                              onPress={() => sendMessage(chip.prompt)}
+                              style={[
+                                styles.starterChip,
+                                {
+                                  backgroundColor: chatbotDark ? '#14203D' : '#F1F5F9',
+                                  borderColor: chatbotDark ? '#233866' : '#CBD5E1'
+                                }
+                              ]}
+                              activeOpacity={0.75}
+                            >
+                              <Text style={[styles.starterChipText, { color: chatbotDark ? '#93C5FD' : '#1E40AF' }]}>
+                                {chip.label}
+                              </Text>
+                            </TouchableOpacity>
+                          ))}
+                        </View>
+                      )}
 
                       {/* Interactive Mood Check-in directly under Mitra's Greeting (Auto-hides once chosen) */}
                       {showMoodBanner && !isUser && (msg.id === 'welcome_1' || String(msg.id).startsWith('welcome')) && (
@@ -881,14 +1044,14 @@ export default function AbhyasMitra({
             )}
 
             {/* Bottom Input Area: Compact & Space-Efficient */}
-            <View style={[styles.inputBar, { backgroundColor: colors.screenBg, borderColor: colors.border }]}>
+            <View style={[styles.inputBar, { backgroundColor: colors.screenBg, borderTopColor: colors.border }]}>
               <View style={[styles.inputPill, { backgroundColor: colors.inputBg, borderColor: colors.inputBorder }]}>
                 {/* Feature Launcher Button */}
                 <TouchableOpacity
                   onPress={() => setShowFeaturesBar(!showFeaturesBar)}
                   style={[
                     styles.actionToggleBtn,
-                    showFeaturesBar && { backgroundColor: isDark ? '#1E3A8A' : '#EFF6FF' }
+                    showFeaturesBar && { backgroundColor: chatbotDark ? '#1E3A8A' : '#EFF6FF' }
                   ]}
                   hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                 >
@@ -899,7 +1062,7 @@ export default function AbhyasMitra({
                   />
                 </TouchableOpacity>
 
-                {/* Microphone Voice Input Button */}
+                {/* Microphone Voice Input Button (Larger 34px with Pulsing Indicator) */}
                 <TouchableOpacity
                   onPress={toggleListening}
                   style={[
@@ -910,7 +1073,7 @@ export default function AbhyasMitra({
                 >
                   <Ionicons
                     name={isListening ? 'mic' : 'mic-outline'}
-                    size={16}
+                    size={18}
                     color={isListening ? '#FFFFFF' : '#2563EB'}
                   />
                 </TouchableOpacity>
@@ -919,8 +1082,9 @@ export default function AbhyasMitra({
                   value={inputText}
                   onChangeText={setInputText}
                   placeholder={t.placeholder}
-                  placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
+                  placeholderTextColor={chatbotDark ? '#64748B' : '#94A3B8'}
                   style={[styles.textInput, { color: colors.inputText }]}
+                  multiline={true}
                   onSubmitEditing={() => sendMessage()}
                   returnKeyType="send"
                 />
@@ -932,14 +1096,19 @@ export default function AbhyasMitra({
                   style={[
                     styles.sendIconButton,
                     {
-                      backgroundColor: inputText.trim() && !loading ? '#2563EB' : '#CBD5E1',
-                      opacity: inputText.trim() && !loading ? 1 : 0.6
+                      backgroundColor: inputText.trim() && !loading ? '#2563EB' : (chatbotDark ? '#1E293B' : '#CBD5E1'),
+                      opacity: inputText.trim() && !loading ? 1 : 0.5
                     }
                   ]}
                 >
-                  <Ionicons name="paper-plane" size={14} color="#FFFFFF" />
+                  <Ionicons name="paper-plane" size={15} color="#FFFFFF" />
                 </TouchableOpacity>
               </View>
+
+              {/* Bottom Privacy & Safety Indicator */}
+              <Text style={[styles.bottomPrivacyNotice, { color: colors.muted }]}>
+                {t.privacyNotice}
+              </Text>
             </View>
           </KeyboardAvoidingView>
 
@@ -1054,6 +1223,53 @@ export default function AbhyasMitra({
                     </TouchableOpacity>
                   );
                 })}
+              </View>
+            </TouchableOpacity>
+          </Modal>
+
+          {/* Clear Chat Confirmation Modal */}
+          <Modal
+            visible={clearConfirmOpen}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={() => setClearConfirmOpen(false)}
+          >
+            <TouchableOpacity
+              style={styles.confirmModalOverlay}
+              activeOpacity={1}
+              onPress={() => setClearConfirmOpen(false)}
+            >
+              <View style={[styles.confirmModalBox, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+                <View style={styles.confirmModalIconWrap}>
+                  <Ionicons name="trash-outline" size={22} color="#DC2626" />
+                </View>
+                <Text style={[styles.confirmModalTitle, { color: colors.titleText }]}>
+                  {t.clearConfirmTitle}
+                </Text>
+                <Text style={[styles.confirmModalMsg, { color: colors.subtitleText }]}>
+                  {t.clearConfirmMsg}
+                </Text>
+                <View style={styles.confirmModalActions}>
+                  <TouchableOpacity
+                    onPress={() => setClearConfirmOpen(false)}
+                    style={[
+                      styles.confirmModalBtn,
+                      { backgroundColor: chatbotDark ? '#1E293B' : '#F1F5F9', borderColor: colors.border }
+                    ]}
+                  >
+                    <Text style={[styles.confirmModalBtnText, { color: colors.titleText }]}>
+                      {t.cancel}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={handleClearChat}
+                    style={[styles.confirmModalBtn, { backgroundColor: '#DC2626', borderColor: '#DC2626' }]}
+                  >
+                    <Text style={[styles.confirmModalBtnText, { color: '#FFFFFF' }]}>
+                      {t.clearChat}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </TouchableOpacity>
           </Modal>
@@ -1220,12 +1436,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center'
   },
   headerTitle: {
-    fontSize: 14.5,
-    fontWeight: '800',
+    fontSize: 15.5,
+    fontWeight: '700',
     letterSpacing: 0.2
   },
   headerSubtitle: {
-    fontSize: 10,
+    fontSize: 9.5,
     fontWeight: '500'
   },
   headerVoiceBtn: {
@@ -1241,13 +1457,15 @@ const styles = StyleSheet.create({
   singleLangBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
+    justifyContent: 'center',
+    gap: 4,
     backgroundColor: '#0F1D3D',
     borderWidth: 1,
     borderColor: '#334155',
     borderRadius: 14,
     paddingHorizontal: 8,
-    paddingVertical: 4
+    paddingVertical: 4.5,
+    minWidth: 54
   },
   singleLangBadgeText: {
     fontSize: 11,
@@ -1308,6 +1526,32 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#64748B'
   },
+  speakingBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderBottomWidth: 1
+  },
+  speakingBannerText: {
+    fontSize: 11.5,
+    fontWeight: '600'
+  },
+  stopSpeakingBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#DC2626',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10
+  },
+  stopSpeakingBtnText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '700'
+  },
   listeningBanner: {
     backgroundColor: '#DC2626',
     flexDirection: 'row',
@@ -1333,6 +1577,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 8,
     gap: 8
+  },
+  starterChipsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 8,
+    marginBottom: 4
+  },
+  starterChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 14,
+    borderWidth: 1
+  },
+  starterChipText: {
+    fontSize: 11,
+    fontWeight: '600'
   },
   // Inline Mood Check-in directly under Mitra Greeting
   inlineMoodWrap: {
@@ -1366,9 +1627,9 @@ const styles = StyleSheet.create({
     marginBottom: 2
   },
   botAvatarMini: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#38BDF8',
@@ -1386,7 +1647,7 @@ const styles = StyleSheet.create({
   },
   messageText: {
     fontSize: 12.5,
-    lineHeight: 18.5
+    lineHeight: 19
   },
   speechBubbleBtn: {
     width: 22,
@@ -1480,28 +1741,31 @@ const styles = StyleSheet.create({
   inputBar: {
     paddingHorizontal: 8,
     paddingBottom: Platform.OS === 'ios' ? 8 : 6,
-    paddingTop: 3
+    paddingTop: 4,
+    borderTopWidth: 1
   },
   inputPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 38,
-    borderRadius: 19,
+    minHeight: 40,
+    maxHeight: 84,
+    borderRadius: 20,
     borderWidth: 1,
     paddingHorizontal: 6,
+    paddingVertical: 3,
     gap: 4
   },
   actionToggleBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     justifyContent: 'center',
     alignItems: 'center'
   },
   micButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     backgroundColor: '#EFF6FF',
     justifyContent: 'center',
     alignItems: 'center'
@@ -1509,14 +1773,21 @@ const styles = StyleSheet.create({
   textInput: {
     flex: 1,
     fontSize: 12.5,
-    paddingVertical: 0
+    paddingVertical: 4,
+    maxHeight: 76
   },
   sendIconButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     justifyContent: 'center',
     alignItems: 'center'
+  },
+  bottomPrivacyNotice: {
+    fontSize: 9.5,
+    textAlign: 'center',
+    marginTop: 4,
+    fontWeight: '500'
   },
   // Full 7-Features Floating Modal Sheet
   sheetOverlay: {
@@ -1613,6 +1884,64 @@ const styles = StyleSheet.create({
   },
   langModalOptionText: {
     fontSize: 13,
+    fontWeight: '700'
+  },
+  // Clear Chat Confirmation Modal
+  confirmModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20
+  },
+  confirmModalBox: {
+    width: '100%',
+    maxWidth: 300,
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 16,
+    alignItems: 'center',
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 10
+  },
+  confirmModalIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#FEE2E2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10
+  },
+  confirmModalTitle: {
+    fontSize: 14.5,
+    fontWeight: '700',
+    marginBottom: 6,
+    textAlign: 'center'
+  },
+  confirmModalMsg: {
+    fontSize: 11.5,
+    lineHeight: 16,
+    textAlign: 'center',
+    marginBottom: 16
+  },
+  confirmModalActions: {
+    flexDirection: 'row',
+    gap: 10,
+    width: '100%'
+  },
+  confirmModalBtn: {
+    flex: 1,
+    paddingVertical: 9,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  confirmModalBtnText: {
+    fontSize: 12,
     fontWeight: '700'
   }
 });
