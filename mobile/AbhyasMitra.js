@@ -170,6 +170,7 @@ export default function AbhyasMitra({
   const [showFeaturesBar, setShowFeaturesBar] = useState(true);
   const [featuresGridModal, setFeaturesGridModal] = useState(false);
   const [voiceSettingsOpen, setVoiceSettingsOpen] = useState(false);
+  const [langMenuOpen, setLangMenuOpen] = useState(false);
   const [autoReadAloud, setAutoReadAloud] = useState(false);
   const [voiceGender, setVoiceGender] = useState('female'); // 'female' | 'male'
   const [isSpeakingId, setIsSpeakingId] = useState(null);
@@ -373,6 +374,7 @@ export default function AbhyasMitra({
   const sendMessage = async (customText = null) => {
     stopVoice();
     stopListening();
+    setShowMoodBanner(false);
 
     const textToSend = customText || inputText;
     if (!textToSend || !textToSend.trim() || loading) return;
@@ -550,7 +552,7 @@ export default function AbhyasMitra({
                   <View style={styles.avatarOnlineDot} />
                 </View>
 
-                <View style={{ flexShrink: 1 }}>
+                <View style={styles.titleContainer}>
                   <Text style={[styles.headerTitle, { color: colors.titleText }]} numberOfLines={1}>
                     {t.title}
                   </Text>
@@ -564,61 +566,31 @@ export default function AbhyasMitra({
               </View>
 
               <View style={styles.headerRight}>
-                {/* Daily Mood Check-In Toggle */}
-                <TouchableOpacity
-                  onPress={() => setShowMoodBanner(!showMoodBanner)}
-                  style={[styles.headerVoiceBtn, showMoodBanner && { backgroundColor: '#1E3A8A' }]}
-                >
-                  <Ionicons
-                    name={showMoodBanner ? 'happy' : 'happy-outline'}
-                    size={16}
-                    color={showMoodBanner ? '#38BDF8' : '#94A3B8'}
-                  />
-                </TouchableOpacity>
-
                 {/* Voice Settings Toggle Icon */}
                 <TouchableOpacity
                   onPress={() => setVoiceSettingsOpen(!voiceSettingsOpen)}
                   style={[styles.headerVoiceBtn, autoReadAloud && { backgroundColor: '#1E3A8A' }]}
+                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                 >
                   <Ionicons
                     name={autoReadAloud ? 'volume-high' : 'volume-medium-outline'}
-                    size={16}
+                    size={15}
                     color={autoReadAloud ? '#38BDF8' : '#94A3B8'}
                   />
                 </TouchableOpacity>
 
-                {/* Compact Language Selector Pills [ EN | म | हि ] */}
-                <View style={styles.langContainer}>
-                  {[
-                    ['en', 'EN'],
-                    ['mr', 'म'],
-                    ['hi', 'हि']
-                  ].map(([code, label], idx) => {
-                    const isActive = activeLang === code;
-                    return (
-                      <React.Fragment key={code}>
-                        <TouchableOpacity
-                          onPress={() => handleLanguageSwitch(code)}
-                          style={[
-                            styles.langPill,
-                            isActive && styles.langPillActive
-                          ]}
-                        >
-                          <Text
-                            style={[
-                              styles.langPillText,
-                              { color: isActive ? '#0B1736' : '#94A3B8' }
-                            ]}
-                          >
-                            {label}
-                          </Text>
-                        </TouchableOpacity>
-                        {idx < 2 && <Text style={{ color: '#334155', fontSize: 10 }}>|</Text>}
-                      </React.Fragment>
-                    );
-                  })}
-                </View>
+                {/* Single Compact Language Dropdown Pill: [ 🌐 EN ▾ ] */}
+                <TouchableOpacity
+                  onPress={() => setLangMenuOpen(true)}
+                  style={styles.singleLangBadge}
+                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                >
+                  <Ionicons name="globe-outline" size={12} color="#38BDF8" />
+                  <Text style={styles.singleLangBadgeText}>
+                    {activeLang === 'en' ? 'EN' : activeLang === 'mr' ? 'मराठी' : 'हिंदी'}
+                  </Text>
+                  <Ionicons name="chevron-down" size={10} color="#94A3B8" />
+                </TouchableOpacity>
               </View>
             </View>
 
@@ -691,48 +663,6 @@ export default function AbhyasMitra({
               contentContainerStyle={styles.messagesContainer}
               keyboardShouldPersistTaps="handled"
             >
-              {/* Daily Mood Check-In Widget: Ultra-Compact & Dismissible Banner */}
-              {showMoodBanner && (
-                <View style={[styles.compactMoodBanner, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
-                  <View style={styles.compactMoodHeader}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-                      <Text style={{ fontSize: 12 }}>💡</Text>
-                      <Text style={[styles.compactMoodTitle, { color: isDark ? '#F1F5F9' : '#0F172A' }]}>
-                        {t.moodTitle}
-                      </Text>
-                    </View>
-                    <TouchableOpacity
-                      onPress={() => setShowMoodBanner(false)}
-                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    >
-                      <Ionicons name="close" size={13} color={colors.muted} />
-                    </TouchableOpacity>
-                  </View>
-
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.compactMoodList}
-                  >
-                    {t.moods.map(m => (
-                      <TouchableOpacity
-                        key={m.id}
-                        onPress={() => {
-                          setShowMoodBanner(false);
-                          sendMessage(m.label);
-                        }}
-                        style={[
-                          styles.compactMoodButton,
-                          { backgroundColor: m.bg, borderColor: m.border }
-                        ]}
-                      >
-                        <Text style={[styles.compactMoodButtonText, { color: m.color }]}>{m.label}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
-                </View>
-              )}
-
               {/* Message Bubbles */}
               {messages.map(msg => {
                 const isUser = msg.sender === 'user';
@@ -782,6 +712,32 @@ export default function AbhyasMitra({
                           {msg.text}
                         </Text>
                       </View>
+
+                      {/* Interactive Mood Check-in directly under Mitra's Greeting (Auto-hides once chosen) */}
+                      {showMoodBanner && !isUser && (msg.id === 'welcome_1' || String(msg.id).startsWith('welcome')) && (
+                        <View style={styles.inlineMoodWrap}>
+                          <Text style={[styles.inlineMoodPrompt, { color: colors.muted }]}>
+                            {t.moodSubtitle}
+                          </Text>
+                          <View style={styles.inlineMoodPillsRow}>
+                            {t.moods.map(m => (
+                              <TouchableOpacity
+                                key={m.id}
+                                onPress={() => {
+                                  setShowMoodBanner(false);
+                                  sendMessage(m.label);
+                                }}
+                                style={[
+                                  styles.inlineMoodPill,
+                                  { backgroundColor: m.bg, borderColor: m.border }
+                                ]}
+                              >
+                                <Text style={[styles.inlineMoodPillText, { color: m.color }]}>{m.label}</Text>
+                              </TouchableOpacity>
+                            ))}
+                          </View>
+                        </View>
+                      )}
 
                       {/* Bot Message Voice Play/Stop Button */}
                       {!isUser && (
@@ -1058,6 +1014,63 @@ export default function AbhyasMitra({
               </View>
             </View>
           </Modal>
+
+          {/* Language Selection Popover / Modal */}
+          <Modal
+            visible={langMenuOpen}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={() => setLangMenuOpen(false)}
+          >
+            <TouchableOpacity
+              style={styles.langModalOverlay}
+              activeOpacity={1}
+              onPress={() => setLangMenuOpen(false)}
+            >
+              <View style={[styles.langModalBox, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+                <View style={styles.langModalHeader}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Ionicons name="globe-outline" size={16} color="#38BDF8" />
+                    <Text style={[styles.langModalHeading, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
+                      {activeLang === 'mr' ? 'भाषा निवडा' : activeLang === 'hi' ? 'भाषा चुनें' : 'Select Language'}
+                    </Text>
+                  </View>
+                  <TouchableOpacity onPress={() => setLangMenuOpen(false)}>
+                    <Ionicons name="close" size={16} color={colors.muted} />
+                  </TouchableOpacity>
+                </View>
+
+                {[
+                  { code: 'en', label: 'English', sub: 'Default' },
+                  { code: 'mr', label: 'मराठी', sub: 'Marathi' },
+                  { code: 'hi', label: 'हिंदी', sub: 'Hindi' }
+                ].map(item => {
+                  const isActive = activeLang === item.code;
+                  return (
+                    <TouchableOpacity
+                      key={item.code}
+                      onPress={() => {
+                        handleLanguageSwitch(item.code);
+                        setLangMenuOpen(false);
+                      }}
+                      style={[
+                        styles.langModalOption,
+                        isActive && { backgroundColor: isDark ? '#1E293B' : '#EFF6FF', borderColor: '#2563EB' }
+                      ]}
+                    >
+                      <View>
+                        <Text style={[styles.langModalOptionText, { color: isActive ? '#2563EB' : colors.mitraText }]}>
+                          {item.label}
+                        </Text>
+                        <Text style={{ fontSize: 10, color: colors.muted }}>{item.sub}</Text>
+                      </View>
+                      {isActive && <Ionicons name="checkmark-circle" size={18} color="#2563EB" />}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </TouchableOpacity>
+          </Modal>
         </SafeAreaView>
       </Modal>
     </>
@@ -1216,9 +1229,14 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: '#0B1736'
   },
+  titleContainer: {
+    flex: 1,
+    justifyContent: 'center'
+  },
   headerTitle: {
-    fontSize: 14,
-    fontWeight: '700'
+    fontSize: 14.5,
+    fontWeight: '800',
+    letterSpacing: 0.2
   },
   headerSubtitle: {
     fontSize: 10,
@@ -1234,28 +1252,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#334155'
   },
-  langContainer: {
+  singleLangBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 14,
+    gap: 3,
+    backgroundColor: '#0F1D3D',
     borderWidth: 1,
     borderColor: '#334155',
-    backgroundColor: '#080E1E',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    gap: 4
+    borderRadius: 14,
+    paddingHorizontal: 8,
+    paddingVertical: 4
   },
-  langPill: {
-    paddingHorizontal: 5,
-    paddingVertical: 2,
-    borderRadius: 6
-  },
-  langPillActive: {
-    backgroundColor: '#F8FAFC'
-  },
-  langPillText: {
+  singleLangBadgeText: {
     fontSize: 11,
-    fontWeight: '700'
+    fontWeight: '700',
+    color: '#F8FAFC'
   },
   voiceSettingsPanel: {
     marginHorizontal: 12,
@@ -1337,37 +1348,29 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     gap: 8
   },
-  // Compact Mood Banner
-  compactMoodBanner: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginBottom: 4
+  // Inline Mood Check-in directly under Mitra Greeting
+  inlineMoodWrap: {
+    marginTop: 6,
+    marginBottom: 2
   },
-  compactMoodHeader: {
+  inlineMoodPrompt: {
+    fontSize: 10.5,
+    marginBottom: 4,
+    fontWeight: '600'
+  },
+  inlineMoodPillsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4
+    flexWrap: 'wrap',
+    gap: 5
   },
-  compactMoodTitle: {
-    fontSize: 11,
-    fontWeight: '700'
-  },
-  compactMoodList: {
-    flexDirection: 'row',
-    gap: 6,
-    paddingRight: 6
-  },
-  compactMoodButton: {
-    paddingHorizontal: 9,
+  inlineMoodPill: {
+    paddingHorizontal: 8,
     paddingVertical: 3.5,
-    borderRadius: 14,
+    borderRadius: 12,
     borderWidth: 1
   },
-  compactMoodButtonText: {
-    fontSize: 10.5,
+  inlineMoodPillText: {
+    fontSize: 10,
     fontWeight: '700'
   },
   messageRow: {
@@ -1583,5 +1586,52 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     flexShrink: 1
+  },
+  // Language Modal
+  langModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20
+  },
+  langModalBox: {
+    width: '100%',
+    maxWidth: 290,
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 14,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 10
+  },
+  langModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+    paddingBottom: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0'
+  },
+  langModalHeading: {
+    fontSize: 13,
+    fontWeight: '700'
+  },
+  langModalOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'transparent',
+    marginBottom: 4
+  },
+  langModalOptionText: {
+    fontSize: 13,
+    fontWeight: '700'
   }
 });
