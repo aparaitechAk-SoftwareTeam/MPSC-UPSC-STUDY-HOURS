@@ -39,20 +39,17 @@ const UI_TEXT = {
       `Hello, ${name || 'Aspirant'}! 👋\n\nI'm Abhyas Mitra, your friendly UPSC & MPSC preparation companion.\n\nWhat shall we work on today?`,
     starters: {
       study: '📚 Study Help',
-      mcq: '📝 Practice MCQs',
-      plan: '📅 Study Planning',
-      motivation: '⚡ Motivation'
+      plan: '📅 Study Planning'
     },
     features: {
-      study: '📚 Study Buddy',
-      quiz: '📝 Daily Quiz',
+      study: '📚 Study Help',
+      planning: '📅 Study Planning',
       anxiety: '❤️ Anxiety Support',
       comeback: '🔄 Study Comeback',
       eli10: "👶 Explain Like I'm 10",
-      revision: '🔁 Revision Reminder',
-      planning: '📅 Study Planner'
+      revision: '🔁 Revision Reminder'
     },
-    quickActionsLabel: 'Quick Actions (7 Features)',
+    quickActionsLabel: 'Quick Actions (6 Features)',
     collapse: 'Show Less ▴',
     expand: 'View All ▾',
     helplineBtn: '📞 Call Tele-MANAS: 14416 (Free 24/7)',
@@ -91,22 +88,19 @@ const UI_TEXT = {
       `नमस्ते, ${name || 'मित्रा'}! 👋\n\nमी अभ्यास मित्र, तुमचा मैत्रीपूर्ण UPSC व MPSC अभ्यास साथीदार.\n\nआज आपण कशावर काम करूया?`,
     starters: {
       study: '📚 अभ्यास मदत',
-      mcq: '📝 MCQ सराव',
-      plan: '📅 अभ्यास नियोजन',
-      motivation: '⚡ प्रेरणा'
+      plan: '📅 अभ्यास नियोजन'
     },
     features: {
-      study: '📚 अभ्यास मित्र',
-      quiz: '📝 दैनिक प्रश्नमंजुषा',
+      study: '📚 अभ्यास मदत',
+      planning: '📅 अभ्यास नियोजन',
       anxiety: '❤️ ताण निवारण',
       comeback: '🔄 अभ्यास कमबॅक',
       eli10: '👶 सोप्या भाषेत (ELI10)',
-      revision: '🔁 उजळणी आठवण',
-      planning: '📅 अभ्यास नियोजन'
+      revision: '🔁 उजळणी आठवण'
     },
-    quickActionsLabel: 'मुख्य वैशिष्ट्ये (७ फीचर्स)',
+    quickActionsLabel: 'मुख्य वैशिष्ट्ये (६ फीचर्स)',
     collapse: 'कमी करा ▴',
-    expand: 'सर्व ७ पहा ▾',
+    expand: 'सर्व ६ पहा ▾',
     helplineBtn: '📞 टेली-मानस हेल्पलाइन: 14416 (मोफत)',
     openPlannerBtn: '📅 प्लॅनर उघडा',
     startTimerBtn: '▶ टायमर सुरू करा',
@@ -143,22 +137,19 @@ const UI_TEXT = {
       `नमस्ते, ${name || 'साथी'}! 👋\n\nमैं अभ्यास मित्र, आपका आत्मीय UPSC व MPSC तैयारी साथी।\n\nआज हम किस पर काम करें?`,
     starters: {
       study: '📚 स्टडी हेल्प',
-      mcq: '📝 MCQ अभ्यास',
-      plan: '📅 स्टडी प्लानिंग',
-      motivation: '⚡ मोटिवेशन'
+      plan: '📅 स्टडी प्लानिंग'
     },
     features: {
-      study: '📚 स्टडी बडी',
-      quiz: '📝 दैनिक क्विज़',
+      study: '📚 स्टडी हेल्प',
+      planning: '📅 स्टडी प्लानिंग',
       anxiety: '❤️ तनाव मुक्ति',
       comeback: '🔄 स्टडी कमबैक',
       eli10: '👶 सरल शब्दों में (ELI10)',
-      revision: '🔁 रिवीजन रिमाइंडर',
-      planning: '📅 स्टडी प्लानर'
+      revision: '🔁 रिवीजन रिमाइंडर'
     },
-    quickActionsLabel: 'मुख्य सुविधाएं (७ फीचर्स)',
+    quickActionsLabel: 'मुख्य सुविधाएं (६ फीचर्स)',
     collapse: 'कम दिखाएं ▴',
-    expand: 'सभी ७ देखें ▾',
+    expand: 'सभी ६ देखें ▾',
     helplineBtn: '📞 टेली-मानस हेल्पलाइन: 14416 (निःशुल्क)',
     openPlannerBtn: '📅 प्लानर खोलें',
     startTimerBtn: '▶ टाइमर शुरू करें',
@@ -245,16 +236,6 @@ export default function AbhyasMitra({
           : 'Help me study Indian Polity and Constitution.'
     },
     {
-      key: 'mcq',
-      label: t.starters?.mcq || '📝 Practice MCQs',
-      prompt:
-        activeLang === 'mr'
-          ? 'मला सराव करण्यासाठी ५ वस्तुनिष्ठ प्रश्न (MCQs) द्या.'
-          : activeLang === 'hi'
-          ? 'मुझे अभ्यास के लिए ५ बहुविकल्पीय प्रश्न (MCQs) दीजिए।'
-          : 'Give me 5 practice MCQs on Indian Polity.'
-    },
-    {
       key: 'plan',
       label: t.starters?.plan || '📅 Study Planning',
       prompt:
@@ -263,16 +244,6 @@ export default function AbhyasMitra({
           : activeLang === 'hi'
           ? 'मेरी आज की पढ़ाई का टाइमटेबल बनाइए।'
           : 'Help me plan my study schedule for today.'
-    },
-    {
-      key: 'motivation',
-      label: t.starters?.motivation || '⚡ Motivation',
-      prompt:
-        activeLang === 'mr'
-          ? 'अभ्यासाचा उत्साह कमी झाला आहे, मला प्रोत्साहन द्या.'
-          : activeLang === 'hi'
-          ? 'पढ़ाई में मन नहीं लग रहा, थोड़ा मोटिवेशन चाहिए।'
-          : 'I need some motivation and focus tips to start studying.'
     }
   ];
 
@@ -975,7 +946,7 @@ export default function AbhyasMitra({
                   hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                 >
                   <Ionicons name="grid-outline" size={11} color="#2563EB" />
-                  <Text style={styles.featureGridCountText}>7</Text>
+                  <Text style={styles.featureGridCountText}>6</Text>
                 </TouchableOpacity>
 
                 <ScrollView
@@ -991,10 +962,10 @@ export default function AbhyasMitra({
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    onPress={() => sendMessage(activeLang === 'mr' ? 'एक झटपट प्रश्न विचारा' : activeLang === 'hi' ? 'एक त्वरित क्विज़ प्रश्न पूछें' : 'Give me a quick quiz')}
+                    onPress={() => sendMessage(activeLang === 'mr' ? 'अभ्यास वेळापत्रक नियोजन' : activeLang === 'hi' ? 'स्टडी टाइमटेबल प्लानिंग' : 'Study planning routine')}
                     style={[styles.slimPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
                   >
-                    <Text style={[styles.slimPillText, { color: colors.chipText }]}>{t.features.quiz}</Text>
+                    <Text style={[styles.slimPillText, { color: colors.chipText }]}>{t.features.planning}</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -1023,13 +994,6 @@ export default function AbhyasMitra({
                     style={[styles.slimPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
                   >
                     <Text style={[styles.slimPillText, { color: colors.chipText }]}>{t.features.revision}</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={() => sendMessage(activeLang === 'mr' ? 'अभ्यास वेळापत्रक नियोजन' : activeLang === 'hi' ? 'स्टडी टाइमटेबल प्लानिंग' : 'Study planner routine')}
-                    style={[styles.slimPill, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
-                  >
-                    <Text style={[styles.slimPillText, { color: colors.chipText }]}>{t.features.planning}</Text>
                   </TouchableOpacity>
                 </ScrollView>
 
@@ -1144,12 +1108,11 @@ export default function AbhyasMitra({
                 <View style={styles.gridContainer}>
                   {[
                     { key: 'study', title: t.features.study, prompt: activeLang === 'mr' ? 'मूलभूत हक्क समजावून सांगा' : activeLang === 'hi' ? 'मौलिक अधिकार क्या हैं?' : 'Explain Fundamental Rights', icon: 'book-outline', color: '#2563EB', bg: '#EFF6FF' },
-                    { key: 'quiz', title: t.features.quiz, prompt: activeLang === 'mr' ? 'एक झटपट प्रश्न विचारा' : activeLang === 'hi' ? 'एक त्वरित क्विज़ प्रश्न पूछें' : 'Give me a quick quiz', icon: 'help-circle-outline', color: '#059669', bg: '#ECFDF5' },
+                    { key: 'planning', title: t.features.planning, prompt: activeLang === 'mr' ? 'अभ्यास वेळापत्रक नियोजन' : activeLang === 'hi' ? 'स्टडी टाइमटेबल प्लानिंग' : 'Study planner routine', icon: 'calendar-outline', color: '#4F46E5', bg: '#EEF2FF' },
                     { key: 'anxiety', title: t.features.anxiety, prompt: activeLang === 'mr' ? 'परीक्षेचा खूप ताण आलाय' : activeLang === 'hi' ? 'परीक्षा का बहुत तनाव है' : 'I have exam anxiety', icon: 'heart-outline', color: '#DC2626', bg: '#FEF2F2' },
                     { key: 'comeback', title: t.features.comeback, prompt: activeLang === 'mr' ? 'अभ्यास कमबॅक कसा करू?' : activeLang === 'hi' ? 'स्टडी कमबैक कैसे करूँ?' : 'How to do a study comeback?', icon: 'refresh-outline', color: '#7C3AED', bg: '#F5F3FF' },
                     { key: 'eli10', title: t.features.eli10, prompt: activeLang === 'mr' ? 'सोप्या भाषेत समजावून सांगा' : activeLang === 'hi' ? 'सरल शब्दों में समझाइए' : "Explain Like I'm 10", icon: 'bulb-outline', color: '#D97706', bg: '#FFFBEB' },
-                    { key: 'revision', title: t.features.revision, prompt: activeLang === 'mr' ? 'रिव्हिजन कशी करू?' : activeLang === 'hi' ? 'रिवीजन कैसे करूँ?' : 'Revision reminders and spaced repetition', icon: 'repeat-outline', color: '#0891B2', bg: '#ECFEFF' },
-                    { key: 'planning', title: t.features.planning, prompt: activeLang === 'mr' ? 'अभ्यास वेळापत्रक नियोजन' : activeLang === 'hi' ? 'स्टडी टाइमटेबल प्लानिंग' : 'Study planner routine', icon: 'calendar-outline', color: '#4F46E5', bg: '#EEF2FF' }
+                    { key: 'revision', title: t.features.revision, prompt: activeLang === 'mr' ? 'रिव्हिजन कशी करू?' : activeLang === 'hi' ? 'रिवीजन कैसे करूँ?' : 'Revision reminders and spaced repetition', icon: 'repeat-outline', color: '#0891B2', bg: '#ECFEFF' }
                   ].map(item => (
                     <TouchableOpacity
                       key={item.key}
