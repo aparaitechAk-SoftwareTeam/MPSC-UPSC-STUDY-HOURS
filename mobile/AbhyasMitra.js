@@ -11,15 +11,12 @@ import {
   Platform,
   Linking,
   StyleSheet,
-  ActivityIndicator,
-  Image
+  ActivityIndicator
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import * as Speech from 'expo-speech';
 import { smartApiFetch } from './api';
-
-// 3D Robot Mascot Image
-const MASCOT_IMG = require('./assets/mitra_mascot.jpg');
 
 // Multilingual labels matching exact user requirements
 const UI_TEXT = {
@@ -53,11 +50,22 @@ const UI_TEXT = {
     startTimerBtn: 'Start Focus Timer',
     privacyNote: '100% Free & Private • Rule-based study companion',
     settings: 'Settings',
+    language: 'Language / भाषा',
+    languageSub: 'Select conversation language',
     appearance: 'Theme Mode',
     darkMode: 'Dark Mode',
     lightMode: 'Light Mode',
     chatHistory: 'Conversation History',
     chatHistorySub: 'Keep conversation on your device',
+    savedChats: 'Saved Sessions',
+    viewAll: 'View All',
+    newChat: '+ New Chat',
+    noChatsYet: 'No past chats yet',
+    noChatsSub: 'Your study discussions with Abhyas Mitra will appear here.',
+    startChatting: 'Start a Conversation',
+    activeChat: 'Active',
+    messagesCount: 'messages',
+    untitledChat: 'Study Session',
     voiceReading: 'Voice Auto-Read',
     voiceReadingSub: 'Read answers aloud automatically',
     clearChat: 'Clear Conversation',
@@ -102,11 +110,22 @@ const UI_TEXT = {
     startTimerBtn: 'टायमर सुरू करा',
     privacyNote: '१००% मोफत व सुरक्षित • अभ्यास साथीदार',
     settings: 'सेटिंग्ज',
+    language: 'भाषा निवडा (Language)',
+    languageSub: 'संभाषणाची भाषा बदला',
     appearance: 'थीम मोड',
     darkMode: 'डार्क मोड',
     lightMode: 'लाइट मोड',
     chatHistory: 'संभाषण इतिहास',
     chatHistorySub: 'डिव्हाइसवर संभाषण सुरक्षित ठेवा',
+    savedChats: 'साठवलेली सत्रे',
+    viewAll: 'सर्व पहा',
+    newChat: '+ नवीन चॅट',
+    noChatsYet: 'अद्याप कोणतेही जुने चॅट नाहीत',
+    noChatsSub: 'अभ्यास मित्रासोबतचे तुमचे संभाषण येथे सुरक्षित साठवले जाईल.',
+    startChatting: 'नवीन चर्चा सुरू करा',
+    activeChat: 'सक्रिय',
+    messagesCount: 'मेसेज',
+    untitledChat: 'अभ्यास सत्र',
     voiceReading: 'व्हॉइस ऑटो-रीड',
     voiceReadingSub: 'उत्तरे आपोआप वाचून दाखवा',
     clearChat: 'चॅट साफ करा',
@@ -151,11 +170,22 @@ const UI_TEXT = {
     startTimerBtn: 'टाइमर शुरू करें',
     privacyNote: '100% निःशुल्क और सुरक्षित • सच्चा साथी',
     settings: 'सेटिंग्स',
+    language: 'भाषा चुनें (Language)',
+    languageSub: 'बातचीत की भाषा बदलें',
     appearance: 'थीम मोड',
     darkMode: 'डार्क मोड',
     lightMode: 'लाइट मोड',
     chatHistory: 'बातचीत इतिहास',
     chatHistorySub: 'डिवाइस पर बातचीत सुरक्षित रखें',
+    savedChats: 'सहेजे गए सत्र',
+    viewAll: 'सभी देखें',
+    newChat: '+ नया चैट',
+    noChatsYet: 'अभी तक कोई पिछला चैट नहीं है',
+    noChatsSub: 'अभ्यास मित्र के साथ आपकी पढ़ाई की बातचीत यहाँ दिखेगी।',
+    startChatting: 'बातचीत शुरू करें',
+    activeChat: 'सक्रिय',
+    messagesCount: 'संदेश',
+    untitledChat: 'स्टडी सत्र',
     voiceReading: 'वॉयस ऑटो-रीड',
     voiceReadingSub: 'उत्तर अपने आप बोलकर सुनाएं',
     clearChat: 'चैट साफ करें',
@@ -199,7 +229,9 @@ export default function AbhyasMitra({
   const [showMoodBanner, setShowMoodBanner] = useState(true);
   const [showFeaturesBar, setShowFeaturesBar] = useState(false);
   const [featuresGridModal, setFeaturesGridModal] = useState(false);
-  const [langMenuOpen, setLangMenuOpen] = useState(false);
+  const [historyModalOpen, setHistoryModalOpen] = useState(false);
+  const [conversations, setConversations] = useState([]);
+  const [currentSessionId, setCurrentSessionId] = useState(() => 'sess_' + Date.now());
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [saveChatHistory, setSaveChatHistory] = useState(true);
   const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
@@ -210,6 +242,8 @@ export default function AbhyasMitra({
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef(null);
   const scrollRef = useRef(null);
+
+  const storageKey = `@abhyas_mitra_sessions_${user?.id || user?._id || 'local'}`;
 
   // Sync active language and theme with parent if updated
   useEffect(() => {
@@ -236,18 +270,120 @@ export default function AbhyasMitra({
     }
   ]);
 
-  const handleClearChat = () => {
+  // Load saved chat history from AsyncStorage on mount
+  useEffect(() => {
+    let isMounted = true;
+    const loadSavedChats = async () => {
+      try {
+        const raw = await AsyncStorage.getItem(storageKey);
+        if (raw && isMounted) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setConversations(parsed);
+            const latest = parsed[0];
+            if (latest && Array.isArray(latest.messages) && latest.messages.length > 0) {
+              setCurrentSessionId(latest.id);
+              setMessages(latest.messages);
+              setShowMoodBanner(false);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Error loading chat history:', err);
+      }
+    };
+    loadSavedChats();
+    return () => { isMounted = false; };
+  }, [storageKey]);
+
+  // Auto-sync conversation list and persist to AsyncStorage whenever messages change
+  useEffect(() => {
+    if (!saveChatHistory || !currentSessionId || messages.length === 0) return;
+
+    const userMsg = messages.find(m => m.sender === 'user');
+    const autoTitle = userMsg
+      ? (userMsg.text.slice(0, 32) + (userMsg.text.length > 32 ? '...' : ''))
+      : (UI_TEXT[activeLang] || UI_TEXT.en).untitledChat;
+
+    setConversations(prev => {
+      const existingIdx = prev.findIndex(c => c.id === currentSessionId);
+      let updated;
+      if (existingIdx >= 0) {
+        const existing = prev[existingIdx];
+        if (
+          existing.messages.length === messages.length &&
+          existing.messages[existing.messages.length - 1]?.id === messages[messages.length - 1]?.id
+        ) {
+          return prev;
+        }
+        const updatedItem = {
+          ...existing,
+          title: existing.title === (UI_TEXT[activeLang] || UI_TEXT.en).untitledChat && userMsg ? autoTitle : existing.title,
+          updatedAt: new Date().toISOString(),
+          messages
+        };
+        updated = [updatedItem, ...prev.filter(c => c.id !== currentSessionId)];
+      } else {
+        const newItem = {
+          id: currentSessionId,
+          title: autoTitle,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          messages
+        };
+        updated = [newItem, ...prev];
+      }
+      AsyncStorage.setItem(storageKey, JSON.stringify(updated.slice(0, 50))).catch(() => {});
+      return updated;
+    });
+  }, [messages, currentSessionId, saveChatHistory, storageKey, activeLang]);
+
+  const handleStartNewChat = () => {
     stopVoice();
     stopListening();
-    setMessages([
+    const newId = 'sess_' + Date.now();
+    setCurrentSessionId(newId);
+    const welcome = [
       {
         id: 'welcome_' + Date.now(),
         sender: 'mitra',
         text: (UI_TEXT[activeLang] || UI_TEXT.en).greeting(userName),
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }
-    ]);
+    ];
+    setMessages(welcome);
     setShowMoodBanner(true);
+    setHistoryModalOpen(false);
+    setSettingsModalOpen(false);
+  };
+
+  const handleLoadConversation = (conv) => {
+    stopVoice();
+    stopListening();
+    setCurrentSessionId(conv.id);
+    setMessages(conv.messages || []);
+    setShowMoodBanner(false);
+    setHistoryModalOpen(false);
+    setSettingsModalOpen(false);
+  };
+
+  const handleDeleteConversation = async (convId) => {
+    try {
+      const updated = conversations.filter(c => c.id !== convId);
+      setConversations(updated);
+      await AsyncStorage.setItem(storageKey, JSON.stringify(updated));
+      if (convId === currentSessionId) {
+        handleStartNewChat();
+      }
+    } catch (e) {
+      console.warn('Failed to delete chat:', e);
+    }
+  };
+
+  const handleClearChat = () => {
+    stopVoice();
+    stopListening();
+    handleStartNewChat();
     setClearConfirmOpen(false);
   };
 
@@ -564,14 +700,11 @@ export default function AbhyasMitra({
           onPress={() => setIsOpen(true)}
           activeOpacity={0.88}
           style={styles.fabButton}
+          accessibilityLabel="Abhyas Mitra Study Companion"
         >
           <View style={styles.fabGlowRing} />
-          <View style={styles.fabInnerCircle}>
-            <Image
-              source={MASCOT_IMG}
-              style={styles.fabMascotImage}
-              resizeMode="cover"
-            />
+          <View style={[styles.fabInnerCircle, { backgroundColor: '#1E3A8A', borderColor: '#38BDF8' }]}>
+            <Ionicons name="school" size={26} color="#FFFFFF" />
             <View style={styles.fabOnlineDot} />
           </View>
         </TouchableOpacity>
@@ -600,12 +733,8 @@ export default function AbhyasMitra({
                   <Ionicons name="chevron-back" size={22} color={colors.backBtnColor} />
                 </TouchableOpacity>
 
-                <View style={styles.avatarWrapper}>
-                  <Image
-                    source={MASCOT_IMG}
-                    style={styles.avatarMascotImage}
-                    resizeMode="cover"
-                  />
+                <View style={[styles.avatarWrapper, { backgroundColor: '#1E3A8A', borderColor: '#38BDF8' }]}>
+                  <Ionicons name="school" size={19} color="#FFFFFF" />
                   <View style={styles.avatarOnlineDot} />
                 </View>
 
@@ -623,33 +752,17 @@ export default function AbhyasMitra({
               </View>
 
               <View style={styles.headerRight}>
-                {/* Single Compact Language Dropdown Pill: [ 🌐 EN ▾ ] */}
-                <TouchableOpacity
-                  onPress={() => setLangMenuOpen(true)}
-                  style={[
-                    styles.singleLangBadge,
-                    { backgroundColor: colors.singleLangBadgeBg, borderColor: colors.singleLangBadgeBorder }
-                  ]}
-                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-                >
-                  <Ionicons name="globe-outline" size={12} color="#38BDF8" />
-                  <Text style={[styles.singleLangBadgeText, { color: colors.singleLangBadgeText }]}>
-                    {activeLang === 'en' ? 'EN' : activeLang === 'mr' ? 'मराठी' : 'हिंदी'}
-                  </Text>
-                  <Ionicons name="chevron-down" size={10} color={colors.muted} />
-                </TouchableOpacity>
-
-                {/* Single Settings Button: Opens Theme, Chat History & Clear Chat */}
+                {/* Single Settings Button: Opens Language, Theme, Chat History & Clear Chat */}
                 <TouchableOpacity
                   onPress={() => setSettingsModalOpen(true)}
                   style={[
                     styles.headerVoiceBtn,
                     { backgroundColor: colors.headerBtnBg, borderColor: colors.headerBtnBorder }
                   ]}
-                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   accessibilityLabel="Settings"
                 >
-                  <Ionicons name="settings-outline" size={15} color={colors.headerBtnIcon} />
+                  <Ionicons name="settings-outline" size={16} color={colors.headerBtnIcon} />
                 </TouchableOpacity>
               </View>
             </View>
@@ -706,12 +819,8 @@ export default function AbhyasMitra({
                     ]}
                   >
                     {!isUser && (
-                      <View style={styles.botAvatarMini}>
-                        <Image
-                          source={MASCOT_IMG}
-                          style={styles.botAvatarMiniImg}
-                          resizeMode="cover"
-                        />
+                      <View style={[styles.botAvatarMini, { backgroundColor: chatbotDark ? '#1E293B' : '#EFF6FF', borderColor: chatbotDark ? '#334155' : '#DBEAFE' }]}>
+                        <Ionicons name="school" size={13} color={chatbotDark ? '#93C5FD' : '#2563EB'} />
                       </View>
                     )}
 
@@ -852,8 +961,8 @@ export default function AbhyasMitra({
 
               {loading && (
                 <View style={[styles.messageRow, { justifyContent: 'flex-start' }]}>
-                  <View style={styles.botAvatarMini}>
-                    <Image source={MASCOT_IMG} style={styles.botAvatarMiniImg} />
+                  <View style={[styles.botAvatarMini, { backgroundColor: chatbotDark ? '#1E293B' : '#EFF6FF', borderColor: chatbotDark ? '#334155' : '#DBEAFE' }]}>
+                    <Ionicons name="school" size={13} color={chatbotDark ? '#93C5FD' : '#2563EB'} />
                   </View>
                   <View style={[styles.bubble, { backgroundColor: colors.mitraBubble, borderColor: colors.mitraBubbleBorder, paddingVertical: 12 }]}>
                     <ActivityIndicator size="small" color="#2563EB" />
@@ -1070,7 +1179,7 @@ export default function AbhyasMitra({
             </View>
           </Modal>
 
-          {/* Single Settings Modal Sheet: Theme Mode, Conversation History, Voice & Clear Chat */}
+          {/* Single Settings Modal Sheet: Language, Theme Mode, Conversation History, Voice & Clear Chat */}
           <Modal
             visible={settingsModalOpen}
             transparent={true}
@@ -1099,7 +1208,58 @@ export default function AbhyasMitra({
                   </TouchableOpacity>
                 </View>
 
-                {/* 1. Theme Mode (Light / Dark) */}
+                {/* 1. Language Translation Selection (English, मराठी, हिंदी) */}
+                <View style={[styles.settingsRow, { borderBottomColor: colors.border, flexDirection: 'column', alignItems: 'stretch', gap: 8 }]}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                      <View style={[styles.settingsIconBox, { backgroundColor: chatbotDark ? '#1E293B' : '#F1F5F9' }]}>
+                        <Ionicons name="globe-outline" size={17} color="#2563EB" />
+                      </View>
+                      <View>
+                        <Text style={[styles.settingsItemTitle, { color: colors.titleText }]}>{t.language}</Text>
+                        <Text style={[styles.settingsItemSub, { color: colors.muted }]}>
+                          {activeLang === 'mr' ? 'मराठी (Marathi)' : activeLang === 'hi' ? 'हिंदी (Hindi)' : 'English'}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                  <View style={[styles.langSegmentedWrap, { backgroundColor: chatbotDark ? '#0F172A' : '#F1F5F9', borderColor: colors.border }]}>
+                    {[
+                      { code: 'en', label: 'English' },
+                      { code: 'mr', label: 'मराठी' },
+                      { code: 'hi', label: 'हिंदी' }
+                    ].map(langItem => {
+                      const isCurrent = activeLang === langItem.code;
+                      return (
+                        <TouchableOpacity
+                          key={langItem.code}
+                          onPress={() => handleLanguageSwitch(langItem.code)}
+                          style={[
+                            styles.langSegmentBtn,
+                            isCurrent && {
+                              backgroundColor: '#2563EB',
+                              elevation: 2,
+                              shadowColor: '#000',
+                              shadowOpacity: 0.15,
+                              shadowRadius: 3
+                            }
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.langSegmentText,
+                              { color: isCurrent ? '#FFFFFF' : colors.muted, fontWeight: isCurrent ? '700' : '500' }
+                            ]}
+                          >
+                            {langItem.label}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+
+                {/* 2. Theme Mode (Light / Dark) */}
                 <View style={[styles.settingsRow, { borderBottomColor: colors.border }]}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
                     <View style={[styles.settingsIconBox, { backgroundColor: chatbotDark ? '#1E293B' : '#F1F5F9' }]}>
@@ -1121,29 +1281,36 @@ export default function AbhyasMitra({
                   </TouchableOpacity>
                 </View>
 
-                {/* 2. Conversation History */}
-                <View style={[styles.settingsRow, { borderBottomColor: colors.border }]}>
+                {/* 3. Conversation History (ChatGPT Style Full History) */}
+                <TouchableOpacity
+                  onPress={() => {
+                    setSettingsModalOpen(false);
+                    setTimeout(() => setHistoryModalOpen(true), 120);
+                  }}
+                  style={[styles.settingsRow, { borderBottomColor: colors.border }]}
+                >
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
                     <View style={[styles.settingsIconBox, { backgroundColor: chatbotDark ? '#1E293B' : '#F1F5F9' }]}>
                       <Ionicons name="time-outline" size={17} color="#2563EB" />
                     </View>
                     <View>
                       <Text style={[styles.settingsItemTitle, { color: colors.titleText }]}>{t.chatHistory}</Text>
-                      <Text style={[styles.settingsItemSub, { color: colors.muted }]}>{saveChatHistory ? t.chatHistorySub : 'Disabled'}</Text>
+                      <Text style={[styles.settingsItemSub, { color: colors.muted }]}>
+                        {conversations.length > 0 ? `${conversations.length} ${t.savedChats}` : t.chatHistorySub}
+                      </Text>
                     </View>
                   </View>
-                  <TouchableOpacity
-                    onPress={() => setSaveChatHistory(!saveChatHistory)}
-                    style={[
-                      styles.aestheticSwitch,
-                      { backgroundColor: saveChatHistory ? '#2563EB' : '#E2E8F0', borderColor: saveChatHistory ? '#3B82F6' : '#CBD5E1' }
-                    ]}
-                  >
-                    <View style={[styles.aestheticSwitchThumb, saveChatHistory ? { alignSelf: 'flex-end' } : { alignSelf: 'flex-start' }]} />
-                  </TouchableOpacity>
-                </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <View style={[styles.historyCountBadge, { backgroundColor: chatbotDark ? '#1E293B' : '#EFF6FF' }]}>
+                      <Text style={[styles.historyCountBadgeText, { color: '#2563EB' }]}>
+                        {t.viewAll}
+                      </Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={16} color={colors.muted} />
+                  </View>
+                </TouchableOpacity>
 
-                {/* 3. Voice Auto-Read */}
+                {/* 4. Voice Auto-Read */}
                 <View style={[styles.settingsRow, { borderBottomColor: colors.border }]}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
                     <View style={[styles.settingsIconBox, { backgroundColor: chatbotDark ? '#1E293B' : '#F1F5F9' }]}>
@@ -1165,7 +1332,7 @@ export default function AbhyasMitra({
                   </TouchableOpacity>
                 </View>
 
-                {/* 4. Clear Chat Option */}
+                {/* 5. Clear Chat Option */}
                 <TouchableOpacity
                   onPress={() => {
                     setSettingsModalOpen(false);
@@ -1188,61 +1355,145 @@ export default function AbhyasMitra({
             </View>
           </Modal>
 
-          {/* Language Selection Popover / Modal */}
+          {/* ChatGPT-Style Full Conversation History Modal */}
           <Modal
-            visible={langMenuOpen}
-            transparent={true}
-            animationType="fade"
-            onRequestClose={() => setLangMenuOpen(false)}
+            visible={historyModalOpen}
+            transparent={false}
+            animationType="slide"
+            onRequestClose={() => setHistoryModalOpen(false)}
           >
-            <TouchableOpacity
-              style={styles.langModalOverlay}
-              activeOpacity={1}
-              onPress={() => setLangMenuOpen(false)}
-            >
-              <View style={[styles.langModalBox, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
-                <View style={styles.langModalHeader}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <Ionicons name="globe-outline" size={16} color="#38BDF8" />
-                    <Text style={[styles.langModalHeading, { color: chatbotDark ? '#FFFFFF' : '#0F172A' }]}>
-                      {activeLang === 'mr' ? 'भाषा निवडा' : activeLang === 'hi' ? 'भाषा चुनें' : 'Select Language'}
+            <SafeAreaView style={[styles.modalSafe, { backgroundColor: colors.screenBg }]}>
+              {/* History Top Navigation */}
+              <View style={[styles.historyHeader, { backgroundColor: colors.headerBg, borderBottomColor: colors.headerBorder }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <TouchableOpacity
+                    onPress={() => setHistoryModalOpen(false)}
+                    hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                    style={styles.backBtn}
+                  >
+                    <Ionicons name="chevron-back" size={22} color={colors.backBtnColor} />
+                  </TouchableOpacity>
+                  <View>
+                    <Text style={[styles.historyHeaderTitle, { color: colors.titleText }]}>
+                      {t.chatHistory}
+                    </Text>
+                    <Text style={[styles.historyHeaderSub, { color: colors.subtitleText }]}>
+                      {conversations.length} {t.savedChats}
                     </Text>
                   </View>
-                  <TouchableOpacity onPress={() => setLangMenuOpen(false)}>
-                    <Ionicons name="close" size={16} color={colors.muted} />
-                  </TouchableOpacity>
                 </View>
 
-                {[
-                  { code: 'en', label: 'English', sub: 'Default' },
-                  { code: 'mr', label: 'मराठी', sub: 'Marathi' },
-                  { code: 'hi', label: 'हिंदी', sub: 'Hindi' }
-                ].map(item => {
-                  const isActive = activeLang === item.code;
-                  return (
-                    <TouchableOpacity
-                      key={item.code}
-                      onPress={() => {
-                        handleLanguageSwitch(item.code);
-                        setLangMenuOpen(false);
-                      }}
-                      style={[
-                        styles.langModalOption,
-                        isActive && { backgroundColor: chatbotDark ? '#1E293B' : '#EFF6FF', borderColor: '#2563EB' }
-                      ]}
-                    >
-                      <View>
-                        <Text style={[styles.langModalOptionText, { color: isActive ? '#2563EB' : colors.mitraText }]}>
-                          {item.label}
-                        </Text>
-                        <Text style={{ fontSize: 10, color: colors.muted }}>{item.sub}</Text>
-                      </View>
-                      {isActive && <Ionicons name="checkmark-circle" size={18} color="#2563EB" />}
-                    </TouchableOpacity>
-                  );
-                })}
+                {/* ChatGPT-Style + New Chat Button */}
+                <TouchableOpacity
+                  onPress={handleStartNewChat}
+                  style={styles.historyNewChatBtn}
+                  activeOpacity={0.85}
+                >
+                  <Ionicons name="add" size={16} color="#FFFFFF" />
+                  <Text style={styles.historyNewChatBtnText}>{t.newChat}</Text>
+                </TouchableOpacity>
               </View>
-            </TouchableOpacity>
+
+              {/* Conversation History List */}
+              <ScrollView
+                style={{ flex: 1 }}
+                contentContainerStyle={{ padding: 14, paddingBottom: 40 }}
+              >
+                {conversations.length === 0 ? (
+                  <View style={styles.emptyHistoryBox}>
+                    <View style={[styles.emptyHistoryIconWrap, { backgroundColor: chatbotDark ? '#1E293B' : '#EFF6FF' }]}>
+                      <Ionicons name="chatbubbles-outline" size={32} color="#2563EB" />
+                    </View>
+                    <Text style={[styles.emptyHistoryTitle, { color: colors.titleText }]}>
+                      {t.noChatsYet}
+                    </Text>
+                    <Text style={[styles.emptyHistoryMsg, { color: colors.muted }]}>
+                      {t.noChatsSub}
+                    </Text>
+                    <TouchableOpacity
+                      onPress={handleStartNewChat}
+                      style={styles.emptyStartChatBtn}
+                    >
+                      <Ionicons name="chatbubble-ellipses" size={16} color="#FFFFFF" />
+                      <Text style={styles.emptyStartChatBtnText}>{t.startChatting}</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  conversations.map(conv => {
+                    const isActive = conv.id === currentSessionId;
+                    const dateFormatted = new Date(conv.updatedAt || conv.createdAt).toLocaleDateString([], {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    });
+
+                    return (
+                      <View
+                        key={conv.id}
+                        style={[
+                          styles.historyCard,
+                          {
+                            backgroundColor: isActive
+                              ? (chatbotDark ? '#1E293B' : '#EFF6FF')
+                              : colors.cardBg,
+                            borderColor: isActive
+                              ? '#2563EB'
+                              : colors.border
+                          }
+                        ]}
+                      >
+                        <TouchableOpacity
+                          onPress={() => handleLoadConversation(conv)}
+                          style={{ flex: 1, paddingVertical: 12, paddingLeft: 12 }}
+                        >
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                            <Ionicons
+                              name="chatbubble-outline"
+                              size={15}
+                              color={isActive ? '#2563EB' : colors.muted}
+                            />
+                            <Text
+                              style={[
+                                styles.historyCardTitle,
+                                { color: colors.titleText, fontWeight: isActive ? '700' : '600' }
+                              ]}
+                              numberOfLines={1}
+                            >
+                              {conv.title || t.untitledChat}
+                            </Text>
+                            {isActive && (
+                              <View style={styles.activeChatBadge}>
+                                <Text style={styles.activeChatBadgeText}>{t.activeChat}</Text>
+                              </View>
+                            )}
+                          </View>
+
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                            <Text style={[styles.historyCardMeta, { color: colors.muted }]}>
+                              {dateFormatted}
+                            </Text>
+                            <Text style={[styles.historyCardMetaDot, { color: colors.muted }]}>•</Text>
+                            <Text style={[styles.historyCardMeta, { color: colors.muted }]}>
+                              {(conv.messages || []).length} {t.messagesCount}
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          onPress={() => handleDeleteConversation(conv.id)}
+                          style={styles.historyDeleteBtn}
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                          accessibilityLabel="Delete Conversation"
+                        >
+                          <Ionicons name="trash-outline" size={16} color={colors.muted} />
+                        </TouchableOpacity>
+                      </View>
+                    );
+                  })
+                )}
+              </ScrollView>
+            </SafeAreaView>
           </Modal>
 
           {/* Clear Chat Confirmation Modal */}
@@ -1429,22 +1680,23 @@ const styles = StyleSheet.create({
     padding: 2
   },
   avatarWrapper: {
-    position: 'relative'
-  },
-  avatarMascotImage: {
+    position: 'relative',
     width: 36,
     height: 36,
     borderRadius: 18,
+    backgroundColor: '#1E3A8A',
+    justifyContent: 'center',
+    alignItems: 'center',
     borderWidth: 1.5,
     borderColor: '#38BDF8'
   },
   avatarOnlineDot: {
     position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 9,
-    height: 9,
-    borderRadius: 4.5,
+    bottom: -1,
+    right: -1,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
     backgroundColor: '#22C55E',
     borderWidth: 1.5,
     borderColor: '#0B1736'
@@ -1651,11 +1903,9 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#38BDF8',
-    marginTop: 2
-  },
-  botAvatarMiniImg: {
-    width: '100%',
-    height: '100%'
+    marginTop: 2,
+    justifyContent: 'center',
+    alignItems: 'center'
   },
   bubble: {
     paddingHorizontal: 12,
@@ -2020,5 +2270,139 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOpacity: 0.15,
     shadowRadius: 2
+  },
+  // Settings Language Segmented Selector
+  langSegmentedWrap: {
+    flexDirection: 'row',
+    borderRadius: 10,
+    borderWidth: 1,
+    padding: 3,
+    marginTop: 4
+  },
+  langSegmentBtn: {
+    flex: 1,
+    paddingVertical: 7,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 7
+  },
+  langSegmentText: {
+    fontSize: 12
+  },
+  historyCountBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8
+  },
+  historyCountBadgeText: {
+    fontSize: 10.5,
+    fontWeight: '700'
+  },
+  // ChatGPT-Style Full History Screen
+  historyHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderBottomWidth: 1
+  },
+  historyHeaderTitle: {
+    fontSize: 15.5,
+    fontWeight: '700'
+  },
+  historyHeaderSub: {
+    fontSize: 11,
+    marginTop: 1
+  },
+  historyNewChatBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#2563EB',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 16
+  },
+  historyNewChatBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700'
+  },
+  historyCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 8,
+    overflow: 'hidden'
+  },
+  historyCardTitle: {
+    fontSize: 13,
+    flexShrink: 1
+  },
+  historyCardMeta: {
+    fontSize: 10.5
+  },
+  historyCardMetaDot: {
+    fontSize: 10
+  },
+  activeChatBadge: {
+    backgroundColor: '#2563EB',
+    paddingHorizontal: 6,
+    paddingVertical: 1.5,
+    borderRadius: 6,
+    marginLeft: 4
+  },
+  activeChatBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: '700'
+  },
+  historyDeleteBtn: {
+    padding: 12,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  emptyHistoryBox: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+    paddingHorizontal: 20
+  },
+  emptyHistoryIconWrap: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16
+  },
+  emptyHistoryTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    marginBottom: 6,
+    textAlign: 'center'
+  },
+  emptyHistoryMsg: {
+    fontSize: 12,
+    textAlign: 'center',
+    lineHeight: 18,
+    marginBottom: 20
+  },
+  emptyStartChatBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#2563EB',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20
+  },
+  emptyStartChatBtnText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700'
   }
 });
