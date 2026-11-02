@@ -2778,22 +2778,19 @@ borderColor: [
                         alignItems: 'center',
                         justifyContent: 'center',
                         backgroundColor:
-                          intensity === 0
-                            ? C.soft
-                            : intensity === 1
-                              ? C.line
-                              : intensity === 2
-                                ? C.muted
-                                : C.blue
+  intensity === 0
+    ? C.soft
+    : intensity === 1
+      ? "#DBEAFE"
+      : intensity === 2
+        ? "#93C5FD"
+        : "#60A5FA"
                       }}
                     >
                       <Text
                         style={{
                           fontSize: 9,
-                          color:
-                            intensity >= 3
-                              ? '#FFFFFF'
-                              : C.muted
+                          color: intensity >= 2 ? "#1E3A8A" : C.text,
                         }}
                       >
                         {new Date(
