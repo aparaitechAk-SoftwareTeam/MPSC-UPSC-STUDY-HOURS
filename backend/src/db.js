@@ -1,8 +1,13 @@
 const dns = require('dns');
-try {
-  dns.setServers(['8.8.8.8', '1.1.1.1']);
-} catch (_) {}
 const mongoose = require('mongoose');
+
+// Configure resilient public DNS resolvers (Google & Cloudflare)
+// to guarantee MongoDB Atlas SRV records resolve seamlessly on any Wi-Fi network, mobile hotspot, or ISP
+try {
+  dns.setServers(['8.8.8.8', '1.1.1.1', '8.8.4.4']);
+} catch (dnsErr) {
+  console.warn('[Database] Custom DNS config notice:', dnsErr.message);
+}
 
 async function connectDB() {
   const uri = process.env.MONGODB_URI;
@@ -13,15 +18,25 @@ async function connectDB() {
     throw error;
   }
 
-  try {
-    const conn = await mongoose.connect(uri, {
-      serverSelectionTimeoutMS: 10000,
-    });
+  // If already connected or currently connecting, do not initiate duplicate attempts
+  if (mongoose.connection.readyState === 1) return mongoose.connection;
+  if (mongoose.connection.readyState === 2) return null;
 
+  const opts = {
+    serverSelectionTimeoutMS: 2500,
+    connectTimeoutMS: 2500,
+    socketTimeoutMS: 5000,
+  };
+
+  try {
+    const conn = await mongoose.connect(uri, opts);
     console.log(`[Database] MongoDB connected successfully to host: ${conn.connection.host}`);
     return conn;
   } catch (err) {
-    console.error(`[Database] Connection error: ${err.message}`);
+    // Halt internal mongoose retries so DNS is not flooded
+    try {
+      await mongoose.disconnect();
+    } catch {}
     throw err;
   }
 }

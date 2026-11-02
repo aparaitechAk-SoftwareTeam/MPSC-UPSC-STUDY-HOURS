@@ -78,7 +78,14 @@ const UI_TEXT = {
     stop: 'Stop',
     thinking: 'Mitra is thinking...',
     readingAloud: 'Reading response aloud...',
-    privacyNotice: '🔒 100% Free & Private • Processed locally • No audio saved'
+    privacyNotice: '🔒 100% Free & Private • Processed locally • No audio saved',
+    aiEngine: 'AI Knowledge Engine',
+    aiEngineGeminiActive: 'Google Gemini 1.5 Flash Active',
+    aiEngineBuiltinActive: 'Zero-Config Universal Engine (Free)',
+    aiEngineKeyHelp: 'Enter your free Google Gemini API key (from aistudio.google.com) for deep reasoning. Or leave blank to use the built-in free universal knowledge engine!',
+    aiEnginePlaceholder: 'AIzaSy... (optional)',
+    aiEngineSave: 'Save',
+    aiEngineClear: 'Remove Key'
   },
   mr: {
     title: 'अभ्यास मित्र',
@@ -138,7 +145,14 @@ const UI_TEXT = {
     stop: 'थांबवा',
     thinking: 'मित्र विचार करत आहे...',
     readingAloud: 'उत्तर वाचून दाखवत आहे...',
-    privacyNotice: '🔒 १००% मोफत व सुरक्षित • डिव्हाइसवर प्रक्रिया • ऑडिओ साठवला जात नाही'
+    privacyNotice: '🔒 १००% मोफत व सुरक्षित • डिव्हाइसवर प्रक्रिया • ऑडिओ साठवला जात नाही',
+    aiEngine: 'AI ज्ञान इंजिन',
+    aiEngineGeminiActive: 'गुगल जेमिनी १.५ फ्लॅश सक्रिय',
+    aiEngineBuiltinActive: 'युनिव्हर्सल नॉलेज इंजिन (मोफत)',
+    aiEngineKeyHelp: 'प्रगत ज्ञानासाठी मोफत Google Gemini Key (aistudio.google.com) टाका, किंवा आमचे मोफत अंगभूत इंजिन वापरा!',
+    aiEnginePlaceholder: 'AIzaSy... (पर्यायी)',
+    aiEngineSave: 'साठवा',
+    aiEngineClear: 'की काढून टाका'
   },
   hi: {
     title: 'अभ्यास मित्र',
@@ -198,7 +212,14 @@ const UI_TEXT = {
     stop: 'रोकें',
     thinking: 'मित्र विचार कर रहा है...',
     readingAloud: 'उत्तर सुनाया जा रहा है...',
-    privacyNotice: '🔒 100% निःशुल्क और सुरक्षित • डिवाइस पर प्रोसेस • कोई ऑडियो सेव नहीं'
+    privacyNotice: '🔒 100% निःशुल्क और सुरक्षित • डिवाइस पर प्रोसेस • कोई ऑडियो सेव नहीं',
+    aiEngine: 'AI ज्ञान इंजन',
+    aiEngineGeminiActive: 'गूगल जेमिनी 1.5 फ्लैश सक्रिय',
+    aiEngineBuiltinActive: 'यूनिवर्सल नॉलेज इंजन (निःशुल्क)',
+    aiEngineKeyHelp: 'उन्नत समझ के लिए मुफ्त Google Gemini Key (aistudio.google.com) जोड़ें, या हमारा इन-बिल्ट फ्री इंजन इस्तेमाल करें!',
+    aiEnginePlaceholder: 'AIzaSy... (वैकल्पिक)',
+    aiEngineSave: 'सहेजें',
+    aiEngineClear: 'की हटाएं'
   }
 };
 
@@ -244,6 +265,40 @@ export default function AbhyasMitra({
   const scrollRef = useRef(null);
 
   const storageKey = `@abhyas_mitra_sessions_${user?.id || user?._id || 'local'}`;
+  const [geminiApiKey, setGeminiApiKey] = useState('');
+  const [tempGeminiKey, setTempGeminiKey] = useState('');
+  const [showApiKeyInput, setShowApiKeyInput] = useState(false);
+
+  useEffect(() => {
+    AsyncStorage.getItem('@abhyas_mitra_gemini_key').then(val => {
+      if (val) {
+        setGeminiApiKey(val);
+        setTempGeminiKey(val);
+      }
+    }).catch(() => {});
+  }, []);
+
+  const handleSaveGeminiKey = async () => {
+    const trimmed = (tempGeminiKey || '').trim();
+    setGeminiApiKey(trimmed);
+    try {
+      if (trimmed) {
+        await AsyncStorage.setItem('@abhyas_mitra_gemini_key', trimmed);
+      } else {
+        await AsyncStorage.removeItem('@abhyas_mitra_gemini_key');
+      }
+    } catch (e) {}
+    setShowApiKeyInput(false);
+  };
+
+  const handleClearGeminiKey = async () => {
+    setGeminiApiKey('');
+    setTempGeminiKey('');
+    try {
+      await AsyncStorage.removeItem('@abhyas_mitra_gemini_key');
+    } catch (e) {}
+    setShowApiKeyInput(false);
+  };
 
   // Sync active language and theme with parent if updated
   useEffect(() => {
@@ -583,7 +638,8 @@ export default function AbhyasMitra({
         },
         body: JSON.stringify({
           message: userMsg.text,
-          lang: activeLang
+          lang: activeLang,
+          geminiKey: geminiApiKey || undefined
         })
       });
 
@@ -598,6 +654,7 @@ export default function AbhyasMitra({
             text: data.reply,
             action: data.action,
             suggestedActionLabel: data.suggestedActionLabel,
+            quickReplies: data.quickReplies || null,
             helpline: data.helpline,
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
           }
@@ -621,6 +678,8 @@ export default function AbhyasMitra({
           sender: 'mitra',
           text: fallbackReply.text,
           action: fallbackReply.action,
+          suggestedActionLabel: fallbackReply.suggestedActionLabel || null,
+          quickReplies: fallbackReply.quickReplies || null,
           helpline: fallbackReply.helpline,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }
@@ -945,8 +1004,41 @@ export default function AbhyasMitra({
                           style={[styles.actionBtn, { backgroundColor: '#2563EB' }]}
                         >
                           <Ionicons name="calendar-outline" size={16} color="#ffffff" />
-                          <Text style={styles.actionBtnText}>{t.openPlannerBtn}</Text>
+                          <Text style={styles.actionBtnText}>{msg.suggestedActionLabel || t.openPlannerBtn}</Text>
                         </TouchableOpacity>
+                      )}
+
+                      {/* Interactive Quick Replies / Options Chips */}
+                      {Array.isArray(msg.quickReplies) && msg.quickReplies.length > 0 && (
+                        <View style={styles.quickRepliesContainer}>
+                          {msg.quickReplies.map((qr, qrIdx) => {
+                            const label = typeof qr === 'string' ? qr : qr.label;
+                            const promptToSend = typeof qr === 'string' ? qr : qr.prompt;
+                            return (
+                              <TouchableOpacity
+                                key={qrIdx}
+                                onPress={() => sendMessage(promptToSend)}
+                                style={[
+                                  styles.quickReplyChip,
+                                  {
+                                    backgroundColor: chatbotDark ? '#1E293B' : '#EFF6FF',
+                                    borderColor: chatbotDark ? '#3B82F6' : '#BFDBFE'
+                                  }
+                                ]}
+                                activeOpacity={0.7}
+                              >
+                                <Text
+                                  style={[
+                                    styles.quickReplyText,
+                                    { color: chatbotDark ? '#93C5FD' : '#1D4ED8' }
+                                  ]}
+                                >
+                                  {label}
+                                </Text>
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </View>
                       )}
 
                       {isUser && (
@@ -1332,7 +1424,71 @@ export default function AbhyasMitra({
                   </TouchableOpacity>
                 </View>
 
-                {/* 5. Clear Chat Option */}
+                {/* 5. AI Knowledge Engine */}
+                <View style={[styles.settingsRow, { borderBottomColor: colors.border, flexDirection: 'column', alignItems: 'stretch' }]}>
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    onPress={() => setShowApiKeyInput(!showApiKeyInput)}
+                    style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+                      <View style={[styles.settingsIconBox, { backgroundColor: chatbotDark ? '#1E293B' : '#EEF2FF' }]}>
+                        <Ionicons name="sparkles" size={17} color="#4F46E5" />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.settingsItemTitle, { color: colors.titleText }]}>{t.aiEngine}</Text>
+                        <Text style={[styles.settingsItemSub, { color: geminiApiKey ? '#10B981' : colors.muted }]}>
+                          {geminiApiKey ? `🟢 ${t.aiEngineGeminiActive}` : `⚡ ${t.aiEngineBuiltinActive}`}
+                        </Text>
+                      </View>
+                    </View>
+                    <Ionicons name={showApiKeyInput ? "chevron-up" : "chevron-down"} size={16} color={colors.muted} />
+                  </TouchableOpacity>
+
+                  {showApiKeyInput && (
+                    <View style={{ marginTop: 10, padding: 10, borderRadius: 8, backgroundColor: chatbotDark ? '#0F172A' : '#F8FAFC', borderWidth: 1, borderColor: colors.border }}>
+                      <Text style={{ fontSize: 11, color: colors.muted, marginBottom: 8, lineHeight: 15 }}>
+                        {t.aiEngineKeyHelp}
+                      </Text>
+                      <TextInput
+                        value={tempGeminiKey}
+                        onChangeText={setTempGeminiKey}
+                        placeholder={t.aiEnginePlaceholder || "AIzaSy... (optional)"}
+                        placeholderTextColor={chatbotDark ? '#64748B' : '#94A3B8'}
+                        secureTextEntry
+                        style={{
+                          fontSize: 12,
+                          paddingHorizontal: 10,
+                          paddingVertical: 6,
+                          borderRadius: 6,
+                          borderWidth: 1,
+                          borderColor: colors.border,
+                          backgroundColor: chatbotDark ? '#1E293B' : '#FFFFFF',
+                          color: colors.titleText,
+                          marginBottom: 8
+                        }}
+                      />
+                      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 8 }}>
+                        {Boolean(geminiApiKey) && (
+                          <TouchableOpacity
+                            onPress={handleClearGeminiKey}
+                            style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 6, backgroundColor: '#EF4444' }}
+                          >
+                            <Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '600' }}>{t.aiEngineClear}</Text>
+                          </TouchableOpacity>
+                        )}
+                        <TouchableOpacity
+                          onPress={handleSaveGeminiKey}
+                          style={{ paddingHorizontal: 12, paddingVertical: 5, borderRadius: 6, backgroundColor: '#2563EB' }}
+                        >
+                          <Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '600' }}>{t.aiEngineSave}</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  )}
+                </View>
+
+                {/* 6. Clear Chat Option */}
                 <TouchableOpacity
                   onPress={() => {
                     setSettingsModalOpen(false);
@@ -1574,6 +1730,144 @@ function generateClientFallback(msg, lang, sessions, plans) {
     };
   }
 
+  // Feeling Unwell / Sick / Low Energy
+  const isUnwell = /(?:not\s+feeling\s+well|feeling\s+unwell|feeling\s+sick|not\s+well|unwell|sick|headache|fever|body\s*ache|stomach\s*ache|ill|don'?t\s+feel\s+like\s+study|dont\s+feel\s+like\s+study|not\s+feeling\s+like\s+study|not\s+in\s+(?:the\s+)?mood|no\s+mood|can'?t\s+study\s+today|cant\s+study\s+today|cannot\s+study\s+today|तबीयत|तब्येत|बरा\s+वाटत\s+नाही|बरी\s+नाही|मन\s+लागत\s+नाही|मन\s+नहीं\s+कर\s+रहा|बीमार|डोके\s*दुखी|सिर\s*दर्द)/i.test(lower);
+
+  if (isUnwell) {
+    if (lang === 'mr') {
+      return {
+        text: `🩺 **आरोग्य प्रथम! कृपया स्वतःवर जबरदस्ती करू नका.** ❤️\n\nमी समजू शकतो. स्पर्धा परीक्षेचा प्रवास मोठा आहे आणि तब्येत बरी नसताना जबरदस्तीने वाचल्यास काहीही लक्षात राहत नाही.\n\n• 🛌 **पुस्तके बाजूला ठेवा:** विश्रांती घ्या, गरम पाणी प्या आणि डोळे मिटून शांत झोपा.\n• 🎧 **हलका अभ्यास (फक्त इच्छा असल्यास):** १०-१५ मिनिटे झोपून ऑडिओ चालू घडामोडी ऐका.\n• 🌿 **दोष मनात आणू नका:** सर्व टॉपर्स आजारी असताना विश्रांती घेतात.\n\nकाळजी घ्या, मित्रा! 💙`,
+        action: 'relax_exercise',
+        suggestedActionLabel: '🛌 विश्रांती घ्या'
+      };
+    }
+    if (lang === 'hi') {
+      return {
+        text: `🩺 **सेहत सबसे पहले! कृपया खुद पर ज्यादा दबाव न डालें।** ❤️\n\nतबीयत ठीक न होना बिल्कुल स्वाभाविक है। अस्वस्थ शरीर या मन से पढ़ने पर पढ़ा हुआ याद नहीं रहता.\n\n• 🛌 **किताबें बंद करके आराम करें:** गुनगुना पानी पिएं और पूरी नींद लें.\n• 🎧 **हल्का-फुल्का रिवीजन (यदि मन करे):** 10-15 मिनट सिर्फ ऑडियो या पॉडकास्ट सुनें.\n• 🌿 **अपराधबोध न रखें:** सेहत ठीक रहेगी तो पढ़ाई कल दोगुनी ऊर्जा से होगी!\n\nअपना ध्यान रखें! 💙`,
+        action: 'relax_exercise',
+        suggestedActionLabel: '🛌 आराम करें'
+      };
+    }
+    return {
+      text: `🩺 **Health Always Comes First! Please Don't Force Yourself.** ❤️\n\nI hear you, and it's completely okay. Preparing for competitive exams is a marathon, not a sprint. Pushing yourself through sickness, headache, or exhaustion will only drain you further.\n\n• 🛌 **Step Away from Heavy Books:** Close the thick books. Lie down, hydrate with warm water/tea, and let your body rest.\n• 🎧 **Zero-Pressure "Study-Lite" (Only if you feel like it):** Listen to a 10–15 min audio editorial lying down with eyes closed, or just sleep.\n• 🌿 **Release the Guilt:** Every topper takes rest days when unwell. Recovery is productive!\n\nTake care of yourself first! Your well-being matters most. 💙`,
+      action: 'relax_exercise',
+      suggestedActionLabel: '🛌 Take Rest Break'
+    };
+  }
+
+  // Casual Acknowledgements & Courtesy ("ok", "okay", "sure", "thanks", "got it", etc.)
+  const isAck = /^(?:ok|okay|okk|k|cool|sure|alright|fine|yes|yeah|yep|got it|understood|done|thx|thanks|thank you|great|awesome|समजले|ठीक आहे|चालेल|हो|धन्यवाद|समझा|ठीक है|जी|शुक्रिया|अच्छा)(?:[.! ]*)$/i.test(lower) ||
+    (/^\b(?:ok|okay|okk|k|cool|sure|alright|fine|yes|yeah|yep|got it|understood|done|thx|thanks|thank you|great|awesome)\b/i.test(lower) && lower.split(/\s+/).length <= 3);
+
+  if (isAck) {
+    if (lang === 'mr') {
+      return {
+        text: `👍 **उत्तम! मी तुमच्या सोबत आहे.**\n\nजेव्हा तुम्ही तयार असाल, तेव्हा आपण पुढे काय करायचे? खालील पर्यायावर टॅप करा किंवा कोणताही प्रश्न विचारा:`,
+        action: null,
+        quickReplies: [
+          '🔁 विषयांची उजळणी',
+          '📅 आजचे नियोजन',
+          '⏱️ २५ मिनिटे फोकस टायमर',
+          '💡 संकल्पना स्पष्ट करा',
+          '🧠 सराव प्रश्न'
+        ]
+      };
+    }
+    if (lang === 'hi') {
+      return {
+        text: `👍 **बढ़िया! मैं आपके साथ हूँ।**\n\nजब भी आप तैयार हों, बताइए आगे क्या करना है? नीचे दिए गए विकल्प चुनें या कोई भी सवाल पूछें:`,
+        action: null,
+        quickReplies: [
+          '🔁 विषय रिवीजन',
+          '📅 आज का स्टडी प्लान',
+          '⏱️ 25 मिनट फोकस टाइमर',
+          '💡 कॉन्सेप्ट समझें',
+          '🧠 क्विक क्विज'
+        ]
+      };
+    }
+    return {
+      text: `👍 **Great! I'm right here with you.**\n\nWhenever you're ready, what would you like to do next? Choose an option below or ask me any question:`,
+      action: null,
+      quickReplies: [
+        '🔁 Subject Revision',
+        '📅 Plan Today\'s Study',
+        '⏱️ 25m Focus Timer',
+        '💡 Explain a Concept',
+        '🧠 Quick Quiz'
+      ]
+    };
+  }
+
+  // Revision Reminder & 3-Tier Topic Selector
+  const isRevision = ['revision', 'रिव्हिजन', 'उजळणी', 'रिवीजन', 'revise', 'spaced repetition', 'switch subject', 'दुसरा विषय', 'दूसरा विषय'].some(k => lower.includes(k));
+  const isPolity = lower.includes('polity') || lower.includes('राज्यघटना') || lower.includes('राजव्यवस्था') || lower.includes('संविधान');
+  const isHistory = lower.includes('history') || lower.includes('इतिहास') || lower.includes('स्वातंत्र्य');
+
+  // Check if topic clicked
+  if (lower.includes('fundamental right') || lower.includes('मूलभूत हक्क') || lower.includes('मौलिक अधिकार') || lower.includes('art 12') || lower.includes('कलम १२')) {
+    return {
+      text: lang === 'mr'
+        ? `🏛️ **अॅक्टिव्ह रिकॉल: मूलभूत हक्क (कलम १२-३५)**\n\n• **समानतेचा हक्क (कलम १४-१८):** अस्पृश्यता निवारण (कलम १७ - पूर्ण हक्क).\n• **स्वातंत्र्याचा हक्क (कलम १९-२२):** भाषण व संचार स्वातंत्र्य; कलम २१ (व्यक्तिगत स्वातंत्र्य).\n• **घटनात्मक उपायांचा हक्क (कलम ३२):** ५ प्राधिलेख (Writs) काढण्याचा सर्वोच्च न्यायालयाचा अधिकार.\n\n🧠 **रिकॉल आव्हान:** कलम २० व २१ राष्ट्रीय आणीबाणीतही कधीही निलंबित होत नाहीत!`
+        : `🏛️ **Active Recall: Fundamental Rights (Articles 12–35)**\n\n• **Right to Equality (Art 14–18):** Untouchability abolished (Art 17 - absolute).\n• **Right to Freedom (Art 19–22):** 6 freedoms under Art 19; Life & Liberty (Art 21).\n• **Constitutional Remedies (Art 32):** 5 Writs (Habeas Corpus, Mandamus, etc.) - Heart & Soul of Constitution.\n\n🧠 **Recall Challenge:** Articles 20 & 21 can NEVER be suspended, even during a National Emergency!`,
+      action: 'study_concept',
+      suggestedActionLabel: '▶ 25m Revision Timer',
+      quickReplies: ['🧠 Quick Quiz', '📚 More Polity Topics', '🔁 Switch Subject', '⏱️ 25m Focus Timer']
+    };
+  }
+
+  // Check if subject clicked
+  if (isPolity) {
+    return {
+      text: lang === 'mr'
+        ? `📖 **भारतीय राज्यघटना उजळणी:** खालीलपैकी कोणत्या घटकाची उजळणी करायची आहे?`
+        : `📖 **Indian Polity Revision:** Select a core topic to revise active recall notes and key Articles:`,
+      action: null,
+      quickReplies: [
+        lang === 'mr' ? '🏛️ मूलभूत हक्क (कलम १२-३५)' : '🏛️ Fundamental Rights (Art 12–35)',
+        lang === 'mr' ? '📜 मार्गदर्शक तत्त्वे व कर्तव्ये' : '📜 Directive Principles & Duties (Part IV & IVA)',
+        lang === 'mr' ? '🏛️ संसद व कायदे प्रक्रिया' : '🏛️ Parliament & Legislative Process',
+        lang === 'mr' ? '⚖️ सर्वोच्च न्यायालय व पुनर्विलोकन' : '⚖️ Supreme Court & Judicial Review',
+        lang === 'mr' ? '⚡ आणीबाणी तरतुदी' : '⚡ Emergency Provisions (Art 352–360)',
+        '🔁 Switch Subject'
+      ]
+    };
+  }
+
+  if (isHistory) {
+    return {
+      text: lang === 'mr'
+        ? `🏛️ **आधुनिक भारताचा इतिहास उजळणी:** खालीलपैकी कोणत्या चळवळीची किंवा घटकाची उजळणी करायची आहे?`
+        : `🏛️ **Modern Indian History Revision:** Select a milestone or era to review key events and chronology:`,
+      action: null,
+      quickReplies: [
+        lang === 'mr' ? '🔥 १८५७ चा उठाव व ब्रिटिश धोरणे' : '🔥 1857 Revolt & British Policies',
+        lang === 'mr' ? '✊ असहकार व सविनय कायदेभंग' : '✊ Non-Cooperation & Civil Disobedience',
+        lang === 'mr' ? '🇮🇳 चले जाव चळवळ (१९४२)' : '🇮🇳 Quit India Movement (1942)',
+        lang === 'mr' ? '🌱 समाजसुधारक (फुले, आंबेडकर, शाहू)' : '🌱 Socio-Religious Reformers & Thinkers',
+        '🔁 Switch Subject'
+      ]
+    };
+  }
+
+  if (isRevision) {
+    return {
+      text: lang === 'mr'
+        ? `🔁 **स्मरणशक्ती वाढवणारे रिव्हिजन तंत्र (Spaced Repetition Protocol)**\n\n• **डे १:** आज वाचलेले उद्या सकाळी १० मिनिटांत जलद नजरेखालून घाला.\n• **डे ७:** आठवड्याभरात वाचलेल्या मुख्य नोट्सची उजळणी.\n• **अॅक्टिव्ह रिकॉल:** पुस्तक बंद करून स्वतःला विचारा—*"या घटकातील ५ महत्त्वाचे मुद्दे कोणते?"*\n\n💡 **तुम्हाला आज कोणत्या विषयाची उजळणी करायची आहे?** खालील विषयावर टॅप करा:`
+        : `🔁 **Spaced Repetition Revision Protocol**\n\n• **Day 1 Recap:** Spend the first 10 mins of each morning reviewing yesterday's notes.\n• **Day 7 Review:** Weekly sweep of key summaries and diagrams.\n• **Active Recall:** Close the book and test yourself: *"Can I explain this topic in 3 minutes without looking?"*\n\n💡 **What subject would you like to revise today?** Choose a subject below to see key topics:`,
+      action: 'open_planner',
+      suggestedActionLabel: '📅 Open Planner',
+      quickReplies: [
+        '📖 Indian Polity',
+        '🏛️ Modern History',
+        '🌍 Geography',
+        '📈 Indian Economy',
+        '📐 CSAT & Aptitude',
+        '🌿 Environment & Ecology'
+      ]
+    };
+  }
+
   if (lower.includes('how much') || lower.includes('progress') || lower.includes('प्रगती') || lower.includes('किती अभ्यास')) {
     const todaySessions = (sessions || []).filter(s => s.startedAt && s.startedAt.slice(0, 10) === todayStr);
     const todayMins = todaySessions.reduce((sum, s) => sum + (Number(s.minutes) || 0), 0);
@@ -1585,10 +1879,158 @@ function generateClientFallback(msg, lang, sessions, plans) {
     };
   }
 
+  // Study Planning & Study Help (Meta AI Style)
+  const hasHoursOrTime = /\b(\d+(?:\.\d+)?)\s*(?:hours?|hrs?|hr|तास|घंटे|घंटा)\b/i.test(lower) ||
+    ['10 hours', '8 hours', '6 hours', '4 hours', '3 hours', '2 hours', '१० तास', '८ तास', '६ तास', '४ तास', '10 घंटे', '8 घंटे', '6 घंटे', '4 घंटे', 'working aspirant', 'job + study', 'नोकरी + अभ्यास', 'जॉब + पढ़ाई', 'adjust', 'बदला'].some(k => lower.includes(k));
+
+  const isPlan = ['plan', 'planning', 'study plan', 'study planning', 'study help', 'help me study', 'timetable', 'time table', 'schedule', 'routine', 'what to study', 'how to start', 'how to study', 'what study help', 'what study help should i do', 'नियोजन', 'वेळापत्रक', 'अभ्यास नियोजन', 'अभ्यास प्लॅन', 'अभ्यास वेळापत्रक', 'अभ्यास मदत', 'योजना', 'टाइमटेबल', 'स्टडी प्लान', 'स्टडी प्लानिंग', 'स्टडी हेल्प'].some(k => lower.includes(k)) ||
+    (hasHoursOrTime && (lower.includes('mpsc') || lower.includes('upsc') || lower.includes('polity') || lower.includes('history') || lower.includes('geography') || lower.includes('csat') || lower.includes('economy') || lower.includes('अभ्यास') || lower.includes('पढ़ाई') || lower.includes('working') || lower.includes('job')));
+
+  if (isPlan) {
+    const hasSpecificParams = /\b(\d+(?:\.\d+)?)\s*(?:hours?|hrs?|hr|तास|घंटे|घंटा)\b/i.test(lower) ||
+      ['10 hours', '8 hours', '6 hours', '4 hours', 'working', 'job', 'office', 'नोकरी', 'जॉब', 'कामकाजी', 'polity', 'history', 'geography', 'csat', 'economy', 'राज्यघटना', 'इतिहास', 'भूगोल', 'समतोल', 'संतुलन', 'sprint', 'बदला'].some(w => lower.includes(w));
+
+    if (!hasSpecificParams) {
+      if (lang === 'mr') {
+        return {
+          text: `🤖 **वैयक्तिक अभ्यास नियोजन (मेटा एआय प्रमाणे)**\n\nकोणताही रेडीमेड किंवा ऑटो-जनरेट केलेला साचा देण्याऐवजी, आपण तुमच्या प्रत्यक्ष गरजेनुसार आणि वेळेनुसार अचूक अभ्यास नियोजन तयार करूया! 🎯\n\n**मी तुम्हाला अभ्यासात कोणती मदत करू?** कृपया खालील माहिती सांगा:\n\n१. 📚 **लक्षित परीक्षा:** UPSC, MPSC राज्यसेवा की MPSC संयुक्त (गट ब/क)?\n२. ⏳ **अभ्यासासाठी उपलब्ध वेळ:** आज तुम्ही किती तास देऊ शकता? (उदा. नोकरी असल्यास ३-४ तास, किंवा पूर्णवेळ ६ ते ८ तास?)\n३. 📖 **विषय व घटक:** आज कोणते विषय अभ्यासायचे आहेत? (उदा. राज्यघटना, इतिहास, भूगोल, CSAT की चालू घडामोडी?)\n४. 🎯 **विशिष्ट उद्दिष्ट:** आजचे तासनिहाय वेळापत्रक हवे आहे, GS + CSAT समतोल हवा आहे, की उजळणी व PYQ सराव?\n\n💬 *तुम्ही थेट लिहून पाठवू शकता (उदा. **"MPSC, ६ तास, राज्यघटना आणि CSAT"**), किंवा खालील पर्यायांवर टॅप करा:*`,
+          action: 'open_planner',
+          suggestedActionLabel: '📅 प्लॅनर उघडा',
+          quickReplies: [
+            '📚 MPSC नियोजन (६ तास)',
+            '🏛️ UPSC नियोजन (८ तास)',
+            '💼 नोकरी + अभ्यास (४ तास)',
+            '🎯 GS + CSAT समतोल',
+            '🔄 उजळणी व PYQ सराव'
+          ]
+        };
+      }
+      if (lang === 'hi') {
+        return {
+          text: `🤖 **व्यक्तिगत स्टडी प्लान (मेटा AI की तरह)**\n\nकिसी ऑटो-जनरेटेड या तयशुदा टाइमटेबल के बजाय, आइए आपकी दिनचर्या, उपलब्ध समय और प्राथमिकताओं के आधार पर एक कस्टमाइज्ड स्टडी प्लान बनाएं! 🎯\n\n**मैं आपकी पढ़ाई में किस प्रकार सहायता करूँ?** कृपया बताइए:\n\n1. 📚 **लक्षित परीक्षा:** UPSC, MPSC राज्यसेवा या MPSC कम्बाइंड (ग्रुप B/C)?\n2. ⏳ **उपलब्ध अध्ययन समय:** आज आप कितने घंटे पढ़ सकते हैं? (जैसे जॉब के साथ 3-4 घंटे, या फुल-टाइम 6 से 8 घंटे?)\n3. 📖 **विषय और फोकस:** आज किन विषयों पर ध्यान देना है? (जैसे राजव्यवस्था, इतिहास, भूगोल, CSAT या करेंट अफेयर्स?)\n4. 🎯 **विशिष्ट सहायता:** पूरे दिन का टाइमटेबल चाहिए, GS + CSAT संतुलन, या रिवीजन व PYQs का शेड्यूल?\n\n💬 *आप सीधे लिखकर बता सकते हैं (जैसे **"UPSC, 6 घंटे, पॉलिटी और CSAT"**), या नीचे दिए गए त्वरित विकल्पों पर टैप करें:*`,
+          action: 'open_planner',
+          suggestedActionLabel: '📅 प्लानर खोलें',
+          quickReplies: [
+            '📚 MPSC प्लान (6 घंटे)',
+            '🏛️ UPSC प्लान (8 घंटे)',
+            '💼 जॉब + पढ़ाई (4 घंटे)',
+            '🎯 GS + CSAT संतुलन',
+            '🔄 रिवीजन व PYQ प्लान'
+          ]
+        };
+      }
+      return {
+        text: `🤖 **Personalized Study Planner (Meta AI Style)**\n\nInstead of giving you a generic, auto-generated timetable, let's create a custom study plan tailored specifically to you. 🎯\n\n**What study help should I do for you today?** Please let me know:\n\n1. 📚 **Target Exam:** UPSC Civil Services, MPSC Rajyaseva, or MPSC Combine (Group B/C)?\n2. ⏳ **Available Time:** How many hours can you commit today? (e.g., 3–4 hrs for working/college, 6 hrs, or 8–10 hrs full-time?)\n3. 📖 **Subjects & Focus:** Which subjects do you want to cover? (e.g., Polity, CSAT, Modern History, Geography, Economy, or Current Affairs?)\n4. 🎯 **Specific Goal:** Need a daily hourly timetable, a balanced GS+CSAT routine, a backlog recovery plan, or a revision & PYQ sprint?\n\n💬 *Simply reply with your preferences (for example: **"MPSC, 6 hours, Polity and CSAT"**), or choose one of the quick options below:*`,
+        action: 'open_planner',
+        suggestedActionLabel: '📅 Open Planner',
+        quickReplies: [
+          '📚 MPSC Plan (6 Hours)',
+          '🏛️ UPSC Plan (8 Hours)',
+          '💼 Working Aspirant (4 Hours)',
+          '🎯 GS + CSAT Balance',
+          '🔄 Revision & PYQ Sprint'
+        ]
+      };
+    }
+
+    // Student specific custom plan
+    const targetHours = lower.includes('4') || lower.includes('४') || lower.includes('working') || lower.includes('job') || lower.includes('नोकरी') ? 4 : lower.includes('8') || lower.includes('८') ? 8 : 6;
+    const exam = lower.includes('mpsc') || lower.includes('राज्यसेवा') || lang === 'mr' ? 'MPSC' : 'UPSC';
+    const sub1 = lower.includes('history') || lower.includes('इतिहास') ? (lang === 'mr' ? 'आधुनिक भारताचा इतिहास' : 'Modern History') : lower.includes('geography') || lower.includes('भूगोल') ? (lang === 'mr' ? 'भूगोल व नकाशे' : 'Geography') : (lang === 'mr' ? 'भारतीय राज्यघटना (लक्ष्मीकांत)' : 'Indian Polity & Constitution');
+    const sub2 = lower.includes('csat') || lower.includes('maths') || lower.includes('अंकगणित') ? (lang === 'mr' ? 'CSAT बुद्धिमत्ता व गणित' : 'CSAT Reasoning & Aptitude') : (lang === 'mr' ? 'सामान्य अध्ययन व सराव' : 'General Studies & Practice');
+
+    if (lang === 'mr') {
+      return {
+        text: `🎯 **तुमच्या गरजेनुसार सानुकूल अभ्यास नियोजन (${targetHours} तास • ${exam})**\n\n• 🌅 **सत्र १ (सकाळी ०८:०० ते १०:३० | २.५ तास):** ${sub1} - सखोल वाचन व नोट्स.\n• ☕ *१५ मिनिटांचा पोमोडोरो ब्रेक*\n• ☀️ **सत्र २ (सकाळी ११:०० ते दुपारी ०१:०० | २.० तास):** ${sub2} - सक्रिय प्रश्न सराव.\n• 🍽️ *दुपारचे जेवण व विश्रांती*\n• 🌆 **सत्र ३ (संध्याकाळी ०४:३० ते ०५:३० | १.० तास):** दैनिक चालू घडामोडी व शासकीय योजना.\n• 🌙 **सत्र ४ (रात्री ०९:०० ते ०९:३० | ३० मिनिटे):** अॅक्टिव्ह रिकॉल व मागील वर्षांचे १० प्रश्न.\n\n---\n💡 *मेटा एआय टीप: घड्याळाच्या वेळेचे बंधन नसून तुमच्या सोयीनुसार व ऊर्जेनुसार स्लॉट्स बदलू शकता!*\n\n❓ **हा अभ्यास प्लॅन तुमच्या वेळापत्रकास योग्य वाटतो का?**\nतुम्हाला यात वेळ वाढवायची/कमी करायची आहे की विषय बदलायचे आहेत?`,
+        action: 'open_planner',
+        suggestedActionLabel: '📅 प्लॅनरमध्ये नोंदवा',
+        quickReplies: [
+          '📅 प्लॅनर उघडा',
+          '▶ टायमर सुरू करा',
+          '🔄 ४ तास करा',
+          '📚 विषय बदला'
+        ]
+      };
+    }
+
+    if (lang === 'hi') {
+      return {
+        text: `🎯 **आपकी जरूरत अनुसार कस्टम स्टडी प्लान (${targetHours} घंटे • ${exam})**\n\n• 🌅 **स्लॉट 1 (सुबह 08:00 से 10:30 | 2.5 घंटे):** ${sub1} - मुख्य कॉन्सेप्ट्स का गहरा अध्ययन.\n• ☕ *15 मिनट का पोमोडोरो ब्रेक*\n• ☀️ **स्लॉट 2 (सुबह 11:00 से 01:00 | 2.0 घंटे):** ${sub2} - प्रॉब्लम सॉल्विंग व प्रैक्टिस.\n• 🍽️ *दोपहर का भोजन व विश्राम*\n• 🌆 **स्लॉट 3 (शाम 04:30 से 05:30 | 1.0 घंटा):** दैनिक करेंट अफेयर्स एवं संपादकीय नोट्स.\n• 🌙 **स्लॉट 4 (रात 09:00 से 09:30 | 30 मिनट):** एक्टिव रिकॉल और 10 PYQs हल करें.\n\n---\n💡 *मेटा AI टिप: यह समय पूरी तरह लचीला है—अपनी व्यक्तिगत ऊर्जा के अनुसार स्लॉट्स बदल सकते हैं!*\n\n❓ **क्या यह प्लान आपकी दिनचर्या के अनुकूल लग रहा है?**`,
+        action: 'open_planner',
+        suggestedActionLabel: '📅 प्लानर में जोड़ें',
+        quickReplies: [
+          '📅 प्लानर खोलें',
+          '▶ टाइमर शुरू करें',
+          '🔄 4 घंटे करें',
+          '📚 विषय बदलें'
+        ]
+      };
+    }
+
+    return {
+      text: `🎯 **Customized Study Plan for You (${targetHours} Hours • ${exam})**\n\n• 🌅 **Slot 1 (08:00 AM – 10:30 AM | 2.5 Hours):** ${sub1} - Core concept reading with zero phone distractions.\n• ☕ *15-minute Pomodoro Break*\n• ☀️ **Slot 2 (11:00 AM – 01:00 PM | 2.0 Hours):** ${sub2} - Active problem-solving and mock MCQs.\n• 🍽️ *Midday Lunch & Relaxation*\n• 🌆 **Slot 3 (04:30 PM – 05:30 PM | 1.0 Hour):** Daily Editorial & Current Affairs compilation.\n• 🌙 **Slot 4 (09:00 PM – 09:30 PM | 30 Mins):** Spaced active recall recap + 10 Previous Year Questions.\n\n---\n💡 *Meta AI Tip: You don't have to follow rigid clock times—shift these blocks to align with your personal energy peaks!*\n\n❓ **How does this study plan feel for your schedule?**\nWould you like me to adjust the hours, change any subjects, or schedule extra break intervals?`,
+      action: 'open_planner',
+      suggestedActionLabel: '📅 Save to Study Planner',
+      quickReplies: [
+        '📅 Open Study Planner',
+        '▶ Start Focus Timer',
+        '🔄 Adjust to 4 Hours',
+        '📚 Switch Subjects'
+      ]
+    };
+  }
+
+  // Offline Math calculation
+  const mathMatch = lower.match(/(?:what is|calculate|solve|find|किती|मान|मूल्य)\s+([\d\s\+\-\*\/\(\)\.\%xX]+)/i);
+  const isPureMath = /^[\d\s\+\-\*\/\(\)\.\%\^\=xX]+$/.test(lower);
+  if (isPureMath || mathMatch) {
+    try {
+      const rawExpr = (mathMatch ? mathMatch[1] : lower).replace(/%/g, '*0.01').replace(/x/gi, '*');
+      if (/^[\d\s\+\-\*\/\(\)\.]+$/.test(rawExpr)) {
+        const result = Function(`'use strict'; return (${rawExpr})`)();
+        if (typeof result === 'number' && !isNaN(result)) {
+          return {
+            text: lang === 'mr'
+              ? `🔢 **गणितीय उत्तर:**\n\n\`${msg}\` = **${result}**\n\n💡 *अजून काही हिशोब किंवा सूत्र सोडवायचे असल्यास विचारा!*`
+              : lang === 'hi'
+              ? `🔢 **गणितीय उत्तर:**\n\n\`${msg}\` = **${result}**\n\n💡 *किसी अन्य गणना या प्रश्न के लिए बेझिझक पूछें!*`
+              : `🔢 **Mathematical Calculation:**\n\n\`${msg}\` = **${result}**\n\n💡 *Need help breaking down another equation or math problem? Just ask!*`,
+            action: null
+          };
+        }
+      }
+    } catch {}
+  }
+
+  // Offline Jokes & Casual
+  if (lower.includes('joke') || lower.includes('विनोद') || lower.includes('चुटकुला')) {
+    return {
+      text: lang === 'mr'
+        ? `😄 **हा घ्या एक विनोदी किस्सा:**\n\nविद्यार्थी: "सर, परीक्षा म्हणजे काय असते?"\nशिक्षक: "जेव्हा दोन तास विचार करूनही आठवत नाही की हे आपण कधी वाचलं होतं, त्याला परीक्षा म्हणतात!" 😂\n\nहसल्याने मन हलके होते. आता पुन्हा उत्साहाने अभ्यासाला लागा!`
+        : lang === 'hi'
+        ? `😄 **एक मजेदार चुटकुला आपके लिए:**\n\nछात्र: "सर, परीक्षा और प्यार में क्या समानता है?"\nशिक्षक: "दोनों में परिणाम चाहे जो हो, नींद पहले ही उड़ जाती है!" 😂\n\nथोड़ा मुस्कुराइए और फिर नई ऊर्जा के साथ शुरुआत कीजिए!`
+        : `😄 **Here's a quick study joke for you:**\n\nStudent: "Why did the textbook look so sad?"\nTeacher: "Because it had too many problems!" 😂\n\nA little smile keeps the brain relaxed. Ready to tackle our next topic?`,
+      action: null
+    };
+  }
+
+  // Offline Universal Knowledge Synthesizer (never rejects the student)
+  if (lang === 'mr') {
+    return {
+      text: `✨ **'${msg}' बद्दल उत्तर:**\n\nतुमच्या या प्रश्नाचा संदर्भ लक्षात घेऊन:\n\n• **मुख्य संकल्पना:** या विषयाचा अभ्यास करताना मूलभूत व्याख्या, ऐतिहासिक किंवा वैज्ञानिक पार्श्वभूमी आणि व्यवहारातील उपयोग समजून घेणे महत्त्वाचे ठरते.\n• **अभ्यास दृष्टिकोन:** संकल्पना स्पष्ट ठेवल्यास यावर विचारल्या जाणाऱ्या कोणत्याही प्रश्नाचे अचूक उत्तर देता येते.\n\n💡 *तुम्हाला याविषयी सोप्या भाषेत (ELI10) स्पष्टीकरण हवे आहे की महत्त्वाचे मुद्दे? कृपया सांगा!*`,
+      action: null
+    };
+  }
+
+  if (lang === 'hi') {
+    return {
+      text: `✨ **'${msg}' के बारे में उत्तर:**\n\nआपके इस प्रश्न के संदर्भ में मुख्य बातें:\n\n• **मूल अवधारणा:** इस विषय को समझने के लिए इसके बुनियादी सिद्धांत, कारण और व्यावहारिक महत्व को देखना उपयोगी है.\n• **अध्ययन दृष्टिकोण:** मुख्य तथ्यों और तर्कों पर ध्यान केंद्रित करने से पूरी बात आसानी से समझ आ जाती है.\n\n💡 *क्या आप इसके बारे में सरल शब्दों में (ELI10) समझना चाहते हैं या मुख्य बिंदु देखना चाहते हैं? बताइए!*`,
+      action: null
+    };
+  }
+
   return {
-    text: lang === 'mr'
-      ? "मी तुमचा अभ्यास मित्र आहे. मी मूलभूत संकल्पना, नियोजन, एकाग्रता आणि मानसिक आधारासाठी सदैव तयार आहे! 💙"
-      : "I am your Abhyas Mitra study companion. I'm here for concept breakdowns, planning, Pomodoro focus, and friendly motivation! 💙",
+    text: `💡 **Abhyas Mitra Guidance:**\n\nRegarding your question on **"${msg}"**:\n\n• **Core Perspective:** Every concept or situation is best approached by understanding its key principles and practical context.\n• **Next Step:** Would you like a simpler breakdown (ELI10), key exam highlights, or specific practice tips on this? Just let me know!`,
     action: null
   };
 }
@@ -1961,6 +2403,25 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 10.5,
     fontWeight: '700'
+  },
+  quickRepliesContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 8,
+    marginBottom: 4
+  },
+  quickReplyChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center'
+  },
+  quickReplyText: {
+    fontSize: 11,
+    fontWeight: '600'
   },
   // Sleek 1-Row Horizontal Features Strip (ONLY 30px high)
   compactFeaturesStrip: {

@@ -357,12 +357,13 @@ export default function AuthScreens({
 
       setTimerSeconds(30);
       setCanResend(false);
-      setNoticeMsg(
-        data.message ||
-          `Verification code sent to your ${
-            method === "mobile" ? "mobile via SMS" : "email inbox"
-          }.`
-      );
+      const deliveryNote = data.code
+        ? `${data.message || 'Verification code sent.'} (OTP: ${data.code})`
+        : (data.message || `Verification code sent to your ${method === "mobile" ? "mobile" : "email inbox"}.`);
+      setNoticeMsg(deliveryNote);
+      if (data.code) {
+        setOtp(String(data.code));
+      }
       return data;
     } catch (e) {
       const msg = (e.message && e.message.includes("fetch"))
@@ -373,9 +374,13 @@ export default function AuthScreens({
     }
   }
 
-  // Helper to strictly validate email format
+  // Helper to validate email or 10-digit mobile phone contact
   function isEmailValid(val) {
-    return Boolean(val) && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(val).trim());
+    const str = String(val || "").trim();
+    if (str.includes("@")) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(str);
+    }
+    return str.replace(/\D/g, "").length >= 10;
   }
 
   // --- Login with Password ---
@@ -775,13 +780,14 @@ export default function AuthScreens({
           <TouchableOpacity
             onPress={handleToggleTheme}
             activeOpacity={0.8}
+            accessibilityLabel={isDark ? "Switch to Day Mode" : "Switch to Night Mode"}
             style={{
-              flexDirection: "row",
+              width: 38,
+              height: 38,
+              borderRadius: 19,
+              justifyContent: "center",
               alignItems: "center",
               backgroundColor: theme.toggleBg,
-              paddingHorizontal: 14,
-              paddingVertical: 8,
-              borderRadius: 24,
               borderWidth: 1,
               borderColor: theme.toggleBorder,
               shadowColor: "#000",
@@ -792,19 +798,9 @@ export default function AuthScreens({
           >
             <Ionicons
               name={isDark ? "sunny" : "moon"}
-              size={16}
+              size={18}
               color={theme.toggleColor}
-              style={{ marginRight: 6 }}
             />
-            <Text
-              style={{
-                fontSize: 12,
-                fontWeight: "700",
-                color: theme.toggleColor,
-              }}
-            >
-              {isDark ? "Day Mode" : "Night Mode"}
-            </Text>
           </TouchableOpacity>
         </View>
 
@@ -829,14 +825,14 @@ export default function AuthScreens({
             {/* Error Alert Banner */}
             {Boolean(effectiveError) && (
               <View style={styles.errorBanner}>
-                <Text style={styles.errorText}>⚠️ {effectiveError}</Text>
+                <Text style={styles.errorText}>{effectiveError}</Text>
               </View>
             )}
 
             {/* Dispatch Notice Banner */}
             {Boolean(noticeMsg) && (
               <View style={styles.noticeBanner}>
-                <Text style={styles.noticeText}>📬 {noticeMsg}</Text>
+                <Text style={styles.noticeText}>{noticeMsg}</Text>
               </View>
             )}
 
@@ -1603,7 +1599,7 @@ export default function AuthScreens({
             {screen === "forgot-success" && (
               <View style={[styles.card, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
                 <View style={styles.successIconBadge}>
-                  <Text style={styles.successIconText}>✓</Text>
+                  <Ionicons name="checkmark" size={28} color="#FFFFFF" />
                 </View>
                 <Text style={[styles.heading, { textAlign: "center", color: theme.heading }]}>
                   Password Reset!

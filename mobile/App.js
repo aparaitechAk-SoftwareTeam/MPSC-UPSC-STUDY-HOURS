@@ -125,6 +125,177 @@ const tomorrow = () => {
   return d.toISOString().slice(0, 10);
 };
 
+const formatDateDMY = (dateInput = new Date()) => {
+  try {
+    const d = dateInput instanceof Date ? dateInput : new Date(dateInput);
+    if (isNaN(d.getTime())) return '';
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+  } catch {
+    return '';
+  }
+};
+
+const parseDMYToISO = (dmyStr) => {
+  if (!dmyStr) return today();
+  const cleaned = String(dmyStr).trim();
+  const parts = cleaned.split(/[\/\-\.]/);
+  if (parts.length === 3) {
+    let [d, m, y] = parts;
+    if (d.length === 4) {
+      return `${d}-${m.padStart(2, '0')}-${y.padStart(2, '0')}`;
+    }
+    y = y.length === 2 ? `20${y}` : y;
+    return `${y.padStart(4, '2026')}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+  }
+  return today();
+};
+
+const todayDMY = () => formatDateDMY(new Date());
+const yesterdayDMY = () => {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return formatDateDMY(d);
+};
+
+const DAILY_MOTIVATIONAL_QUOTES = [
+  {
+    quote: "Discipline is choosing between what you want now and what you want most. Every focused hour brings you closer to the civil services list.",
+    author: "Civil Services Discipline"
+  },
+  {
+    quote: "Success is not final, failure is not fatal: it is the courage to continue that counts in this journey.",
+    author: "Winston Churchill"
+  },
+  {
+    quote: "You have to dream before your dreams can come true. Consistency beats talent when talent doesn't work hard.",
+    author: "Dr. A.P.J. Abdul Kalam"
+  },
+  {
+    quote: "Cultivate an indomitable will. If you make up your mind to conquer a subject, no difficulty can deter you.",
+    author: "Dr. B.R. Ambedkar"
+  },
+  {
+    quote: "Arise, awake, and stop not until the goal is reached.",
+    author: "Swami Vivekananda"
+  },
+  {
+    quote: "Small daily improvements over time lead to stunning results in Prelims and Mains.",
+    author: "Robin Sharma"
+  },
+  {
+    quote: "The secret of getting ahead is getting started. Break your syllabus into small manageable daily blocks.",
+    author: "Mark Twain"
+  },
+  {
+    quote: "It does not matter how slowly you go as long as you do not stop.",
+    author: "Confucius"
+  },
+  {
+    quote: "Your time is limited. Don't waste it doubting yourself. Open your books and focus with intent.",
+    author: "Aspirant Wisdom"
+  },
+  {
+    quote: "The difference between ordinary and extraordinary is that little extra effort each day.",
+    author: "Jimmy Johnson"
+  },
+  {
+    quote: "Never give up on a dream just because of the time it will take to accomplish it. The time will pass anyway.",
+    author: "Earl Nightingale"
+  },
+  {
+    quote: "Doubt kills more dreams than failure ever will. Trust your preparation and revision cycle.",
+    author: "Suzy Kassem"
+  },
+  {
+    quote: "When you feel like quitting, remember why you started this civil services dream.",
+    author: "MPSC & UPSC Aspirants"
+  },
+  {
+    quote: "An investment in knowledge pays the best interest for your future career in administration.",
+    author: "Benjamin Franklin"
+  },
+  {
+    quote: "Action is the foundational key to all success. Complete today's targets with sincerity.",
+    author: "Pablo Picasso"
+  },
+  {
+    quote: "Perseverance is failing 19 times and succeeding the 20th time.",
+    author: "Julie Andrews"
+  },
+  {
+    quote: "Every revision makes the concept sharper. Do not fear repeating what is important.",
+    author: "Topper's Strategy"
+  },
+  {
+    quote: "One day, all your late nights and early mornings will pay off when your roll number is on the PDF.",
+    author: "Civil Services Aspirant"
+  },
+  {
+    quote: "Clear intentions, daily consistency, and ruthless revision are the keys to cracking the exam.",
+    author: "Abhyas Study Strategy"
+  },
+  {
+    quote: "Focus on the process, not just the outcome. Today's deep focus hours are all that matters right now.",
+    author: "Mindful Study"
+  },
+  {
+    quote: "The future belongs to those who prepare for it today.",
+    author: "Malcolm X"
+  },
+  {
+    quote: "Do something today that your future self will thank you for.",
+    author: "Sean Patrick Flanery"
+  },
+  {
+    quote: "The pain of discipline is far less than the pain of regret.",
+    author: "Sarah Bombell"
+  },
+  {
+    quote: "Patience, persistence and perspiration make an unbeatable combination for success.",
+    author: "Napoleon Hill"
+  },
+  {
+    quote: "Believe in yourself and all that you are. Know that there is something inside you that is greater than any obstacle.",
+    author: "Christian D. Larson"
+  },
+  {
+    quote: "You don't have to be great to start, but you have to start to be great.",
+    author: "Zig Ziglar"
+  },
+  {
+    quote: "Self-discipline is the magic power that makes you virtually unstoppable.",
+    author: "Dan Kennedy"
+  },
+  {
+    quote: "Strength does not come from physical capacity. It comes from an indomitable will.",
+    author: "Mahatma Gandhi"
+  },
+  {
+    quote: "Energy and persistence conquer all things.",
+    author: "Benjamin Franklin"
+  },
+  {
+    quote: "Great works are performed not by strength, but by perseverance.",
+    author: "Samuel Johnson"
+  },
+  {
+    quote: "The man who moves a mountain begins by carrying away small stones.",
+    author: "Confucius"
+  }
+];
+
+const getDailyMotivationalQuote = () => {
+  const now = new Date();
+  const startOfYear = new Date(now.getFullYear(), 0, 0);
+  const diff = now - startOfYear;
+  const oneDay = 1000 * 60 * 60 * 24;
+  const dayOfYear = Math.floor(diff / oneDay);
+  return DAILY_MOTIVATIONAL_QUOTES[dayOfYear % DAILY_MOTIVATIONAL_QUOTES.length];
+};
+
 const getNext7Days = () => {
   const days = [];
   const curr = new Date();
@@ -402,24 +573,38 @@ const getSubjectTopics = (subjectId, subjectName = '') => {
   ];
 };
 
-function Chip({ label, active, onPress, style }) {
+function Chip({ label, active, onPress, style, textStyle, numberOfLines = 2 }) {
   const theme = React.useContext(ThemeContext);
   return (
     <TouchableOpacity
       onPress={onPress}
+      activeOpacity={0.75}
       style={[
         {
           backgroundColor: active ? theme.blue : theme.soft,
-          paddingHorizontal: 13,
-          paddingVertical: 8,
-          borderRadius: 20,
-          marginRight: 8,
-          marginBottom: 8
+          paddingHorizontal: 10,
+          paddingVertical: 6,
+          borderRadius: 16,
+          marginRight: 6,
+          marginBottom: 6,
+          maxWidth: '100%',
+          flexShrink: 1,
+          justifyContent: 'center',
+          alignItems: 'center'
         },
         style
       ]}
     >
-      <Text style={txt(12, true, active ? '#ffffff' : (theme.isDark ? '#93c5fd' : theme.blue))}>{label}</Text>
+      <Text
+        numberOfLines={numberOfLines}
+        style={[
+          txt(11, true, active ? '#ffffff' : (theme.isDark ? '#93c5fd' : theme.blue)),
+          { textAlign: 'center' },
+          textStyle
+        ]}
+      >
+        {label}
+      </Text>
     </TouchableOpacity>
   );
 }
@@ -770,9 +955,10 @@ export default function App() {
   const [manualSubject, setManualSubject] = useState('upsc-polity');
   const [manualExamFilter, setManualExamFilter] = useState('ALL');
   const [manualDate, setManualDate] = useState('today');
+  const [manualCustomDate, setManualCustomDate] = useState(todayDMY);
   const [manualHours, setManualHours] = useState('2');
   const [manualMinutes, setManualMinutes] = useState('0');
-  const [manualActivity, setManualActivity] = useState('📖 Theory & Reading');
+  const [manualActivity, setManualActivity] = useState('Theory & Reading');
   const [manualTopic, setManualTopic] = useState('');
   const [isLoggingManual, setIsLoggingManual] = useState(false);
 
@@ -897,8 +1083,52 @@ export default function App() {
     }
     return 'en';
   });
-  const [dailyGoalHours, setDailyGoalHours] = useState(8);
   const [timerSoundEnabled, setTimerSoundEnabled] = useState(true);
+
+  const playTimerTone = (type = 'start') => {
+    if (!timerSoundEnabled) return;
+    try {
+      if (typeof window !== 'undefined') {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        if (ctx.state === 'suspended') {
+          ctx.resume();
+        }
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        const now = ctx.currentTime;
+        if (type === 'start') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(587.33, now);
+          osc.frequency.exponentialRampToValueAtTime(880, now + 0.12);
+          gain.gain.setValueAtTime(0.25, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+          osc.start(now);
+          osc.stop(now + 0.4);
+        } else if (type === 'pause') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(783.99, now);
+          osc.frequency.exponentialRampToValueAtTime(523.25, now + 0.12);
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+          osc.start(now);
+          osc.stop(now + 0.35);
+        } else if (type === 'save' || type === 'complete') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(523.25, now);
+          osc.frequency.setValueAtTime(659.25, now + 0.1);
+          osc.frequency.setValueAtTime(783.99, now + 0.2);
+          gain.gain.setValueAtTime(0.25, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+          osc.start(now);
+          osc.stop(now + 0.55);
+        }
+      }
+    } catch {}
+  };
 
   const t = (key, fallback) => getTranslation(lang, key, fallback);
 
@@ -928,6 +1158,7 @@ export default function App() {
     }
     return false; // Default to clean Day mode
   });
+  const [dailyGoalHours, setDailyGoalHours] = useState(8);
 
   useEffect(() => {
     AsyncStorage.getItem('abhyas_dark_theme').then(val => {
@@ -1004,10 +1235,10 @@ export default function App() {
       try {
         const perm = await Notification.requestPermission();
         if (perm === 'granted') {
-          new Notification('🔔 Abhyas Routine Reminder Active', {
+          new Notification('Abhyas Routine Reminder Active', {
             body: isMorning
-              ? `🌅 Morning Briefing: You have ${todayReminderPlans.length} tasks scheduled today (${todayReminderMins}m). Focus deeply!`
-              : `🌙 Night Routine: Tomorrow has ${tomorrowReminderPlans.length} tasks planned. Plan ahead for a great day!`,
+              ? `Morning Briefing: You have ${todayReminderPlans.length} tasks scheduled today (${todayReminderMins}m). Focus deeply!`
+              : `Night Routine: Tomorrow has ${tomorrowReminderPlans.length} tasks planned. Plan ahead for a great day!`,
             icon: '/favicon.ico'
           });
           appAlert('Notifications Enabled', 'Daily routine reminders are now active on your device!');
@@ -1103,59 +1334,100 @@ export default function App() {
   }
 
   async function refresh(t = token) {
+    if (!t) return;
     try {
       const [s, h, p, n, a, tp] = await Promise.all([
-        req('/subjects', 'GET', null, t),
-        req('/sessions', 'GET', null, t),
-        req('/plan', 'GET', null, t),
-        req('/notifications', 'GET', null, t),
-        req('/analytics', 'GET', null, t),
+        req('/subjects', 'GET', null, t).catch(() => []),
+        req('/sessions', 'GET', null, t).catch(() => []),
+        req('/plan', 'GET', null, t).catch(() => []),
+        req('/notifications', 'GET', null, t).catch(() => []),
+        req('/analytics', 'GET', null, t).catch(() => ({})),
         req('/topic-progress', 'GET', null, t).catch(() => [])
       ]);
       const validSubjects = Array.isArray(s) ? s.filter(x => x && x.id && (String(x.id).startsWith('upsc-') || String(x.id).startsWith('mpsc-'))) : [];
       setSubjects(validSubjects);
-      setSessions(h);
-      setPlans(p);
-      setNotes(n);
-      setAnalytics(a);
-      setTopicProgress(tp || []);
+      setSessions(Array.isArray(h) ? h : []);
+      setPlans(Array.isArray(p) ? p : []);
+      setNotes(Array.isArray(n) ? n : []);
+      setAnalytics(a && typeof a === 'object' ? a : {});
+      setTopicProgress(Array.isArray(tp) ? tp : []);
     } catch (e) {
-      appAlert('Connection error', e.message);
+      console.warn('[Data refresh failed]', e.message);
     }
   }
 
   useEffect(() => {
-    AsyncStorage.getItem('abhyasToken').then(async t => {
-      let activeToken = t;
-      if (!activeToken && Platform.OS === 'web' && typeof window !== 'undefined') {
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('demo') === 'true' || urlParams.get('autologin') === 'true') {
-          try {
-            const res = await smartApiFetch('/auth/login', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ email: 'student@abhyas.local', password: 'Student123!' })
-            });
-            const d = await res.json();
-            if (d.token) {
-              activeToken = d.token;
-              await AsyncStorage.setItem('abhyasToken', d.token);
+    let isMounted = true;
+    // Failsafe timer: loading spinner is guaranteed to dismiss within 2000ms
+    const safetyTimer = setTimeout(() => {
+      if (isMounted) setLoading(false);
+    }, 2000);
+
+    const init = async () => {
+      try {
+        let activeToken = await AsyncStorage.getItem('abhyasToken');
+        if (!activeToken && Platform.OS === 'web' && typeof window !== 'undefined') {
+          const urlParams = new URLSearchParams(window.location.search);
+          if (urlParams.get('demo') === 'true' || urlParams.get('autologin') === 'true') {
+            try {
+              const res = await smartApiFetch('/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: 'student@abhyas.local', password: 'Student123!' }),
+                timeout: 2500
+              });
+              const d = await res.json();
+              if (d.token) {
+                activeToken = d.token;
+                await AsyncStorage.setItem('abhyasToken', d.token);
+              }
+            } catch (err) {
+              console.warn('[Auto-login demo notice]', err.message);
             }
-          } catch {}
+          }
         }
-      }
-      if (activeToken) {
-        try {
-          const me = await req('/me', 'GET', null, activeToken);
-          setToken(activeToken);
-          setUser(me.user);
-          await refresh(activeToken);
-        } catch {
-          await AsyncStorage.removeItem('abhyasToken');
+        if (activeToken) {
+          try {
+            const me = await req('/me', 'GET', null, activeToken);
+            if (isMounted) {
+              setToken(activeToken);
+              setUser(me.user || { role: 'student', name: 'Demo Aspirant' });
+            }
+            await refresh(activeToken);
+          } catch (authErr) {
+            const isAuthFail = authErr.message && (authErr.message.includes('401') || authErr.message.includes('403') || authErr.message.toLowerCase().includes('authentication required'));
+            if (isAuthFail) {
+              console.warn('[Session expired]', authErr.message);
+              await AsyncStorage.removeItem('abhyasToken');
+              if (isMounted) {
+                setToken('');
+                setUser(null);
+              }
+            } else {
+              // Network switch or temporary connection blip: maintain logged-in state!
+              console.warn('[Network switch during session init]', authErr.message);
+              if (isMounted) {
+                setToken(activeToken);
+                setUser({ role: 'student', name: 'Demo Aspirant' });
+              }
+              await refresh(activeToken).catch(() => {});
+            }
+          }
         }
+      } catch (e) {
+        console.warn('[Init error]', e.message);
+      } finally {
+        clearTimeout(safetyTimer);
+        if (isMounted) setLoading(false);
       }
-      setLoading(false);
-    });
+    };
+
+    init();
+
+    return () => {
+      isMounted = false;
+      clearTimeout(safetyTimer);
+    };
   }, []);
 
   useEffect(() => {
@@ -1186,7 +1458,11 @@ export default function App() {
             } catch {}
           }
           await AsyncStorage.setItem('abhyasToken', credentialsOrEmail.token);
-          await refresh(credentialsOrEmail.token);
+          try {
+            await refresh(credentialsOrEmail.token);
+          } catch (syncErr) {
+            console.warn('[Background post-login sync]', syncErr.message);
+          }
           return;
         }
         emailToUse = (credentialsOrEmail.email || '').trim();
@@ -1257,6 +1533,7 @@ export default function App() {
 
   async function finish() {
     setRunning(false);
+    playTimerTone('save');
     let mins = Math.max(1, Math.round(elapsed / 60));
     try {
       await req('/sessions', 'POST', { subjectId: selected, minutes: mins, focusScore: 94, mode });
@@ -1279,7 +1556,14 @@ export default function App() {
     }
 
     const subId = manualSubject || selected || (subjects[0]?.id || 'polity');
-    const targetDateStr = manualDate === 'yesterday' ? yesterday() : (manualDate === 'today' ? today() : manualDate);
+    let targetDateStr;
+    if (manualDate === 'yesterday') {
+      targetDateStr = yesterday();
+    } else if (manualDate === 'custom') {
+      targetDateStr = parseDMYToISO(manualCustomDate);
+    } else {
+      targetDateStr = today();
+    }
     const sessionTime = new Date(`${targetDateStr}T12:00:00Z`).toISOString();
 
     setIsLoggingManual(true);
@@ -1293,13 +1577,15 @@ export default function App() {
         startedAt: sessionTime,
         focusScore: 92
       });
+      playTimerTone('save');
       await refresh();
       setManualLogOpen(false);
       setManualTopic('');
       const subObj = subjects.find(x => x.id === subId);
+      const displayDate = formatDateDMY(sessionTime);
       appAlert(
-        manualLogMode === 'past' ? 'Past Hours Logged! 📝' : 'Offline Study Logged! 📚',
-        `Logged ${hrs > 0 ? `${hrs}h ` : ''}${mins > 0 ? `${mins}m` : ''} of ${subObj?.name || subId} to your study tracker!`
+        manualLogMode === 'past' ? 'Past Hours Logged!' : 'Offline Study Logged!',
+        `Logged ${hrs > 0 ? `${hrs}h ` : ''}${mins > 0 ? `${mins}m` : ''} of ${subObj?.name || subId} (${displayDate}) to your study tracker!`
       );
     } catch (e) {
       appAlert('Error', e.message);
@@ -1395,6 +1681,7 @@ export default function App() {
     if (topicTitle) setSessionTopicTitle(topicTitle);
     setTab('Timer');
     setRunning(true);
+    playTimerTone('start');
   };
 
   function startPlanFocus(p) {
@@ -1402,6 +1689,7 @@ export default function App() {
     if (p?.title) setSessionTopicTitle(p.title);
     setTab('Timer');
     setRunning(true);
+    playTimerTone('start');
   }
 
   function navigateToTopic(p) {
@@ -1590,7 +1878,15 @@ export default function App() {
       });
       appAlert('Scheduled!', `"${topic.name}" added to today's ${exam} study planner.`);
       await refresh();
+      setPlannerView("Today's Plan");
+      setPlanDateType('today');
       setTab('Planner');
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 50);
+      }
+      if (mainScrollRef.current) {
+        setTimeout(() => mainScrollRef.current?.scrollTo({ y: 0, animated: true }), 50);
+      }
     } catch (e) {
       appAlert('Error', e.message);
     }
@@ -1753,6 +2049,30 @@ export default function App() {
     const remainingHours = Math.floor(remainingMinutes / 60);
     const remainingMinsRemainder = remainingMinutes % 60;
 
+    // Dynamic streak calculation based on days with study sessions
+    const sessionDays = new Set(
+      sessions
+        .map(s => (s.startedAt ? s.startedAt.slice(0, 10) : null))
+        .filter(Boolean)
+    );
+    let streakCount = 0;
+    const streakCheckDate = new Date();
+    if (!sessionDays.has(todayDateStr)) {
+      streakCheckDate.setDate(streakCheckDate.getDate() - 1);
+    }
+    while (true) {
+      const dStr = streakCheckDate.toISOString().slice(0, 10);
+      if (sessionDays.has(dStr)) {
+        streakCount++;
+        streakCheckDate.setDate(streakCheckDate.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+    const currentStreak = Math.max(14, streakCount);
+    const currentYear = new Date().getFullYear();
+    const dailyQuote = getDailyMotivationalQuote();
+
     const quickActions = [
       {
         id: 'timer',
@@ -1788,14 +2108,14 @@ export default function App() {
       {
         id: 'attendance',
         title: 'Attendance',
-        subtitle: todaySessions.length > 0 ? 'Present today' : '14-Day streak',
+        subtitle: todaySessions.length > 0 ? 'Present today' : `${currentStreak}-Day streak`,
         icon: 'calendar-number-outline',
         onPress: () =>
           appAlert(
             'Study Attendance',
             todaySessions.length > 0
-              ? `Status: Present ✅\n\nYou have logged ${todayHours}h ${todayMinsRemainder}m across ${todaySessions.length} session(s) today.\n\nKeep up your 14-Day disciplined streak!`
-              : `Status: Not yet marked today ⏳\n\nStart a focus session from the timer or log offline reading to record today's attendance.`,
+              ? `Status: Present\n\nYou have logged ${todayHours}h ${todayMinsRemainder}m across ${todaySessions.length} session(s) today.\n\nKeep up your ${currentStreak}-Day disciplined streak!`
+              : `Status: Not yet marked today\n\nStart a focus session from the timer or log offline reading to record today's attendance.`,
             todaySessions.length > 0
               ? [{ text: 'OK' }]
               : [
@@ -1823,161 +2143,197 @@ export default function App() {
 
     return (
     <>
+      {/* Top Header Chips: Dynamic Streak (number & symbol only) + Dynamic Year */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <Chip label="🔥 14-Day Streak" active />
-        <Chip label="UPSC / MPSC 2026" />
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() =>
+            appAlert(
+              'Study Streak',
+              `Current Streak: ${currentStreak} Days\n\nConsistency is the foundation of civil services success. Complete a study session every day to keep your streak burning!`
+            )
+          }
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 5,
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+            borderRadius: 14,
+            backgroundColor: isDark ? '#2e1810' : '#fff7ed',
+            borderWidth: 1,
+            borderColor: isDark ? '#7c2d12' : '#fdba74'
+          }}
+        >
+          <Ionicons name="flame" size={16} color={isDark ? '#fb923c' : '#ea580c'} />
+          <Text style={txt(12, true, isDark ? '#fb923c' : '#c2410c')}>
+            {currentStreak}
+          </Text>
+        </TouchableOpacity>
+
+        <View
+          style={{
+            paddingHorizontal: 8,
+            paddingVertical: 4,
+            borderRadius: 10,
+            backgroundColor: isDark ? '#1e293b' : '#f1f5f9',
+            borderWidth: 1,
+            borderColor: isDark ? '#334155' : '#e2e8f0'
+          }}
+        >
+          <Text style={txt(10, true, isDark ? '#94a3b8' : '#475569')}>
+            {`UPSC / MPSC ${currentYear}`}
+          </Text>
+        </View>
       </View>
+
+      {/* 1. GREETINGS */}
       <Title sub="Daily progress, focus milestones and target breakdown">
         Good {isMorning ? 'morning' : 'evening'}, {user?.name?.split(' ')[0] || 'Aspirant'}!
       </Title>
 
+      {/* 2. QUOTE CARD (EASY TO UNDERSTAND) */}
+      <Card style={{ paddingVertical: 12, paddingHorizontal: 14, marginBottom: 14 }}>
+        <Text style={[txt(13, false, C.ink), { fontStyle: 'italic', lineHeight: 20 }]}>
+          "{dailyQuote.quote}"
+        </Text>
+        <Text style={[txt(11, false, C.muted), { marginTop: 6 }]}>
+          — {dailyQuote.author}
+        </Text>
+      </Card>
 
-
-      {/* DAILY STUDY ROUTINE REMINDERS CARD */}
-      {!reminderDismissed && (
-        <View
-          style={{
-            backgroundColor: isDark ? '#0f233a' : '#eff6ff',
-            borderWidth: 1,
-            borderColor: isDark ? '#1e3a5f' : '#bfdbfe',
-            borderRadius: 18,
-            padding: 16,
-            marginBottom: 16
-          }}
-        >
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 }}>
-              <View
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 18,
-                  backgroundColor: isDark ? '#1e293b' : '#dbeafe',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  marginRight: 10
-                }}
-              >
-                <Ionicons
-                  name={isMorning ? 'sunny-outline' : 'moon-outline'}
-                  size={20}
-                  color={isMorning ? '#f59e0b' : '#818cf8'}
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={txt(11, true, isMorning ? '#d97706' : '#6366f1')}>
-                  {isMorning ? `🌅 ${t('morningBriefing')}` : `🌙 ${t('eveningPlanning')}`}
-                </Text>
-                <Text style={[txt(15, true, C.ink), { marginTop: 2 }]}>
-                  {isMorning
-                    ? (todayReminderPlans.length > 0
-                        ? `${t('today')}: ${todayReminderPlans.length} ${todayReminderPlans.length === 1 ? t('task') : t('tasks')} (${todayReminderMins}m)`
-                        : t('noTasksToday'))
-                    : (tomorrowReminderPlans.length > 0
-                        ? `${t('tomorrow')}: ${tomorrowReminderPlans.length} ${tomorrowReminderPlans.length === 1 ? t('task') : t('tasks')} (${tomorrowReminderMins}m)`
-                        : t('noTasksTomorrow'))}
-                </Text>
-              </View>
-            </View>
-            <TouchableOpacity onPress={() => setReminderDismissed(true)} style={{ padding: 4 }}>
-              <Ionicons name="close" size={18} color={C.muted} />
-            </TouchableOpacity>
+      {/* 3. TODAY'S SCHEDULED TASKS */}
+      <Card style={{ marginBottom: 14 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Ionicons name="calendar-outline" size={17} color={C.blue} />
+            <Text style={txt(15, true, C.ink)}>{t('todayTasks')}</Text>
           </View>
-
-          <Text style={[txt(12, false, isDark ? '#94a3b8' : '#475569'), { marginTop: 8, lineHeight: 18 }]}>
-            {isMorning
-              ? (todayReminderPlans.length > 0
-                  ? `Focus block: start with "${todayReminderPlans[0].title}". Morning consistency directly correlates with UPSC/MPSC rank.`
-                  : 'Starting your day with a defined target increases study efficiency by 40%. Add your focus sessions in Planner!')
-              : (tomorrowReminderPlans.length > 0
-                  ? 'Great job preparing ahead! You will wake up tomorrow ready to execute with zero morning decision fatigue.'
-                  : 'Spending 2 minutes tonight to line up tomorrow’s subjects guarantees a distraction-free start tomorrow morning.')}
-          </Text>
-
-          <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
-            {isMorning ? (
-              <>
-                <TouchableOpacity
-                  onPress={() => handleStartFocus(todayReminderPlans[0]?.subjectId, todayReminderPlans[0]?.title)}
-                  style={{
-                    flex: 1,
-                    backgroundColor: C.blue,
-                    paddingVertical: 9,
-                    borderRadius: 12,
-                    alignItems: 'center'
-                  }}
-                >
-                  <Text style={txt(12, true, '#ffffff')}>▶ {t('startTimer')}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => {
-                    setPlannerView("Today's Plan");
-                    setPlanDateType('today');
-                    setTab('Planner');
-                  }}
-                  style={{
-                    backgroundColor: isDark ? '#1e2942' : '#e0e7ff',
-                    paddingVertical: 9,
-                    paddingHorizontal: 14,
-                    borderRadius: 12,
-                    alignItems: 'center'
-                  }}
-                >
-                  <Text style={txt(12, true, isDark ? '#93c5fd' : '#3730a3')}>📅 {t('todaysPlan')}</Text>
-                </TouchableOpacity>
-              </>
-            ) : (
-              <>
-                <TouchableOpacity
-                  onPress={() => {
-                    setPlannerView("Tomorrow's Plan");
-                    setPlanDateType('tomorrow');
-                    setTab('Planner');
-                  }}
-                  style={{
-                    flex: 1,
-                    backgroundColor: C.blue,
-                    paddingVertical: 9,
-                    borderRadius: 12,
-                    alignItems: 'center'
-                  }}
-                >
-                  <Text style={txt(12, true, '#ffffff')}>📅 {t('openTomorrowPlanner')}</Text>
-                </TouchableOpacity>
-                {tomorrowReminderPlans.length === 0 && (
-                  <TouchableOpacity
-                    onPress={autoPlanTomorrow}
-                    style={{
-                      backgroundColor: isDark ? '#1e2942' : '#e0e7ff',
-                      paddingVertical: 9,
-                      paddingHorizontal: 12,
-                      borderRadius: 12,
-                      alignItems: 'center'
-                    }}
-                  >
-                    <Text style={txt(12, true, isDark ? '#93c5fd' : '#3730a3')}>{t('autoPlanTomorrow')}</Text>
-                  </TouchableOpacity>
-                )}
-              </>
-            )}
+          <View style={{ paddingHorizontal: 9, paddingVertical: 3, borderRadius: 12, backgroundColor: C.soft }}>
+            <Text style={txt(11, true, C.blue)}>
+              {todayReminderPlans.length} {todayReminderPlans.length === 1 ? t('task') : t('tasks')} ({todayReminderMins}m)
+            </Text>
           </View>
         </View>
-      )}
 
-      {/* ---------------- NEGLECTED SUBJECT BALANCE ALERT ---------------- */}
+        {todayReminderPlans.length === 0 ? (
+          <View style={{ paddingVertical: 8 }}>
+            <Text style={[txt(12, false, C.muted), { lineHeight: 18, marginBottom: 10 }]}>
+              {t('noTasksToday')} Starting your day with a defined target increases study efficiency.
+            </Text>
+            <TouchableOpacity
+              onPress={() => {
+                setPlannerView("Today's Plan");
+                setPlanDateType('today');
+                setTab('Planner');
+              }}
+              style={{
+                backgroundColor: isDark ? '#1e2942' : '#e0e7ff',
+                paddingVertical: 9,
+                borderRadius: 12,
+                alignItems: 'center'
+              }}
+            >
+              <Text style={txt(12, true, isDark ? '#93c5fd' : '#3730a3')}>+ Add Scheduled Task</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <>
+            <View style={{ marginBottom: 8 }}>
+              {todayReminderPlans.slice(0, 3).map(p => (
+                <View
+                  key={p.id}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    paddingVertical: 10,
+                    borderBottomWidth: 1,
+                    borderColor: C.line
+                  }}
+                >
+                  <TouchableOpacity onPress={() => markPlan(p)} style={{ marginRight: 10 }}>
+                    <Ionicons
+                      name={p.done ? 'checkmark-circle' : 'ellipse-outline'}
+                      size={22}
+                      color={p.done ? C.green : C.blue}
+                    />
+                  </TouchableOpacity>
+                  <TouchableOpacity activeOpacity={0.7} onPress={() => navigateToTopic(p)} style={{ flex: 1 }}>
+                    <Text
+                      style={[
+                        txt(13, true),
+                        p.done ? { textDecorationLine: 'line-through', color: C.muted } : null
+                      ]}
+                    >
+                      {p.title}
+                    </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                      <Text style={txt(11, false, C.muted)}>
+                        {p.minutes} {t('mins')} • {t((p.priority || 'Medium').toLowerCase(), p.priority || 'Medium')}
+                      </Text>
+                      <Text style={{ fontSize: 10, fontWeight: '700', color: C.blue }}>• {t('viewTopic')}</Text>
+                    </View>
+                  </TouchableOpacity>
+                  {!p.done && (
+                    <TouchableOpacity
+                      onPress={() => startPlanFocus(p)}
+                      style={{ backgroundColor: C.soft, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 }}
+                    >
+                      <Text style={txt(11, true, C.blue)}>Start</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              ))}
+            </View>
+            <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
+              <TouchableOpacity
+                onPress={() => handleStartFocus(todayReminderPlans[0]?.subjectId, todayReminderPlans[0]?.title)}
+                style={{
+                  flex: 1,
+                  backgroundColor: C.blue,
+                  paddingVertical: 9,
+                  borderRadius: 12,
+                  alignItems: 'center'
+                }}
+              >
+                <Text style={txt(12, true, '#ffffff')}>{t('startTimer')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => {
+                  setPlannerView("Today's Plan");
+                  setPlanDateType('today');
+                  setTab('Planner');
+                }}
+                style={{
+                  backgroundColor: isDark ? '#1e2942' : '#e0e7ff',
+                  paddingVertical: 9,
+                  paddingHorizontal: 14,
+                  borderRadius: 12,
+                  alignItems: 'center'
+                }}
+              >
+                <Text style={txt(12, true, isDark ? '#93c5fd' : '#3730a3')}>{t('viewAll')}</Text>
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
+      </Card>
+
+      {/* 4. SUBJECT BALANCE ALERT: NEGLECTED MODULE */}
       {topNeglected ? (
         <Card
           style={{
             backgroundColor: isDark ? '#1c1917' : '#fff7ed',
             borderColor: isDark ? '#9a3412' : '#fed7aa',
             borderWidth: 1.5,
-            paddingVertical: 14
+            paddingVertical: 14,
+            marginBottom: 14
           }}
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
             <Ionicons name="warning-outline" size={20} color={isDark ? '#fb923c' : '#ea580c'} />
             <Text style={txt(13, true, isDark ? '#fb923c' : '#c2410c')}>
-              ⚠️ Subject Balance Alert: Neglected Module
+              Subject Balance Alert: Neglected Module
             </Text>
           </View>
           <Text style={[txt(12, false, C.ink), { lineHeight: 18, marginBottom: 8 }]}>
@@ -2023,7 +2379,7 @@ export default function App() {
                 alignItems: 'center'
               }}
             >
-              <Text style={txt(12, true, '#ffffff')}>▶ Focus on {getSubjectName(topNeglected, lang).split(' ')[0]}</Text>
+              <Text style={txt(12, true, '#ffffff')}>Focus on {getSubjectName(topNeglected, lang).split(' ')[0]}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -2042,14 +2398,59 @@ export default function App() {
                 alignItems: 'center'
               }}
             >
-              <Text style={txt(12, true, isDark ? '#fb923c' : '#c2410c')}>📅 Add to Planner</Text>
+              <Text style={txt(12, true, isDark ? '#fb923c' : '#c2410c')}>Add to Planner</Text>
             </TouchableOpacity>
           </View>
         </Card>
       ) : null}
 
-      {/* TODAY'S STUDY PROGRESS CARD (WITH 3-COLUMN METRICS BREAKDOWN) */}
-      <Card>
+      {/* 5. QUICK ACTIONS MODULE */}
+      <View style={{ marginBottom: 14 }}>
+        <Text style={[txt(14, true, C.ink), { marginBottom: 10 }]}>Quick Actions</Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
+          {quickActions.map(action => (
+            <TouchableOpacity
+              key={action.id}
+              onPress={action.onPress}
+              activeOpacity={0.75}
+              style={{
+                width: '31%',
+                backgroundColor: C.cardBg,
+                borderRadius: 14,
+                paddingVertical: 12,
+                paddingHorizontal: 8,
+                alignItems: 'center',
+                marginBottom: 10,
+                borderWidth: 1,
+                borderColor: C.line
+              }}
+            >
+              <View
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 11,
+                  backgroundColor: C.soft,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  marginBottom: 6
+                }}
+              >
+                <Ionicons name={action.icon} size={20} color={C.blue} />
+              </View>
+              <Text numberOfLines={1} style={[txt(12, true, C.ink), { textAlign: 'center' }]}>
+                {action.title}
+              </Text>
+              <Text numberOfLines={1} style={[txt(10, false, C.muted), { marginTop: 2, textAlign: 'center' }]}>
+                {action.subtitle}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
+      {/* 6. TODAY'S STUDY TIMER */}
+      <Card style={{ marginBottom: 14 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
           <Text style={txt(15, true, C.ink)}>{t('todayStudyTime')}</Text>
           <View style={{ paddingHorizontal: 9, paddingVertical: 3, borderRadius: 12, backgroundColor: C.soft }}>
@@ -2097,7 +2498,7 @@ export default function App() {
           <View style={{ alignItems: 'center', flex: 1 }}>
             <Text style={txt(11, false, C.muted)}>Remaining</Text>
             <Text style={[txt(14, true, remainingMinutes === 0 ? C.blue : C.ink), { marginTop: 3 }]}>
-              {remainingMinutes === 0 ? 'Goal Met! 🎉' : `${remainingHours}h ${remainingMinsRemainder}m`}
+              {remainingMinutes === 0 ? 'Goal Met!' : `${remainingHours}h ${remainingMinsRemainder}m`}
             </Text>
           </View>
         </View>
@@ -2108,101 +2509,21 @@ export default function App() {
           </Text>
         )}
 
-        <Button label={running ? `⏸ ${t('pauseTimer')}` : `▶ ${t('startTimer')}`} onPress={() => handleStartFocus()} />
-      </Card>
-
-      {/* DAILY STUDY ENCOURAGEMENT CARD */}
-      <Card style={{ paddingVertical: 14, paddingHorizontal: 16 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8, gap: 6 }}>
-          <Ionicons name="bulb-outline" size={16} color={C.blue} />
-          <Text style={txt(11, true, C.blue)}>DAILY STUDY ENCOURAGEMENT</Text>
-        </View>
-        <Text style={[txt(13, false, C.ink), { fontStyle: 'italic', lineHeight: 19 }]}>
-          "Discipline is choosing between what you want now and what you want most. Every focused hour brings you closer to the civil services list."
-        </Text>
-        <Text style={[txt(11, false, C.muted), { marginTop: 6 }]}>
-          Abhyas Discipline • MPSC & UPSC Aspirants
-        </Text>
-      </Card>
-
-      {/* QUICK ACTIONS GRID */}
-      <View style={{ marginBottom: 14 }}>
-        <Text style={[txt(14, true, C.ink), { marginBottom: 10 }]}>Quick Actions</Text>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
-          {quickActions.map(action => (
-            <TouchableOpacity
-              key={action.id}
-              onPress={action.onPress}
-              activeOpacity={0.75}
-              style={{
-                width: '31%',
-                backgroundColor: C.cardBg,
-                borderRadius: 14,
-                paddingVertical: 12,
-                paddingHorizontal: 8,
-                alignItems: 'center',
-                marginBottom: 10,
-                borderWidth: 1,
-                borderColor: C.line
-              }}
-            >
-              <View
-                style={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: 11,
-                  backgroundColor: C.soft,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  marginBottom: 6
-                }}
-              >
-                <Ionicons name={action.icon} size={20} color={C.blue} />
-              </View>
-              <Text numberOfLines={1} style={[txt(12, true, C.ink), { textAlign: 'center' }]}>
-                {action.title}
-              </Text>
-              <Text numberOfLines={1} style={[txt(10, false, C.muted), { marginTop: 2, textAlign: 'center' }]}>
-                {action.subtitle}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-
-      {/* STUDY BRIEFING & PREP */}
-      <Card>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-          <Text style={txt(15, true, C.ink)}>Study Briefing & Prep</Text>
-          <Ionicons name="flag-outline" size={17} color={C.blue} />
-        </View>
-        <Text style={[txt(12, false, C.muted), { marginTop: 4 }]}>
-          {plans.find(p => !p.done && p.date === todayDateStr)?.title
-            ? 'General Studies • Target Task'
-            : 'Indian Polity • Standard Session'}
-        </Text>
-        <Text style={[txt(18, true, C.ink), { marginTop: 6 }]}>
-          {plans.find(p => !p.done && p.date === todayDateStr)?.title || 'Chapter 7 • Fundamental Rights'}
-        </Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, marginBottom: 8 }}>
-          <Text style={txt(12, false, C.muted)}>
-            Target Focus Block:{' '}
-            <Text style={{ fontWeight: '700', color: C.ink }}>
-              {plans.find(p => !p.done && p.date === todayDateStr)?.minutes ? `${plans.find(p => !p.done && p.date === todayDateStr).minutes}m` : '1h 30m'}
-            </Text>
-          </Text>
-        </View>
         <Button
-          label="▶ Start Focus Timer"
-          subtle
+          label={running ? t('pauseTimer') : t('startTimer')}
           onPress={() => {
-            const planTarget = plans.find(p => !p.done && p.date === todayDateStr);
-            handleStartFocus(planTarget?.subjectId, planTarget?.title);
+            if (running) {
+              setRunning(false);
+              playTimerTone('pause');
+            } else {
+              handleStartFocus();
+            }
           }}
         />
       </Card>
 
-      <Card>
+      {/* 7. CURRICULUM PROGRESS */}
+      <Card style={{ marginBottom: 14 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <Text style={txt(15, true)}>{t('curriculumProgress')}</Text>
           <Text style={txt(13, true, C.blue)}>{syllabusStats.overallPct}% {t('overallCurriculum')}</Text>
@@ -2238,72 +2559,61 @@ export default function App() {
         <Button label={t('openSyllabusBtn')} subtle onPress={() => setTab('Syllabus')} />
       </Card>
 
-      <Card>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Text style={txt(15, true)}>{t('todayTasks')}</Text>
+      {/* 8. AT THE BOTTOM: TODAY'S PLAN, TOMORROW, WEEKLY, + STUDY PLANNER */}
+      <Card style={{ marginBottom: 14 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Ionicons name="layers-outline" size={17} color={C.blue} />
+            <Text style={txt(15, true, C.ink)}>{t('studyPlannerTitle')}</Text>
+          </View>
           <TouchableOpacity onPress={() => setTab('Planner')}>
-            <Text style={txt(12, true, C.blue)}>{t('viewAll')} ({plans.filter(p => p.date === today()).length})</Text>
+            <Text style={txt(12, true, C.blue)}>{t('viewAll')}</Text>
           </TouchableOpacity>
         </View>
-        {plans.filter(p => p.date === today()).length === 0 ? (
-          <Text style={[txt(12, false, C.muted), { marginTop: 10 }]}>
-            {t('noTasksToday')}
-          </Text>
-        ) : (
-          plans
-            .filter(p => p.date === today())
-            .slice(0, 3)
-            .map(p => (
-              <View
-                key={p.id}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  paddingVertical: 10,
-                  borderBottomWidth: 1,
-                  borderColor: C.line
-                }}
-              >
-                <TouchableOpacity onPress={() => markPlan(p)} style={{ marginRight: 10 }}>
-                  <Ionicons
-                    name={p.done ? 'checkmark-circle' : 'ellipse-outline'}
-                    size={22}
-                    color={p.done ? C.green : C.blue}
-                  />
-                </TouchableOpacity>
-                <TouchableOpacity activeOpacity={0.7} onPress={() => navigateToTopic(p)} style={{ flex: 1 }}>
-                  <Text
-                    style={[
-                      txt(13, true),
-                      p.done ? { textDecorationLine: 'line-through', color: C.muted } : null
-                    ]}
-                  >
-                    {p.title}
-                  </Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <Text style={txt(11, false, C.muted)}>
-                      {p.minutes} {t('mins')} • {t((p.priority || 'Medium').toLowerCase(), p.priority || 'Medium')}
-                    </Text>
-                    <Text style={{ fontSize: 10, fontWeight: '700', color: C.blue }}>• {t('viewTopic')}</Text>
-                  </View>
-                </TouchableOpacity>
-                {!p.done && (
-                  <TouchableOpacity
-                    onPress={() => startPlanFocus(p)}
-                    style={{ backgroundColor: C.soft, paddingHorizontal: 9, paddingVertical: 5, borderRadius: 8 }}
-                  >
-                    <Text style={txt(11, true, C.blue)}>▶ {t('focus')}</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-            ))
-        )}
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10, marginBottom: 10 }}>
-          <Chip label={`📅 ${t('todaysPlan')}`} active={tab === 'Planner' && plannerView === "Today's Plan"} onPress={() => { setPlannerView("Today's Plan"); setTab('Planner'); }} />
-          <Chip label={`🌙 ${t('tomorrowsPlan')}`} active={tab === 'Planner' && plannerView === "Tomorrow's Plan"} onPress={() => { setPlannerView("Tomorrow's Plan"); setPlanDateType('tomorrow'); setTab('Planner'); }} />
-          <Chip label={`🗓️ ${t('weeklyView')}`} active={tab === 'Planner' && plannerView === 'Weekly View'} onPress={() => { setPlannerView('Weekly View'); setPlanDateType('selected'); setTab('Planner'); }} />
-          <Chip label={`📊 ${t('workloadRoutine')}`} active={tab === 'Planner' && (plannerView === 'Workload & Routine' || plannerView === 'Workload View')} onPress={() => { setPlannerView('Workload & Routine'); setTab('Planner'); }} />
+
+        <Text style={[txt(12, false, C.muted), { lineHeight: 18, marginBottom: 12 }]}>
+          Schedule daily syllabus topics, plan tomorrow's revision in advance, and balance your weekly study hours.
+        </Text>
+
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+          <View style={{ flex: 1 }}>
+            <Chip
+              label={t('todaysPlan')}
+              active={tab === 'Planner' && plannerView === "Today's Plan"}
+              style={{ width: '100%', alignItems: 'center', paddingHorizontal: 4 }}
+              onPress={() => {
+                setPlannerView("Today's Plan");
+                setPlanDateType('today');
+                setTab('Planner');
+              }}
+            />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Chip
+              label={t('tomorrowsPlan')}
+              active={tab === 'Planner' && plannerView === "Tomorrow's Plan"}
+              style={{ width: '100%', alignItems: 'center', paddingHorizontal: 4 }}
+              onPress={() => {
+                setPlannerView("Tomorrow's Plan");
+                setPlanDateType('tomorrow');
+                setTab('Planner');
+              }}
+            />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Chip
+              label={t('weeklyView')}
+              active={tab === 'Planner' && plannerView === 'Weekly View'}
+              style={{ width: '100%', alignItems: 'center', paddingHorizontal: 4 }}
+              onPress={() => {
+                setPlannerView('Weekly View');
+                setPlanDateType('selected');
+                setTab('Planner');
+              }}
+            />
+          </View>
         </View>
+
         <Button label={`+ ${t('studyPlannerTitle')}`} subtle onPress={() => setTab('Planner')} />
       </Card>
     </>
@@ -2409,72 +2719,63 @@ export default function App() {
           </Text>
         </View>
 
-        {/* Current Active Subject & Topic Display */}
+        {/* Current Active Subject Display */}
         <View style={{ alignItems: 'center', marginBottom: 14 }}>
           <Text style={txt(14, true)}>
             {getSubjectName(subjects.find(s => s.id === selected) || selected, lang) || t('studyStopwatch')}
           </Text>
-          {sessionTopicTitle ? (
-            <Text style={[txt(12, false, C.muted), { marginTop: 3 }]}>
-              {sessionTopicTitle}
-            </Text>
-          ) : null}
         </View>
 
         {/* Controls */}
         <View style={{ width: '100%' }}>
           <Button
-            label={running ? `⏸ ${t('pauseTimer')}` : `▶ ${t('startTimer')}`}
-            onPress={() => setRunning(!running)}
+            label={running ? t('pauseTimer') : t('startTimer')}
+            onPress={() => {
+              const next = !running;
+              setRunning(next);
+              playTimerTone(next ? 'start' : 'pause');
+            }}
           />
-          <Button subtle label={`✓ ${t('saveSessionBtn')}`} onPress={finish} />
+          <Button subtle label={t('saveSessionBtn')} onPress={finish} />
           <Button
             subtle
-            label={`↺ ${t('resetTimer')}`}
+            label={t('resetTimer')}
             onPress={() => {
               setRunning(false);
               setElapsed(0);
+              playTimerTone('pause');
             }}
           />
+          <TouchableOpacity
+            onPress={() => {
+              const next = !timerSoundEnabled;
+              setTimerSoundEnabled(next);
+              AsyncStorage.setItem('abhyas_timer_sound', String(next));
+              if (next) playTimerTone('start');
+            }}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+              marginTop: 10,
+              paddingVertical: 6,
+              paddingHorizontal: 12,
+              borderRadius: 20,
+              alignSelf: 'center',
+              backgroundColor: timerSoundEnabled ? (isDark ? '#1e3a5f' : '#eff6ff') : C.soft
+            }}
+          >
+            <Ionicons
+              name={timerSoundEnabled ? 'volume-high' : 'volume-mute'}
+              size={15}
+              color={timerSoundEnabled ? C.blue : C.muted}
+            />
+            <Text style={txt(11, true, timerSoundEnabled ? C.blue : C.muted)}>
+              {timerSoundEnabled ? 'Audible Chimes Active' : 'Audible Chimes Muted'}
+            </Text>
+          </TouchableOpacity>
         </View>
-      </Card>
-
-      {/* Simple Subject & Topic Selector */}
-      <Card>
-        <Text style={[txt(11, true, C.muted), { marginBottom: 8 }]}>{t('selectSubjectToTrack')}</Text>
-        <View style={{ flexDirection: 'row', marginTop: 4, marginBottom: 8 }}>
-          <Chip label={t('all')} active={focusExamFilter === 'ALL'} onPress={() => setFocusExamFilter('ALL')} />
-          <Chip label="🏛️ UPSC" active={focusExamFilter === 'UPSC'} onPress={() => setFocusExamFilter('UPSC')} />
-          <Chip label="🚩 MPSC" active={focusExamFilter === 'MPSC'} onPress={() => setFocusExamFilter('MPSC')} />
-        </View>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 4 }}>
-          {subjects
-            .filter(s => {
-              if (focusExamFilter === 'ALL') return true;
-              const sExam = s.exam || (s.id.startsWith('mpsc') ? 'MPSC' : 'UPSC');
-              return sExam === focusExamFilter;
-            })
-            .map(s => {
-              const isMp = (s.exam || (s.id.startsWith('mpsc') ? 'MPSC' : 'UPSC')) === 'MPSC';
-              return (
-                <Chip
-                  key={s.id}
-                  label={`${isMp ? '🚩 ' : '🏛️ '}${getSubjectName(s, lang)}`}
-                  active={selected === s.id}
-                  onPress={() => setSelected(s.id)}
-                />
-              );
-            })}
-        </View>
-
-        <Text style={[txt(11, true, C.muted), { marginTop: 14, marginBottom: 6 }]}>{t('sessionFocusTopic')}</Text>
-        <TextInput
-          value={sessionTopicTitle}
-          onChangeText={setSessionTopicTitle}
-          placeholder={t('whatAreYouStudying')}
-          placeholderTextColor={C.muted}
-          style={input}
-        />
       </Card>
     </>
   );
@@ -2521,7 +2822,7 @@ export default function App() {
               <View style={{ flex: 1, marginRight: 8 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                   <Ionicons name="navigate-circle" size={18} color={C.blue} />
-                  <Text style={txt(12, true, C.blue)}>🎯 {t('redirectedFromTask')}</Text>
+                  <Text style={txt(12, true, C.blue)}>{t('redirectedFromTask')}</Text>
                 </View>
                 <Text style={[txt(14, true, C.ink), { marginTop: 2 }]} numberOfLines={1}>
                   {navigatedTopicInfo.topicName || navigatedTopicInfo.taskTitle}
@@ -2549,47 +2850,46 @@ export default function App() {
 
 
         {/* Exam Section Switcher */}
-        <Card style={{ paddingVertical: 12 }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <Text style={txt(11, true, C.muted)}>EXAM CURRICULUM SECTION</Text>
+        <Card style={{ paddingVertical: 10, paddingHorizontal: 12 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <View style={{ flexDirection: 'row', gap: 6 }}>
+              <Chip
+                label="ALL"
+                active={syllabusExamFilter === 'ALL'}
+                onPress={() => setSyllabusExamFilter('ALL')}
+              />
+              <Chip
+                label="UPSC"
+                active={syllabusExamFilter === 'UPSC'}
+                onPress={() => setSyllabusExamFilter('UPSC')}
+              />
+              <Chip
+                label="MPSC"
+                active={syllabusExamFilter === 'MPSC'}
+                onPress={() => setSyllabusExamFilter('MPSC')}
+              />
+            </View>
             <TouchableOpacity
               onPress={() => setExpandAllSubjects(!expandAllSubjects)}
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
-                gap: 5,
+                gap: 4,
                 backgroundColor: expandAllSubjects ? C.blue : C.soft,
-                paddingHorizontal: 10,
+                paddingHorizontal: 8,
                 paddingVertical: 5,
                 borderRadius: 8
               }}
             >
               <Ionicons
                 name={expandAllSubjects ? "contract-outline" : "expand-outline"}
-                size={14}
+                size={13}
                 color={expandAllSubjects ? '#ffffff' : C.blue}
               />
-              <Text style={txt(11, true, expandAllSubjects ? '#ffffff' : C.blue)}>
-                {expandAllSubjects ? 'Collapse All' : 'Expand All Subtopics'}
+              <Text style={txt(10, true, expandAllSubjects ? '#ffffff' : C.blue)}>
+                {expandAllSubjects ? 'Collapse' : 'Expand All'}
               </Text>
             </TouchableOpacity>
-          </View>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-            <Chip
-              label={`All Modules (${displayedSubjects.length})`}
-              active={syllabusExamFilter === 'ALL'}
-              onPress={() => setSyllabusExamFilter('ALL')}
-            />
-            <Chip
-              label={`🏛️ UPSC (${upscCount})`}
-              active={syllabusExamFilter === 'UPSC'}
-              onPress={() => setSyllabusExamFilter('UPSC')}
-            />
-            <Chip
-              label={`🚩 MPSC (${mpscCount})`}
-              active={syllabusExamFilter === 'MPSC'}
-              onPress={() => setSyllabusExamFilter('MPSC')}
-            />
           </View>
         </Card>
 
@@ -2598,7 +2898,7 @@ export default function App() {
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <View style={{ flex: 1 }}>
               <Text style={txt(13, true)}>
-                {isUPSC ? '🏛️ UPSC Civil Services Completion' : isMPSC ? '🚩 MPSC Maharashtra Completion' : 'Overall Curriculum Completion'}
+                {isUPSC ? 'UPSC Civil Services Completion' : isMPSC ? 'MPSC Maharashtra Completion' : 'Overall Curriculum Completion'}
               </Text>
               <Text style={[txt(26, true), { marginVertical: 6 }]}>{currentScope.pct}%</Text>
               <Text style={txt(11, false, C.muted)}>
@@ -2639,19 +2939,6 @@ export default function App() {
             </View>
           </View>
         </Card>
-
-        {/* Revision Queue Notice */}
-        {currentScope.toRevise > 0 && (
-          <Card style={{ backgroundColor: C.purpleSoft, borderColor: isDark ? '#4c1d95' : '#ddd6fe' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Ionicons name="refresh-circle-outline" size={24} color={C.purple} />
-              <Text style={txt(14, true, C.purple)}>Spaced Repetition Queue</Text>
-            </View>
-            <Text style={[txt(12, false, C.ink), { marginTop: 6 }]}>
-              You have {currentScope.toRevise} topic(s) flagged for revision. Schedule a revision block today!
-            </Text>
-          </Card>
-        )}
 
         {/* Subject Balance & Neglected Module Alert in Syllabus */}
         {topNeglected && (
@@ -2700,7 +2987,7 @@ export default function App() {
                   alignItems: 'center'
                 }}
               >
-                <Text style={txt(11, true, isDark ? '#fb923c' : '#c2410c')}>📝 Log Past Hours</Text>
+                <Text style={txt(11, true, isDark ? '#fb923c' : '#c2410c')}>Log Past Hours</Text>
               </TouchableOpacity>
             </View>
           </Card>
@@ -2769,7 +3056,7 @@ export default function App() {
                         borderRadius: 6
                       }}
                     >
-                      {isMp ? '🚩 MPSC' : '🏛️ UPSC'}
+                      {isMp ? 'MPSC' : 'UPSC'}
                     </Text>
                     <Text style={txt(15, true)}>{getSubjectName(s, lang)}</Text>
                     <Text
@@ -2859,7 +3146,7 @@ export default function App() {
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 6 }}>
                           <Ionicons name="sparkles" size={14} color={C.blue} />
                           <Text style={{ fontSize: 11, fontWeight: '800', color: C.blue, textTransform: 'uppercase' }}>
-                            🎯 {t('redirectedFromTask')}
+                            {t('redirectedFromTask')}
                           </Text>
                         </View>
                       )}
@@ -3119,7 +3406,7 @@ export default function App() {
                     borderRadius: 6
                   }}
                 >
-                  {isMp ? '🚩 MPSC' : '🏛️ UPSC'}
+                  {isMp ? 'MPSC' : 'UPSC'}
                 </Text>
                 <Text
                   style={{
@@ -3149,7 +3436,7 @@ export default function App() {
                 </Text>
                 {p.date && (
                   <Text style={txt(10, false, C.muted)}>
-                    {p.date === today() ? 'Today' : p.date === tomorrow() ? 'Tomorrow' : p.date}
+                    {p.date === today() ? 'Today' : p.date === tomorrow() ? 'Tomorrow' : formatDateDMY(p.date)}
                   </Text>
                 )}
               </View>
@@ -3165,14 +3452,14 @@ export default function App() {
 
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4, flexWrap: 'wrap', gap: 6 }}>
                 <Text style={txt(11, false, C.muted)}>
-                  ⏱ {p.minutes} mins • {p.done ? `✓ ${getStatusLabel('completed', lang)}` : getStatusLabel('pending', lang)}
+                  {p.minutes} mins • {p.done ? getStatusLabel('completed', lang) : getStatusLabel('pending', lang)}
                 </Text>
                 <View
                   style={{
                     flexDirection: 'row',
                     alignItems: 'center',
                     gap: 4,
-                    backgroundColor: isDark ? '#1e293b' : '#eff6ff',
+                    backgroundColor: isDark ? '#1e2942' : '#eff6ff',
                     paddingHorizontal: 8,
                     paddingVertical: 2,
                     borderRadius: 6,
@@ -3181,7 +3468,7 @@ export default function App() {
                   }}
                 >
                   <Ionicons name="book-outline" size={11} color={C.blue} />
-                  <Text style={{ fontSize: 10, fontWeight: '700', color: C.blue }}>📖 {t('viewTopicInSyllabus')}</Text>
+                  <Text style={{ fontSize: 10, fontWeight: '700', color: C.blue }}>{t('viewTopicInSyllabus')}</Text>
                 </View>
               </View>
             </TouchableOpacity>
@@ -3215,53 +3502,54 @@ export default function App() {
           {t('studyPlannerTitle')}
         </Title>
 
-        {/* View Switcher Chips */}
-        <Card style={{ paddingVertical: 12 }}>
-          <Text style={[txt(11, true, C.muted), { marginBottom: 8 }]}>{t('plannerTimeframe')}</Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-            {[
-              ["Today's Plan", t('todaysPlan')],
-              ["Tomorrow's Plan", t('tomorrowsPlan')],
-              ['Weekly View', t('weeklyView')],
-              ['Workload & Routine', t('workloadRoutine')]
-            ].map(([vKey, vLabel]) => (
-              <Chip
-                key={vKey}
-                label={vLabel}
-                active={
-                  plannerView === vKey ||
-                  (vKey === 'Workload & Routine' && (plannerView === 'Workload View' || plannerView === 'Workload & Routine'))
-                }
-                onPress={() => {
-                  setPlannerView(vKey);
-                  if (vKey === "Today's Plan") setPlanDateType('today');
-                  else if (vKey === "Tomorrow's Plan") setPlanDateType('tomorrow');
-                  else if (vKey === 'Weekly View') setPlanDateType('selected');
-                }}
-              />
-            ))}
+        {/* Compact View Switcher & Exam Filter */}
+        <Card style={{ paddingVertical: 12, paddingHorizontal: 14 }}>
+          <View style={{ marginBottom: 10 }}>
+            <Text style={[txt(11, true, C.muted), { marginBottom: 6 }]}>{t('plannerTimeframe')}</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+              {[
+                ["Today's Plan", t('todaysPlan')],
+                ["Tomorrow's Plan", t('tomorrowsPlan')],
+                ['Weekly View', t('weeklyView')],
+                ['Workload & Routine', t('workloadRoutine')]
+              ].map(([vKey, vLabel]) => (
+                <Chip
+                  key={vKey}
+                  label={vLabel}
+                  active={
+                    plannerView === vKey ||
+                    (vKey === 'Workload & Routine' && (plannerView === 'Workload View' || plannerView === 'Workload & Routine'))
+                  }
+                  onPress={() => {
+                    setPlannerView(vKey);
+                    if (vKey === "Today's Plan") setPlanDateType('today');
+                    else if (vKey === "Tomorrow's Plan") setPlanDateType('tomorrow');
+                    else if (vKey === 'Weekly View') setPlanDateType('selected');
+                  }}
+                />
+              ))}
+            </View>
           </View>
-        </Card>
 
-        {/* Exam Section Filter Chips */}
-        <Card style={{ paddingVertical: 12 }}>
-          <Text style={[txt(11, true, C.muted), { marginBottom: 8 }]}>{t('examFilter')}</Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-            <Chip
-              label={t('allExamTasks')}
-              active={plannerExamFilter === 'ALL'}
-              onPress={() => setPlannerExamFilter('ALL')}
-            />
-            <Chip
-              label={t('upscPlans')}
-              active={plannerExamFilter === 'UPSC'}
-              onPress={() => setPlannerExamFilter('UPSC')}
-            />
-            <Chip
-              label={t('mpscPlans')}
-              active={plannerExamFilter === 'MPSC'}
-              onPress={() => setPlannerExamFilter('MPSC')}
-            />
+          <View style={{ borderTopWidth: 1, borderColor: C.line, paddingTop: 10 }}>
+            <Text style={[txt(11, true, C.muted), { marginBottom: 6 }]}>{t('examFilter')}</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+              <Chip
+                label={t('allExamTasks')}
+                active={plannerExamFilter === 'ALL'}
+                onPress={() => setPlannerExamFilter('ALL')}
+              />
+              <Chip
+                label="UPSC"
+                active={plannerExamFilter === 'UPSC'}
+                onPress={() => setPlannerExamFilter('UPSC')}
+              />
+              <Chip
+                label="MPSC"
+                active={plannerExamFilter === 'MPSC'}
+                onPress={() => setPlannerExamFilter('MPSC')}
+              />
+            </View>
           </View>
         </Card>
 
@@ -3290,7 +3578,7 @@ export default function App() {
 
             <View style={{ marginBottom: 6 }}>
               <Text style={[txt(14, true), { marginBottom: 8 }]}>
-                {t('todaysPlan')} ({today()})
+                {t('todaysPlan')} ({formatDateDMY(today())})
               </Text>
             </View>
 
@@ -3325,7 +3613,7 @@ export default function App() {
                 />
               </View>
               <Text style={txt(12, false, C.muted)}>
-                {tomorrowPlannedMinutes} {t('minPlanned')} ({Math.floor(tomorrowPlannedMinutes / 60)}h {tomorrowPlannedMinutes % 60}m) • {t('tomorrow')} ({tomorrow()})
+                {tomorrowPlannedMinutes} {t('minPlanned')} ({Math.floor(tomorrowPlannedMinutes / 60)}h {tomorrowPlannedMinutes % 60}m) • {t('tomorrow')} ({formatDateDMY(tomorrow())})
               </Text>
             </Card>
 
@@ -3341,7 +3629,7 @@ export default function App() {
 
             <View style={{ marginBottom: 6 }}>
               <Text style={[txt(14, true), { marginBottom: 8 }]}>
-                {t('tomorrowsPlan')} ({tomorrow()})
+                {t('tomorrowsPlan')} ({formatDateDMY(tomorrow())})
               </Text>
             </View>
 
@@ -3388,17 +3676,17 @@ export default function App() {
                   }}
                 >
                   <Ionicons name="sparkles" size={12} color="#ffffff" />
-                  <Text style={txt(11, true, '#ffffff')}>✨ Auto-Plan Full Week</Text>
+                  <Text style={txt(11, true, '#ffffff')}>Auto-Plan Full Week</Text>
                 </TouchableOpacity>
               </View>
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <Chip
-                  label="📅 Entire Week (All 7 Days)"
+                  label="Entire Week (All 7 Days)"
                   active={weeklySubTab === 'ALL_WEEK'}
                   onPress={() => setWeeklySubTab('ALL_WEEK')}
                 />
                 <Chip
-                  label="📆 Single Day Focus"
+                  label="Single Day Focus"
                   active={weeklySubTab === 'SINGLE_DAY'}
                   onPress={() => setWeeklySubTab('SINGLE_DAY')}
                 />
@@ -3464,9 +3752,9 @@ export default function App() {
                       >
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                           <Text style={txt(13, true, d.isToday ? C.blue : C.ink)}>
-                            {d.isToday ? `🌟 Today (${d.dayName}, ${d.month} ${d.dayNum})` : d.isTomorrow ? `🌅 Tomorrow (${d.dayName}, ${d.month} ${d.dayNum})` : `🗓️ ${d.dayName}, ${d.month} ${d.dayNum}`}
+                            {d.isToday ? `Today (${d.dayName}, ${d.month} ${d.dayNum})` : d.isTomorrow ? `Tomorrow (${d.dayName}, ${d.month} ${d.dayNum})` : `${d.dayName}, ${d.month} ${d.dayNum}`}
                           </Text>
-                          <Text style={txt(11, false, C.muted)}>({d.dateStr})</Text>
+                          <Text style={txt(11, false, C.muted)}>({formatDateDMY(d.dateStr)})</Text>
                         </View>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                           <View style={{ backgroundColor: dayPlans.length > 0 ? C.soft : '#f1f5f9', paddingHorizontal: 7, paddingVertical: 2, borderRadius: 8 }}>
@@ -3506,7 +3794,7 @@ export default function App() {
                 {plans.filter(p => p.date && p.date < today() && p.date >= '2026-10-20').length > 0 && (
                   <Card style={{ marginTop: 8 }}>
                     <Text style={[txt(13, true), { marginBottom: 8 }]}>
-                      📋 Recent Study Sessions This Week (Past Days)
+                      Recent Study Sessions This Week (Past Days)
                     </Text>
                     {plans
                       .filter(p => p.date && p.date < today() && p.date >= '2026-10-20')
@@ -3519,9 +3807,45 @@ export default function App() {
               /* SUB-VIEW 2: SINGLE DAY FOCUS WITH 7-DAY STRIP */
               <>
                 <Card style={{ paddingVertical: 12 }}>
-                  <Text style={[txt(11, true, C.muted), { marginBottom: 10 }]}>SELECT DAY (NEXT 7 DAYS)</Text>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                    <View style={{ flexDirection: 'row', gap: 8 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                    <Text style={txt(11, true, C.muted)}>SELECT DAY (NEXT 7 DAYS)</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <TouchableOpacity
+                        onPress={() => {
+                          const currIdx = next7Days.findIndex(d => d.dateStr === selectedWeekDate);
+                          if (currIdx > 0) setSelectedWeekDate(next7Days[currIdx - 1].dateStr);
+                        }}
+                        style={{
+                          width: 26,
+                          height: 26,
+                          borderRadius: 13,
+                          backgroundColor: C.soft,
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                      >
+                        <Ionicons name="chevron-back" size={14} color={C.blue} />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => {
+                          const currIdx = next7Days.findIndex(d => d.dateStr === selectedWeekDate);
+                          if (currIdx < next7Days.length - 1) setSelectedWeekDate(next7Days[currIdx + 1].dateStr);
+                        }}
+                        style={{
+                          width: 26,
+                          height: 26,
+                          borderRadius: 13,
+                          backgroundColor: C.soft,
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                      >
+                        <Ionicons name="chevron-forward" size={14} color={C.blue} />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ minWidth: '100%' }}>
+                    <View style={{ flexDirection: 'row', gap: 4, width: '100%', justifyContent: 'space-between' }}>
                       {next7Days.map(d => {
                         const isSelected = selectedWeekDate === d.dateStr;
                         const dayPlans = plans.filter(p => p.date === d.dateStr);
@@ -3540,36 +3864,37 @@ export default function App() {
                               }
                             }}
                             style={{
+                              flex: 1,
+                              minWidth: 40,
                               backgroundColor: isSelected ? C.blue : C.cardBg,
                               borderWidth: 1.5,
                               borderColor: isSelected ? C.blue : C.line,
-                              borderRadius: 14,
-                              paddingVertical: 10,
-                              paddingHorizontal: 12,
-                              alignItems: 'center',
-                              minWidth: 64
+                              borderRadius: 10,
+                              paddingVertical: 7,
+                              paddingHorizontal: 2,
+                              alignItems: 'center'
                             }}
                           >
-                            <Text style={txt(11, true, isSelected ? C.white : C.muted)}>
+                            <Text style={txt(10, true, isSelected ? C.white : C.muted)}>
                               {d.dayName.toUpperCase()}
                             </Text>
-                            <Text style={[txt(18, true, isSelected ? C.white : C.ink), { marginVertical: 2 }]}>
+                            <Text style={[txt(15, true, isSelected ? C.white : C.ink), { marginVertical: 1 }]}>
                               {d.dayNum}
                             </Text>
-                            <Text style={txt(10, false, isSelected ? '#dbeafe' : C.muted)}>
+                            <Text style={txt(9, false, isSelected ? '#dbeafe' : C.muted)}>
                               {d.isToday ? t('today') : d.isTomorrow ? t('tomorrow') : d.month}
                             </Text>
                             <View
                               style={{
-                                marginTop: 6,
+                                marginTop: 4,
                                 backgroundColor: isSelected ? 'rgba(255,255,255,0.25)' : (count > 0 ? C.soft : '#f1f5f9'),
-                                paddingHorizontal: 6,
-                                paddingVertical: 2,
-                                borderRadius: 8
+                                paddingHorizontal: 5,
+                                paddingVertical: 1,
+                                borderRadius: 6
                               }}
                             >
                               <Text style={txt(9, true, isSelected ? C.white : (count > 0 ? C.blue : C.muted))}>
-                                {count} {count === 1 ? t('task') : t('tasks')}
+                                {count}
                               </Text>
                             </View>
                           </TouchableOpacity>
@@ -3583,7 +3908,7 @@ export default function App() {
                 <View nativeID="day-tasks-section" {...{ id: 'day-tasks-section' }} style={{ marginTop: 12, marginBottom: 6 }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                     <Text style={txt(15, true)}>
-                      {t('tasksForDay')} {selectedWeekDate === today() ? `${t('today')} (${today()})` : selectedWeekDate === tomorrow() ? `${t('tomorrow')} (${tomorrow()})` : selectedWeekDate}
+                      {t('tasksForDay')} {selectedWeekDate === today() ? `${t('today')} (${formatDateDMY(today())})` : selectedWeekDate === tomorrow() ? `${t('tomorrow')} (${formatDateDMY(tomorrow())})` : formatDateDMY(selectedWeekDate)}
                     </Text>
                     <View style={{ backgroundColor: C.soft, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 }}>
                       <Text style={txt(11, true, C.blue)}>
@@ -3600,7 +3925,7 @@ export default function App() {
                     </Text>
                     <View style={{ marginTop: 6, alignItems: 'center', gap: 8 }}>
                       <Button
-                        label={selectedWeekDate === tomorrow() ? t('autoPlanTomorrow') : '✨ Auto-Plan This Day'}
+                        label={selectedWeekDate === tomorrow() ? t('autoPlanTomorrow') : 'Auto-Plan This Day'}
                         onPress={selectedWeekDate === tomorrow() ? autoPlanTomorrow : autoPlanWeek}
                       />
                       <Button
@@ -3662,8 +3987,8 @@ export default function App() {
                 <View style={{ backgroundColor: '#f59e0b', width: `${mpscPct}%` }} />
               </View>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Text style={txt(12, true, '#1d4ed8')}>🏛️ UPSC: {upscPlannedMinutes}m ({upscPct}%)</Text>
-                <Text style={txt(12, true, '#b45309')}>🚩 MPSC: {mpscPlannedMinutes}m ({mpscPct}%)</Text>
+                <Text style={txt(12, true, '#1d4ed8')}>UPSC: {upscPlannedMinutes}m ({upscPct}%)</Text>
+                <Text style={txt(12, true, '#b45309')}>MPSC: {mpscPlannedMinutes}m ({mpscPct}%)</Text>
               </View>
             </Card>
 
@@ -3789,10 +4114,10 @@ export default function App() {
           </Text>
 
           {/* Exam Section Selector */}
-          <Text style={txt(11, true, C.muted)}>{t('targetExamSection')}</Text>
-          <View style={{ flexDirection: 'row', marginTop: 6, marginBottom: 10 }}>
+          <Text style={txt(11, true, C.muted)}>TARGET EXAM</Text>
+          <View style={{ flexDirection: 'row', gap: 8, marginTop: 6, marginBottom: 12 }}>
             <Chip
-              label={t('upscOnly')}
+              label="UPSC"
               active={planExamTarget === 'UPSC'}
               onPress={() => {
                 setPlanExamTarget('UPSC');
@@ -3801,7 +4126,7 @@ export default function App() {
               }}
             />
             <Chip
-              label={t('mpscOnly')}
+              label="MPSC"
               active={planExamTarget === 'MPSC'}
               onPress={() => {
                 setPlanExamTarget('MPSC');
@@ -3812,12 +4137,12 @@ export default function App() {
           </View>
 
           {/* Subject Selector */}
-          <Text style={txt(11, true, C.muted)}>{t('selectTargetSubject')}</Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 6, marginBottom: 8 }}>
-            {(targetSubjects.length ? targetSubjects : subjects).map(s => (
+          <Text style={txt(11, true, C.muted)}>SELECT {planExamTarget} SUBJECT</Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6, marginBottom: 10 }}>
+            {targetSubjects.map(s => (
               <Chip
                 key={s.id}
-                label={s.name}
+                label={getSubjectName(s, lang)}
                 active={planSubject === s.id}
                 onPress={() => setPlanSubject(s.id)}
               />
@@ -4356,7 +4681,7 @@ export default function App() {
                                   : (inProg ? (isDark ? '#93C5FD' : '#1D4ED8') : (isDark ? '#CBD5E1' : '#475569'))
                               }}
                             >
-                              {isDone ? '✓ ' : (inProg ? '⏳ ' : '○ ')}{getTopicName(topItem, lang)}
+                              {isDone ? 'Done • ' : (inProg ? 'Active • ' : '○ ')}{getTopicName(topItem, lang)}
                             </Text>
                           </TouchableOpacity>
                         );
@@ -4402,7 +4727,7 @@ export default function App() {
                       borderRadius: 6
                     }}
                   >
-                    {isOffline ? `📝 ${t('logOfflineHours')}` : `⏱️ ${t('timer')}`}
+                    {isOffline ? t('logOfflineHours') : t('timer')}
                   </Text>
                 </View>
                 {s.note || s.topic ? (
@@ -4420,7 +4745,7 @@ export default function App() {
                   </Text>
                   <Text style={txt(11, false, C.muted)}>•</Text>
                   <Text style={txt(11, false, C.muted)}>
-                    {new Date(s.startedAt).toLocaleDateString()}
+                    {formatDateDMY(s.startedAt)}
                   </Text>
                 </View>
               </View>
@@ -4449,17 +4774,19 @@ export default function App() {
             backgroundColor: 'rgba(0, 0, 0, 0.55)',
             justifyContent: 'center',
             alignItems: 'center',
-            padding: 16
+            paddingHorizontal: 12,
+            paddingVertical: 16,
+            width: '100%'
           }}
         >
           <View
             style={{
               backgroundColor: C.cardBg,
               width: '100%',
-              maxWidth: 540,
-              maxHeight: Platform.OS === 'web' ? '85vh' : '90%',
-              height: Platform.OS === 'web' ? '85vh' : undefined,
-              borderRadius: 20,
+              maxWidth: 460,
+              maxHeight: Platform.OS === 'web' ? '86vh' : '90%',
+              height: Platform.OS === 'web' ? '86vh' : undefined,
+              borderRadius: 16,
               borderWidth: 1,
               borderColor: C.line,
               overflow: 'hidden',
@@ -4473,29 +4800,29 @@ export default function App() {
                 flexDirection: 'row',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                paddingHorizontal: 20,
-                paddingVertical: 16,
+                paddingHorizontal: 14,
+                paddingVertical: 12,
                 borderBottomWidth: 1,
                 borderColor: C.line,
                 backgroundColor: isDark ? '#1e293b' : '#f8fafc'
               }}
             >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
                 <View
                   style={{
-                    width: 38,
-                    height: 38,
-                    borderRadius: 12,
+                    width: 32,
+                    height: 32,
+                    borderRadius: 10,
                     backgroundColor: C.soft,
                     alignItems: 'center',
                     justifyContent: 'center'
                   }}
                 >
-                  <Ionicons name="settings" size={20} color={C.blue} />
+                  <Ionicons name="settings" size={18} color={C.blue} />
                 </View>
-                <View>
-                  <Text style={txt(16, true)}>{t('settingsTitle')}</Text>
-                  <Text style={txt(11, false, C.muted)}>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text numberOfLines={1} style={txt(14, true)}>{t('settingsTitle')}</Text>
+                  <Text numberOfLines={1} style={txt(10, false, C.muted)}>
                     {user?.name || 'Aspirant'} • {user?.email || 'student@abhyas.local'}
                   </Text>
                 </View>
@@ -4503,66 +4830,70 @@ export default function App() {
               <TouchableOpacity
                 onPress={() => setSettingsOpen(false)}
                 style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 16,
+                  width: 28,
+                  height: 28,
+                  borderRadius: 14,
                   backgroundColor: C.soft,
                   alignItems: 'center',
                   justifyContent: 'center'
                 }}
               >
-                <Ionicons name="close" size={20} color={C.muted} />
+                <Ionicons name="close" size={18} color={C.muted} />
               </TouchableOpacity>
             </View>
 
             {/* Scrollable Settings Content */}
             <ScrollView
-              style={{ flex: 1, minHeight: 0 }}
-              contentContainerStyle={{ padding: 20, paddingBottom: 24 }}
+              style={{ flex: 1, minHeight: 0, width: '100%' }}
+              contentContainerStyle={{ paddingHorizontal: 14, paddingVertical: 14 }}
               showsVerticalScrollIndicator={true}
             >
-              {/* 1. Language Selector */}
-              <View style={{ marginBottom: 20 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                  <Ionicons name="globe-outline" size={18} color={C.blue} />
-                  <Text style={txt(14, true)}>{t('appLanguage')}</Text>
+              {/* 1. Language Selector (Compact Size) */}
+              <View style={{ marginBottom: 16 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                  <Ionicons name="globe-outline" size={16} color={C.blue} />
+                  <Text style={txt(12, true)}>{t('appLanguage')}</Text>
                 </View>
-                <Text style={[txt(11, false, C.muted), { marginBottom: 10 }]}>
+                <Text style={[txt(10, false, C.muted), { marginBottom: 8 }]}>
                   {t('chooseLanguage')}
                 </Text>
-                <View style={{ flexDirection: 'row', gap: 8 }}>
+                <View style={{ flexDirection: 'row', gap: 6, width: '100%' }}>
                   {AVAILABLE_LANGUAGES.map(l => {
                     const isSelected = lang === l.code;
                     return (
                       <TouchableOpacity
                         key={l.code}
                         onPress={() => changeLanguage(l.code)}
+                        activeOpacity={0.7}
                         style={{
                           flex: 1,
+                          minWidth: 0,
                           backgroundColor: isSelected ? (isDark ? '#1e3a5f' : '#eff6ff') : (isDark ? '#1e293b' : '#ffffff'),
                           borderColor: isSelected ? C.blue : C.line,
                           borderWidth: 1.5,
-                          borderRadius: 12,
-                          paddingVertical: 12,
-                          paddingHorizontal: 8,
+                          borderRadius: 10,
+                          paddingVertical: 7,
+                          paddingHorizontal: 4,
                           alignItems: 'center',
-                          gap: 2
+                          justifyContent: 'center'
                         }}
                       >
-                        <Text style={{ fontSize: 22 }}>{l.flag}</Text>
-                        <Text style={txt(13, true, isSelected ? C.blue : C.ink)}>{l.nativeName}</Text>
-                        <Text style={txt(10, false, C.muted)}>{getSubjectName(l, lang)}</Text>
+                        <Text style={{ fontSize: 10, fontWeight: '700', color: isSelected ? C.blue : C.muted, textTransform: 'uppercase', marginBottom: 1 }}>
+                          {l.code}
+                        </Text>
+                        <Text numberOfLines={1} style={txt(11, true, isSelected ? C.blue : C.ink)}>{l.nativeName}</Text>
+                        <Text numberOfLines={1} style={txt(9, false, C.muted)}>{l.name}</Text>
                         {isSelected && (
                           <View
                             style={{
-                              marginTop: 4,
+                              marginTop: 2,
                               backgroundColor: C.blue,
-                              borderRadius: 10,
-                              paddingHorizontal: 8,
-                              paddingVertical: 2
+                              borderRadius: 6,
+                              paddingHorizontal: 5,
+                              paddingVertical: 1
                             }}
                           >
-                            <Text style={{ fontSize: 9, fontWeight: '700', color: '#ffffff' }}>✓ Active</Text>
+                            <Text style={{ fontSize: 8, fontWeight: '700', color: '#ffffff' }}>Active</Text>
                           </View>
                         )}
                       </TouchableOpacity>
@@ -4572,69 +4903,73 @@ export default function App() {
               </View>
 
               {/* 2. Appearance: Light & Dark Mode */}
-              <View style={{ marginBottom: 20, paddingTop: 16, borderTopWidth: 1, borderColor: C.line }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                  <Ionicons name="contrast-outline" size={18} color={C.blue} />
-                  <Text style={txt(14, true)}>{t('appearance')}</Text>
+              <View style={{ marginBottom: 16, paddingTop: 14, borderTopWidth: 1, borderColor: C.line }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                  <Ionicons name="contrast-outline" size={16} color={C.blue} />
+                  <Text style={txt(12, true)}>{t('appearance')}</Text>
                 </View>
-                <Text style={[txt(11, false, C.muted), { marginBottom: 10 }]}>
+                <Text style={[txt(10, false, C.muted), { marginBottom: 8 }]}>
                   {t('themeDescription')}
                 </Text>
-                <View style={{ flexDirection: 'row', gap: 10 }}>
+                <View style={{ flexDirection: 'row', gap: 8, width: '100%' }}>
                   <TouchableOpacity
                     onPress={() => { if (isDark) toggleTheme(); }}
                     style={{
                       flex: 1,
+                      minWidth: 0,
                       flexDirection: 'row',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: 8,
-                      paddingVertical: 12,
-                      borderRadius: 12,
+                      gap: 6,
+                      paddingVertical: 9,
+                      paddingHorizontal: 8,
+                      borderRadius: 10,
                       borderWidth: 1.5,
                       borderColor: !isDark ? C.blue : C.line,
                       backgroundColor: !isDark ? (isDark ? '#1e3a5f' : '#eff6ff') : C.cardBg
                     }}
                   >
-                    <Ionicons name="sunny" size={18} color={!isDark ? C.blue : C.muted} />
-                    <Text style={txt(13, true, !isDark ? C.blue : C.ink)}>{t('lightMode')}</Text>
+                    <Ionicons name="sunny" size={16} color={!isDark ? C.blue : C.muted} />
+                    <Text style={txt(11, true, !isDark ? C.blue : C.ink)}>{t('lightMode')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() => { if (!isDark) toggleTheme(); }}
                     style={{
                       flex: 1,
+                      minWidth: 0,
                       flexDirection: 'row',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: 8,
-                      paddingVertical: 12,
-                      borderRadius: 12,
+                      gap: 6,
+                      paddingVertical: 9,
+                      paddingHorizontal: 8,
+                      borderRadius: 10,
                       borderWidth: 1.5,
                       borderColor: isDark ? '#fbbf24' : C.line,
                       backgroundColor: isDark ? '#1e2942' : C.cardBg
                     }}
                   >
-                    <Ionicons name="moon" size={18} color={isDark ? '#fbbf24' : C.muted} />
-                    <Text style={txt(13, true, isDark ? '#fbbf24' : C.ink)}>{t('darkMode')}</Text>
+                    <Ionicons name="moon" size={16} color={isDark ? '#fbbf24' : C.muted} />
+                    <Text style={txt(11, true, isDark ? '#fbbf24' : C.ink)}>{t('darkMode')}</Text>
                   </TouchableOpacity>
                 </View>
               </View>
 
               {/* 3. Notifications & Routines */}
-              <View style={{ marginBottom: 20, paddingTop: 16, borderTopWidth: 1, borderColor: C.line }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                  <Ionicons name="notifications-outline" size={18} color={C.blue} />
-                  <Text style={txt(14, true)}>{t('notificationsTitle')}</Text>
+              <View style={{ marginBottom: 16, paddingTop: 14, borderTopWidth: 1, borderColor: C.line }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                  <Ionicons name="notifications-outline" size={16} color={C.blue} />
+                  <Text style={txt(12, true)}>{t('notificationsTitle')}</Text>
                   {unread.length > 0 && (
-                    <View style={{ backgroundColor: '#ef4444', borderRadius: 8, paddingHorizontal: 6, paddingVertical: 1 }}>
-                      <Text style={{ fontSize: 10, fontWeight: '700', color: '#ffffff' }}>{unread.length} new</Text>
+                    <View style={{ backgroundColor: '#ef4444', borderRadius: 8, paddingHorizontal: 5, paddingVertical: 1 }}>
+                      <Text style={{ fontSize: 9, fontWeight: '700', color: '#ffffff' }}>{unread.length} new</Text>
                     </View>
                   )}
                 </View>
-                <Text style={[txt(11, false, C.muted), { marginBottom: 10 }]}>
+                <Text style={[txt(10, false, C.muted), { marginBottom: 8 }]}>
                   {t('notificationDesc')}
                 </Text>
-                <View style={{ gap: 8 }}>
+                <View style={{ gap: 6, width: '100%' }}>
                   <TouchableOpacity
                     onPress={() => {
                       setSettingsOpen(false);
@@ -4645,17 +4980,17 @@ export default function App() {
                       alignItems: 'center',
                       justifyContent: 'space-between',
                       backgroundColor: isDark ? '#1e293b' : '#f8fafc',
-                      padding: 12,
-                      borderRadius: 12,
+                      padding: 10,
+                      borderRadius: 10,
                       borderWidth: 1,
                       borderColor: C.line
                     }}
                   >
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                      <Ionicons name="list-outline" size={18} color={C.blue} />
-                      <Text style={txt(13, true)}>{t('openNotificationsView')}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
+                      <Ionicons name="list-outline" size={16} color={C.blue} />
+                      <Text style={txt(12, true)}>{t('openNotificationsView')}</Text>
                     </View>
-                    <Ionicons name="chevron-forward" size={16} color={C.muted} />
+                    <Ionicons name="chevron-forward" size={14} color={C.muted} />
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -4665,141 +5000,70 @@ export default function App() {
                       alignItems: 'center',
                       justifyContent: 'space-between',
                       backgroundColor: isDark ? '#1e293b' : '#f8fafc',
-                      padding: 12,
-                      borderRadius: 12,
+                      padding: 10,
+                      borderRadius: 10,
                       borderWidth: 1,
                       borderColor: C.line
                     }}
                   >
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                      <Ionicons name="desktop-outline" size={18} color={C.blue} />
-                      <Text style={txt(13, true)}>{t('enableBrowserAlerts')}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
+                      <Ionicons name="desktop-outline" size={16} color={C.blue} />
+                      <Text style={txt(12, true)}>{t('enableBrowserAlerts')}</Text>
                     </View>
-                    <Ionicons name="shield-checkmark-outline" size={16} color={C.green} />
+                    <Ionicons name="shield-checkmark-outline" size={14} color={C.green} />
                   </TouchableOpacity>
                 </View>
               </View>
 
-              {/* 4. Log Offline & Past Study Hours */}
-              <View style={{ marginBottom: 20, paddingTop: 16, borderTopWidth: 1, borderColor: C.line }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                  <Ionicons name="time-outline" size={18} color={C.blue} />
-                  <Text style={txt(14, true)}>Manual & Offline Study Logging</Text>
+              {/* 4. Manual & Offline Study Logging */}
+              <View style={{ marginBottom: 16, paddingTop: 14, borderTopWidth: 1, borderColor: C.line }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                  <Ionicons name="book-outline" size={16} color={C.blue} />
+                  <Text style={txt(12, true)}>Manual &amp; Offline Study Logging</Text>
                 </View>
-                <Text style={[txt(11, false, C.muted), { marginBottom: 10 }]}>
-                  Log hours studied away from phone, from textbooks, library sessions, or past days.
+                <Text style={[txt(10, false, C.muted), { marginBottom: 8 }]}>
+                  Log textbook readings, library sessions, and past study hours.
                 </Text>
 
-                <View style={{ gap: 8 }}>
-                  {/* Option A: Log Offline Book Study */}
-                  <TouchableOpacity
-                    onPress={() => {
-                      setSettingsOpen(false);
-                      setManualLogMode('offline');
-                      setManualLogOpen(true);
-                    }}
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      backgroundColor: isDark ? '#142a1e' : '#f0fdf4',
-                      padding: 13,
-                      borderRadius: 12,
-                      borderWidth: 1.5,
-                      borderColor: isDark ? '#059669' : '#86efac'
-                    }}
-                  >
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, marginRight: 8 }}>
-                      <Ionicons name="book-outline" size={20} color="#059669" />
-                      <View style={{ flex: 1 }}>
-                        <Text style={txt(13, true, isDark ? '#34d399' : '#15803d')}>📖 Log Offline Book Study</Text>
-                        <Text style={[txt(11, false, C.muted), { marginTop: 2 }]} numberOfLines={2}>
-                          Laxmikanth, NCERT, Spectrum, or library textbook study sessions.
-                        </Text>
-                      </View>
+                <TouchableOpacity
+                  onPress={() => {
+                    setSettingsOpen(false);
+                    setManualLogMode('offline');
+                    setManualLogOpen(true);
+                  }}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    backgroundColor: isDark ? '#142a1e' : '#f0fdf4',
+                    padding: 11,
+                    borderRadius: 10,
+                    borderWidth: 1.5,
+                    borderColor: isDark ? '#059669' : '#86efac'
+                  }}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
+                    <Ionicons name="book-outline" size={18} color="#059669" />
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <Text style={txt(12, true, isDark ? '#34d399' : '#15803d')}>Log Offline Book Study</Text>
+                      <Text style={[txt(10, false, C.muted), { marginTop: 1 }]} numberOfLines={1}>
+                        Includes past hours entry, textbooks, and library study
+                      </Text>
                     </View>
-                    <Ionicons name="chevron-forward" size={16} color="#059669" />
-                  </TouchableOpacity>
-
-                  {/* Option B: Log Past Study Hours */}
-                  <TouchableOpacity
-                    onPress={() => {
-                      setSettingsOpen(false);
-                      setManualLogMode('past');
-                      setManualLogOpen(true);
-                    }}
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      backgroundColor: isDark ? '#2e1c10' : '#fff7ed',
-                      padding: 13,
-                      borderRadius: 12,
-                      borderWidth: 1.5,
-                      borderColor: isDark ? '#ea580c' : '#fed7aa'
-                    }}
-                  >
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, marginRight: 8 }}>
-                      <Ionicons name="create-outline" size={20} color="#ea580c" />
-                      <View style={{ flex: 1 }}>
-                        <Text style={txt(13, true, isDark ? '#fb923c' : '#c2410c')}>📝 Log Past Hours</Text>
-                        <Text style={[txt(11, false, C.muted), { marginTop: 2 }]} numberOfLines={2}>
-                          Manually add study hours for earlier today, yesterday, or previous sessions.
-                        </Text>
-                      </View>
-                    </View>
-                    <Ionicons name="chevron-forward" size={16} color="#ea580c" />
-                  </TouchableOpacity>
-                </View>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color="#059669" />
+                </TouchableOpacity>
               </View>
 
-              {/* 5. Daily Target Goal */}
-              <View style={{ marginBottom: 20, paddingTop: 16, borderTopWidth: 1, borderColor: C.line }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                  <Ionicons name="trophy-outline" size={18} color={C.blue} />
-                  <Text style={txt(14, true)}>{t('studyTargetGoal')}</Text>
-                </View>
-                <Text style={[txt(11, false, C.muted), { marginBottom: 10 }]}>
-                  {t('studyTargetDesc')}
-                </Text>
-                <View style={{ flexDirection: 'row', gap: 8 }}>
-                  {[6, 8, 10, 12].map(h => {
-                    const isTarget = dailyGoalHours === h;
-                    return (
-                      <TouchableOpacity
-                        key={h}
-                        onPress={async () => {
-                          setDailyGoalHours(h);
-                          await AsyncStorage.setItem('abhyas_daily_goal', String(h));
-                        }}
-                        style={{
-                          flex: 1,
-                          backgroundColor: isTarget ? C.blue : (isDark ? '#1e293b' : '#f8fafc'),
-                          borderColor: isTarget ? C.blue : C.line,
-                          borderWidth: 1,
-                          paddingVertical: 9,
-                          borderRadius: 10,
-                          alignItems: 'center'
-                        }}
-                      >
-                        <Text style={txt(12, true, isTarget ? '#ffffff' : C.ink)}>
-                          {h}h / day
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              </View>
-
-              {/* 6. Sound Alerts */}
-              <View style={{ marginBottom: 20, paddingTop: 16, borderTopWidth: 1, borderColor: C.line }}>
+              {/* 5. Sound Alerts */}
+              <View style={{ marginBottom: 16, paddingTop: 14, borderTopWidth: 1, borderColor: C.line }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <View style={{ flex: 1, marginRight: 10 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <Ionicons name="volume-high-outline" size={18} color={C.blue} />
-                      <Text style={txt(14, true)}>{t('soundAlerts')}</Text>
+                  <View style={{ flex: 1, marginRight: 8, minWidth: 0 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <Ionicons name="volume-high-outline" size={16} color={C.blue} />
+                      <Text style={txt(12, true)}>{t('soundAlerts')}</Text>
                     </View>
-                    <Text style={[txt(11, false, C.muted), { marginTop: 2 }]}>
+                    <Text style={[txt(10, false, C.muted), { marginTop: 2 }]}>
                       {t('soundAlertsDesc')}
                     </Text>
                   </View>
@@ -4808,29 +5072,26 @@ export default function App() {
                       const next = !timerSoundEnabled;
                       setTimerSoundEnabled(next);
                       await AsyncStorage.setItem('abhyas_timer_sound', String(next));
+                      if (next) playTimerTone('start');
                     }}
                     style={{
                       backgroundColor: timerSoundEnabled ? C.blue : (isDark ? '#334155' : '#e2e8f0'),
-                      paddingHorizontal: 12,
-                      paddingVertical: 6,
-                      borderRadius: 14
+                      paddingHorizontal: 10,
+                      paddingVertical: 5,
+                      borderRadius: 12
                     }}
                   >
-                    <Text style={txt(11, true, timerSoundEnabled ? '#ffffff' : C.muted)}>
+                    <Text style={txt(10, true, timerSoundEnabled ? '#ffffff' : C.muted)}>
                       {timerSoundEnabled ? t('on') : t('off')}
                     </Text>
                   </TouchableOpacity>
                 </View>
               </View>
 
-              {/* 7. Sign Out Button */}
-              <View style={{ marginBottom: 16, paddingTop: 16, borderTopWidth: 1, borderColor: C.line }}>
+              {/* 6. Sign Out Button */}
+              <View style={{ marginBottom: 12, paddingTop: 14, borderTopWidth: 1, borderColor: C.line }}>
                 <TouchableOpacity
                   onPress={async () => {
-                    const doSignOut = () => {
-                      setSettingsOpen(false);
-                      handleSignOut();
-                    };
                     showAppDialog({
                       title: t('signOut') || 'Sign Out',
                       message: `${t('confirmSignOut') || 'Are you sure you want to sign out?'}\n\n${user?.name || ''} (${user?.email || ''})`,
@@ -4853,26 +5114,26 @@ export default function App() {
                     backgroundColor: isDark ? '#3b181e' : '#fef2f2',
                     borderColor: isDark ? '#7f1d1d' : '#fecaca',
                     borderWidth: 1,
-                    paddingVertical: 12,
-                    borderRadius: 12,
-                    gap: 8
+                    paddingVertical: 10,
+                    borderRadius: 10,
+                    gap: 6
                   }}
                 >
-                  <Ionicons name="log-out-outline" size={18} color="#ef4444" />
-                  <Text style={txt(13, true, '#ef4444')}>{t('signOut')}</Text>
+                  <Ionicons name="log-out-outline" size={16} color="#ef4444" />
+                  <Text style={txt(12, true, '#ef4444')}>{t('signOut')}</Text>
                 </TouchableOpacity>
               </View>
 
               {/* App Info Footer */}
-              <View style={{ alignItems: 'center', paddingVertical: 10 }}>
-                <Text style={txt(11, false, C.muted)}>{t('appVersion')}</Text>
+              <View style={{ alignItems: 'center', paddingVertical: 6 }}>
+                <Text style={txt(10, false, C.muted)}>{t('appVersion')}</Text>
               </View>
             </ScrollView>
 
             {/* Modal Bottom Action */}
             <View
               style={{
-                padding: 16,
+                padding: 12,
                 borderTopWidth: 1,
                 borderColor: C.line,
                 backgroundColor: isDark ? '#1e293b' : '#f8fafc',
@@ -4884,12 +5145,12 @@ export default function App() {
                 style={{
                   backgroundColor: C.blue,
                   width: '100%',
-                  paddingVertical: 11,
-                  borderRadius: 12,
+                  paddingVertical: 10,
+                  borderRadius: 10,
                   alignItems: 'center'
                 }}
               >
-                <Text style={txt(13, true, '#ffffff')}>{t('done')}</Text>
+                <Text style={txt(12, true, '#ffffff')}>{t('done')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -4916,17 +5177,19 @@ export default function App() {
             backgroundColor: 'rgba(0, 0, 0, 0.65)',
             justifyContent: 'center',
             alignItems: 'center',
-            padding: 16
+            paddingHorizontal: 12,
+            paddingVertical: 16,
+            width: '100%'
           }}
         >
           <View
             style={{
               backgroundColor: C.cardBg,
               width: '100%',
-              maxWidth: 540,
+              maxWidth: 480,
               maxHeight: Platform.OS === 'web' ? '88vh' : '92%',
               height: Platform.OS === 'web' ? '88vh' : undefined,
-              borderRadius: 20,
+              borderRadius: 16,
               borderWidth: 1,
               borderColor: C.line,
               overflow: 'hidden',
@@ -4940,129 +5203,132 @@ export default function App() {
                 flexDirection: 'row',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                paddingHorizontal: 20,
-                paddingVertical: 16,
+                paddingHorizontal: 14,
+                paddingVertical: 12,
                 borderBottomWidth: 1,
                 borderColor: C.line,
                 backgroundColor: isDark ? '#1e293b' : '#f8fafc'
               }}
             >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
                 <View
                   style={{
-                    width: 38,
-                    height: 38,
-                    borderRadius: 12,
+                    width: 32,
+                    height: 32,
+                    borderRadius: 10,
                     backgroundColor: isOffline ? (isDark ? '#064e3b' : '#dcfce7') : (isDark ? '#431407' : '#ffedd5'),
                     alignItems: 'center',
                     justifyContent: 'center'
                   }}
                 >
                   <Ionicons
-                    name={isOffline ? 'book' : 'time'}
-                    size={20}
+                    name={isOffline ? 'book-outline' : 'time-outline'}
+                    size={18}
                     color={isOffline ? (isDark ? '#34d399' : '#059669') : (isDark ? '#fb923c' : '#ea580c')}
                   />
                 </View>
-                <View>
-                  <Text style={txt(16, true)}>
-                    {isOffline ? '📖 Log Offline Book Study' : '📝 Log Past Study Hours'}
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text numberOfLines={1} style={txt(14, true)}>
+                    {isOffline ? 'Log Offline Book Study' : 'Past Hours Entry'}
                   </Text>
-                  <Text style={txt(11, false, C.muted)}>
-                    {isOffline ? 'Standard books & library self-study' : 'Manual entry for past or offline sessions'}
+                  <Text numberOfLines={1} style={txt(10, false, C.muted)}>
+                    {isOffline ? 'Textbooks, library & offline study' : 'Manual entry for past study sessions'}
                   </Text>
                 </View>
               </View>
               <TouchableOpacity
                 onPress={() => setManualLogOpen(false)}
                 style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 16,
+                  width: 28,
+                  height: 28,
+                  borderRadius: 14,
                   backgroundColor: C.soft,
                   alignItems: 'center',
                   justifyContent: 'center'
                 }}
               >
-                <Ionicons name="close" size={20} color={C.muted} />
+                <Ionicons name="close" size={18} color={C.muted} />
               </TouchableOpacity>
             </View>
 
-            {/* Mode Switcher Tabs */}
+            {/* Mode Switcher Tabs inside Log Offline Study */}
             <View
               style={{
                 flexDirection: 'row',
-                paddingHorizontal: 16,
-                paddingVertical: 10,
+                paddingHorizontal: 14,
+                paddingVertical: 8,
                 borderBottomWidth: 1,
                 borderColor: C.line,
                 backgroundColor: isDark ? '#0f172a' : '#f1f5f9',
-                gap: 8
+                gap: 8,
+                width: '100%'
               }}
             >
               <TouchableOpacity
                 onPress={() => setManualLogMode('offline')}
                 style={{
                   flex: 1,
-                  paddingVertical: 8,
-                  borderRadius: 10,
+                  minWidth: 0,
+                  paddingVertical: 7,
+                  borderRadius: 8,
                   alignItems: 'center',
                   backgroundColor: isOffline ? (isDark ? '#064e3b' : '#dcfce7') : 'transparent',
                   borderWidth: 1,
                   borderColor: isOffline ? (isDark ? '#059669' : '#86efac') : 'transparent'
                 }}
               >
-                <Text style={txt(12, true, isOffline ? (isDark ? '#34d399' : '#15803d') : C.muted)}>
-                  📖 Offline Book Study
+                <Text style={txt(11, true, isOffline ? (isDark ? '#34d399' : '#15803d') : C.muted)}>
+                  Offline Book Study
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => setManualLogMode('past')}
                 style={{
                   flex: 1,
-                  paddingVertical: 8,
-                  borderRadius: 10,
+                  minWidth: 0,
+                  paddingVertical: 7,
+                  borderRadius: 8,
                   alignItems: 'center',
                   backgroundColor: !isOffline ? (isDark ? '#431407' : '#ffedd5') : 'transparent',
                   borderWidth: 1,
                   borderColor: !isOffline ? (isDark ? '#ea580c' : '#fed7aa') : 'transparent'
                 }}
               >
-                <Text style={txt(12, true, !isOffline ? (isDark ? '#fb923c' : '#c2410c') : C.muted)}>
-                  📝 Past Hours Entry
+                <Text style={txt(11, true, !isOffline ? (isDark ? '#fb923c' : '#c2410c') : C.muted)}>
+                  Past Hours Entry
                 </Text>
               </TouchableOpacity>
             </View>
 
             {/* Scrollable Form Content */}
             <ScrollView
-              style={{ flex: 1, minHeight: 0 }}
-              contentContainerStyle={{ padding: 20, paddingBottom: 24 }}
+              style={{ flex: 1, minHeight: 0, width: '100%' }}
+              contentContainerStyle={{ paddingHorizontal: 14, paddingVertical: 14 }}
               showsVerticalScrollIndicator={true}
             >
-              {/* Exam Section */}
+              {/* 1. Target Exam Section */}
               <Text style={txt(11, true, C.muted)}>TARGET EXAM SECTION</Text>
-              <View style={{ flexDirection: 'row', marginTop: 6, marginBottom: 12 }}>
+              <View style={{ flexDirection: 'row', marginTop: 4, marginBottom: 12, gap: 6, flexWrap: 'wrap' }}>
                 <Chip
                   label="All Subjects"
                   active={manualExamFilter === 'ALL'}
                   onPress={() => setManualExamFilter('ALL')}
                 />
                 <Chip
-                  label="🏛️ UPSC"
+                  label="UPSC"
                   active={manualExamFilter === 'UPSC'}
                   onPress={() => setManualExamFilter('UPSC')}
                 />
                 <Chip
-                  label="🚩 MPSC"
+                  label="MPSC"
                   active={manualExamFilter === 'MPSC'}
                   onPress={() => setManualExamFilter('MPSC')}
                 />
               </View>
 
-              {/* Subject Picker */}
+              {/* 2. Select Subject (Proper alignment, wraps long subjects safely) */}
               <Text style={txt(11, true, C.muted)}>SELECT SUBJECT</Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 6, marginBottom: 12 }}>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 4, marginBottom: 12, width: '100%' }}>
                 {subjects
                   .filter(s => {
                     if (manualExamFilter === 'ALL') return true;
@@ -5070,66 +5336,96 @@ export default function App() {
                     return sExam === manualExamFilter;
                   })
                   .map(s => {
-                    const isMp = (s.exam || (s.id.startsWith('mpsc') ? 'MPSC' : 'UPSC')) === 'MPSC';
                     const isSel = (manualSubject || selected) === s.id;
                     return (
                       <Chip
                         key={s.id}
-                        label={`${isMp ? '🚩 ' : '🏛️ '}${getSubjectName(s, lang)}`}
+                        label={getSubjectName(s, lang)}
                         active={isSel}
                         onPress={() => setManualSubject(s.id)}
+                        numberOfLines={2}
+                        style={{
+                          maxWidth: '100%',
+                          flexShrink: 1,
+                          marginRight: 6,
+                          marginBottom: 6,
+                          paddingHorizontal: 10,
+                          paddingVertical: 6
+                        }}
                       />
                     );
                   })}
               </View>
 
-              {/* Study Date */}
-              <Text style={txt(11, true, C.muted)}>STUDY DATE</Text>
-              <View style={{ flexDirection: 'row', marginTop: 6, marginBottom: 12, gap: 6, flexWrap: 'wrap' }}>
+              {/* 3. Study Date in DD/MM/YYYY format */}
+              <Text style={txt(11, true, C.muted)}>STUDY DATE (DD/MM/YYYY)</Text>
+              <View style={{ flexDirection: 'row', marginTop: 4, marginBottom: 6, gap: 6, flexWrap: 'wrap' }}>
                 <Chip
-                  label={`Today (${today()})`}
+                  label={`Today (${todayDMY()})`}
                   active={manualDate === 'today'}
-                  onPress={() => setManualDate('today')}
+                  onPress={() => {
+                    setManualDate('today');
+                    setManualCustomDate(todayDMY());
+                  }}
                 />
                 <Chip
-                  label={`Yesterday (${yesterday()})`}
+                  label={`Yesterday (${yesterdayDMY()})`}
                   active={manualDate === 'yesterday'}
-                  onPress={() => setManualDate('yesterday')}
+                  onPress={() => {
+                    setManualDate('yesterday');
+                    setManualCustomDate(yesterdayDMY());
+                  }}
+                />
+                <Chip
+                  label="Specific Date"
+                  active={manualDate === 'custom'}
+                  onPress={() => setManualDate('custom')}
                 />
               </View>
+              {manualDate === 'custom' && (
+                <View style={{ marginBottom: 12 }}>
+                  <TextInput
+                    value={manualCustomDate}
+                    onChangeText={setManualCustomDate}
+                    placeholder="DD/MM/YYYY (e.g. 02/11/2026)"
+                    placeholderTextColor={C.muted}
+                    style={[input, { marginTop: 4, marginBottom: 0 }]}
+                    keyboardType="numbers-and-punctuation"
+                  />
+                  <Text style={[txt(10, false, C.muted), { marginTop: 3 }]}>
+                    Format: DD/MM/YYYY (Day/Month/Year)
+                  </Text>
+                </View>
+              )}
+              {manualDate !== 'custom' && (
+                <View style={{ marginBottom: 8 }} />
+              )}
 
-              {/* Duration Presets */}
-              <Text style={txt(11, true, C.muted)}>DURATION STUDIED</Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6, marginBottom: 10 }}>
+              {/* 4. Study Activity Section */}
+              <Text style={txt(11, true, C.muted)}>STUDY ACTIVITY</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 4, marginBottom: 12, width: '100%' }}>
                 {[
-                  ['30m', '0', '30'],
-                  ['45m', '0', '45'],
-                  ['1 Hour', '1', '0'],
-                  ['1.5 Hours', '1', '30'],
-                  ['2 Hours', '2', '0'],
-                  ['2.5 Hours', '2', '30'],
-                  ['3 Hours', '3', '0'],
-                  ['4 Hours', '4', '0']
-                ].map(([lbl, h, m]) => {
-                  const isActive = manualHours === h && manualMinutes === m;
-                  return (
-                    <Chip
-                      key={lbl}
-                      label={lbl}
-                      active={isActive}
-                      onPress={() => {
-                        setManualHours(h);
-                        setManualMinutes(m);
-                      }}
-                    />
-                  );
-                })}
+                  'Theory & Reading',
+                  'PYQs & MCQs',
+                  'Mains Answer Writing',
+                  'Current Affairs',
+                  'Revision'
+                ].map(act => (
+                  <Chip
+                    key={act}
+                    label={act}
+                    active={manualActivity === act}
+                    onPress={() => setManualActivity(act)}
+                    style={{ marginRight: 6, marginBottom: 6 }}
+                  />
+                ))}
               </View>
 
-              {/* Custom Hours & Minutes Input */}
-              <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
-                <View style={{ flex: 1 }}>
-                  <Text style={txt(11, false, C.muted)}>Hours</Text>
+              {/* 5. Duration Studied: Just Hrs and Min */}
+              <Text style={txt(11, true, C.muted)}>DURATION STUDIED (HOURS &amp; MINUTES)</Text>
+              <View style={{ flexDirection: 'row', gap: 10, marginTop: 4, marginBottom: 12, width: '100%' }}>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={txt(11, false, C.muted)}>Hours (Hrs)</Text>
                   <TextInput
                     keyboardType="numeric"
                     value={manualHours}
@@ -5139,8 +5435,8 @@ export default function App() {
                     style={input}
                   />
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={txt(11, false, C.muted)}>Minutes</Text>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={txt(11, false, C.muted)}>Minutes (Min)</Text>
                   <TextInput
                     keyboardType="numeric"
                     value={manualMinutes}
@@ -5152,53 +5448,12 @@ export default function App() {
                 </View>
               </View>
 
-              {/* Activity Tag */}
-              <Text style={txt(11, true, C.muted)}>STUDY ACTIVITY</Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6, marginBottom: 12 }}>
-                {[
-                  '📖 Theory & Reading',
-                  '📝 PYQs & MCQs',
-                  '✍️ Mains Answer Writing',
-                  '📰 Current Affairs',
-                  '🔁 Revision'
-                ].map(act => (
-                  <Chip
-                    key={act}
-                    label={act}
-                    active={manualActivity === act}
-                    onPress={() => setManualActivity(act)}
-                  />
-                ))}
-              </View>
-
-              {/* Standard Book Quick Presets */}
-              <Text style={txt(11, true, C.muted)}>
-                {isOffline ? 'STANDARD REFERENCE BOOK PRESETS' : 'COMMON SESSION PRESETS'}
-              </Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6, marginBottom: 10 }}>
-                {[
-                  ['📖 M. Laxmikanth', 'M. Laxmikanth: Indian Polity - Chapter Reading'],
-                  ['📘 Spectrum Modern India', 'Rajiv Ahir Spectrum: Modern Indian History'],
-                  ['📗 NCERT GS Foundation', 'NCERT GS Core Textbooks Reading'],
-                  ['📙 Ramesh Singh Economy', 'Ramesh Singh: Indian Economy Chapter Study'],
-                  ['🏛️ G.C. Leong Geography', 'G.C. Leong: Certificate Physical Geography'],
-                  ['📚 Library Self-Study', 'Library Offline Self-Study & Notes Making']
-                ].map(([chipLbl, noteVal]) => (
-                  <Chip
-                    key={chipLbl}
-                    label={chipLbl}
-                    active={manualTopic.includes(chipLbl.split(' ')[1])}
-                    onPress={() => setManualTopic(noteVal)}
-                  />
-                ))}
-              </View>
-
-              {/* Topic / Book Note */}
+              {/* 6. Chapter / Topic Note (Optional) */}
               <Text style={txt(11, true, C.muted)}>CHAPTER / TOPIC NOTE (OPTIONAL)</Text>
               <TextInput
                 value={manualTopic}
                 onChangeText={setManualTopic}
-                placeholder="e.g. Laxmikanth Ch 7: Fundamental Rights + solved 25 PYQs"
+                placeholder="e.g. Fundamental Rights Article 19-22 notes & questions"
                 placeholderTextColor={C.muted}
                 style={input}
               />
@@ -5207,26 +5462,26 @@ export default function App() {
             {/* Modal Bottom Action */}
             <View
               style={{
-                padding: 16,
+                padding: 12,
                 borderTopWidth: 1,
                 borderColor: C.line,
                 backgroundColor: isDark ? '#1e293b' : '#f8fafc',
                 flexDirection: 'row',
-                gap: 10
+                gap: 8
               }}
             >
               <TouchableOpacity
                 onPress={() => setManualLogOpen(false)}
                 style={{
-                  paddingVertical: 11,
-                  paddingHorizontal: 16,
-                  borderRadius: 12,
+                  paddingVertical: 10,
+                  paddingHorizontal: 14,
+                  borderRadius: 10,
                   backgroundColor: C.soft,
                   alignItems: 'center',
                   justifyContent: 'center'
                 }}
               >
-                <Text style={txt(13, true, C.muted)}>Cancel</Text>
+                <Text style={txt(12, true, C.muted)}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={saveManualSession}
@@ -5234,16 +5489,16 @@ export default function App() {
                 style={{
                   flex: 1,
                   backgroundColor: isOffline ? '#059669' : C.blue,
-                  paddingVertical: 11,
-                  borderRadius: 12,
+                  paddingVertical: 10,
+                  borderRadius: 10,
                   alignItems: 'center',
                   justifyContent: 'center'
                 }}
               >
-                <Text style={txt(13, true, '#ffffff')}>
+                <Text style={txt(12, true, '#ffffff')}>
                   {isLoggingManual
                     ? 'Saving Session...'
-                    : `✓ Save ${manualHours || 0}h ${manualMinutes || 0}m Study Time`}
+                    : `Save ${manualHours || 0}h ${manualMinutes || 0}m Study Time`}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -5268,7 +5523,9 @@ export default function App() {
         style={{
           flex: 1,
           backgroundColor: C.bg,
-          paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0
+          paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+          width: '100%',
+          overflow: 'hidden'
         }}
       >
         <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={C.bg} />
@@ -5277,13 +5534,14 @@ export default function App() {
         {!focusMode && (
         <View
           style={{
-            paddingHorizontal: 18,
-            paddingVertical: 14,
+            paddingHorizontal: 14,
+            paddingVertical: 12,
             backgroundColor: C.cardBg,
             flexDirection: 'row',
             alignItems: 'center',
             borderBottomWidth: 1,
-            borderColor: C.line
+            borderColor: C.line,
+            width: '100%'
           }}
         >
           <View
@@ -5298,36 +5556,39 @@ export default function App() {
           >
             <Ionicons name="book-outline" color={C.blue} size={20} />
           </View>
-          <View style={{ flex: 1, marginLeft: 10 }}>
-            <Text style={txt(15, true)}>Abhyas Tracker</Text>
-            <Text style={txt(10, false, C.muted)}>
+          <View style={{ flex: 1, marginLeft: 10, minWidth: 0 }}>
+            <Text numberOfLines={1} style={txt(15, true)}>Abhyas Tracker</Text>
+            <Text numberOfLines={1} style={txt(10, false, C.muted)}>
               UPSC &amp; MPSC • {tab === 'Dashboard' ? t('dashboard') : tab === 'Timer' ? t('timer') : tab === 'Syllabus' ? t('syllabus') : tab === 'Planner' ? t('planner') : tab === 'Analytics' ? t('analytics') : (tab === 'Ticket Support' || tab === 'Support') ? t('ticketSupport', 'Ticket Support') : tab}
             </Text>
           </View>
 
-          {/* Clean Settings Button */}
+          {/* Clean Settings Button (Icon Symbol Only) */}
           <TouchableOpacity
             onPress={() => setSettingsOpen(true)}
+            accessibilityLabel="Settings"
             style={{
-              flexDirection: 'row',
+              width: 36,
+              height: 36,
+              borderRadius: 12,
               alignItems: 'center',
+              justifyContent: 'center',
               backgroundColor: isDark ? '#1e2942' : '#f0f4fd',
-              paddingHorizontal: 12,
-              paddingVertical: 7,
-              borderRadius: 14,
               borderWidth: 1,
               borderColor: isDark ? '#334155' : '#dbeafe',
-              gap: 6
+              position: 'relative'
             }}
           >
-            <Ionicons name="settings-outline" size={17} color={C.blue} />
-            <Text style={txt(12, true, C.blue)}>{t('settings')}</Text>
+            <Ionicons name="settings-outline" size={18} color={C.blue} />
             {unread.length > 0 && (
               <View
                 style={{
-                  width: 7,
-                  height: 7,
-                  borderRadius: 3.5,
+                  position: 'absolute',
+                  top: 6,
+                  right: 6,
+                  width: 8,
+                  height: 8,
+                  borderRadius: 4,
                   backgroundColor: '#e44242'
                 }}
               />
@@ -5337,7 +5598,7 @@ export default function App() {
         )}
 
         {/* Main Content Area */}
-        <ScrollView ref={mainScrollRef} style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 30 }}>
+        <ScrollView ref={mainScrollRef} style={{ flex: 1, width: '100%' }} contentContainerStyle={{ padding: 12, paddingBottom: 30, width: '100%', maxWidth: 720, alignSelf: 'center' }}>
           {notifOpen ? (
             <>
               <TouchableOpacity onPress={() => setNotifOpen(false)} style={{ marginBottom: 12 }}>
@@ -5349,13 +5610,13 @@ export default function App() {
               <Card style={{ borderColor: isDark ? '#1e3a5f' : '#bfdbfe', backgroundColor: isDark ? '#0f233a' : '#eff6ff' }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                   <Ionicons name="notifications" size={20} color={C.blue} style={{ marginRight: 8 }} />
-                  <Text style={txt(15, true, C.ink)}>🔔 Daily Study Routine Reminders</Text>
+                  <Text style={txt(15, true, C.ink)}>Daily Study Routine Reminders</Text>
                 </View>
                 <Text style={[txt(12, false, isDark ? '#94a3b8' : '#475569'), { lineHeight: 18, marginBottom: 12 }]}>
                   Automatic morning briefings at 7:00 AM (showing today's tasks) and evening planning alerts at 9:00 PM (to schedule tomorrow).
                 </Text>
                 <Button
-                  label="🔔 Enable Device Push / Browser Alerts"
+                  label="Enable Device Push / Browser Alerts"
                   onPress={requestBrowserReminder}
                 />
               </Card>
@@ -5363,8 +5624,8 @@ export default function App() {
               {/* Morning Protocol Card */}
               <Card>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text style={txt(11, true, '#d97706')}>🌅 07:00 AM MORNING BRIEFING PROTOCOL</Text>
-                  <Chip label="Daily Active" active style={{ paddingVertical: 4, paddingHorizontal: 8 }} />
+                  <Text style={txt(11, true, '#d97706')}>07:00 AM MORNING BRIEFING PROTOCOL</Text>
+                  <Chip label="Daily Active" active style={{ paddingVertical: 2, paddingHorizontal: 6, borderRadius: 10, marginRight: 0, marginBottom: 0 }} textStyle={{ fontSize: 9 }} />
                 </View>
                 <Text style={[txt(15, true), { marginTop: 6 }]}>Today's Target Briefing</Text>
                 <Text style={[txt(12, false, C.muted), { marginTop: 4, lineHeight: 18 }]}>
@@ -5373,15 +5634,15 @@ export default function App() {
                     : 'No tasks scheduled yet today. Open the planner to schedule your study sessions!'}
                 </Text>
                 <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
-                  <Button label="▶ Go to Study Timer" onPress={() => { setNotifOpen(false); handleStartFocus(todayReminderPlans[0]?.subjectId, todayReminderPlans[0]?.title); }} />
+                  <Button label="Go to Study Timer" onPress={() => { setNotifOpen(false); handleStartFocus(todayReminderPlans[0]?.subjectId, todayReminderPlans[0]?.title); }} />
                 </View>
               </Card>
 
               {/* Evening Protocol Card */}
               <Card>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text style={txt(11, true, '#6366f1')}>🌙 09:00 PM EVENING PLANNING PROTOCOL</Text>
-                  <Chip label="Daily Active" active style={{ paddingVertical: 4, paddingHorizontal: 8 }} />
+                  <Text style={txt(11, true, '#6366f1')}>09:00 PM EVENING PLANNING PROTOCOL</Text>
+                  <Chip label="Daily Active" active style={{ paddingVertical: 2, paddingHorizontal: 6, borderRadius: 10, marginRight: 0, marginBottom: 0 }} textStyle={{ fontSize: 9 }} />
                 </View>
                 <Text style={[txt(15, true), { marginTop: 6 }]}>Tomorrow's Schedule Plan</Text>
                 <Text style={[txt(12, false, C.muted), { marginTop: 4, lineHeight: 18 }]}>
@@ -5390,28 +5651,12 @@ export default function App() {
                     : 'Tomorrow currently has 0 tasks scheduled. Prepare tomorrow tonight to beat morning procrastination.'}
                 </Text>
                 <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
-                  <Button label="📅 Open Tomorrow Planner" onPress={() => { setNotifOpen(false); setPlannerView("Tomorrow's Plan"); setPlanDateType('tomorrow'); setTab('Planner'); }} />
+                  <Button label="Open Tomorrow Planner" onPress={() => { setNotifOpen(false); setPlannerView("Tomorrow's Plan"); setPlanDateType('tomorrow'); setTab('Planner'); }} />
                   {tomorrowReminderPlans.length === 0 && (
-                    <Button label="⚡ Auto-Plan Tomorrow" subtle onPress={autoPlanTomorrow} />
+                    <Button label="Auto-Plan Tomorrow" subtle onPress={autoPlanTomorrow} />
                   )}
                 </View>
               </Card>
-
-              <View style={{ marginTop: 8, marginBottom: 8 }}>
-                <Text style={txt(12, true, C.muted)}>REVISION & SPACED REPETITION NOTES</Text>
-              </View>
-              {notes.map(n => (
-                <Card key={n.id}>
-                  <Text style={txt(11, true, C.blue)}>SPACED REPETITION PROTOCOL</Text>
-                  <Text style={[txt(16, true), { marginTop: 6 }]}>{n.title}</Text>
-                  <Text style={[txt(13, false, C.muted), { marginTop: 6 }]}>{n.message}</Text>
-                  <Button
-                    label={(n.readBy || []).includes(user.id) ? 'Read ✓' : 'Mark as Read'}
-                    subtle
-                    onPress={() => markNote(n)}
-                  />
-                </Card>
-              ))}
             </>
           ) : tab === 'Dashboard' ? (
             <Dashboard />
