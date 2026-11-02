@@ -117,10 +117,10 @@ const ThemeContext = React.createContext({
 const useTheme = () => React.useContext(ThemeContext);
 
 const API =
-  Platform.OS === 'web'
+  process.env.EXPO_PUBLIC_API_URL ||
+  (Platform.OS === 'web'
     ? 'http://localhost:4000/api'
-    : (process.env.EXPO_PUBLIC_API_URL ||
-       'http://10.212.208.98:4000/api');
+    : 'http://10.0.2.2:4000/api');
 
 const today = () => new Date().toISOString().slice(0, 10);
 const tomorrow = () => {

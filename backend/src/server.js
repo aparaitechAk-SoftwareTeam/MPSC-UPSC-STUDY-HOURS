@@ -56,6 +56,11 @@ app.use(cors({
 
 app.use(express.json({ limit: '2mb' }));
 
+if (process.env.NODE_ENV === 'production' &&
+    (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32)) {
+  throw new Error('JWT_SECRET must be configured with at least 32 characters in production.');
+}
+
 const secret = process.env.JWT_SECRET || 'development-only-change-this-secret';
 const dbFile = path.join(__dirname, '../data/db.json');
 
@@ -71,10 +76,22 @@ async function withDb(mongoFn, jsonFn) {
     try {
       return await mongoFn();
     } catch (err) {
-      console.warn(`[DB Failover] MongoDB query failed (${err.message}). Seamlessly using local db.json.`);
+      if (process.env.NODE_ENV === 'production') {
+        console.error('[DB Error] MongoDB operation failed:', err.message);
+        throw err;
+      }
+
+      console.warn(
+        `[DB Failover] MongoDB query failed (${err.message}). Using local db.json.`
+      );
       return await jsonFn();
     }
   }
+
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('MongoDB is unavailable. Request cannot be processed safely.');
+  }
+
   return await jsonFn();
 }
 
@@ -185,11 +202,18 @@ function cleanDoc(doc) {
 // -------------------------------------------------------------
 // Health Check
 // -------------------------------------------------------------
-app.get('/api/health', (req, res) => res.json({
-  ok: true,
-  service: 'Abhyas Tracker API',
-  storage: isDbMongo() ? 'mongodb' : 'local-json'
-}));
+app.get('/api/health', (req, res) => {
+  const mongoReady = isDbMongo();
+  const production = process.env.NODE_ENV === 'production';
+  const healthy = mongoReady || !production;
+
+  res.status(healthy ? 200 : 503).json({
+    ok: healthy,
+    service: 'Abhyas Tracker API',
+    storage: mongoReady ? 'mongodb' : 'local-json',
+    databaseConnected: mongoReady
+  });
+});
 
 // -------------------------------------------------------------
 // OTP Verification & Forgot Password
@@ -510,42 +534,6 @@ app.post('/api/auth/login', async (req, res) => {
         if (user.passwordHash) {
             passwordMatches = bcrypt.compareSync(cleanPassword, user.passwordHash) ||
                               bcrypt.compareSync(password, user.passwordHash);
-        }
-
-        // Auto-heal / synchronize password for primary account (Bhumika Jadhav)
-        const isBhumika = (user.email && user.email.toLowerCase() === 'bhumikajadhav.aparaitech@gmail.com') ||
-                          user.id === '1792758354053' ||
-                          (user.phone && String(user.phone).includes('7972476760'));
-
-        if (!passwordMatches && isBhumika) {
-            const oldBackupHashes = [
-                '$2a$10$/Y0y55ZUCyCn/UDmz0Df2.HpsasZ17qBu5JC1l63UG0XdE2dMUel6',
-                '$2a$10$EnfnSPWQYUG7Ddt5jCclq.7.tdFnRTnfTjTXZQ8o3QQ.Oz/1X4Zca'
-            ];
-            const matchedOld = oldBackupHashes.some(h => bcrypt.compareSync(cleanPassword, h) || bcrypt.compareSync(password, h));
-            if (matchedOld || cleanPassword.length >= 4) {
-                passwordMatches = true;
-                const newHash = bcrypt.hashSync(cleanPassword, 10);
-                user.passwordHash = newHash;
-                if (isDbMongo()) {
-                    try {
-                        await User.updateOne({ _id: user._id || user.id }, { $set: { passwordHash: newHash } });
-                    } catch (mErr) {
-                        console.warn('[AUTH] Mongo password update sync skipped:', mErr.message);
-                    }
-                }
-                try {
-                    const db = readJsonDb();
-                    const uInDb = (db.users || []).find(x => x.id === user.id || (x.email && x.email.toLowerCase() === (user.email || '').toLowerCase()));
-                    if (uInDb) {
-                        uInDb.passwordHash = newHash;
-                        writeJsonDb(db);
-                    }
-                } catch (e) {
-                    console.error('[AUTH] JSON DB password sync error:', e.message);
-                }
-                console.log(`[AUTH] Successfully auto-synchronized password for ${user.email}`);
-            }
         }
 
         if (!passwordMatches) {
@@ -1603,36 +1591,57 @@ app.post('/api/admin/notifications', auth('admin'), async (req, res) => {
 const port = process.env.PORT || 4000;
 
 async function startServer() {
+    const isProduction = process.env.NODE_ENV === 'production';
+
+    if (isProduction && !process.env.MONGODB_URI) {
+        throw new Error('MONGODB_URI is required in production.');
+    }
+
     if (process.env.MONGODB_URI) {
         try {
             await connectDB();
             isMongoConnected = true;
             console.log('[Server] Connected to MongoDB Atlas');
         } catch (err) {
-            console.error(`[Server] MongoDB connection failed: ${err.message}. Falling back to local data/db.json storage.`);
             isMongoConnected = false;
+
+            if (isProduction) {
+                throw new Error(
+                    `Production startup aborted: MongoDB connection failed. ${err.message}`
+                );
+            }
+
+            console.error(
+                `[Server] MongoDB connection failed: ${err.message}. ` +
+                'Falling back to local data/db.json storage.'
+            );
         }
     } else {
-        console.log('[Server] MONGODB_URI not provided; running with local data/db.json storage.');
         isMongoConnected = false;
+        console.log(
+            '[Server] MONGODB_URI not provided; running with local data/db.json storage.'
+        );
     }
 
     const server = app.listen(port, '0.0.0.0', () => {
-        console.log(`Abhyas API listening on 0.0.0.0:${port} (http://localhost:${port})`);
+        console.log(
+            `Abhyas API listening on 0.0.0.0:${port} (http://localhost:${port})`
+        );
     });
+
     server.on('error', (err) => {
         console.error('[Server Listen Error]', err.message);
     });
 
-    // Background auto-reconnect interval if connection drops or network changes
+    // Retry MongoDB connection if it drops or the network changes.
     setInterval(async () => {
         if (!isDbMongo() && process.env.MONGODB_URI) {
             try {
                 await connectDB();
                 isMongoConnected = true;
-                console.log('[Server] Reconnected to MongoDB Atlas in background!');
+                console.log('[Server] Reconnected to MongoDB Atlas.');
             } catch (_) {
-                // Silently wait for next interval
+                // Retry on the next interval.
             }
         }
     }, 15000);
