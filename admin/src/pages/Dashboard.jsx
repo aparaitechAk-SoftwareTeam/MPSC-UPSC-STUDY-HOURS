@@ -68,6 +68,41 @@ const statusCls = {
   Missed: "bg-danger-soft text-destructive",
 };
 
+function computeLast7DaysFromSessions(sessions = [], today = new Date()) {
+  const result = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    d.setHours(0, 0, 0, 0);
+
+    const nextD = new Date(d);
+    nextD.setDate(d.getDate() + 1);
+
+    const daySessions = sessions.filter((s) => {
+      if (!s.startedAt) return false;
+      const sDate = new Date(s.startedAt);
+      return sDate >= d && sDate < nextD;
+    });
+
+    const totalMinutes = daySessions.reduce((acc, s) => acc + (Number(s.minutes) || 0), 0);
+    const hours = parseFloat((totalMinutes / 60).toFixed(1));
+
+    result.push({
+      day: d.toLocaleDateString("en-IN", { weekday: "short" }),
+      date: d.toLocaleDateString("en-IN", { day: "numeric", month: "short" }),
+      hours,
+    });
+  }
+  return result;
+}
+
+function computeWeeklyGoal(days, targetHours = 50) {
+  const completed = parseFloat(days.reduce((acc, d) => acc + (Number(d.hours) || 0), 0).toFixed(1));
+  const remaining = Math.max(0, parseFloat((targetHours - completed).toFixed(1)));
+  const percent = Math.min(100, Math.round((completed / targetHours) * 100));
+  return { goal: targetHours, completed, remaining, percent };
+}
+
 export default function Dashboard({
   overview,
   users: externalUsers,
@@ -78,11 +113,24 @@ export default function Dashboard({
   error = "",
   onSignOut,
 } = {}) {
-  const isDemo = !overview;
+  const isDemo = !overview && (!externalSessions || externalSessions.length === 0);
   const today = useToday();
-  const days = useMemo(() => (today ? getLast7Days(today) : []), [today]);
+  const days = useMemo(() => {
+    if (!today) return [];
+    if (externalSessions && externalSessions.length > 0) {
+      return computeLast7DaysFromSessions(externalSessions, today);
+    }
+    return isDemo ? getLast7Days(today) : computeLast7DaysFromSessions([], today);
+  }, [today, externalSessions, isDemo]);
+
   const defaultSessions = useMemo(() => (today ? getRecentSessions(today) : []), [today]);
-  const goal = getWeeklyGoal();
+  const goal = useMemo(() => {
+    if (externalSessions && externalSessions.length > 0) {
+      return computeWeeklyGoal(days, 50);
+    }
+    return isDemo ? getWeeklyGoal() : computeWeeklyGoal(days, 50);
+  }, [days, externalSessions, isDemo]);
+
   const [tasks, setTasks] = useState(null);
   const taskList = tasks ?? externalTasks ?? (today ? getTasks(today) : []);
   const activeSubjects = externalSubjects ?? subjects;
@@ -126,16 +174,6 @@ export default function Dashboard({
   const focusSessionsCount =
     overview?.sessions ?? (externalSessions ? externalSessions.length : loading ? "..." : 0);
 
-  // 4. Study Hours: total recorded minutes converted to hours
-  const studyHoursValue =
-    overview?.minutes != null
-      ? (overview.minutes / 60).toFixed(1)
-      : externalSessions
-      ? (externalSessions.reduce((sum, s) => sum + (s.minutes || 0), 0) / 60).toFixed(1)
-      : loading
-      ? "..."
-      : "0.0";
-
   // 4. Support Tickets count & awaiting response
   const [ticketsList, setTicketsList] = useState(null);
 
@@ -143,7 +181,11 @@ export default function Dashboard({
     let cancelled = false;
     const token = localStorage.getItem("abhyas_admin_token");
     if (!token) return;
-    const API = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
+    const API = (typeof window !== "undefined" && window.location?.hostname)
+      ? (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+          ? "http://localhost:4000/api"
+          : `http://${window.location.hostname}:4000/api`)
+      : (import.meta.env.VITE_API_URL || "http://localhost:4000/api");
     fetch(`${API}/admin/tickets`, {
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -160,12 +202,12 @@ export default function Dashboard({
   }, []);
 
   const ticketsCount =
-    ticketsList && ticketsList.length > 1
+    ticketsList && ticketsList.length > 0
       ? ticketsList.length
       : 12;
 
   const awaitingCount =
-    ticketsList && ticketsList.length > 1
+    ticketsList && ticketsList.length > 0
       ? ticketsList.filter((t) => t.status !== "Resolved").length
       : 3;
 
@@ -219,7 +261,7 @@ export default function Dashboard({
 
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-5">
           <div className="flex flex-col gap-6 xl:col-span-3">
-            <Panel title="Study Activity · Last 7 days" action={<DemoBadge />}>
+            <Panel title="Study Activity · Last 7 days" action={isDemo ? <DemoBadge /> : null}>
               <div className="h-64">
                 {days.length === 0 ? (
                   <div className="h-full animate-pulse rounded-lg bg-muted" />
@@ -242,7 +284,7 @@ export default function Dashboard({
               </div>
             </Panel>
 
-            <Panel title="Weekly Study Goal" action={<DemoBadge />}>
+            <Panel title="Weekly Study Goal" action={isDemo ? <DemoBadge /> : null}>
               <div className="flex flex-col items-center gap-6 sm:flex-row">
                 <div
                   className="relative grid h-32 w-32 shrink-0 place-items-center rounded-full"

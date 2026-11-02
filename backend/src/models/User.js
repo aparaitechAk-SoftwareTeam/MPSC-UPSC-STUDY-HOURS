@@ -25,16 +25,6 @@ const userSchema = new mongoose.Schema(
       trim: true,
       default: ''
     },
-    examTarget: {
-      type: String,
-      trim: true,
-      default: 'MPSC / UPSC'
-    },
-    preferredSubjects: {
-      type: String,
-      trim: true,
-      default: 'Polity, History'
-    },
     role: {
       type: String,
       required: true,
