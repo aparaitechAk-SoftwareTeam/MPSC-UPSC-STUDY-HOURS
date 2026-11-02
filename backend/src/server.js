@@ -1,8 +1,4 @@
 require('dotenv').config();
-const dns = require('dns');
-try {
-  dns.setServers(['8.8.8.8', '1.1.1.1']);
-} catch (_) {}
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
@@ -37,9 +33,10 @@ const app = express();
 // Support Private Network Access and instant preflights for Chrome/Edge on ANY Wi-Fi
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Private-Network', 'true');
+  const origin = req.headers.origin || '*';
+  res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
   if (req.method === 'OPTIONS') {
-    res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,Accept,X-Requested-With,Access-Control-Request-Private-Network');
     return res.sendStatus(204);
@@ -60,39 +57,76 @@ const secret = process.env.JWT_SECRET || 'development-only-change-this-secret';
 const dbFile = path.join(__dirname, '../data/db.json');
 
 let isMongoConnected = false;
+let isMongoCircuitOpen = false;
+let lastMongoFailTime = 0;
+const MONGO_CIRCUIT_COOLDOWN = 60000; // 60s cooldown before retrying Atlas
+const MONGO_QUERY_TIMEOUT = 1200; // 1.2s fast timeout
 
 function isDbMongo() {
+  if (isMongoCircuitOpen) {
+    if (Date.now() - lastMongoFailTime > MONGO_CIRCUIT_COOLDOWN) {
+      isMongoCircuitOpen = false;
+    } else {
+      return false; // Skip MongoDB, use local db.json immediately (<1ms)
+    }
+  }
   return mongoose.connection.readyState === 1;
 }
 
-// Resilient DB executor: attempts MongoDB if ready, automatically falls back to local JSON db on error/network drop
+// Resilient DB executor: attempts MongoDB if ready and circuit is closed.
+// If query stalls (>1.2s) or network drops, trips the circuit breaker immediately.
+// All subsequent and concurrent requests respond instantaneously (<1ms) via local db.json.
 async function withDb(mongoFn, jsonFn) {
   if (isDbMongo()) {
     try {
-      return await mongoFn();
+      let timer;
+      const timeoutPromise = new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error('MongoDB query timed out on network switch')), MONGO_QUERY_TIMEOUT);
+      });
+      const result = await Promise.race([mongoFn(), timeoutPromise]);
+      clearTimeout(timer);
+      return result;
     } catch (err) {
-      console.warn(`[DB Failover] MongoDB query failed (${err.message}). Seamlessly using local db.json.`);
+      isMongoCircuitOpen = true;
+      lastMongoFailTime = Date.now();
+      console.warn(`[DB Failover] MongoDB unavailable (${err.message}). Tripping circuit breaker, using local db.json.`);
       return await jsonFn();
     }
   }
   return await jsonFn();
 }
 
+let loggedDisconnectNotice = false;
+
 mongoose.connection.on('connected', () => {
   console.log('[MongoDB] Connected to MongoDB Atlas.');
   isMongoConnected = true;
+  isMongoCircuitOpen = false;
+  loggedDisconnectNotice = false;
 });
 mongoose.connection.on('disconnected', () => {
-  console.warn('[MongoDB] Connection lost. Seamlessly routing requests to local JSON database.');
   isMongoConnected = false;
+  isMongoCircuitOpen = true;
+  lastMongoFailTime = Date.now();
+  if (!loggedDisconnectNotice) {
+    console.log('[MongoDB] Connection dropped or network switched. Operating seamlessly via local data/db.json.');
+    loggedDisconnectNotice = true;
+  }
 });
 mongoose.connection.on('error', (err) => {
-  console.warn(`[MongoDB] Network error (${err.message}). Using local JSON database.`);
   isMongoConnected = false;
+  isMongoCircuitOpen = true;
+  lastMongoFailTime = Date.now();
+  if (!loggedDisconnectNotice) {
+    console.log(`[MongoDB] Atlas unreachable on this network (${err.message}). Operating seamlessly via local data/db.json.`);
+    loggedDisconnectNotice = true;
+  }
 });
 mongoose.connection.on('reconnected', () => {
   console.log('[MongoDB] Connection restored. Synchronizing with MongoDB Atlas.');
   isMongoConnected = true;
+  isMongoCircuitOpen = false;
+  loggedDisconnectNotice = false;
 });
 
 function readJsonDb() {
@@ -183,8 +217,35 @@ function cleanDoc(doc) {
 }
 
 // -------------------------------------------------------------
-// Health Check
+// Root Landing & Health Check
 // -------------------------------------------------------------
+app.get('/', (req, res) => {
+  res.send(`<!DOCTYPE html>
+<html>
+  <head>
+    <title>Abhyas Tracker API</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a0f1d; color: #f8fafc; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
+      .card { background: #131b2e; border: 1px solid #1e2d4d; border-radius: 16px; padding: 32px; max-width: 480px; width: 100%; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+      h1 { margin-top: 0; font-size: 22px; color: #60a5fa; }
+      p { color: #94a3b8; font-size: 14px; line-height: 1.6; }
+      .btn { display: inline-block; background: #2563eb; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 16px; transition: background 0.2s; }
+      .btn:hover { background: #1d4ed8; }
+      .status { display: inline-block; margin-top: 10px; font-size: 12px; color: #34d399; background: #064e3b; padding: 4px 12px; border-radius: 20px; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>Abhyas Tracker Backend API</h1>
+      <div class="status">Server Active & Healthy</div>
+      <p>The backend API is running on port 4000. Open the interactive web application below:</p>
+      <a class="btn" href="http://localhost:8082">Open Web App (Port 8082)</a>
+    </div>
+  </body>
+</html>`);
+});
+
 app.get('/api/health', (req, res) => res.json({
   ok: true,
   service: 'Abhyas Tracker API',
@@ -232,6 +293,7 @@ app.post('/api/auth/send-otp', async (req, res) => {
 
   if (method === 'mobile' || !cleanTarget.includes('@')) {
     const cleanMobile = cleanTarget.replace(/\D/g, '');
+    let user = null;
     try {
       user = await withDb(
         () => User.findOne({ $or: [{ phone: cleanMobile }, { mobile: cleanMobile }] }),
@@ -1024,6 +1086,76 @@ app.patch('/api/notifications/:id/read', auth(), async (req, res) => {
 });
 
 // -------------------------------------------------------------
+// Abhyas Mitra - Study Companion Chat Endpoint
+// -------------------------------------------------------------
+const { processMitraMessage } = require('./mitraEngine');
+
+app.post('/api/mitra/chat', async (req, res) => {
+    try {
+        // Optional auth: parse user if token provided, but allow non-logged-in access too
+        let authenticatedUser = null;
+        try {
+            const t = (req.headers.authorization || '').replace(/^Bearer /, '');
+            if (t) authenticatedUser = jwt.verify(t, secret);
+        } catch {}
+
+        const { message, lang = 'en', geminiKey: bodyGeminiKey } = req.body || {};
+        if (!message || !String(message).trim()) {
+            return res.status(400).json({ error: 'Message is required' });
+        }
+
+        const geminiKey = bodyGeminiKey || req.headers['x-gemini-key'] || process.env.GEMINI_API_KEY;
+
+        // Fetch student's real study data to give personalized context if logged in
+        let sessions = [];
+        let plans = [];
+        let topicProgress = [];
+
+        if (authenticatedUser && authenticatedUser.id) {
+            [sessions, plans, topicProgress] = await Promise.all([
+                withDb(
+                    () => Session.find({ userId: authenticatedUser.id }).lean(),
+                    () => (readJsonDb().sessions || []).filter(s => s.userId === authenticatedUser.id)
+                ),
+                withDb(
+                    () => Plan.find({ userId: authenticatedUser.id }).lean(),
+                    () => (readJsonDb().plans || []).filter(p => p.userId === authenticatedUser.id)
+                ),
+                withDb(
+                    () => TopicProgress.find({ userId: authenticatedUser.id }).lean(),
+                    () => (readJsonDb().topicProgress || []).filter(tp => tp.userId === authenticatedUser.id)
+                )
+            ]);
+        }
+
+        const reply = await processMitraMessage({
+            message,
+            lang,
+            user: authenticatedUser,
+            geminiKey,
+            sessions: (sessions || []).map(cleanDoc),
+            plans: (plans || []).map(cleanDoc),
+            topicProgress: (topicProgress || []).map(cleanDoc)
+        });
+
+        res.json({
+            ok: true,
+            reply: reply.text,
+            action: reply.action || null,
+            suggestedActionLabel: reply.suggestedActionLabel || null,
+            helpline: reply.helpline || null,
+            quizAnswer: reply.quizAnswer || null,
+            explanation: reply.explanation || null,
+            quickReplies: reply.quickReplies || null,
+            timestamp: new Date().toISOString()
+        });
+    } catch (err) {
+        console.error('[Abhyas Mitra] Error processing message:', err);
+        res.status(500).json({ error: 'Abhyas Mitra is momentarily unavailable. Please try again.' });
+    }
+});
+
+// -------------------------------------------------------------
 // Support Tickets Routes (Student)
 // -------------------------------------------------------------
 app.get('/api/tickets', auth(), async (req, res) => {
@@ -1042,17 +1174,18 @@ app.get('/api/tickets', auth(), async (req, res) => {
 
 app.post('/api/tickets', auth(), async (req, res) => {
     try {
-        const { type, subject, message } = req.body || {};
-        if (!type || !message || !message.trim()) {
+        const rawType = req.body?.type || req.body?.category || 'General';
+        const { subject, message } = req.body || {};
+        if (!rawType || !message || !String(message).trim()) {
             return res.status(400).json({ error: 'Category and message are required' });
         }
         const now = new Date().toISOString();
         const obj = {
             id: Date.now().toString(),
             userId: req.user.id,
-            type,
-            subject: (subject && subject.trim()) ? subject.trim() : `${type} Request`,
-            message: message.trim(),
+            type: rawType,
+            subject: (subject && String(subject).trim()) ? String(subject).trim() : `${rawType} Request`,
+            message: String(message).trim(),
             status: 'Open',
             createdAt: now,
             updatedAt: now,
@@ -1624,7 +1757,7 @@ async function startServer() {
         console.error('[Server Listen Error]', err.message);
     });
 
-    // Background auto-reconnect interval if connection drops or network changes
+    // Background auto-reconnect interval if connection drops or network changes (every 2 minutes)
     setInterval(async () => {
         if (!isDbMongo() && process.env.MONGODB_URI) {
             try {
@@ -1632,10 +1765,10 @@ async function startServer() {
                 isMongoConnected = true;
                 console.log('[Server] Reconnected to MongoDB Atlas in background!');
             } catch (_) {
-                // Silently wait for next interval
+                // Silently wait for next 2-minute cycle
             }
         }
-    }, 15000);
+    }, 120000);
 
     return server;
 }

@@ -416,7 +416,7 @@ export default function TicketSupportScreen({
                 color: activeSubTab === 'create' ? C.blue : C.muted
               }}
             >
-              ✍️ Create Ticket
+              Create Ticket
             </Text>
           </TouchableOpacity>
 
@@ -438,7 +438,7 @@ export default function TicketSupportScreen({
                 color: activeSubTab === 'list' ? C.blue : C.muted
               }}
             >
-              📋 View My Tickets {tickets.length > 0 ? `(${tickets.length})` : ''}
+              View My Tickets {tickets.length > 0 ? `(${tickets.length})` : ''}
             </Text>
           </TouchableOpacity>
         </View>
@@ -1139,7 +1139,7 @@ export default function TicketSupportScreen({
                     }}
                   >
                     <Text style={{ fontSize: 13, fontWeight: '700', color: C.blue }}>
-                      ✎ Edit
+                      Edit
                     </Text>
                   </TouchableOpacity>
                 )}
