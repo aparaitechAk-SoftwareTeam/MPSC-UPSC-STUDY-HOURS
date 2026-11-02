@@ -96,7 +96,17 @@ function App() {
   useEffect(() => {
     let cancelled = false;
     async function verifySession() {
-      const stored = localStorage.getItem('abhyas_admin_token');
+      let stored = localStorage.getItem('abhyas_admin_token');
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlToken = urlParams.get('token');
+        if (urlToken) {
+          stored = urlToken;
+          localStorage.setItem('abhyas_admin_token', urlToken);
+          window.history.replaceState({}, '', window.location.pathname);
+        }
+      } catch {}
+
       if (!stored) {
         setChecking(false);
         return;

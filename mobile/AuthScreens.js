@@ -731,6 +731,17 @@ export default function AuthScreens({
       if (!res.ok) {
         throw new Error(data.error || "Invalid administrator credentials.");
       }
+      if (data.user?.role !== "admin") {
+        throw new Error("Access restricted: Administrator account required.");
+      }
+
+      // If running on Web, immediately open the Admin Portal on port 5173!
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        const adminHost = window.location.hostname || 'localhost';
+        window.location.href = `http://${adminHost}:5173/?token=${encodeURIComponent(data.token)}`;
+        return;
+      }
+
       if (typeof onLogin === "function") {
         await onLogin({
           token: data.token,
@@ -1038,7 +1049,7 @@ export default function AuthScreens({
                         ) : (
                           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center" }}>
                             <Ionicons name="shield-checkmark" size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
-                            <Text style={styles.primaryButtonText}>Sign In as Admin</Text>
+                            <Text style={styles.primaryButtonText}>Sign In & Open Admin Portal</Text>
                           </View>
                         )}
                       </TouchableOpacity>
