@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 const API = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
 
 export default function SignIn({ onLoginSuccess }) {
-  const [email, setEmail] = useState("admin@abhyas.local");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
