@@ -1,6 +1,5 @@
-﻿
-package com.aparaitech.abhyastracker
-
+﻿package com.aparaitech.abhyastracker
+import android.app.admin.DevicePolicyManager
 import android.app.Activity
 import android.app.ActivityManager
 import android.content.Context
@@ -17,19 +16,20 @@ class FocusLockModule(
 
     override fun getName(): String = "FocusLock"
 
-    private fun lockTaskMode(): Int {
-        val activity = appContext.currentActivity
-            ?: return ActivityManager.LOCK_TASK_MODE_NONE
-
-        val manager = activity.getSystemService(
+    private fun getActivityManager(activity: Activity): ActivityManager {
+        return activity.getSystemService(
             Context.ACTIVITY_SERVICE
         ) as ActivityManager
+    }
+
+    @Suppress("DEPRECATION")
+    private fun getLockTaskMode(activity: Activity): Int {
+        val manager = getActivityManager(activity)
 
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             manager.lockTaskModeState
         } else {
-            @Suppress("DEPRECATION")
-            if (activity.isInLockTaskModeCompat()) {
+            if (manager.isInLockTaskMode) {
                 ActivityManager.LOCK_TASK_MODE_PINNED
             } else {
                 ActivityManager.LOCK_TASK_MODE_NONE
@@ -37,26 +37,41 @@ class FocusLockModule(
         }
     }
 
-    @Suppress("DEPRECATION")
-    private fun Activity.isInLockTaskModeCompat(): Boolean {
-        val manager = getSystemService(
-            Context.ACTIVITY_SERVICE
-        ) as ActivityManager
-        return manager.isInLockTaskMode
-    }
+    private fun isLockTaskPermitted(activity: Activity): Boolean {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        val policyManager = activity.getSystemService(
+            Context.DEVICE_POLICY_SERVICE
+        ) as DevicePolicyManager
 
-    private fun createStatus() =
+        policyManager.isLockTaskPermitted(activity.packageName)
+    } else {
+        false
+    }
+}
+    private fun createStatus(activity: Activity) =
         Arguments.createMap().apply {
-            val mode = lockTaskMode()
+            val mode = getLockTaskMode(activity)
 
             putBoolean(
                 "active",
                 mode != ActivityManager.LOCK_TASK_MODE_NONE
             )
+
+            putBoolean(
+                "pinned",
+                mode == ActivityManager.LOCK_TASK_MODE_PINNED
+            )
+
             putBoolean(
                 "kioskMode",
                 mode == ActivityManager.LOCK_TASK_MODE_LOCKED
             )
+
+            putBoolean(
+                "lockTaskPermitted",
+                isLockTaskPermitted(activity)
+            )
+
             putString(
                 "mode",
                 when (mode) {
@@ -70,9 +85,23 @@ class FocusLockModule(
     @ReactMethod
     fun getPinningStatus(promise: Promise) {
         try {
-            promise.resolve(createStatus())
+            val activity = appContext.currentActivity
+
+            if (activity == null) {
+                promise.reject(
+                    "NO_ACTIVITY",
+                    "No active Android activity"
+                )
+                return
+            }
+
+            promise.resolve(createStatus(activity))
         } catch (error: Exception) {
-            promise.reject("STATUS_FAILED", error.message, error)
+            promise.reject(
+                "STATUS_FAILED",
+                error.message ?: "Could not read lock status",
+                error
+            )
         }
     }
 
@@ -81,20 +110,30 @@ class FocusLockModule(
         val activity = appContext.currentActivity
 
         if (activity == null) {
-            promise.reject("NO_ACTIVITY", "No active Android activity")
+            promise.reject(
+                "NO_ACTIVITY",
+                "No active Android activity"
+            )
             return
         }
 
         activity.runOnUiThread {
             try {
-                if (lockTaskMode() == ActivityManager.LOCK_TASK_MODE_NONE) {
+                val currentMode = getLockTaskMode(activity)
+
+                if (currentMode == ActivityManager.LOCK_TASK_MODE_NONE) {
                     activity.startLockTask()
                 }
 
-                // Report the mode Android actually entered.
-                promise.resolve(createStatus())
+                // Return the actual mode entered by Android.
+                // PINNED is not the same as fully restricted kiosk mode.
+                promise.resolve(createStatus(activity))
             } catch (error: Exception) {
-                promise.reject("PINNING_FAILED", error.message, error)
+                promise.reject(
+                    "PINNING_FAILED",
+                    error.message ?: "Could not start Android screen pinning",
+                    error
+                )
             }
         }
     }
@@ -104,19 +143,28 @@ class FocusLockModule(
         val activity = appContext.currentActivity
 
         if (activity == null) {
-            promise.reject("NO_ACTIVITY", "No active Android activity")
+            promise.reject(
+                "NO_ACTIVITY",
+                "No active Android activity"
+            )
             return
         }
 
         activity.runOnUiThread {
             try {
-                if (lockTaskMode() != ActivityManager.LOCK_TASK_MODE_NONE) {
+                val currentMode = getLockTaskMode(activity)
+
+                if (currentMode != ActivityManager.LOCK_TASK_MODE_NONE) {
                     activity.stopLockTask()
                 }
 
-                promise.resolve(true)
+                promise.resolve(createStatus(activity))
             } catch (error: Exception) {
-                promise.reject("UNPINNING_FAILED", error.message, error)
+                promise.reject(
+                    "UNPINNING_FAILED",
+                    error.message ?: "Could not stop Android screen pinning",
+                    error
+                )
             }
         }
     }
