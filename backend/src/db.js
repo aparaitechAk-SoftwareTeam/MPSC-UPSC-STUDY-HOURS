@@ -6,10 +6,15 @@ const mongoose = require('mongoose');
 
 async function connectDB() {
   const uri = process.env.MONGODB_URI;
+  const dbName = process.env.DB_NAME || 'mpsc_upsc_tracker';
 
   if (!uri) {
-    const error = new Error('MONGODB_URI is not defined in environment variables');
-    console.error('[Database] Connection configuration error: MONGODB_URI missing in .env');
+    const error = new Error(
+      'MONGODB_URI is not defined in environment variables'
+    );
+    console.error(
+      '[Database] Connection configuration error: MONGODB_URI missing in .env'
+    );
     throw error;
   }
 
@@ -18,7 +23,10 @@ async function connectDB() {
       serverSelectionTimeoutMS: 10000,
     });
 
-    console.log(`[Database] MongoDB connected successfully to host: ${conn.connection.host}`);
+    console.log(
+      `[Database] Connected to host: ${conn.connection.host}, database: ${conn.connection.name}`
+    );
+
     return conn;
   } catch (err) {
     console.error(`[Database] Connection error: ${err.message}`);

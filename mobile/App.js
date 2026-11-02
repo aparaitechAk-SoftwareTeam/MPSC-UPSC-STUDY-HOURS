@@ -22,6 +22,8 @@ import Svg, { Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { translations, AVAILABLE_LANGUAGES, getTranslation, getSubjectName, getTopicName, getChapterName, getTaskTitle, getStatusLabel } from './translations';
 import TicketSupportScreen from './TicketSupportScreen';
+import NotificationsScreen from './NotificationsScreen';
+import StudentProfileScreen from './StudentProfileScreen';
 
 const LIGHT_THEME = {
   isDark: false,
@@ -1566,6 +1568,7 @@ export default function App() {
       return [...prev, { topicId: topic.id, subjectId, status: nextStatus }];
     });
 
+  async function quickScheduleTopic(topic, subjectName, subjectId) {
     try {
       await req('/topic-progress/' + topic.id, 'PATCH', { status: nextStatus, subjectId });
       await refresh();
@@ -5648,7 +5651,94 @@ export default function App() {
                   lineHeight: 21
                 }}
               >
-                Are you sure you want to leave Focus Mode and return to normal navigation?
+                Are you sure you want to exit Focus Mode?
+              </Text>
+
+              <View style={{ flexDirection: 'row', gap: 12 }}>
+                <TouchableOpacity
+                  onPress={() => setExitFocusConfirmOpen(false)}
+                  style={{
+                    flex: 1,
+                    padding: 13,
+                    borderRadius: 10,
+                    backgroundColor: C.soft,
+                    alignItems: 'center',
+                  }}
+                >
+                  <Text style={{ color: C.blue, fontWeight: '600' }}>
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => {
+                    if (deepZenSessionActive) {
+                      setExitFocusConfirmOpen(false);
+                      return;
+                    }
+
+                    setExitFocusConfirmOpen(false);
+                    setFocusMode(false);
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: 13,
+                    borderRadius: 10,
+                    backgroundColor: C.blue,
+                    alignItems: 'center',
+                  }}
+                >
+                  <Text style={{ color: C.white, fontWeight: '600' }}>
+                    Exit
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* Exit Focus Mode confirmation dialog */}
+        {exitFocusConfirmOpen && (
+          <View
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(15, 23, 42, 0.5)',
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: 24,
+              zIndex: 1000,
+              elevation: 21,
+            }}
+          >
+            <View
+              style={{
+                width: '100%',
+                maxWidth: 380,
+                backgroundColor: C.white,
+                borderRadius: 18,
+                padding: 24,
+                borderWidth: 1,
+                borderColor: C.line,
+              }}
+            >
+              <Text style={{ fontSize: 20, fontWeight: '700', color: C.ink }}>
+                Exit Focus Mode?
+              </Text>
+
+              <Text
+                style={{
+                  marginTop: 10,
+                  marginBottom: 24,
+                  color: C.muted,
+                  fontSize: 14,
+                  lineHeight: 21,
+                }}
+              >
+                Are you sure you want to exit Focus Mode?
               </Text>
 
               <View style={{ flexDirection: 'row', gap: 12 }}>
@@ -5669,6 +5759,11 @@ export default function App() {
 
                 <TouchableOpacity
                   onPress={() => {
+                    if (deepZenSessionActive) {
+                      setExitFocusConfirmOpen(false);
+                      return;
+                    }
+
                     setExitFocusConfirmOpen(false);
                     setFocusMode(false);
                   }}
@@ -5688,6 +5783,8 @@ export default function App() {
             </View>
           </View>
         )}
+
+
       </SafeAreaView>
     </ThemeContext.Provider>
   );
