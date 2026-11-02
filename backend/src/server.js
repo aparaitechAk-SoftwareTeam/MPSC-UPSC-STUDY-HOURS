@@ -1290,14 +1290,17 @@ app.get('/api/analytics', auth(), async (req, res) => {
         const daysStudiedLast30 = daily.filter(day => day.minutes > 0).length;
 
         res.json({
-            sessionCount: sessions.length,
-            totalMinutes: minutes,
-            averageFocus: focus,
-            weekly: sessions.slice(-7).map(s => ({
-                date: (s.startedAt || '').slice(0, 10),
-                minutes: Number(s.minutes) || 0
-            }))
-        });
+    sessionCount: sessions.length,
+    totalMinutes: minutes,
+    averageFocus: focus,
+    currentStreak,
+    daysStudiedLast30,
+    daily,
+    weekly: sessions.slice(-7).map(s => ({
+        date: (s.startedAt || '').slice(0, 10),
+        minutes: Number(s.minutes) || 0
+    }))
+});
     } catch (err) {
         console.error('Failed to calculate analytics:', err);
         res.status(500).json({
