@@ -17,12 +17,11 @@ import Tickets from '@/pages/Tickets';
 import SignIn from '@/pages/SignIn';
 import { initProfileFromUser, signOutProfile } from '@/lib/profile-store';
 
-const API = import.meta.env.VITE_API_URL ||
-  ((typeof window !== 'undefined' && window.location?.hostname)
-    ? (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-        ? 'http://localhost:4000/api'
-        : `http://${window.location.hostname}:4000/api`)
-    : 'http://localhost:4000/api');
+const API = (typeof window !== 'undefined' && window.location?.hostname)
+  ? (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+      ? 'http://localhost:4000/api'
+      : `http://${window.location.hostname}:4000/api`)
+  : (import.meta.env.VITE_API_URL || 'http://localhost:4000/api');
 
 function App() {
   // The token starts empty: nothing protected renders until the stored token is verified below.
