@@ -13,6 +13,7 @@ import {
   Modal
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { getTranslation } from './translations';
 
 const SUPPORT_EMAIL =
   process.env.EXPO_PUBLIC_SUPPORT_EMAIL || 'support@abhyas.local';
@@ -43,8 +44,10 @@ export default function TicketSupportScreen({
   theme,
   isDarkMode = false,
   onBack,
-  req
+  req,
+  lang = 'en'
 }) {
+  const t = (k, fb = '') => getTranslation(lang, k, fb);
   const [activeSubTab, setActiveSubTab] = useState('create'); // 'create' | 'list'
 
   // Create Form state
@@ -361,7 +364,7 @@ export default function TicketSupportScreen({
             }}
           >
             <Text style={{ fontSize: 23, fontWeight: '700', color: C.ink }}>
-              Ticket Support
+              {t('ticketSupport', 'Ticket Support')}
             </Text>
             <View
               style={{
@@ -384,7 +387,7 @@ export default function TicketSupportScreen({
               lineHeight: 17
             }}
           >
-            Dedicated student assistance, bug reports & feature requests
+            {t('helpDeskSubtitle', 'Dedicated student assistance, bug reports & feature requests')}
           </Text>
         </View>
 
@@ -416,7 +419,7 @@ export default function TicketSupportScreen({
                 color: activeSubTab === 'create' ? C.blue : C.muted
               }}
             >
-              Create Ticket
+              {t('createTicket', 'Create Ticket')}
             </Text>
           </TouchableOpacity>
 
@@ -438,7 +441,7 @@ export default function TicketSupportScreen({
                 color: activeSubTab === 'list' ? C.blue : C.muted
               }}
             >
-              View My Tickets {tickets.length > 0 ? `(${tickets.length})` : ''}
+              {t('viewMyTickets', 'View My Tickets')} {tickets.length > 0 ? `(${tickets.length})` : ''}
             </Text>
           </TouchableOpacity>
         </View>
