@@ -11,11 +11,13 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+import { getTranslation } from './translations';
 
 const STORAGE_KEY = 'abhyas_study_reminder_preferences';
 const TIMES = ['06:00 AM', '07:00 AM', '08:00 AM', '06:00 PM', '07:00 PM', '08:00 PM'];
 
-export default function ReminderSettingsScreen({ onBack }) {
+export default function ReminderSettingsScreen({ onBack, lang = 'en' }) {
+  const t = (k, fb = '') => getTranslation(lang, k, fb);
   const [enabled, setEnabled] = useState(false);
   const [selectedTime, setSelectedTime] = useState('07:00 AM');
   const [loaded, setLoaded] = useState(false);
@@ -77,7 +79,7 @@ export default function ReminderSettingsScreen({ onBack }) {
         >
           <Ionicons name="arrow-back" size={22} color={C.text} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: C.text }]}>Study Reminders</Text>
+        <Text style={[styles.headerTitle, { color: C.text }]}>{t('studyReminders', 'Study Reminders')}</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
@@ -85,18 +87,18 @@ export default function ReminderSettingsScreen({ onBack }) {
           <View style={styles.heroIcon}>
             <Ionicons name="notifications-outline" size={30} color={C.blue} />
           </View>
-          <Text style={[styles.title, { color: C.text }]}>Build a consistent routine</Text>
+          <Text style={[styles.title, { color: C.text }]}>{t('buildConsistentRoutine', 'Build a consistent routine')}</Text>
           <Text style={[styles.description, { color: C.muted }]}>
-            Choose a daily reminder time to help you stay on track with your study goals.
+            {t('reminderHeroDesc', 'Choose a daily reminder time to help you stay on track with your study goals.')}
           </Text>
         </View>
 
         <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
           <View style={styles.row}>
             <View style={styles.flex}>
-              <Text style={[styles.label, { color: C.text }]}>Daily study reminder</Text>
+              <Text style={[styles.label, { color: C.text }]}>{t('dailyStudyReminder', 'Daily study reminder')}</Text>
               <Text style={[styles.hint, { color: C.muted }]}>
-                {enabled ? 'Reminder preference is enabled' : 'Reminder preference is disabled'}
+                {enabled ? t('reminderEnabled', 'Reminder preference is enabled') : t('reminderDisabled', 'Reminder preference is disabled')}
               </Text>
             </View>
             <Switch
@@ -109,9 +111,9 @@ export default function ReminderSettingsScreen({ onBack }) {
           </View>
         </View>
 
-        <Text style={[styles.sectionTitle, { color: C.text }]}>Reminder time</Text>
+        <Text style={[styles.sectionTitle, { color: C.text }]}>{t('reminderTime', 'Reminder time')}</Text>
         <Text style={[styles.sectionHint, { color: C.muted }]}>
-          Select your preferred time.
+          {t('selectPreferredTime', 'Select your preferred time.')}
         </Text>
 
         <View style={styles.timeGrid}>
@@ -143,7 +145,7 @@ export default function ReminderSettingsScreen({ onBack }) {
         </View>
 
         <Text style={[styles.note, { color: C.muted }]}>
-          These preferences are saved on this device. Scheduled notifications and notification permissions must be configured separately before reminders can alert you.
+          {t('reminderDeviceNote', 'These preferences are saved on this device. Scheduled notifications and notification permissions must be configured separately before reminders can alert you.')}
         </Text>
       </ScrollView>
     </SafeAreaView>

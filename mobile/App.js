@@ -21,7 +21,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Svg, { Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
-import { translations, AVAILABLE_LANGUAGES, getTranslation, getSubjectName, getTopicName, getChapterName, getTaskTitle, getStatusLabel } from './translations';
+import { translations, AVAILABLE_LANGUAGES, getTranslation, getSubjectName, getTopicName, getChapterName, getTaskTitle, getStatusLabel, getDailyQuote, getPaperName, DEFAULT_SYLLABUS_SUBJECTS } from './translations';
 import Timer from './Timer';
 import ReminderSettingsScreen from './ReminderSettingsScreen';
 import NotificationsScreen from './NotificationsScreen';
@@ -307,17 +307,30 @@ const getDailyMotivationalQuote = () => {
   return DAILY_MOTIVATIONAL_QUOTES[dayOfYear % DAILY_MOTIVATIONAL_QUOTES.length];
 };
 
-const getNext7Days = () => {
+const getNext7Days = (lang = 'en') => {
   const days = [];
   const curr = new Date();
+  const weekdayMap = {
+    en: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+    hi: ['रवि', 'सोम', 'मंगल', 'बुध', 'गुरु', 'शुक्र', 'शनि'],
+    mr: ['रवि', 'सोम', 'मंगळ', 'बुध', 'गुरु', 'शुक्र', 'शनि']
+  };
+  const monthMap = {
+    en: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    hi: ['जन', 'फ़र', 'मार्च', 'अप्रै', 'मई', 'जून', 'जुला', 'अग', 'सितं', 'अक्टू', 'नव', 'दिस'],
+    mr: ['जाने', 'फेब्रु', 'मार्च', 'एप्रि', 'मे', 'जून', 'जुलै', 'ऑग', 'सप्टें', 'ऑक्टो', 'नोव्हें', 'डिसें']
+  };
+  const currentWMap = weekdayMap[lang] || weekdayMap.en;
+  const currentMMap = monthMap[lang] || monthMap.en;
+
   for (let i = 0; i < 7; i++) {
     const d = new Date();
     d.setDate(curr.getDate() + i);
     days.push({
       dateStr: d.toISOString().slice(0, 10),
-      dayName: d.toLocaleDateString('en-US', { weekday: 'short' }),
+      dayName: currentWMap[d.getDay()],
       dayNum: d.getDate(),
-      month: d.toLocaleDateString('en-US', { month: 'short' }),
+      month: currentMMap[d.getMonth()],
       isToday: i === 0,
       isTomorrow: i === 1
     });
@@ -2490,71 +2503,71 @@ export default function App() {
     }
     const currentStreak = Math.max(14, streakCount);
     const currentYear = new Date().getFullYear();
-    const dailyQuote = getDailyMotivationalQuote();
+    const dailyQuote = getDailyQuote(lang);
 
     const quickActions = [
       {
         id: 'timer',
-        title: 'Focus Timer',
-        subtitle: running ? 'Active Session' : 'Start Session',
+        title: t('focusTimer', 'Focus Timer'),
+        subtitle: running ? t('activeSession', 'Active Session') : t('startSession', 'Start Session'),
         icon: 'stopwatch-outline',
         onPress: () => handleStartFocus()
       },
       {
         id: 'planner',
-        title: 'Study Plan',
+        title: t('studyPlan', 'Study Plan'),
         subtitle:
           plans.filter(p => !p.done).length > 0
-            ? `${plans.filter(p => !p.done).length} active`
-            : 'Schedule',
+            ? `${plans.filter(p => !p.done).length} ${t('active', 'active')}`
+            : t('schedule', 'Schedule'),
         icon: 'calendar-outline',
         onPress: () => setTab('Planner')
       },
       {
         id: 'syllabus',
-        title: 'Syllabus',
-        subtitle: `${syllabusStats.overallPct}% done`,
+        title: t('syllabus', 'Syllabus'),
+        subtitle: `${syllabusStats.overallPct}% ${t('done', 'done')}`,
         icon: 'book-outline',
         onPress: () => setTab('Syllabus')
       },
       {
         id: 'analytics',
-        title: 'Reports',
-        subtitle: `${Math.floor(total / 60)}h logged`,
+        title: t('reports', 'Reports'),
+        subtitle: `${Math.floor(total / 60)}h ${t('logged', 'logged')}`,
         icon: 'analytics-outline',
         onPress: () => setTab('Analytics')
       },
       {
         id: 'attendance',
-        title: 'Attendance',
-        subtitle: todaySessions.length > 0 ? 'Present today' : `${currentStreak}-Day streak`,
+        title: t('attendance', 'Attendance'),
+        subtitle: todaySessions.length > 0 ? t('presentToday', 'Present today') : t('dayStreak', '{streak}-Day streak').replace('{streak}', currentStreak),
         icon: 'calendar-number-outline',
         onPress: () =>
           appAlert(
-            'Study Attendance',
+            t('attendance', 'Study Attendance'),
             todaySessions.length > 0
-              ? `Status: Present\n\nYou have logged ${todayHours}h ${todayMinsRemainder}m across ${todaySessions.length} session(s) today.\n\nKeep up your ${currentStreak}-Day disciplined streak!`
-              : `Status: Not yet marked today\n\nStart a focus session from the timer or log offline reading to record today's attendance.`,
+              ? `${t('status', 'Status')}: ${t('presentToday', 'Present')}\n\n${todayHours}h ${todayMinsRemainder}m across ${todaySessions.length} session(s).\n\n${t('dayStreak', '{streak}-Day streak').replace('{streak}', currentStreak)}!`
+              : `${t('status', 'Status')}: ${t('notStarted', 'Not yet marked today')}\n\n${t('noSessionsLoggedYet', 'Start a focus session from the timer or log offline reading.')}`,
             todaySessions.length > 0
-              ? [{ text: 'OK' }]
+              ? [{ text: t('ok', 'OK') }]
               : [
-                  { text: 'Start Session', onPress: () => setTab('Timer') },
-                  { text: 'Cancel', style: 'cancel' }
+                  { text: t('startSession', 'Start Session'), onPress: () => setTab('Timer') },
+                  { text: t('cancel', 'Cancel'), style: 'cancel' }
                 ]
           )
       },
       {
         id: 'quiz',
-        title: 'Quiz',
-        subtitle: 'Coming Soon',
+        title: t('quiz', 'Quiz'),
+        subtitle: t('comingSoon', 'Coming Soon'),
         icon: 'help-circle-outline',
         onPress: () =>
           appAlert(
-            'Daily Quiz & MCQs',
-            'Prelims practice questions and topic-wise mock tests are coming in the next update. Keep completing your syllabus topics in the meantime.',
+            t('quiz', 'Daily Quiz & MCQs'),
+            t('comingSoon', 'Coming Soon'),
             [
-              { text: 'View Syllabus', onPress: () => setTab('Syllabus') },
-              { text: 'OK' }
+              { text: t('syllabus', 'View Syllabus'), onPress: () => setTab('Syllabus') },
+              { text: t('ok', 'OK') }
             ]
           )
       }
@@ -2568,8 +2581,8 @@ export default function App() {
           activeOpacity={0.8}
           onPress={() =>
             appAlert(
-              'Study Streak',
-              `Current Streak: ${currentStreak} Days\n\nConsistency is the foundation of civil services success. Complete a study session every day to keep your streak burning!`
+              t('studyStreak', 'Study Streak'),
+              `${t('currentStreak', 'Current Streak')}: ${currentStreak} ${t('days', 'Days')}\n\n${t('streakDescription', 'Consistency is the foundation of civil services success. Complete a study session every day to keep your streak burning!')}`
             )
           }
           style={{
@@ -2601,14 +2614,14 @@ export default function App() {
           }}
         >
           <Text style={txt(10, true, isDark ? '#94a3b8' : '#475569')}>
-            {`UPSC / MPSC ${currentYear}`}
+            {t('examYearBadge', 'UPSC / MPSC {year}').replace('{year}', currentYear)}
           </Text>
         </View>
       </View>
 
       {/* 1. GREETINGS */}
-      <Title sub="Daily progress, focus milestones and target breakdown">
-        Good {isMorning ? 'morning' : 'evening'}, {user?.name?.split(' ')[0] || 'Aspirant'}!
+      <Title sub={t('dashboardSubtitle', 'Daily progress, focus milestones and target breakdown')}>
+        {isMorning ? t('goodMorning', 'Good morning') : t('goodEvening', 'Good evening')}, {user?.name?.split(' ')[0] || t('aspirant', 'Aspirant')}!
       </Title>
 
       {/* 2. QUOTE CARD (EASY TO UNDERSTAND) */}
@@ -2630,7 +2643,7 @@ export default function App() {
           </View>
           <View style={{ paddingHorizontal: 9, paddingVertical: 3, borderRadius: 12, backgroundColor: C.soft }}>
             <Text style={txt(11, true, C.blue)}>
-              {todayReminderPlans.length} {todayReminderPlans.length === 1 ? t('task') : t('tasks')} ({todayReminderMins}m)
+              {todayReminderPlans.length} {todayReminderPlans.length === 1 ? t('task') : t('tasks')} ({todayReminderMins}${t('minsShort', 'm')})
             </Text>
           </View>
         </View>
@@ -2638,7 +2651,7 @@ export default function App() {
         {todayReminderPlans.length === 0 ? (
           <View style={{ paddingVertical: 8 }}>
             <Text style={[txt(12, false, C.muted), { lineHeight: 18, marginBottom: 10 }]}>
-              {t('noTasksToday')} Starting your day with a defined target increases study efficiency.
+              {t('noTasksToday')} {t('noTasksTodayDesc', 'Starting your day with a defined target increases study efficiency.')}
             </Text>
             <TouchableOpacity
               onPress={() => {
@@ -2653,7 +2666,7 @@ export default function App() {
                 alignItems: 'center'
               }}
             >
-              <Text style={txt(12, true, isDark ? '#93c5fd' : '#3730a3')}>+ Add Scheduled Task</Text>
+              <Text style={txt(12, true, isDark ? '#93c5fd' : '#3730a3')}>{t('addScheduledTask', '+ Add Scheduled Task')}</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -2684,7 +2697,7 @@ export default function App() {
                         p.done ? { textDecorationLine: 'line-through', color: C.muted } : null
                       ]}
                     >
-                      {p.title}
+                      {getTaskTitle(p.title, lang)}
                     </Text>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 }}>
                       <Text style={txt(11, false, C.muted)}>
@@ -2698,7 +2711,7 @@ export default function App() {
                       onPress={() => startPlanFocus(p)}
                       style={{ backgroundColor: C.soft, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 }}
                     >
-                      <Text style={txt(11, true, C.blue)}>Start</Text>
+                      <Text style={txt(11, true, C.blue)}>{t('start', 'Start')}</Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -2752,24 +2765,26 @@ export default function App() {
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
             <Ionicons name="warning-outline" size={20} color={isDark ? '#fb923c' : '#ea580c'} />
             <Text style={txt(13, true, isDark ? '#fb923c' : '#c2410c')}>
-              Subject Balance Alert: Neglected Module
+              {t('subjectBalanceAlert', 'Subject Balance Alert: Neglected Module')}
             </Text>
           </View>
           <Text style={[txt(12, false, C.ink), { lineHeight: 18, marginBottom: 8 }]}>
-            You haven't logged any study hours for <Text style={{ fontWeight: '700', color: C.blue }}>{getSubjectName(topNeglected, lang)}</Text> in the last {Math.min(7, topNeglected.daysAgo)}+ days.
-            {topNeglected.isCritical ? ' High-weightage qualifying / scoring module — regular hours prevent last-minute panic!' : ' Don’t let syllabus backlog accumulate before the exam!'}
+            {t('neglectedAlertIntro', "You haven't logged any study hours for")}{' '}
+            <Text style={{ fontWeight: '700', color: C.blue }}>{getSubjectName(topNeglected, lang)}</Text>{' '}
+            {t('inTheLastDays', 'in the last {days}+ days.').replace('{days}', Math.min(7, topNeglected.daysAgo))}
+            {topNeglected.isCritical ? ` ${t('highWeightageWarning')}` : ` ${t('backlogWarning')}`}
           </Text>
 
           {/* Quick Neglected Chips */}
           {neglectedSubjects.length > 1 && (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10, alignItems: 'center' }}>
-              <Text style={txt(10, true, C.muted)}>OTHER LOW-HOUR SUBJECTS:</Text>
+              <Text style={txt(10, true, C.muted)}>{t('otherLowHourSubjects', 'OTHER LOW-HOUR SUBJECTS:')}</Text>
               {neglectedSubjects.slice(1, 4).map(ns => (
                 <TouchableOpacity
                   key={ns.id}
                   onPress={() => {
                     setSelected(ns.id);
-                    setSessionTopicTitle(`${ns.name} Core Revision`);
+                    setSessionTopicTitle(`${getSubjectName(ns, lang)} ${t('revision', 'Revision')}`);
                     setTab('Timer');
                   }}
                   style={{
@@ -2780,7 +2795,7 @@ export default function App() {
                   }}
                 >
                   <Text style={txt(10, true, isDark ? '#c084fc' : '#7e22ce')}>
-                    + {ns.name}
+                    + {getSubjectName(ns, lang)}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -2789,7 +2804,7 @@ export default function App() {
 
           <View style={{ flexDirection: 'row', gap: 8 }}>
             <TouchableOpacity
-              onPress={() => handleStartFocus(topNeglected.id, `${topNeglected.name} Priority Session`)}
+              onPress={() => handleStartFocus(topNeglected.id, `${getSubjectName(topNeglected, lang)} ${t('focus', 'Focus')}`)}
               style={{
                 flex: 1,
                 backgroundColor: C.blue,
@@ -2798,14 +2813,16 @@ export default function App() {
                 alignItems: 'center'
               }}
             >
-              <Text style={txt(12, true, '#ffffff')}>Focus on {getSubjectName(topNeglected, lang).split(' ')[0]}</Text>
+              <Text style={txt(12, true, '#ffffff')}>
+                {t('focusOn', 'Focus on {subject}').replace('{subject}', getSubjectName(topNeglected, lang).split(' ')[0])}
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               onPress={() => {
                 setPlanExamTarget(topNeglected.exam || (topNeglected.id.startsWith('mpsc') ? 'MPSC' : 'UPSC'));
                 setPlanSubject(topNeglected.id);
-                setPlanTitle(`${topNeglected.name} 45m Block`);
+                setPlanTitle(`${getSubjectName(topNeglected, lang)} 45${t('minsShort', 'm')} ${t('studyBlock', 'Block')}`);
                 setPlanMinutes('45');
                 setTab('Planner');
               }}
@@ -2817,7 +2834,7 @@ export default function App() {
                 alignItems: 'center'
               }}
             >
-              <Text style={txt(12, true, isDark ? '#fb923c' : '#c2410c')}>Add to Planner</Text>
+              <Text style={txt(12, true, isDark ? '#fb923c' : '#c2410c')}>{t('addToPlanner', 'Add to Planner')}</Text>
             </TouchableOpacity>
           </View>
         </Card>
@@ -2825,7 +2842,7 @@ export default function App() {
 
       {/* 5. QUICK ACTIONS MODULE */}
       <View style={{ marginBottom: 14 }}>
-        <Text style={[txt(14, true, C.ink), { marginBottom: 10 }]}>Quick Actions</Text>
+        <Text style={[txt(14, true, C.ink), { marginBottom: 10 }]}>{t('quickActions', 'Quick Actions')}</Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
           {quickActions.map(action => (
             <TouchableOpacity
@@ -2874,7 +2891,7 @@ export default function App() {
           <Text style={txt(15, true, C.ink)}>{t('todayStudyTime')}</Text>
           <View style={{ paddingHorizontal: 9, paddingVertical: 3, borderRadius: 12, backgroundColor: C.soft }}>
             <Text style={txt(11, true, C.blue)}>
-              {todaySessions.length} {todaySessions.length === 1 ? 'session' : 'sessions'}
+              {todaySessions.length} {todaySessions.length === 1 ? t('session', 'session') : t('sessions', 'sessions')}
             </Text>
           </View>
         </View>
@@ -2883,7 +2900,7 @@ export default function App() {
           <Ring
             value={progressPercent}
             size={168}
-            label={todayMinutes > 0 ? `${todayHours}h ${todayMinsRemainder}m logged` : '0h 00m logged'}
+            label={todayMinutes > 0 ? `${todayHours}${t('hoursShort', 'h')} ${todayMinsRemainder}${t('minsShort', 'm')} ${t('logged', 'logged')}` : `0${t('hoursShort', 'h')} 00${t('minsShort', 'm')} ${t('logged', 'logged')}`}
           />
         </View>
 
@@ -2901,30 +2918,30 @@ export default function App() {
           }}
         >
           <View style={{ alignItems: 'center', flex: 1 }}>
-            <Text style={txt(11, false, C.muted)}>Logged Today</Text>
+            <Text style={txt(11, false, C.muted)}>{t('loggedToday', 'Logged Today')}</Text>
             <Text style={[txt(14, true, C.ink), { marginTop: 3 }]}>
-              {todayHours}h {todayMinsRemainder}m
+              {todayHours}{t('hoursShort', 'h')} {todayMinsRemainder}{t('minsShort', 'm')}
             </Text>
           </View>
           <View style={{ width: 1, height: 26, backgroundColor: C.line }} />
           <View style={{ alignItems: 'center', flex: 1 }}>
-            <Text style={txt(11, false, C.muted)}>Daily Goal</Text>
+            <Text style={txt(11, false, C.muted)}>{t('dailyGoal', 'Daily Goal')}</Text>
             <Text style={[txt(14, true, C.ink), { marginTop: 3 }]}>
-              {dailyGoalHours}h 00m
+              {dailyGoalHours}{t('hoursShort', 'h')} 00{t('minsShort', 'm')}
             </Text>
           </View>
           <View style={{ width: 1, height: 26, backgroundColor: C.line }} />
           <View style={{ alignItems: 'center', flex: 1 }}>
-            <Text style={txt(11, false, C.muted)}>Remaining</Text>
+            <Text style={txt(11, false, C.muted)}>{t('remaining', 'Remaining')}</Text>
             <Text style={[txt(14, true, remainingMinutes === 0 ? C.blue : C.ink), { marginTop: 3 }]}>
-              {remainingMinutes === 0 ? 'Goal Met!' : `${remainingHours}h ${remainingMinsRemainder}m`}
+              {remainingMinutes === 0 ? t('goalMet', 'Goal Met!') : `${remainingHours}${t('hoursShort', 'h')} ${remainingMinsRemainder}${t('minsShort', 'm')}`}
             </Text>
           </View>
         </View>
 
         {todayMinutes === 0 && (
           <Text style={[txt(12, false, C.muted), { textAlign: 'center', marginBottom: 10, lineHeight: 17 }]}>
-            No sessions logged today yet. Ready to start your preparation?
+            {t('noSessionsLoggedYet', 'No sessions logged today yet. Ready to start your preparation?')}
           </Text>
         )}
 
@@ -2958,7 +2975,7 @@ export default function App() {
             <View style={{ backgroundColor: '#1e40af', width: `${syllabusStats.upsc.pct}%`, height: 6, borderRadius: 6 }} />
           </View>
           <Text style={[txt(10, false, C.muted), { marginTop: 3 }]}>
-            {syllabusStats.upsc.completed} of {syllabusStats.upsc.total} {t('topicsMastered')}
+            {syllabusStats.upsc.completed} {t('remainingOf', 'of')} {syllabusStats.upsc.total} {t('topicsMastered')}
           </Text>
         </View>
 
@@ -2971,7 +2988,7 @@ export default function App() {
             <View style={{ backgroundColor: '#b45309', width: `${syllabusStats.mpsc.pct}%`, height: 6, borderRadius: 6 }} />
           </View>
           <Text style={[txt(10, false, C.muted), { marginTop: 3 }]}>
-            {syllabusStats.mpsc.completed} of {syllabusStats.mpsc.total} {t('topicsMastered')}
+            {syllabusStats.mpsc.completed} {t('remainingOf', 'of')} {syllabusStats.mpsc.total} {t('topicsMastered')}
           </Text>
         </View>
 
@@ -2991,7 +3008,7 @@ export default function App() {
         </View>
 
         <Text style={[txt(12, false, C.muted), { lineHeight: 18, marginBottom: 12 }]}>
-          Schedule daily syllabus topics, plan tomorrow's revision in advance, and balance your weekly study hours.
+          {t('scheduleDailySyllabusDesc', "Schedule daily syllabus topics, plan tomorrow's revision in advance, and balance your weekly study hours.")}
         </Text>
 
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 }}>
@@ -3113,17 +3130,17 @@ export default function App() {
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <View style={{ flexDirection: 'row', gap: 6 }}>
               <Chip
-                label="ALL"
+                label={t('all', 'ALL')}
                 active={syllabusExamFilter === 'ALL'}
                 onPress={() => setSyllabusExamFilter('ALL')}
               />
               <Chip
-                label="UPSC"
+                label={t('upsc', 'UPSC')}
                 active={syllabusExamFilter === 'UPSC'}
                 onPress={() => setSyllabusExamFilter('UPSC')}
               />
               <Chip
-                label="MPSC"
+                label={t('mpsc', 'MPSC')}
                 active={syllabusExamFilter === 'MPSC'}
                 onPress={() => setSyllabusExamFilter('MPSC')}
               />
@@ -3146,7 +3163,7 @@ export default function App() {
                 color={expandAllSubjects ? '#ffffff' : C.blue}
               />
               <Text style={txt(10, true, expandAllSubjects ? '#ffffff' : C.blue)}>
-                {expandAllSubjects ? 'Collapse' : 'Expand All'}
+                {expandAllSubjects ? t('collapse', 'Collapse') : t('expandAll', 'Expand All')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -3157,14 +3174,14 @@ export default function App() {
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <View style={{ flex: 1 }}>
               <Text style={txt(13, true)}>
-                {isUPSC ? 'UPSC Civil Services Completion' : isMPSC ? 'MPSC Maharashtra Completion' : 'Overall Curriculum Completion'}
+                {isUPSC ? `${t('upscOnly')} ${t('donePct', 'Completion')}` : isMPSC ? `${t('mpscOnly')} ${t('donePct', 'Completion')}` : t('overallCurriculum')}
               </Text>
               <Text style={[txt(26, true), { marginVertical: 6 }]}>{currentScope.pct}%</Text>
               <Text style={txt(11, false, C.muted)}>
-                {currentScope.completed} of {currentScope.total} topics mastered
+                {currentScope.completed} {t('remainingOf', 'of')} {currentScope.total} {t('topicsMastered')}
               </Text>
             </View>
-            <Ring value={currentScope.pct} size={110} label="Completed" />
+            <Ring value={currentScope.pct} size={110} label={t('completed', 'Completed')} />
           </View>
 
           {/* Status Legends / Breakdown */}
@@ -3212,15 +3229,17 @@ export default function App() {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
               <Ionicons name="warning-outline" size={18} color={isDark ? '#fb923c' : '#ea580c'} />
               <Text style={txt(12, true, isDark ? '#fb923c' : '#c2410c')}>
-                Curriculum Balance: Neglected Module
+                {t('subjectBalanceAlert', 'Curriculum Balance: Neglected Module')}
               </Text>
             </View>
             <Text style={[txt(11, false, C.ink), { lineHeight: 16, marginBottom: 8 }]}>
-              You haven't logged study hours for <Text style={{ fontWeight: '700', color: C.blue }}>{getSubjectName(topNeglected, lang)}</Text> in the last {Math.min(7, topNeglected.daysAgo)}+ days.
+              {t('neglectedAlertIntro', "You haven't logged study hours for")}{' '}
+              <Text style={{ fontWeight: '700', color: C.blue }}>{getSubjectName(topNeglected, lang)}</Text>{' '}
+              {t('inTheLastDays', 'in the last {days}+ days.').replace('{days}', Math.min(7, topNeglected.daysAgo))}
             </Text>
             <View style={{ flexDirection: 'row', gap: 8 }}>
               <TouchableOpacity
-                onPress={() => handleStartFocus(topNeglected.id, `${topNeglected.name} Priority Session`)}
+                onPress={() => handleStartFocus(topNeglected.id, `${getSubjectName(topNeglected, lang)} ${t('focus', 'Focus')}`)}
                 style={{
                   flex: 1,
                   backgroundColor: C.blue,
@@ -3229,12 +3248,12 @@ export default function App() {
                   alignItems: 'center'
                 }}
               >
-                <Text style={txt(11, true, '#ffffff')}>▶ Start Live Timer</Text>
+                <Text style={txt(11, true, '#ffffff')}>▶ {t('startLiveTimer', 'Start Live Timer')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => {
                   setManualSubject(topNeglected.id);
-                  setManualTopic(`${topNeglected.name} Study Session`);
+                  setManualTopic(`${getSubjectName(topNeglected, lang)} ${t('studyTime', 'Session')}`);
                   setManualLogMode('past');
                   setManualLogOpen(true);
                 }}
@@ -3246,7 +3265,7 @@ export default function App() {
                   alignItems: 'center'
                 }}
               >
-                <Text style={txt(11, true, isDark ? '#fb923c' : '#c2410c')}>Log Past Hours</Text>
+                <Text style={txt(11, true, isDark ? '#fb923c' : '#c2410c')}>{t('logPastHours', 'Log Past Hours')}</Text>
               </TouchableOpacity>
             </View>
           </Card>
@@ -3315,7 +3334,7 @@ export default function App() {
                         borderRadius: 6
                       }}
                     >
-                      {isMp ? 'MPSC' : 'UPSC'}
+                      {isMp ? t('mpsc', 'MPSC') : t('upsc', 'UPSC')}
                     </Text>
                     <Text style={txt(15, true)}>{getSubjectName(s, lang)}</Text>
                     <Text
@@ -3329,7 +3348,7 @@ export default function App() {
                         borderRadius: 6
                       }}
                     >
-                      {s.paper}
+                      {getPaperName(s.paper, lang)}
                     </Text>
                   </View>
                   <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4, flexWrap: 'wrap', gap: 4 }}>
@@ -3338,7 +3357,7 @@ export default function App() {
                     </Text>
                     <View style={{ backgroundColor: isExpanded ? (isDark ? '#1e3a5f' : '#dbeafe') : C.soft, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6 }}>
                       <Text style={{ fontSize: 10, fontWeight: '700', color: isExpanded ? C.blue : C.muted }}>
-                        {topicsList.length} subtopics {isExpanded ? '▲' : '▼'}
+                        {topicsList.length} {t('subtopics', 'subtopics')} {isExpanded ? '▲' : '▼'}
                       </Text>
                     </View>
                   </View>
@@ -3540,7 +3559,7 @@ export default function App() {
 
   // ---------------- PLANNER TAB ----------------
   const Planner = () => {
-    const next7Days = useMemo(() => getNext7Days(), []);
+    const next7Days = useMemo(() => getNext7Days(lang), [lang]);
 
     // Filter plans according to view and exam section
     const filteredPlans = useMemo(() => {
@@ -3665,7 +3684,7 @@ export default function App() {
                     borderRadius: 6
                   }}
                 >
-                  {isMp ? 'MPSC' : 'UPSC'}
+                  {isMp ? t('mpsc', 'MPSC') : t('upsc', 'UPSC')}
                 </Text>
                 <Text
                   style={{
@@ -3695,7 +3714,7 @@ export default function App() {
                 </Text>
                 {p.date && (
                   <Text style={txt(10, false, C.muted)}>
-                    {p.date === today() ? 'Today' : p.date === tomorrow() ? 'Tomorrow' : formatDateDMY(p.date)}
+                    {p.date === today() ? t('today', 'Today') : p.date === tomorrow() ? t('tomorrow', 'Tomorrow') : formatDateDMY(p.date)}
                   </Text>
                 )}
               </View>
@@ -3711,7 +3730,7 @@ export default function App() {
 
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4, flexWrap: 'wrap', gap: 6 }}>
                 <Text style={txt(11, false, C.muted)}>
-                  {p.minutes} mins • {p.done ? getStatusLabel('completed', lang) : getStatusLabel('pending', lang)}
+                  {p.minutes} {t('mins', 'mins')} • {p.done ? getStatusLabel('completed', lang) : getStatusLabel('pending', lang)}
                 </Text>
                 <View
                   style={{
@@ -3799,12 +3818,12 @@ export default function App() {
                 onPress={() => setPlannerExamFilter('ALL')}
               />
               <Chip
-                label="UPSC"
+                label={t('upsc', 'UPSC')}
                 active={plannerExamFilter === 'UPSC'}
                 onPress={() => setPlannerExamFilter('UPSC')}
               />
               <Chip
-                label="MPSC"
+                label={t('mpsc', 'MPSC')}
                 active={plannerExamFilter === 'MPSC'}
                 onPress={() => setPlannerExamFilter('MPSC')}
               />
@@ -3817,7 +3836,7 @@ export default function App() {
           <>
             <Card>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={txt(15, true)}>{t('todaysStudyLoad')} vs. {dailyGoalHours}h {t('studyTargetGoal')}</Text>
+                <Text style={txt(15, true)}>{t('todaysStudyLoad')} vs. {dailyGoalHours}{t('hoursShort', 'h')} {t('studyTargetGoal')}</Text>
                 <Text style={txt(13, true, C.blue)}>{todayCapacityPct}% {t('capacity')}</Text>
               </View>
               <View style={{ height: 8, backgroundColor: C.soft, borderRadius: 6, marginVertical: 10 }}>
@@ -3921,7 +3940,7 @@ export default function App() {
             {/* Weekly Mode Switcher */}
             <Card style={{ paddingVertical: 12 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                <Text style={txt(11, true, C.muted)}>WEEKLY SCHEDULE VIEW</Text>
+                <Text style={txt(11, true, C.muted)}>{t('weeklyScheduleView', 'WEEKLY SCHEDULE VIEW')}</Text>
                 <TouchableOpacity
                   onPress={autoPlanWeek}
                   style={{
@@ -3935,17 +3954,17 @@ export default function App() {
                   }}
                 >
                   <Ionicons name="sparkles" size={12} color="#ffffff" />
-                  <Text style={txt(11, true, '#ffffff')}>Auto-Plan Full Week</Text>
+                  <Text style={txt(11, true, '#ffffff')}>{t('autoPlanFullWeek', 'Auto-Plan Full Week')}</Text>
                 </TouchableOpacity>
               </View>
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <Chip
-                  label="Entire Week (All 7 Days)"
+                  label={t('entireWeek', 'Entire Week (All 7 Days)')}
                   active={weeklySubTab === 'ALL_WEEK'}
                   onPress={() => setWeeklySubTab('ALL_WEEK')}
                 />
                 <Chip
-                  label="Single Day Focus"
+                  label={t('singleDayFocus', 'Single Day Focus')}
                   active={weeklySubTab === 'SINGLE_DAY'}
                   onPress={() => setWeeklySubTab('SINGLE_DAY')}
                 />
@@ -4011,14 +4030,14 @@ export default function App() {
                       >
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                           <Text style={txt(13, true, d.isToday ? C.blue : C.ink)}>
-                            {d.isToday ? `Today (${d.dayName}, ${d.month} ${d.dayNum})` : d.isTomorrow ? `Tomorrow (${d.dayName}, ${d.month} ${d.dayNum})` : `${d.dayName}, ${d.month} ${d.dayNum}`}
+                            {d.isToday ? `${t('today', 'Today')} (${d.dayName}, ${d.month} ${d.dayNum})` : d.isTomorrow ? `${t('tomorrow', 'Tomorrow')} (${d.dayName}, ${d.month} ${d.dayNum})` : `${d.dayName}, ${d.month} ${d.dayNum}`}
                           </Text>
                           <Text style={txt(11, false, C.muted)}>({formatDateDMY(d.dateStr)})</Text>
                         </View>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                           <View style={{ backgroundColor: dayPlans.length > 0 ? C.soft : '#f1f5f9', paddingHorizontal: 7, paddingVertical: 2, borderRadius: 8 }}>
                             <Text style={txt(10, true, dayPlans.length > 0 ? C.blue : C.muted)}>
-                              {dayPlans.length} {dayPlans.length === 1 ? 'task' : 'tasks'}
+                              {dayPlans.length} {dayPlans.length === 1 ? t('task', 'task') : t('tasks', 'tasks')}
                             </Text>
                           </View>
                         </View>
@@ -4028,7 +4047,7 @@ export default function App() {
                       {dayPlans.length === 0 ? (
                         <Card style={{ paddingVertical: 10, backgroundColor: isDark ? '#131b2e' : '#ffffff', borderStyle: 'dashed' }}>
                           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <Text style={txt(12, false, C.muted)}>No tasks scheduled for this day</Text>
+                            <Text style={txt(12, false, C.muted)}>{t('noTasksForDay', 'No tasks scheduled for this day')}</Text>
                             <TouchableOpacity
                               onPress={() => {
                                 setSelectedWeekDate(d.dateStr);
@@ -4038,7 +4057,7 @@ export default function App() {
                               }}
                               style={{ paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, backgroundColor: C.soft }}
                             >
-                              <Text style={txt(11, true, C.blue)}>+ Add Task</Text>
+                              <Text style={txt(11, true, C.blue)}>{t('addTask', '+ Add Task')}</Text>
                             </TouchableOpacity>
                           </View>
                         </Card>
@@ -4053,7 +4072,7 @@ export default function App() {
                 {plans.filter(p => p.date && p.date < today() && p.date >= '2026-10-20').length > 0 && (
                   <Card style={{ marginTop: 8 }}>
                     <Text style={[txt(13, true), { marginBottom: 8 }]}>
-                      Recent Study Sessions This Week (Past Days)
+                      {t('recentStudySessions', 'Recent Study Sessions This Week (Past Days)')}
                     </Text>
                     {plans
                       .filter(p => p.date && p.date < today() && p.date >= '2026-10-20')
@@ -4067,7 +4086,7 @@ export default function App() {
               <>
                 <Card style={{ paddingVertical: 12 }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                    <Text style={txt(11, true, C.muted)}>SELECT DAY (NEXT 7 DAYS)</Text>
+                    <Text style={txt(11, true, C.muted)}>{t('selectDayNext7', 'SELECT DAY (NEXT 7 DAYS)')}</Text>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                       <TouchableOpacity
                         onPress={() => {
@@ -4184,7 +4203,7 @@ export default function App() {
                     </Text>
                     <View style={{ marginTop: 6, alignItems: 'center', gap: 8 }}>
                       <Button
-                        label={selectedWeekDate === tomorrow() ? t('autoPlanTomorrow') : 'Auto-Plan This Day'}
+                        label={selectedWeekDate === tomorrow() ? t('autoPlanTomorrow') : t('autoPlanThisDay', 'Auto-Plan This Day')}
                         onPress={selectedWeekDate === tomorrow() ? autoPlanTomorrow : autoPlanWeek}
                       />
                       <Button
@@ -4207,56 +4226,56 @@ export default function App() {
           <>
             {/* Daily & Weekly Capacity Overview */}
             <Card>
-              <Text style={[txt(15, true), { marginBottom: 12 }]}>Workload Capacity Gauges</Text>
+              <Text style={[txt(15, true), { marginBottom: 12 }]}>{t('workloadCapacityGauges', 'Workload Capacity Gauges')}</Text>
 
               {/* Today */}
               <View style={{ marginBottom: 14 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-                  <Text style={txt(13, true)}>Today's Study Load</Text>
-                  <Text style={txt(13, true, C.blue)}>{todayCapacityPct}% of 8h</Text>
+                  <Text style={txt(13, true)}>{t('todaysStudyLoad', "Today's Study Load")}</Text>
+                  <Text style={txt(13, true, C.blue)}>{t('capacityPercentOf', '{pct}% of {hours}').replace('{pct}', todayCapacityPct).replace('{hours}', `8${t('hoursShort', 'h')}`)}</Text>
                 </View>
                 <View style={{ height: 8, backgroundColor: C.soft, borderRadius: 6 }}>
                   <View style={{ backgroundColor: C.blue, height: 8, borderRadius: 6, width: `${todayCapacityPct}%` }} />
                 </View>
                 <Text style={[txt(11, false, C.muted), { marginTop: 4 }]}>
-                  {todayPlannedMinutes} min planned ({Math.floor(todayPlannedMinutes / 60)}h {todayPlannedMinutes % 60}m)
+                  {todayPlannedMinutes} {t('minPlanned')} ({Math.floor(todayPlannedMinutes / 60)}${t('hoursShort', 'h')} ${todayPlannedMinutes % 60}${t('minsShort', 'm')})
                 </Text>
               </View>
 
               {/* Weekly */}
               <View>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-                  <Text style={txt(13, true)}>Weekly Cumulative Load</Text>
-                  <Text style={txt(13, true, C.blue)}>{weeklyCapacityPct}% of 40h</Text>
+                  <Text style={txt(13, true)}>{t('weeklyCumulativeLoad', 'Weekly Cumulative Load')}</Text>
+                  <Text style={txt(13, true, C.blue)}>{t('capacityPercentOf', '{pct}% of {hours}').replace('{pct}', weeklyCapacityPct).replace('{hours}', `40${t('hoursShort', 'h')}`)}</Text>
                 </View>
                 <View style={{ height: 8, backgroundColor: C.soft, borderRadius: 6 }}>
                   <View style={{ backgroundColor: C.green, height: 8, borderRadius: 6, width: `${weeklyCapacityPct}%` }} />
                 </View>
                 <Text style={[txt(11, false, C.muted), { marginTop: 4 }]}>
-                  {Math.floor(weeklyPlannedMinutes / 60)}h {weeklyPlannedMinutes % 60}m planned across 7 days
+                  {Math.floor(weeklyPlannedMinutes / 60)}${t('hoursShort', 'h')} ${weeklyPlannedMinutes % 60}${t('minsShort', 'm')} {t('plannedAcross7Days', 'planned across 7 days')}
                 </Text>
               </View>
             </Card>
 
             {/* Exam Split Meter */}
             <Card>
-              <Text style={[txt(15, true), { marginBottom: 10 }]}>Exam Syllabus Allocation</Text>
+              <Text style={[txt(15, true), { marginBottom: 10 }]}>{t('examSyllabusAllocation', 'Exam Syllabus Allocation')}</Text>
               <View style={{ height: 12, backgroundColor: C.soft, borderRadius: 6, flexDirection: 'row', overflow: 'hidden', marginBottom: 8 }}>
                 <View style={{ backgroundColor: '#1d4ed8', width: `${upscPct}%` }} />
                 <View style={{ backgroundColor: '#f59e0b', width: `${mpscPct}%` }} />
               </View>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Text style={txt(12, true, '#1d4ed8')}>UPSC: {upscPlannedMinutes}m ({upscPct}%)</Text>
-                <Text style={txt(12, true, '#b45309')}>MPSC: {mpscPlannedMinutes}m ({mpscPct}%)</Text>
+                <Text style={txt(12, true, '#1d4ed8')}>{t('upsc', 'UPSC')}: {upscPlannedMinutes}${t('minsShort', 'm')} ({upscPct}%)</Text>
+                <Text style={txt(12, true, '#b45309')}>{t('mpsc', 'MPSC')}: {mpscPlannedMinutes}${t('minsShort', 'm')} ({mpscPct}%)</Text>
               </View>
             </Card>
 
             {/* Subject-Wise Time Allocation */}
             <Card>
-              <Text style={[txt(15, true), { marginBottom: 12 }]}>Subject-Wise Time Allocation</Text>
+              <Text style={[txt(15, true), { marginBottom: 12 }]}>{t('subjectWiseAllocation', 'Subject-Wise Time Allocation')}</Text>
               {subjectBreakdown.length === 0 ? (
                 <Text style={[txt(13, false, C.muted), { textAlign: 'center', paddingVertical: 8 }]}>
-                  No subject hours planned yet. Add study tasks to see subject distribution.
+                  {t('noSubjectHoursPlanned', 'No subject hours planned yet. Add study tasks to see subject distribution.')}
                 </Text>
               ) : (
                 subjectBreakdown.map(sb => {
@@ -4267,7 +4286,7 @@ export default function App() {
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
                         <Text style={txt(12, true)}>{getSubjectName(sb.id || sb.name, lang)}</Text>
                         <Text style={txt(12, false, C.muted)}>
-                          {Math.floor(sb.minutes / 60)}h {sb.minutes % 60}m ({sb.tasks} {sb.tasks === 1 ? 'task' : 'tasks'})
+                          {Math.floor(sb.minutes / 60)}h {sb.minutes % 60}m ({sb.tasks} {sb.tasks === 1 ? t('task', 'task') : t('tasks', 'tasks')})
                         </Text>
                       </View>
                       <View style={{ height: 6, backgroundColor: C.soft, borderRadius: 4 }}>
@@ -4373,10 +4392,10 @@ export default function App() {
           </Text>
 
           {/* Exam Section Selector */}
-          <Text style={txt(11, true, C.muted)}>TARGET EXAM</Text>
+          <Text style={txt(11, true, C.muted)}>{t('targetExam', 'TARGET EXAM')}</Text>
           <View style={{ flexDirection: 'row', gap: 8, marginTop: 6, marginBottom: 12 }}>
             <Chip
-              label="UPSC"
+              label={t('upsc', 'UPSC')}
               active={planExamTarget === 'UPSC'}
               onPress={() => {
                 setPlanExamTarget('UPSC');
@@ -4385,7 +4404,7 @@ export default function App() {
               }}
             />
             <Chip
-              label="MPSC"
+              label={t('mpsc', 'MPSC')}
               active={planExamTarget === 'MPSC'}
               onPress={() => {
                 setPlanExamTarget('MPSC');
@@ -4396,7 +4415,9 @@ export default function App() {
           </View>
 
           {/* Subject Selector */}
-          <Text style={txt(11, true, C.muted)}>SELECT {planExamTarget} SUBJECT</Text>
+          <Text style={txt(11, true, C.muted)}>
+            {t('selectExamSubject', 'SELECT {exam} SUBJECT').replace('{exam}', planExamTarget === 'MPSC' ? t('mpsc', 'MPSC') : t('upsc', 'UPSC'))}
+          </Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6, marginBottom: 10 }}>
             {targetSubjects.map(s => (
               <Chip
@@ -4448,7 +4469,7 @@ export default function App() {
             {['30', '45', '60', '90', '120'].map(m => (
               <Chip
                 key={m}
-                label={`${m}m`}
+                label={`${m}${t('minsShort', 'm')}`}
                 active={planMinutes === m}
                 onPress={() => setPlanMinutes(m)}
               />
@@ -4601,10 +4622,12 @@ const Analytics = () => {
       const minutes = Math.max(0, Number(value) || 0);
       const hours = Math.floor(minutes / 60);
       const remainder = Math.round(minutes % 60);
+      const hShort = t('hoursShort', 'h');
+      const mShort = t('minsShort', 'm');
 
       return hours
-        ? `${hours}h ${remainder}m`
-        : `${remainder}m`;
+        ? `${hours}${hShort} ${remainder}${mShort}`
+        : `${remainder}${mShort}`;
     };
 
     const sectionSubtitle = {
@@ -4616,8 +4639,8 @@ const Analytics = () => {
 
     return (
       <>
-        <Title sub="Understand your habits, track progress and build consistency">
-          Study Analytics
+        <Title sub={t('analyticsSubtitleMain', 'Understand your habits, track progress and build consistency')}>
+          {t('studyAnalytics', 'Study Analytics')}
         </Title>
 
         <View
@@ -4629,18 +4652,18 @@ const Analytics = () => {
           }}
         >
           <Text style={txt(12, false, C.muted)}>
-            Your study overview
+            {t('yourStudyOverview', 'Your study overview')}
           </Text>
 
           <View style={{ flexDirection: 'row' }}>
             <Chip
-              label="7 Days"
+              label={t('sevenDays', '7 Days')}
               active={analyticsRange === '7'}
               onPress={() => setAnalyticsRange('7')}
             />
             <View style={{ width: 6 }} />
             <Chip
-              label="30 Days"
+              label={t('thirtyDays', '30 Days')}
               active={analyticsRange === '30'}
               onPress={() => setAnalyticsRange('30')}
             />
@@ -4658,12 +4681,17 @@ const Analytics = () => {
             paddingRight: 4
           }}
         >
-          {['Overview', 'Activity', 'Subjects', 'Sessions'].map(tab => (
+          {[
+            { key: 'Overview', label: t('overview', 'Overview') },
+            { key: 'Activity', label: t('activity', 'Activity') },
+            { key: 'Subjects', label: t('subjects', 'Subjects') },
+            { key: 'Sessions', label: t('sessionsTab', 'Sessions') }
+          ].map(tabItem => (
             <Chip
-              key={tab}
-              label={tab}
-              active={analyticsTab === tab}
-              onPress={() => setAnalyticsTab(tab)}
+              key={tabItem.key}
+              label={tabItem.label}
+              active={analyticsTab === tabItem.key}
+              onPress={() => setAnalyticsTab(tabItem.key)}
             />
           ))}
         </ScrollView>
@@ -4679,14 +4707,14 @@ const Analytics = () => {
             }}
           >
             <View style={{ flex: 1, paddingRight: 8 }}>
-              <Text style={txt(17, true)}>Today's Study Goal</Text>
+              <Text style={txt(17, true)}>{t('todaysStudyGoal', "Today's Study Goal")}</Text>
               <Text
                 style={[
                   txt(12, false, C.muted),
                   { marginTop: 6, lineHeight: 19 }
                 ]}
               >
-                Build a daily habit, one focused session at a time.
+                {t('buildHabitDesc', 'Build a daily habit, one focused session at a time.')}
               </Text>
             </View>
 
@@ -4699,7 +4727,7 @@ const Analytics = () => {
               }}
             >
               <Text style={txt(11, true, C.blue)}>
-                {goalProgress}% done
+                {goalProgress}% {t('done', 'done')}
               </Text>
             </View>
           </View>
@@ -4717,7 +4745,7 @@ const Analytics = () => {
               <Ring
                 value={goalProgress}
                 size={125}
-                label="Daily goal"
+                label={t('dailyGoal', 'Daily goal')}
               />
             </View>
 
@@ -4731,7 +4759,7 @@ const Analytics = () => {
                   { marginTop: 4 }
                 ]}
               >
-                studied today
+                {t('studiedToday', 'studied today')}
               </Text>
 
               <View
@@ -4760,10 +4788,10 @@ const Analytics = () => {
                 ]}
               >
                 {todayMinutes >= dailyGoalMinutes
-                  ? 'Daily goal reached!'
+                  ? t('dailyGoalReached', 'Daily goal reached!')
                   : `${formatMinutes(
                       dailyGoalMinutes - todayMinutes
-                    )} remaining of 2h`}
+                    )} ${t('remainingOf', 'remaining of')} ${formatMinutes(dailyGoalMinutes)}`}
               </Text>
             </View>
           </View>
@@ -4779,24 +4807,24 @@ const Analytics = () => {
         >
           {[
             {
-              label: 'Study Time',
+              label: t('studyTime', 'Study Time'),
               value: formatMinutes(rangeMinutes),
-              detail: 'Total recorded'
+              detail: t('totalRecorded', 'Total recorded')
             },
             {
-              label: 'Sessions',
+              label: t('sessionsTab', 'Sessions'),
               value: String(rangeSessions.length),
-              detail: 'Completed records'
+              detail: t('completedRecords', 'Completed records')
             },
             {
-              label: 'Average Focus',
+              label: t('averageFocus', 'Average Focus'),
               value: `${rangeFocus}%`,
-              detail: 'Recorded focus score'
+              detail: t('recordedFocusScore', 'Recorded focus score')
             },
             {
-              label: 'Avg. Session',
+              label: t('avgSession', 'Avg. Session'),
               value: formatMinutes(averageSession),
-              detail: 'Per recorded session'
+              detail: t('perRecordedSession', 'Per recorded session')
             }
           ].map((item, index) => (
             <View
@@ -4858,14 +4886,14 @@ borderColor: [
           ))}
         </View>
                   <Card>
-          <Text style={sectionHeading}>Focus Quality</Text>
+          <Text style={sectionHeading}>{t('focusQuality', 'Focus Quality')}</Text>
           <Text
             style={[
               txt(12, false, C.muted),
               sectionSubtitle
             ]}
           >
-            Average focus score from recorded sessions.
+            {t('avgFocusScoreDesc', 'Average focus score from recorded sessions.')}
           </Text>
 
           <View
@@ -4877,7 +4905,7 @@ borderColor: [
             <Ring
               value={rangeFocus}
               size={155}
-              label="Average focus"
+              label={t('averageFocus', 'Average focus')}
             />
           </View>
 
@@ -4889,7 +4917,7 @@ borderColor: [
           >
             {rangeSessions.length
               ? `Based on ${rangeSessions.length} recorded ${
-                  rangeSessions.length === 1 ? 'session' : 'sessions'
+                  rangeSessions.length === 1 ? t('session', 'session') : t('sessions', 'sessions')
                 } in this period.`
               : 'Complete a study session to begin tracking focus quality.'}
           </Text>
@@ -4901,7 +4929,7 @@ borderColor: [
         {analyticsTab === 'Activity' && (
           <>
         <Card>
-          <Text style={sectionHeading}>Daily Study Activity</Text>
+          <Text style={sectionHeading}>{t('dailyStudyActivity', 'Daily Study Activity')}</Text>
           <Text
             style={[
               txt(12, false, C.muted),
@@ -4909,8 +4937,8 @@ borderColor: [
             ]}
           >
             {analyticsRange === '7'
-              ? 'Minutes studied each day this week'
-              : 'Minutes studied across the selected month'}
+              ? t('minutesStudiedWeek', 'Minutes studied each day this week')
+              : t('minutesStudiedMonth', 'Minutes studied across the selected month')}
           </Text>
 
           {chartDays.length === 0 ? (
@@ -5007,7 +5035,7 @@ borderColor: [
           >
             <View>
               <Text style={txt(11, false, C.muted)}>
-                Total study time
+                {t('totalStudyTime', 'Total study time')}
               </Text>
               <Text
                 style={[
@@ -5021,7 +5049,7 @@ borderColor: [
 
             <View style={{ alignItems: 'flex-end' }}>
               <Text style={txt(11, false, C.muted)}>
-                Active days
+                {t('activeDays', 'Active days')}
               </Text>
               <Text
                 style={[
@@ -5036,14 +5064,14 @@ borderColor: [
         </Card>
 
         <Card>
-          <Text style={sectionHeading}>Study Consistency</Text>
+          <Text style={sectionHeading}>{t('studyConsistency', 'Study Consistency')}</Text>
           <Text
             style={[
               txt(12, false, C.muted),
               sectionSubtitle
             ]}
           >
-            Each square represents one day. Stronger color means more study time.
+            {t('heatmapDesc', 'Each square represents one day. Stronger color means more study time.')}
           </Text>
 
           {chartDays.length === 0 ? (
@@ -5110,10 +5138,10 @@ borderColor: [
                 }}
               >
                 <Text style={txt(11, false, C.muted)}>
-                  {activeDays} active days
+                  {activeDays} {t('activeDays', 'active days')}
                 </Text>
                 <Text style={txt(11, false, C.muted)}>
-                  {chartDays.length - activeDays} days without study
+                  {chartDays.length - activeDays} {t('daysWithoutStudy', 'days without study')}
                 </Text>
               </View>
             </>
@@ -5126,14 +5154,14 @@ borderColor: [
 
         {analyticsTab === 'Subjects' && (
         <Card>
-          <Text style={txt(17, true)}>Subject Breakdown</Text>
+          <Text style={txt(17, true)}>{t('subjectBreakdown', 'Subject Breakdown')}</Text>
           <Text
             style={[
               txt(12, false, C.muted),
               { marginTop: 5, marginBottom: 18 }
             ]}
           >
-            See how your study time is distributed across subjects.
+            {t('subjectBreakdownDesc', 'See how your study time is distributed across subjects.')}
           </Text>
 
           {subjectRows.length === 0 ||
@@ -5142,7 +5170,7 @@ borderColor: [
             0
           ) === 0 ? (
             <Text style={txt(12, false, C.muted)}>
-              No subject study time recorded for this period.
+              {t('noSubjectStudyTime', 'No subject study time recorded for this period.')}
             </Text>
           ) : (
             <>
@@ -5244,7 +5272,7 @@ borderColor: [
                           }}
                         >
                           <Text style={txt(11, false, C.muted)}>
-                            Total studied
+                            {t('totalStudied', 'Total studied')}
                           </Text>
                           <Text
                             style={[
@@ -5262,8 +5290,8 @@ borderColor: [
                           >
                             {subjectRows.length}{' '}
                             {subjectRows.length === 1
-                              ? 'subject'
-                              : 'subjects'}
+                              ? t('subject', 'subject')
+                              : t('subjects', 'subjects')}
                           </Text>
                         </View>
                       </>
@@ -5284,7 +5312,7 @@ borderColor: [
               >
                 <View>
                   <Text style={txt(11, false, C.muted)}>
-                    Total sessions
+                    {t('totalSessions', 'Total sessions')}
                   </Text>
                   <Text
                     style={[
@@ -5301,7 +5329,7 @@ borderColor: [
 
                 <View style={{ alignItems: 'flex-end' }}>
                   <Text style={txt(11, false, C.muted)}>
-                    Leading subject
+                    {t('leadingSubject', 'Leading subject')}
                   </Text>
                   <Text
                     style={[
@@ -5309,10 +5337,9 @@ borderColor: [
                       { marginTop: 5 }
                     ]}
                   >
-                    {subjectRows
+                    {getSubjectName(subjectRows
                       .slice()
-                      .sort((a, b) => b.minutes - a.minutes)[0]
-                      .name}
+                      .sort((a, b) => b.minutes - a.minutes)[0], lang)}
                   </Text>
                 </View>
               </View>
@@ -5323,7 +5350,7 @@ borderColor: [
                   { marginBottom: 13 }
                 ]}
               >
-                Subject details
+                {t('subjectDetails', 'Subject details')}
               </Text>
 
               {subjectRows.map((subject, index) => {
@@ -5374,7 +5401,7 @@ borderColor: [
 
                     <View style={{ flex: 1, marginRight: 8 }}>
                       <Text style={txt(13, true)}>
-                        {subject.name}
+                        {getSubjectName(subject, lang)}
                       </Text>
                       <Text
                         style={[
@@ -5384,8 +5411,8 @@ borderColor: [
                       >
                         {subject.count}{' '}
                         {subject.count === 1
-                          ? 'session'
-                          : 'sessions'}
+                          ? t('session', 'session')
+                          : t('sessions', 'sessions')}
                       </Text>
                     </View>
 
@@ -5419,9 +5446,9 @@ borderColor: [
               marginBottom: 4
             }}
           >
-            <Text style={sectionHeading}>Recent Sessions</Text>
+            <Text style={sectionHeading}>{t('recentSessions', 'Recent Sessions')}</Text>
             <Text style={txt(11, false, C.muted)}>
-              Latest {recentSessions.length}
+              {t('latestCount', 'Latest {count}').replace('{count}', recentSessions.length)}
             </Text>
           </View>
 
@@ -5431,7 +5458,7 @@ borderColor: [
               { marginTop: 5, marginBottom: 8 }
             ]}
           >
-            Your latest recorded study sessions in this period.
+            {t('recentSessionsDesc', 'Your latest recorded study sessions in this period.')}
           </Text>
 
           {recentSessions.length === 0 ? (
@@ -5441,13 +5468,16 @@ borderColor: [
                 { marginTop: 12 }
               ]}
             >
-              No sessions recorded during this period.
+              {t('noSessionsRecorded', 'No sessions recorded during this period.')}
             </Text>
           ) : (
             recentSessions.map((session, index) => {
-              const subjectName = subjects.find(
+              const subjectObj = subjects.find(
                 subject => subject.id === session.subjectId
-              )?.name || 'Study Session';
+              );
+              const subjectName = subjectObj
+                ? getSubjectName(subjectObj, lang)
+                : t('studySession', 'Study Session');
 
               return (
                 <View
@@ -5495,7 +5525,7 @@ borderColor: [
                           ? new Date(
                               session.startedAt
                             ).toLocaleDateString()
-                          : 'Date unavailable'}
+                          : t('dateUnavailable', 'Date unavailable')}
                       </Text>
                     </View>
 
@@ -5509,7 +5539,7 @@ borderColor: [
                           { marginTop: 4 }
                         ]}
                       >
-                        {Number(session.focusScore) || 0}% focus
+                        {Number(session.focusScore) || 0}% {t('focus', 'focus')}
                       </Text>
                     </View>
                   </View>
@@ -5659,7 +5689,7 @@ borderColor: [
                               paddingVertical: 1
                             }}
                           >
-                            <Text style={{ fontSize: 8, fontWeight: '700', color: '#ffffff' }}>Active</Text>
+                            <Text style={{ fontSize: 8, fontWeight: '700', color: '#ffffff' }}>{t('active', 'Active')}</Text>
                           </View>
                         )}
                       </TouchableOpacity>
@@ -5728,7 +5758,7 @@ borderColor: [
                   <Text style={txt(12, true)}>{t('notificationsTitle')}</Text>
                   {unread.length > 0 && (
                     <View style={{ backgroundColor: '#ef4444', borderRadius: 8, paddingHorizontal: 5, paddingVertical: 1 }}>
-                      <Text style={{ fontSize: 9, fontWeight: '700', color: '#ffffff' }}>{unread.length} new</Text>
+                      <Text style={{ fontSize: 9, fontWeight: '700', color: '#ffffff' }}>{unread.length} {t('new', 'new')}</Text>
                     </View>
                   )}
                 </View>
@@ -5785,10 +5815,10 @@ borderColor: [
               <View style={{ marginBottom: 16, paddingTop: 14, borderTopWidth: 1, borderColor: C.line }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 3 }}>
                   <Ionicons name="book-outline" size={16} color={C.blue} />
-                  <Text style={txt(12, true)}>Manual &amp; Offline Study Logging</Text>
+                  <Text style={txt(12, true)}>{t('manualOfflineLogging', 'Manual & Offline Study Logging')}</Text>
                 </View>
                 <Text style={[txt(10, false, C.muted), { marginBottom: 8 }]}>
-                  Log textbook readings, library sessions, and past study hours.
+                  {t('manualOfflineDesc', 'Log textbook readings, library sessions, and past study hours.')}
                 </Text>
 
                 <TouchableOpacity
@@ -5811,9 +5841,9 @@ borderColor: [
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
                     <Ionicons name="book-outline" size={18} color="#059669" />
                     <View style={{ flex: 1, minWidth: 0 }}>
-                      <Text style={txt(12, true, isDark ? '#34d399' : '#15803d')}>Log Offline Book Study</Text>
+                      <Text style={txt(12, true, isDark ? '#34d399' : '#15803d')}>{t('logOfflineBookStudy', 'Log Offline Book Study')}</Text>
                       <Text style={[txt(10, false, C.muted), { marginTop: 1 }]} numberOfLines={1}>
-                        Includes past hours entry, textbooks, and library study
+                        {t('logOfflineBookDesc', 'Includes past hours entry, textbooks, and library study')}
                       </Text>
                     </View>
                   </View>
@@ -5995,10 +6025,10 @@ borderColor: [
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text numberOfLines={1} style={txt(14, true)}>
-                    {isOffline ? 'Log Offline Book Study' : 'Past Hours Entry'}
+                    {isOffline ? t('logOfflineBookStudy', 'Log Offline Book Study') : t('pastHoursEntry', 'Past Hours Entry')}
                   </Text>
                   <Text numberOfLines={1} style={txt(10, false, C.muted)}>
-                    {isOffline ? 'Textbooks, library & offline study' : 'Manual entry for past study sessions'}
+                    {isOffline ? t('offlineStudySubtitle', 'Textbooks, library & offline study') : t('pastHoursSubtitle', 'Manual entry for past study sessions')}
                   </Text>
                 </View>
               </View>
@@ -6044,7 +6074,7 @@ borderColor: [
                 }}
               >
                 <Text style={txt(11, true, isOffline ? (isDark ? '#34d399' : '#15803d') : C.muted)}>
-                  Offline Book Study
+                  {t('logOfflineBookStudy', 'Offline Book Study')}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -6061,7 +6091,7 @@ borderColor: [
                 }}
               >
                 <Text style={txt(11, true, !isOffline ? (isDark ? '#fb923c' : '#c2410c') : C.muted)}>
-                  Past Hours Entry
+                  {t('pastHoursEntry', 'Past Hours Entry')}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -6073,27 +6103,27 @@ borderColor: [
               showsVerticalScrollIndicator={true}
             >
               {/* 1. Target Exam Section */}
-              <Text style={txt(11, true, C.muted)}>TARGET EXAM SECTION</Text>
+              <Text style={txt(11, true, C.muted)}>{t('targetExamSection', 'TARGET EXAM SECTION')}</Text>
               <View style={{ flexDirection: 'row', marginTop: 4, marginBottom: 12, gap: 6, flexWrap: 'wrap' }}>
                 <Chip
-                  label="All Subjects"
+                  label={t('allSubjects', 'All Subjects')}
                   active={manualExamFilter === 'ALL'}
                   onPress={() => setManualExamFilter('ALL')}
                 />
                 <Chip
-                  label="UPSC"
+                  label={t('upsc', 'UPSC')}
                   active={manualExamFilter === 'UPSC'}
                   onPress={() => setManualExamFilter('UPSC')}
                 />
                 <Chip
-                  label="MPSC"
+                  label={t('mpsc', 'MPSC')}
                   active={manualExamFilter === 'MPSC'}
                   onPress={() => setManualExamFilter('MPSC')}
                 />
               </View>
 
               {/* 2. Select Subject (Proper alignment, wraps long subjects safely) */}
-              <Text style={txt(11, true, C.muted)}>SELECT SUBJECT</Text>
+              <Text style={txt(11, true, C.muted)}>{t('selectSubject', 'SELECT SUBJECT')}</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 4, marginBottom: 12, width: '100%' }}>
                 {subjects
                   .filter(s => {
@@ -6124,10 +6154,10 @@ borderColor: [
               </View>
 
               {/* 3. Study Date in DD/MM/YYYY format */}
-              <Text style={txt(11, true, C.muted)}>STUDY DATE (DD/MM/YYYY)</Text>
+              <Text style={txt(11, true, C.muted)}>{t('studyDate', 'STUDY DATE (DD/MM/YYYY)')}</Text>
               <View style={{ flexDirection: 'row', marginTop: 4, marginBottom: 6, gap: 6, flexWrap: 'wrap' }}>
                 <Chip
-                  label={`Today (${todayDMY()})`}
+                  label={`${t('today', 'Today')} (${todayDMY()})`}
                   active={manualDate === 'today'}
                   onPress={() => {
                     setManualDate('today');
@@ -6135,7 +6165,7 @@ borderColor: [
                   }}
                 />
                 <Chip
-                  label={`Yesterday (${yesterdayDMY()})`}
+                  label={`${t('yesterday', 'Yesterday')} (${yesterdayDMY()})`}
                   active={manualDate === 'yesterday'}
                   onPress={() => {
                     setManualDate('yesterday');
@@ -6143,7 +6173,7 @@ borderColor: [
                   }}
                 />
                 <Chip
-                  label="Specific Date"
+                  label={t('specificDate', 'Specific Date')}
                   active={manualDate === 'custom'}
                   onPress={() => setManualDate('custom')}
                 />
@@ -6159,7 +6189,7 @@ borderColor: [
                     keyboardType="numbers-and-punctuation"
                   />
                   <Text style={[txt(10, false, C.muted), { marginTop: 3 }]}>
-                    Format: DD/MM/YYYY (Day/Month/Year)
+                    {t('studyDateFormat', 'Format: DD/MM/YYYY (Day/Month/Year)')}
                   </Text>
                 </View>
               )}
@@ -6168,30 +6198,30 @@ borderColor: [
               )}
 
               {/* 4. Study Activity Section */}
-              <Text style={txt(11, true, C.muted)}>STUDY ACTIVITY</Text>
+              <Text style={txt(11, true, C.muted)}>{t('studyActivity', 'STUDY ACTIVITY')}</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 4, marginBottom: 12, width: '100%' }}>
                 {[
-                  'Theory & Reading',
-                  'PYQs & MCQs',
-                  'Mains Answer Writing',
-                  'Current Affairs',
-                  'Revision'
+                  { key: 'Theory & Reading', label: t('theoryReading', 'Theory & Reading') },
+                  { key: 'PYQs & MCQs', label: t('pyqsMcqs', 'PYQs & MCQs') },
+                  { key: 'Mains Answer Writing', label: t('mainsWriting', 'Mains Answer Writing') },
+                  { key: 'Current Affairs', label: t('currentAffairsActivity', 'Current Affairs') },
+                  { key: 'Revision', label: t('revision', 'Revision') }
                 ].map(act => (
                   <Chip
-                    key={act}
-                    label={act}
-                    active={manualActivity === act}
-                    onPress={() => setManualActivity(act)}
+                    key={act.key}
+                    label={act.label}
+                    active={manualActivity === act.key}
+                    onPress={() => setManualActivity(act.key)}
                     style={{ marginRight: 6, marginBottom: 6 }}
                   />
                 ))}
               </View>
 
               {/* 5. Duration Studied: Just Hrs and Min */}
-              <Text style={txt(11, true, C.muted)}>DURATION STUDIED (HOURS &amp; MINUTES)</Text>
+              <Text style={txt(11, true, C.muted)}>{t('durationStudied', 'DURATION STUDIED (HOURS & MINUTES)')}</Text>
               <View style={{ flexDirection: 'row', gap: 10, marginTop: 4, marginBottom: 12, width: '100%' }}>
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={txt(11, false, C.muted)}>Hours (Hrs)</Text>
+                  <Text style={txt(11, false, C.muted)}>{t('hoursHrs', 'Hours (Hrs)')}</Text>
                   <TextInput
                     keyboardType="numeric"
                     value={manualHours}
@@ -6202,7 +6232,7 @@ borderColor: [
                   />
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={txt(11, false, C.muted)}>Minutes (Min)</Text>
+                  <Text style={txt(11, false, C.muted)}>{t('minutesMins', 'Minutes (Min)')}</Text>
                   <TextInput
                     keyboardType="numeric"
                     value={manualMinutes}
@@ -6215,11 +6245,11 @@ borderColor: [
               </View>
 
               {/* 6. Chapter / Topic Note (Optional) */}
-              <Text style={txt(11, true, C.muted)}>CHAPTER / TOPIC NOTE (OPTIONAL)</Text>
+              <Text style={txt(11, true, C.muted)}>{t('topicNoteOptional', 'CHAPTER / TOPIC NOTE (OPTIONAL)')}</Text>
               <TextInput
                 value={manualTopic}
                 onChangeText={setManualTopic}
-                placeholder="e.g. Fundamental Rights Article 19-22 notes & questions"
+                placeholder={t('topicNotePlaceholder', 'e.g. Fundamental Rights Article 19-22 notes & questions')}
                 placeholderTextColor={C.muted}
                 style={input}
               />
@@ -6247,7 +6277,7 @@ borderColor: [
                   justifyContent: 'center'
                 }}
               >
-                <Text style={txt(12, true, C.muted)}>Cancel</Text>
+                <Text style={txt(12, true, C.muted)}>{t('cancel', 'Cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={saveManualSession}
@@ -6263,8 +6293,8 @@ borderColor: [
               >
                 <Text style={txt(12, true, '#ffffff')}>
                   {isLoggingManual
-                    ? 'Saving Session...'
-                    : `Save ${manualHours || 0}h ${manualMinutes || 0}m Study Time`}
+                    ? t('savingSession', 'Saving Session...')
+                    : `${t('saveHoursPrefix', 'Save')} ${manualHours || 0}${t('hoursShort', 'h')} ${manualMinutes || 0}${t('minsShort', 'm')} ${t('studyTime', 'Study Time')}`}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -6323,9 +6353,9 @@ borderColor: [
             <Ionicons name="book-outline" color={C.blue} size={20} />
           </View>
           <View style={{ flex: 1, marginLeft: 10, minWidth: 0 }}>
-            <Text numberOfLines={1} style={txt(15, true)}>Abhyas Tracker</Text>
+            <Text numberOfLines={1} style={txt(15, true)}>{t('appName', 'Abhyas Tracker')}</Text>
             <Text numberOfLines={1} style={txt(10, false, C.muted)}>
-              UPSC &amp; MPSC • {tab === 'Dashboard' ? t('dashboard') : tab === 'Timer' ? t('timer') : tab === 'Syllabus' ? t('syllabus') : tab === 'Planner' ? t('planner') : tab === 'Analytics' ? t('analytics') : (tab === 'Ticket Support' || tab === 'Support') ? t('ticketSupport', 'Ticket Support') : tab}
+              {t('examFocusTag', 'UPSC & MPSC')} • {tab === 'Dashboard' ? t('dashboard') : tab === 'Timer' ? t('timer') : tab === 'Syllabus' ? t('syllabus') : tab === 'Planner' ? t('planner') : tab === 'Analytics' ? t('analytics') : (tab === 'Ticket Support' || tab === 'Support') ? t('ticketSupport', 'Ticket Support') : tab}
             </Text>
           </View>
 
@@ -6416,7 +6446,7 @@ borderColor: [
         {/* Main Content Area */}
         {remindersOpen ? (
           <View style={{ flex: 1, width: '100%' }}>
-            <ReminderSettingsScreen onBack={() => setRemindersOpen(false)} />
+            <ReminderSettingsScreen onBack={() => setRemindersOpen(false)} lang={lang} />
           </View>
         ) : profileOpen ? (
           <View style={{ flex: 1, width: '100%' }}>
@@ -6439,6 +6469,7 @@ borderColor: [
               }}
               studyGoal={6}
               studyStreak={Number(analytics.currentStreak) || 0}
+              lang={lang}
             />
           </View>
         ) : (
@@ -6454,6 +6485,7 @@ borderColor: [
                 onMarkRead={markNote}
                 onBack={() => setNotifOpen(false)}
                 C={C}
+                lang={lang}
               />
             ) : tab === 'Dashboard' ? (
               <Dashboard />
@@ -6469,7 +6501,7 @@ borderColor: [
                 resetSession={resetSession}
                 saving={savingSession.current}
                 selected={selected}
-                subjects={subjects}
+                subjects={subjects && subjects.length > 0 ? subjects : DEFAULT_SYLLABUS_SUBJECTS}
                 setSelected={setSelected}
                 customMinutes={customMinutes}
                 setCustomMinutes={setCustomMinutes}
@@ -6483,6 +6515,8 @@ borderColor: [
                 requestExitFocus={() => setExitFocusConfirmOpen(true)}
                 theme={C}
                 isDarkMode={isDark}
+                lang={lang}
+                t={t}
               />
             ) : tab === 'Syllabus' ? (
               <Syllabus />
@@ -6495,6 +6529,7 @@ borderColor: [
                 isDarkMode={isDark}
                 onBack={() => setTab('Dashboard')}
                 req={req}
+                lang={lang}
               />
             ) : (
               <Analytics />
@@ -6725,7 +6760,7 @@ borderColor: [
               }}
             >
               <Text style={{ fontSize: 20, fontWeight: '700', color: C.ink }}>
-                Reset study session?
+                {t('resetSessionPrompt', 'Reset study session?')}
               </Text>
 
               <Text
@@ -6737,7 +6772,7 @@ borderColor: [
                   lineHeight: 21
                 }}
               >
-                Your current unsaved study time will be discarded.
+                {t('resetSessionDesc', 'Your current unsaved study time will be discarded.')}
               </Text>
 
               <View style={{ flexDirection: 'row', gap: 12 }}>
@@ -6751,7 +6786,7 @@ borderColor: [
                     alignItems: 'center'
                   }}
                 >
-                  <Text style={{ color: C.blue, fontWeight: '600' }}>Cancel</Text>
+                  <Text style={{ color: C.blue, fontWeight: '600' }}>{t('cancel', 'Cancel')}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -6766,7 +6801,7 @@ borderColor: [
                     opacity: savingSession.current ? 0.55 : 1
                   }}
                 >
-                  <Text style={{ color: C.white, fontWeight: '600' }}>Reset</Text>
+                  <Text style={{ color: C.white, fontWeight: '600' }}>{t('reset', 'Reset')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -6802,7 +6837,7 @@ borderColor: [
               }}
             >
               <Text style={{ fontSize: 20, fontWeight: '700', color: C.ink }}>
-                Exit Focus Mode?
+                {t('exitFocusModePrompt', 'Exit Focus Mode?')}
               </Text>
 
               <Text
@@ -6814,7 +6849,7 @@ borderColor: [
                   lineHeight: 21
                 }}
               >
-                Are you sure you want to leave Focus Mode and return to normal navigation?
+                {t('exitFocusModeDesc', 'Are you sure you want to leave Focus Mode and return to normal navigation?')}
               </Text>
 
               <View style={{ flexDirection: 'row', gap: 12 }}>
@@ -6829,7 +6864,7 @@ borderColor: [
                   }}
                 >
                   <Text style={{ color: C.blue, fontWeight: '700' }}>
-                    Stay Focused
+                    {t('stayFocused', 'Stay Focused')}
                   </Text>
                 </TouchableOpacity>
 
@@ -6847,7 +6882,7 @@ borderColor: [
                   }}
                 >
                   <Text style={{ color: '#ffffff', fontWeight: '700' }}>
-                    Exit Focus Mode
+                    {t('exitFocusMode', 'Exit Focus Mode')}
                   </Text>
                 </TouchableOpacity>
               </View>

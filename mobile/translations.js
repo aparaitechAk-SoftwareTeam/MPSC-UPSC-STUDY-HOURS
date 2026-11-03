@@ -9,6 +9,30 @@ export const AVAILABLE_LANGUAGES = [
   { code: 'mr', name: 'Marathi', nativeName: 'मराठी', flag: '' }
 ];
 
+export const DEFAULT_SYLLABUS_SUBJECTS = [
+  // UPSC Civil Services (9 Subjects)
+  { id: 'upsc-history-culture', name: 'History and Culture', exam: 'UPSC', paper: 'GS Paper I' },
+  { id: 'upsc-geography', name: 'Geography', exam: 'UPSC', paper: 'GS Paper I' },
+  { id: 'upsc-polity', name: 'Indian Polity and Governance', exam: 'UPSC', paper: 'GS Paper II' },
+  { id: 'upsc-economy', name: 'Indian Economy', exam: 'UPSC', paper: 'GS Paper III' },
+  { id: 'upsc-environment', name: 'Environment and Ecology', exam: 'UPSC', paper: 'GS Paper III' },
+  { id: 'upsc-science-tech', name: 'Science and Technology', exam: 'UPSC', paper: 'GS Paper III' },
+  { id: 'upsc-current-affairs', name: 'Current Affairs', exam: 'UPSC', paper: 'GS Paper I-IV' },
+  { id: 'upsc-csat', name: 'CSAT (Prelims Paper II)', exam: 'UPSC', paper: 'Prelims Paper II' },
+  { id: 'upsc-ethics', name: 'Ethics, Integrity and Aptitude (Mains)', exam: 'UPSC', paper: 'GS Paper IV' },
+
+  // MPSC Maharashtra State Services (9 Subjects)
+  { id: 'mpsc-history', name: 'Maharashtra and Indian History', exam: 'MPSC', paper: 'GS Paper I' },
+  { id: 'mpsc-geography', name: 'Maharashtra and Indian Geography', exam: 'MPSC', paper: 'GS Paper I' },
+  { id: 'mpsc-polity', name: 'Constitution & Administration', exam: 'MPSC', paper: 'GS Paper II' },
+  { id: 'mpsc-economy', name: 'Indian and Maharashtra Economy', exam: 'MPSC', paper: 'GS Paper IV' },
+  { id: 'mpsc-marathi', name: 'Marathi Language', exam: 'MPSC', paper: 'Language Paper I' },
+  { id: 'mpsc-english', name: 'English Language', exam: 'MPSC', paper: 'Language Paper II' },
+  { id: 'mpsc-aptitude', name: 'Aptitude and Reasoning', exam: 'MPSC', paper: 'CSAT Paper II' },
+  { id: 'mpsc-environment-science', name: 'Environment and Science', exam: 'MPSC', paper: 'GS Paper IV' },
+  { id: 'mpsc-current-affairs', name: 'Current Affairs', exam: 'MPSC', paper: 'GS Paper I-IV' }
+];
+
 export const translations = {
   // ==================== ENGLISH ====================
   en: {
@@ -22,7 +46,7 @@ export const translations = {
     settings: 'Settings',
 
     // Subtitles
-    dashboardSubtitle: 'Target scheduling, task execution & daily workload balance',
+    dashboardSubtitle: 'Daily progress, focus milestones and target breakdown',
     timerSubtitle: 'Deep focus study stopwatch & interval tracker',
     syllabusSubtitle: 'Interactive curriculum checklist, mastery tracking & offline hour logger',
     plannerSubtitle: 'Target scheduling, task execution & daily workload balance',
@@ -58,186 +82,363 @@ export const translations = {
     mastered: 'Mastered',
     remaining: 'Remaining',
     mins: 'mins',
-    minPlanned: 'min planned',
+    minPlanned: 'mins planned',
     hours: 'hours',
-    hoursPlanned: 'h planned',
+    hoursPlanned: 'hours planned',
     tasks: 'tasks',
     task: 'task',
     signOut: 'Sign Out',
     confirmSignOut: 'Are you sure you want to sign out?',
     signedInAs: 'Signed in as',
+    start: 'Start',
+    active: 'Active',
+    new: 'new',
+    on: 'ON',
+    off: 'OFF',
+    set: 'Set',
+    ok: 'OK',
+
+    // Greetings & Header
+    goodMorning: 'Good morning',
+    goodEvening: 'Good evening',
+    aspirant: 'Aspirant',
 
     // Settings Modal
     settingsTitle: 'Settings & Preferences',
     appLanguage: 'App Language',
-    chooseLanguage: 'Choose your preferred interface language',
+    chooseLanguage: 'Select your preferred language for the whole app',
     appearance: 'Appearance & Theme',
-    themeDescription: 'Switch between light and dark themes for comfortable reading',
-    notificationsTitle: 'Notifications & Alerts',
-    notificationDesc: 'Manage daily routine briefings and study alerts',
-    openNotificationsView: 'Open Routine Briefings & Alerts',
-    enableBrowserAlerts: 'Enable Browser Desktop Notifications',
-    notificationsEnabled: 'Daily routine notifications active',
-    studyTargetGoal: 'Daily Target Hours',
-    studyTargetDesc: 'Set your target daily deep focus duration',
+    themeDescription: 'Choose light or dark mode for visual comfort',
+    notificationsTitle: 'Notifications & Daily Alerts',
+    notificationDesc: 'Manage daily study reminders and alerts',
+    openNotificationsView: 'Open Routines & Alerts',
+    enableBrowserAlerts: 'Enable Desktop Notifications',
+    notificationsEnabled: 'Daily alerts are active',
+    studyTargetGoal: 'Daily Study Goal',
+    studyTargetDesc: 'Set your target daily study hours',
     primaryExam: 'Primary Exam Focus',
-    primaryExamDesc: 'Filter your default study curriculum view',
+    primaryExamDesc: 'Select default syllabus view',
     allExams: 'All Exams (UPSC + MPSC)',
     upscOnly: 'UPSC Civil Services',
     mpscOnly: 'MPSC Maharashtra',
-    soundAlerts: 'Timer Completion Sound',
-    soundAlertsDesc: 'Play audio chime when focus timer completes',
-    on: 'ON',
-    off: 'OFF',
+    soundAlerts: 'Timer Sound Alerts',
+    soundAlertsDesc: 'Play sound tone on session completion',
     appInfo: 'About Abhyas Tracker',
-    appVersion: 'Abhyas Tracker v1.2.0 • UPSC & MPSC Preparation Suite',
+    appVersion: 'Abhyas Tracker v1.2.0 • UPSC & MPSC Study Suite',
 
     // Dashboard
-    dailyQuote: 'Consistency is what transforms average into excellence.',
+    dailyQuote: 'Consistency turns average effort into excellence.',
     todayStudyTime: "Today's Study Time",
-    weeklyGoal: '7-Day Goal vs. 40h',
+    weeklyGoal: 'Weekly Goal (40h)',
     dailyStreak: 'Daily Streak',
     days: 'days',
     curriculumProgress: 'Curriculum Progress',
-    overallCurriculum: 'Overall Completion',
+    overallCurriculum: 'Overall Curriculum Completion',
     upscMastery: 'UPSC Mastered',
     mpscMastery: 'MPSC Mastered',
     todayTasks: "Today's Scheduled Tasks",
-    noTasksToday: 'No tasks scheduled for today yet. Plan a study block now!',
+    noTasksToday: 'No tasks scheduled for today.',
+    noTasksTodayDesc: 'Starting your day with a defined target increases study efficiency.',
+    addScheduledTask: '+ Add Scheduled Task',
     openTomorrowPlanner: "Open Tomorrow's Planner",
-    autoPlanTomorrowBtn: 'Auto-Plan Tomorrow',
-    quickTimerStart: 'Quick Start Focus Timer',
+    autoPlanTomorrowBtn: "Auto-Plan Tomorrow's Blueprint",
+    quickTimerStart: 'Start Focus Timer Now',
     recentStudySessions: 'Recent Study Sessions',
-    noSessionsLogged: 'No sessions logged yet today. Hit Start Timer to begin!',
+    noSessionsLogged: 'No sessions logged today yet. Hit the timer to start!',
+    noSessionsLoggedYet: 'No sessions logged today yet. Ready to start your preparation?',
     openSyllabusBtn: 'Open Syllabus & Checklist →',
+    startTimer: 'Start Timer',
+    pauseTimer: 'Pause Timer',
+    resumeTimer: 'Resume Timer',
+    subjectBalanceAlert: 'Subject Balance Alert: Neglected Module',
+    neglectedAlertIntro: "You haven't logged any study hours for",
+    inTheLastDays: 'in the last {days}+ days.',
+    highWeightageWarning: 'High-weightage qualifying / scoring module — regular hours prevent last-minute panic!',
+    backlogWarning: 'Don’t let syllabus backlog accumulate before the exam!',
+    otherLowHourSubjects: 'OTHER LOW-HOUR SUBJECTS:',
+    focusOn: 'Focus on {subject}',
+    addToPlanner: 'Add to Planner',
+    quickActions: 'Quick Actions',
+    focusTimer: 'Focus Timer',
+    activeSession: 'Active Session',
+    startSession: 'Start Session',
+    studyPlan: 'Study Plan',
+    schedule: 'Schedule',
+    reports: 'Reports',
+    attendance: 'Attendance',
+    presentToday: 'Present today',
+    dayStreak: '{streak}-Day streak',
+    quiz: 'Quiz',
+    comingSoon: 'Coming Soon',
+    session: 'session',
+    sessions: 'sessions',
+    logged: 'logged',
+    loggedToday: 'Logged Today',
+    dailyGoal: 'Daily Goal',
+    goalMet: 'Goal Met!',
+    scheduleDailySyllabusDesc: "Schedule daily syllabus topics, plan tomorrow's revision in advance, and balance your weekly study hours.",
+    expandAll: 'Expand All',
+    collapse: 'Collapse',
 
     // Timer Screen
-    studyStopwatch: 'Study Stopwatch & Focus Timer',
-    runningFocus: 'Deep Focus Session in Progress',
-    pausedFocus: 'Session Paused',
-    readyToFocus: 'Ready to Focus',
-    sessionFocusTopic: 'SESSION FOCUS TOPIC',
-    whatAreYouStudying: 'What topic or chapter are you studying?',
-    startTimer: 'Start Study Timer',
-    pauseTimer: 'Pause',
-    resumeTimer: 'Resume',
-    saveSessionBtn: 'Save Session',
-    resetTimer: 'Reset',
-    selectSubjectToTrack: 'SELECT SUBJECT TO TRACK',
-    pomodoroIntervals: 'Focus Interval Presets',
+    studyTimer: 'Study Timer',
+    studyStopwatch: 'Deep focus study stopwatch & interval tracker',
+    trackStudySessions: 'Track your study sessions and stay consistent.',
+    exitFocusMode: 'Exit Focus Mode',
+    enterFocusMode: 'Enter Focus Mode',
+    focusStyle: 'FOCUS STYLE',
+    lightZen: 'Light Zen',
+    deepZen: 'Deep Zen',
+    stopwatchLightZenOnly: 'Stopwatch supports Light Zen only.',
+    deepZenDesc: 'Deep Zen locks pause, reset, finish, and exit during an active countdown. It unlocks when the countdown finishes.',
+    lightZenDesc: 'Light Zen lets you leave Focus Mode whenever you need.',
+    pomodoro: 'Pomodoro',
+    stopwatch: 'Stopwatch',
+    custom: 'Custom',
+    studySubject: 'STUDY SUBJECT',
+    customDuration: 'CUSTOM DURATION',
+    enterOwnTime: 'OR ENTER YOUR OWN TIME (MINUTES)',
+    enterMinutesPlaceholder: 'Enter minutes (1 - 720)',
+    currentTarget: 'Current Target',
+    saveSession: 'Save Session',
+    reset: 'Reset',
+    saving: 'Saving...',
+    finish: 'Finish',
+    allSubjects: 'All Subjects',
+    upsc: 'UPSC',
+    mpsc: 'MPSC',
+    runningFocus: 'Deep focus study session is running',
+    pausedFocus: 'Session is paused',
+    readyToFocus: 'Ready to focus',
+    sessionFocusTopic: 'Session Focus Topic',
+    whatAreYouStudying: 'What chapter or topic are you studying?',
+    selectSubjectToTrack: 'Select Subject to Track',
+    pomodoroIntervals: 'Pomodoro Interval Options',
+
+    // Offline / Manual Study Logging
+    manualOfflineLogging: 'Manual & Offline Study Logging',
+    manualOfflineDesc: 'Log textbook readings, library sessions, and past study hours.',
+    logOfflineBookStudy: 'Log Offline Book Study',
+    logOfflineBookDesc: 'Includes past hours entry, textbooks, and library study',
+    pastHoursEntry: 'Past Hours Entry',
+    pastHoursDesc: 'Manual entry for past study sessions',
+    targetExamSection: 'TARGET EXAM SECTION',
+    selectSubject: 'SELECT SUBJECT',
+    studyDate: 'STUDY DATE (DD/MM/YYYY)',
+    specificDate: 'Specific Date',
+    studyActivity: 'STUDY ACTIVITY',
+    durationStudied: 'DURATION STUDIED (HOURS & MINUTES)',
+    hoursHrs: 'Hours (Hrs)',
+    minutesMins: 'Minutes (Mins)',
+    theoryReading: 'Theory & Reading',
+    pyqsMcqs: 'PYQs & MCQs',
+    mainsWriting: 'Mains Answer Writing',
+    currentAffairsActivity: 'Current Affairs',
+    revision: 'Revision',
+    saveStudyHours: 'Save Study Hours',
 
     // Syllabus Screen
     subjectsAndSyllabus: 'Subjects & Syllabus',
-    curriculumChecklist: 'Interactive curriculum checklist, mastery tracking & offline hour logger',
+    curriculumChecklist: 'Interactive curriculum checklist, mastery tracking & offline log',
     logOfflineHours: '+ Log Hours',
     closeLogger: 'Close Logger',
     offlineLoggerTitle: 'Log Offline / Book Study Hours',
-    offlineLoggerDesc: 'Studied from standard books (Laxmikanth, Spectrum, NCERT) or in library? Record hours directly.',
-    examSection: 'EXAM CURRICULUM SECTION',
-    topicsChecklistTap: 'TOPIC CHECKLIST (TAP TO UPDATE STATUS)',
-    viewTopicInSyllabus: 'Topic in Syllabus →',
+    offlineLoggerDesc: 'Read standard books (Laxmikanth, Spectrum, NCERT) or studied at library? Add hours directly.',
+    examSection: 'Exam Syllabus Section',
+    topicsChecklistTap: 'Topic Checklist (Tap status pill to update)',
+    viewTopicInSyllabus: 'View in Syllabus →',
     redirectedFromTask: 'Redirected from Planner Task',
+    jumpToTopic: 'Jump to Topic ↓',
     topicsMastered: 'topics mastered',
     spacedRepetitionQueue: 'Spaced Repetition Queue',
     neglectedModuleNotice: 'Curriculum Balance: Neglected Module',
     dueOn: 'Due',
-    spent: 'spent',
-    revs: 'revs',
-    donePct: 'done',
+    spent: 'Spent',
+    revs: 'Revs',
+    donePct: 'Done',
+    plusOneRevise: '+1 Revise',
+    logHours: 'Log Hours',
+    revise: 'Revise',
+    viewTopic: 'View Topic',
 
     // Planner Screen
     studyPlannerTitle: 'Study Planner',
-    plannerTimeframe: 'PLANNER TIMEFRAME',
+    plannerTimeframe: 'Planning Timeframe',
     todaysPlan: "Today's Plan",
     tomorrowsPlan: "Tomorrow's Plan",
     weeklyView: 'Weekly View',
     workloadRoutine: 'Workload & Routine',
-    examFilter: 'EXAM FILTER',
+    examFilter: 'Exam Filter',
     allExamTasks: 'All Exam Tasks',
     upscPlans: 'UPSC Plans',
     mpscPlans: 'MPSC Plans',
-    selectDay7: 'SELECT DAY (NEXT 7 DAYS)',
+    selectDay7: 'Select Day (Next 7 Days)',
     addStudyBlock: '+ Add Study Block',
-    addStudyBlockDesc: 'Schedule focus intervals aligned with your MPSC or UPSC syllabus.',
-    targetExamSection: 'TARGET EXAM SECTION',
-    selectTargetSubject: 'SELECT SUBJECT',
-    quickPickUnfinished: 'QUICK PICK FROM UNFINISHED SYLLABUS',
-    topicOrChapterTitle: 'TOPIC OR CHAPTER TITLE',
-    topicTitlePlaceholder: 'e.g. Fundamental Rights (Art 14–18)',
-    targetDurationMins: 'TARGET DURATION (MINUTES)',
+    addStudyBlockDesc: 'Schedule dedicated focus intervals according to your MPSC or UPSC syllabus breakdown.',
+    selectTargetSubject: 'Select Subject',
+    quickPickUnfinished: 'Quick Pick Unfinished Syllabus Topic',
+    topicOrChapterTitle: 'Topic or Chapter Title',
+    topicTitlePlaceholder: 'e.g. Fundamental Rights (Article 14-18)',
+    targetDurationMins: 'Target Duration (minutes)',
     scheduleStudyBlockBtn: '+ Schedule Study Block',
     advancePlanningRoutine: 'Advance Planning Routine',
-    advancePlanningDesc: 'Planning tasks for tomorrow tonight eliminates morning decision fatigue. Wake up knowing exactly what chapters and MCQs to tackle first.',
-    noTasksTomorrow: 'No tasks scheduled for Tomorrow yet.',
-    autoGenerateBlueprint: "Auto-Plan Tomorrow's Core Topics",
-    browseSyllabusToSchedule: 'Browse Syllabus Topics',
-    tomorrowsWorkloadTarget: "Tomorrow's Workload vs. 8h Target",
+    advancePlanningDesc: "Planning tomorrow's tasks tonight eliminates morning friction and provides strategic focus.",
+    noTasksTomorrow: 'No tasks scheduled for tomorrow yet.',
+    autoGenerateBlueprint: "Auto-Schedule Tomorrow's Core Topics",
+    browseSyllabusToSchedule: 'Browse Syllabus Topics to Schedule',
+    tomorrowsWorkloadTarget: "Tomorrow's Workload vs 8h Target",
     capacity: 'Capacity',
-    weeklyGoalVs40h: '7-Day Weekly Goal vs. 40h',
-    tasksForDay: 'Tasks for',
-    noTasksScheduledDate: 'No tasks scheduled for this date. Use "+ Add Study Block" below to schedule a session.',
+    weeklyGoalVs40h: 'Weekly 40h Goal',
+    tasksForDay: 'Scheduled Tasks for',
+    noTasksScheduledDate: 'No tasks scheduled for this date. Tap "+ Add Study Block" below to schedule.',
     workloadGauges: 'Workload Capacity Gauges',
     todaysStudyLoad: "Today's Study Load",
 
     // Analytics Screen
-    analyticsTitle: 'Study Analytics & Insights',
+    studyAnalytics: 'Study Analytics',
+    analyticsSubtitleMain: 'Understand your habits, track progress and build consistency',
+    yourStudyOverview: 'Your study overview',
+    sevenDays: '7 Days',
+    thirtyDays: '30 Days',
+    overview: 'Overview',
+    activity: 'Activity',
+    subjects: 'Subjects',
+    sessionsTab: 'Sessions',
+    todaysStudyGoal: "Today's Study Goal",
+    buildHabitDesc: 'Build a daily habit, one focused session at a time.',
+    studiedToday: 'studied today',
+    dailyGoalReached: 'Daily goal reached!',
+    remainingOf: 'remaining of',
+    studyTime: 'Study Time',
+    totalRecorded: 'Total recorded',
+    completedRecords: 'Completed records',
+    averageFocus: 'Average Focus',
+    recordedFocusScore: 'Recorded focus score',
+    avgSession: 'Avg. Session',
+    perRecordedSession: 'Per recorded session',
+    focusQuality: 'Focus Quality',
+    avgFocusScoreDesc: 'Average focus score from recorded sessions.',
+    dailyStudyActivity: 'Daily Study Activity',
+    minutesStudiedWeek: 'Minutes studied each day this week',
+    minutesStudiedMonth: 'Minutes studied across the selected month',
+    activeDays: 'Active days',
+    studyConsistency: 'Study Consistency',
+    heatmapDesc: 'Each square represents one day. Stronger color means more study time.',
+    daysWithoutStudy: 'days without study',
+    subjectBreakdown: 'Subject Breakdown',
+    subjectBreakdownDesc: 'See how your study time is distributed across subjects.',
+    noSubjectStudyTime: 'No subject study time recorded for this period.',
+    analyticsTitle: 'Study Analytics & Performance',
     totalStudyTime: 'Total Study Time',
     weeklyAvg: 'Weekly Average',
-    completionRate: 'Task Completion Rate',
-    subjectDistribution: 'Subject Distribution & Time Allocation',
+    completionRate: 'Completion Rate',
+    subjectDistribution: 'Subject Distribution',
     last7DaysTrend: 'Daily Study Trend (Last 7 Days)',
     hoursPerDay: 'hours / day',
-    noAnalyticsData: 'Log study sessions to unlock personalized preparation analytics.',
-
-    // Extra Navigation, Routine & Blueprint keys
-    jumpToTopic: 'View Topic ↓',
-    morningBriefing: 'MORNING STUDY BRIEFING',
-    eveningPlanning: 'EVENING PLANNING ROUTINE',
-    blueprintIdealRoutine: '3-Slot Ideal Daily Routine Blueprint',
-    blueprintRoutineDesc: 'Standard competitive examination schedule recommended for working aspirants & full-time students.',
-    slot1DeepWork: 'Slot 1: Early Morning Deep Work (06:00 - 09:00 • 3h)',
-    slot1Desc: 'Theory, core concept mastering & static syllabus reading when mind is freshest.',
-    slot2Practice: 'Slot 2: Afternoon Practice & Problem Solving (14:00 - 17:00 • 3h)',
-    slot2Desc: 'Previous Year Questions (PYQs), mock tests, CSAT & active recall exercises.',
-    slot3CurrentAffairs: 'Slot 3: Evening Current Affairs & Synthesis (20:00 - 22:00 • 2h)',
-    slot3Desc: 'Daily newspaper editorials, monthly magazines, notes summarization & answer writing.',
-    blueprintForToday: 'Blueprint for Today',
-    blueprintForTomorrow: 'Blueprint for Tomorrow',
-    tapToViewTopic: 'Tap to view topic in Syllabus →',
-    tapToViewTasks: 'Tap to view tasks',
-    autoPlanTomorrow: 'Auto-Plan Tomorrow',
-    curriculumBalanceNeglected: 'Curriculum Balance: Neglected Module',
-    offlineStudyLogger: 'Log Offline / Book Study Hours',
-    offlineStudyLoggerDesc: 'Studied from standard books (Laxmikanth, Spectrum, NCERT) or in a library? Record completed hours directly into your study progress.',
+    noAnalyticsData: 'Log study sessions to unlock personal preparation analytics.',
+    topicNoteOptional: 'CHAPTER / TOPIC NOTE (OPTIONAL)',
+    topicNotePlaceholder: 'e.g. Fundamental Rights Article 19-22 notes & questions',
+    resetSessionPrompt: 'Reset study session?',
+    resetSessionDesc: 'Your current unsaved study time will be discarded.',
+    exitFocusModePrompt: 'Exit Focus Mode?',
+    exitFocusModeDesc: 'Are you sure you want to leave Focus Mode and return to normal navigation?',
+    stayFocused: 'Stay Focused',
+    exitFocusMode: 'Exit Focus Mode',
+    studyStreak: 'Study Streak',
+    currentStreak: 'Current Streak',
+    streakDescription: 'Consistency is the foundation of civil services success. Complete a study session every day to keep your streak burning!',
+    days: 'Days',
+    autoPlanFullWeek: 'Auto-Plan Full Week',
+    entireWeek: 'Entire Week (All 7 Days)',
+    singleDayFocus: 'Single Day Focus',
+    weeklyScheduleView: 'WEEKLY SCHEDULE VIEW',
+    noTasksForDay: 'No tasks scheduled for this day',
+    addTask: '+ Add Task',
+    autoPlanThisDay: 'Auto-Plan This Day',
+    workloadCapacityGauges: 'Workload Capacity Gauges',
+    todaysStudyLoad: "Today's Study Load",
+    weeklyCumulativeLoad: 'Weekly Cumulative Load',
+    plannedAcross7Days: 'planned across 7 days',
+    examSyllabusAllocation: 'Exam Syllabus Allocation',
+    subjectWiseAllocation: 'Subject-Wise Time Allocation',
+    noSubjectHoursPlanned: 'No subject hours planned yet. Add study tasks to see subject distribution.',
+    targetExam: 'TARGET EXAM',
+    selectExamSubject: 'SELECT {exam} SUBJECT',
+    saveHoursPrefix: 'Save',
+    hoursShort: 'h',
+    minsShort: 'm',
+    subtopics: 'subtopics',
+    recentStudySessions: 'Recent Study Sessions This Week (Past Days)',
     startLiveTimer: 'Start Live Timer',
     logPastHours: 'Log Past Hours',
-    topicChecklistHeader: 'TOPIC CHECKLIST (TAP TO UPDATE STATUS)',
-    viewTopic: 'View Topic',
-    planForToday: 'Plan for Today',
-    plusOneRevise: '+1 Revise',
-    logHours: 'Log Hours',
-    revise: 'Revise',
-    mastered: 'Mastered',
-    remaining: 'Remaining',
-    confirmSignOut: 'Are you sure you want to sign out?',
-    signOut: 'Sign Out',
-    confirm: 'Confirm',
-    cancel: 'Cancel',
-    scheduled: 'Scheduled!',
-    scheduledMsg: "Added to today's study planner.",
-    studyHoursLogged: 'Study Hours Logged! ',
-    tenHourSchedule: '10-Hour Schedule',
-    tenHourScheduleTitle: '10-Hour Study Schedule for UPSC/MPSC Aspirants',
-    tenHourScheduleDesc: 'Disciplined 4-slot daily routine with scheduled breaks for maximum retention and deep focus.',
-    apply10hToday: 'Apply 10h Schedule to Today',
-    apply10hTomorrow: 'Apply 10h Schedule to Tomorrow',
-    currentSlotActive: 'Currently Active Slot',
-    honestStudyQuote: "Don't sit just to count number of hours, try to study with honesty.",
-    seeDetails: 'See Details',
-    hideDetails: 'Hide Details',
-    progressTrackerTitle: 'Progress Tracker',
-    timeSpent: 'Time Spent',
-    startFocus: 'Start Focus'
+    myProfile: 'My Profile',
+    studentAccount: 'Student Account',
+    aspirantSubtitle: 'MPSC / UPSC Aspirant',
+    studyOverview: 'Study Overview',
+    dailyStudyGoal: 'Daily Study Goal',
+    personalInfo: 'Personal Information',
+    fullName: 'Full Name',
+    emailAddress: 'Email Address',
+    mobileNumber: 'Mobile Number',
+    examTarget: 'Exam Target',
+    preferredSubjects: 'Preferred Subjects',
+    preferences: 'Preferences',
+    studyReminders: 'Study Reminders',
+    setDailyReminderDesc: 'Set your daily study reminder',
+    privacyAndAccount: 'Privacy & Account',
+    manageAccountSettings: 'Manage your account settings',
+    saveChanges: 'Save Changes',
+    savingChanges: 'Saving...',
+    editProfile: 'Edit Profile',
+    signOutPrompt: 'Sign Out?',
+    signOutConfirmDesc: 'Are you sure you want to sign out of Abhyas?',
+    yesSignOut: 'Yes, Sign Out',
+    yourPrepYourProgress: 'Your preparation, your progress.',
+    buildConsistentRoutine: 'Build a consistent routine',
+    reminderHeroDesc: 'Choose a daily reminder time to help you stay on track with your study goals.',
+    dailyStudyReminder: 'Daily study reminder',
+    reminderEnabled: 'Reminder preference is enabled',
+    reminderDisabled: 'Reminder preference is disabled',
+    reminderTime: 'Reminder time',
+    selectPreferredTime: 'Select your preferred time.',
+    reminderDeviceNote: 'These preferences are saved on this device.',
+    announcements: 'Announcements',
+    allAnnouncements: '← All announcements',
+    backToApp: '← Back to app',
+    announcementDetails: 'Announcement Details',
+    completeAnnouncementInfo: 'Complete announcement information',
+    announcementsAndStatus: 'Announcements and read status',
+    readStatus: 'READ',
+    unreadStatus: 'UNREAD',
+    noAnnouncementsYet: 'No announcements yet',
+    announcementCol: 'ANNOUNCEMENT',
+    dateCol: 'DATE',
+    statusCol: 'STATUS',
+    actionCol: 'ACTION',
+    viewAction: 'View',
+    studentHelpDesk: 'Student Help Desk',
+    helpDeskSubtitle: 'Dedicated student assistance, bug reports & feature requests',
+    createTicket: 'Create Ticket',
+    viewMyTickets: 'View My Tickets',
+    appName: 'Abhyas Tracker',
+    examFocusTag: 'UPSC & MPSC',
+    examYearBadge: 'UPSC / MPSC {year}',
+    selectDayNext7: 'SELECT DAY (NEXT 7 DAYS)',
+    ofHours: 'of {h}h',
+    capacityPercentOf: '{pct}% of {hours}',
+    studyBlock: 'Block',
+    recentSessions: 'Recent Sessions',
+    recentSessionsDesc: 'Your latest recorded study sessions in this period.',
+    noSessionsRecorded: 'No sessions recorded during this period.',
+    studySession: 'Study Session',
+    dateUnavailable: 'Date unavailable',
+    latestCount: 'Latest {count}',
+    totalStudied: 'Total studied',
+    totalSessions: 'Total sessions',
+    leadingSubject: 'Leading subject',
+    subjectDetails: 'Subject details',
+    basedOnSessions: 'Based on {count} recorded {sessions} in this period.',
+    completeSessionToTrack: 'Complete a study session to begin tracking focus quality.'
   },
 
   // ==================== HINDI (हिन्दी) ====================
@@ -269,7 +470,7 @@ export const translations = {
     viewAll: 'सभी देखें',
     all: 'सभी',
     today: 'आज',
-    tomorrow: 'कल (आगामी)',
+    tomorrow: 'कल',
     yesterday: 'बीता कल',
     day: 'दिन',
     night: 'रात',
@@ -296,11 +497,23 @@ export const translations = {
     signOut: 'साइन आउट',
     confirmSignOut: 'क्या आप निश्चित रूप से साइन आउट करना चाहते हैं?',
     signedInAs: 'लॉगिन नाम',
+    start: 'शुरू करें',
+    active: 'सक्रिय',
+    new: 'नई',
+    on: 'चालू',
+    off: 'बंद',
+    set: 'सेट करें',
+    ok: 'ठीक है',
+
+    // Greetings & Header
+    goodMorning: 'सुप्रभात',
+    goodEvening: 'शुभ संध्या',
+    aspirant: 'अभ्यर्थी',
 
     // Settings Modal
     settingsTitle: 'सेटिंग्स और प्राथमिकताएं',
     appLanguage: 'ऐप की भाषा',
-    chooseLanguage: 'अपनी पसंदीदा भाषा चुनें',
+    chooseLanguage: 'पूरे ऐप के लिए अपनी पसंदीदा भाषा चुनें',
     appearance: 'दिखावट और थीम',
     themeDescription: 'आंखों के आराम के लिए लाइट या डार्क मोड चुनें',
     notificationsTitle: 'सूचनाएं और दैनिक अलर्ट',
@@ -312,15 +525,13 @@ export const translations = {
     studyTargetDesc: 'अपना दैनिक अध्ययन लक्ष्य निर्धारित करें',
     primaryExam: 'प्राथमिक परीक्षा फोकस',
     primaryExamDesc: 'डिफ़ॉल्ट पाठ्यक्रम दृश्य चुनें',
-    allExams: 'सभी परीक्षाएं (UPSC + MPSC)',
-    upscOnly: 'UPSC सिविल सेवा',
-    mpscOnly: 'MPSC महाराष्ट्र',
+    allExams: 'सभी परीक्षाएं (यूपीएससी + एमपीएससी)',
+    upscOnly: 'यूपीएससी सिविल सेवा',
+    mpscOnly: 'एमपीएससी महाराष्ट्र',
     soundAlerts: 'टाइमर ध्वनि अलर्ट',
     soundAlertsDesc: 'टाइमर पूरा होने पर बीप बजाएं',
-    on: 'चालू',
-    off: 'बंद',
     appInfo: 'अभ्यास ट्रैकर के बारे में',
-    appVersion: 'अभ्यास ट्रैकर v1.2.0 • UPSC और MPSC अध्ययन सूट',
+    appVersion: 'अभ्यास ट्रैकर v1.2.0 • यूपीएससी और एमपीएससी अध्ययन सूट',
 
     // Dashboard
     dailyQuote: 'निरंतरता ही सामान्य को उत्कृष्टता में बदलती है।',
@@ -330,31 +541,108 @@ export const translations = {
     days: 'दिन',
     curriculumProgress: 'पाठ्यक्रम प्रगति',
     overallCurriculum: 'कुल पाठ्यक्रम पूर्णता',
-    upscMastery: 'UPSC पूर्ण विषय',
-    mpscMastery: 'MPSC पूर्ण विषय',
+    upscMastery: 'यूपीएससी पूर्ण विषय',
+    mpscMastery: 'एमपीएससी पूर्ण विषय',
     todayTasks: 'आज के निर्धारित कार्य',
-    noTasksToday: 'आज के लिए कोई कार्य निर्धारित नहीं है। अभी अध्ययन ब्लॉक बनाएं!',
+    noTasksToday: 'आज के लिए कोई कार्य निर्धारित नहीं है।',
+    noTasksTodayDesc: 'अपने दिन की शुरुआत एक निर्धारित लक्ष्य के साथ करने से अध्ययन दक्षता बढ़ती है।',
+    addScheduledTask: '+ निर्धारित कार्य जोड़ें',
     openTomorrowPlanner: 'कल का प्लानर खोलें',
     autoPlanTomorrowBtn: 'कल का प्लान स्वतः बनाएं',
     quickTimerStart: 'फोकस टाइमर तुरंत शुरू करें',
     recentStudySessions: 'हाल के अध्ययन सत्र',
     noSessionsLogged: 'आज कोई सत्र दर्ज नहीं है। शुरू करने के लिए टाइमर दबाएं!',
+    noSessionsLoggedYet: 'आज अभी तक कोई सत्र दर्ज नहीं हुआ है। क्या आप अध्ययन शुरू करने के लिए तैयार हैं?',
     openSyllabusBtn: 'पाठ्यक्रम और चेकलिस्ट खोलें →',
+    startTimer: 'टाइमर शुरू करें',
+    pauseTimer: 'रोकें',
+    resumeTimer: 'पुनः शुरू करें',
+    subjectBalanceAlert: 'विषय संतुलन चेतावनी: उपेक्षित विषय',
+    neglectedAlertIntro: 'आपने पिछले {days}+ दिनों में',
+    inTheLastDays: 'के लिए कोई अध्ययन समय दर्ज नहीं किया है।',
+    highWeightageWarning: 'अधिक अंकभार वाला महत्वपूर्ण विषय — नियमित अध्ययन से अंतिम समय की हड़बड़ी से बचाव होता है!',
+    backlogWarning: 'परीक्षा से पहले पाठ्यक्रम का बैकलॉग जमा न होने दें!',
+    otherLowHourSubjects: 'अन्य कम अध्ययन वाले विषय:',
+    focusOn: '{subject} पर ध्यान दें',
+    addToPlanner: 'प्लानर में जोड़ें',
+    quickActions: 'त्वरित क्रियाएं',
+    focusTimer: 'फोकस टाइमर',
+    activeSession: 'सक्रिय सत्र',
+    startSession: 'सत्र शुरू करें',
+    studyPlan: 'अध्ययन योजना',
+    schedule: 'शेड्यूल',
+    reports: 'रिपोर्ट्स',
+    attendance: 'उपस्थिति',
+    presentToday: 'आज उपस्थित',
+    dayStreak: '{streak}-दिन निरंतरता',
+    quiz: 'प्रश्नोत्तरी',
+    comingSoon: 'जल्द आ रहा है',
+    session: 'सत्र',
+    sessions: 'सत्र',
+    logged: 'दर्ज',
+    loggedToday: 'आज दर्ज समय',
+    dailyGoal: 'दैनिक लक्ष्य',
+    goalMet: 'लक्ष्य पूरा हुआ!',
+    scheduleDailySyllabusDesc: 'दैनिक पाठ्यक्रम के विषयों को निर्धारित करें, कल की पुनरावृत्ति की अग्रिम योजना बनाएं और अपने अध्ययन घंटों को संतुलित करें।',
+    expandAll: 'सभी विस्तृत करें',
+    collapse: 'संक्षिप्त करें',
 
     // Timer Screen
-    studyStopwatch: 'अध्ययन स्टॉपवॉच और फोकस टाइमर',
+    studyTimer: 'अध्ययन टाइमर',
+    studyStopwatch: 'गहन अध्ययन स्टॉपवॉच और फोकस ट्रैकर',
+    trackStudySessions: 'अपने अध्ययन सत्रों को ट्रैक करें और निरंतरता बनाए रखें।',
+    exitFocusMode: 'फोकस मोड से बाहर निकलें',
+    enterFocusMode: 'फोकस मोड शुरू करें',
+    focusStyle: 'फोकस शैली',
+    lightZen: 'लाइट ज़ेन (लचीला)',
+    deepZen: 'डीप ज़ेन (सख्त लॉक)',
+    stopwatchLightZenOnly: 'स्टॉपवॉच केवल लाइट ज़ेन का समर्थन करता है।',
+    deepZenDesc: 'डीप ज़ेन उलटी गिनती के दौरान रोकने, रीसेट करने, समाप्त करने और बाहर निकलने को लॉक करता है। यह समय पूरा होने पर अनलॉक होता है।',
+    lightZenDesc: 'लाइट ज़ेन आपको जब चाहें फोकस मोड छोड़ने की अनुमति देता है।',
+    pomodoro: 'पोमोडोरो',
+    stopwatch: 'स्टॉपवॉच',
+    custom: 'कस्टम',
+    studySubject: 'अध्ययन विषय',
+    customDuration: 'कस्टम अवधि',
+    enterOwnTime: 'या अपना समय दर्ज करें (मिनट में)',
+    enterMinutesPlaceholder: 'मिनट दर्ज करें (1 - 720)',
+    currentTarget: 'वर्तमान लक्ष्य',
+    saveSession: 'सत्र सहेजें',
+    reset: 'रीसेट करें',
+    saving: 'सहेजा जा रहा है...',
+    finish: 'समाप्त करें',
+    allSubjects: 'सभी विषय',
+    upsc: 'यूपीएससी',
+    mpsc: 'एमपीएससी',
     runningFocus: 'गहन अध्ययन सत्र चालू है',
     pausedFocus: 'सत्र रुका हुआ है',
     readyToFocus: 'फोकस करने के लिए तैयार',
     sessionFocusTopic: 'सत्र फोकस विषय',
     whatAreYouStudying: 'आप किस अध्याय या विषय का अध्ययन कर रहे हैं?',
-    startTimer: 'टाइमर शुरू करें',
-    pauseTimer: 'रोकें',
-    resumeTimer: 'पुनः शुरू करें',
-    saveSessionBtn: 'सत्र सहेजें',
-    resetTimer: 'रीसेट करें',
     selectSubjectToTrack: 'ट्रैक करने के लिए विषय चुनें',
     pomodoroIntervals: 'पोमोडोरो अंतराल विकल्प',
+
+    // Offline / Manual Study Logging
+    manualOfflineLogging: 'मैन्युअल और ऑफलाइन अध्ययन लॉगिंग',
+    manualOfflineDesc: 'पाठ्यपुस्तक वाचन, लाइब्रेरी सत्र और पिछले अध्ययन घंटे दर्ज करें।',
+    logOfflineBookStudy: 'ऑफलाइन पुस्तक अध्ययन दर्ज करें',
+    logOfflineBookDesc: 'पिछले घंटों की प्रविष्टि, पाठ्यपुस्तकें और लाइब्रेरी अध्ययन शामिल',
+    pastHoursEntry: 'पिछले घंटों की प्रविष्टि',
+    pastHoursDesc: 'पिछले अध्ययन सत्रों के लिए मैन्युअल प्रविष्टि',
+    targetExamSection: 'लक्षित परीक्षा अनुभाग',
+    selectSubject: 'विषय चुनें',
+    studyDate: 'अध्ययन तिथि (दिन/माह/वर्ष)',
+    specificDate: 'विशिष्ट तिथि',
+    studyActivity: 'अध्ययन गतिविधि',
+    durationStudied: 'अध्ययन अवधि (घंटे और मिनट)',
+    hoursHrs: 'घंटे (घं)',
+    minutesMins: 'मिनट (मि)',
+    theoryReading: 'सिद्धांत और वाचन',
+    pyqsMcqs: 'पीवाईक्यू और बहुविकल्पीय प्रश्न',
+    mainsWriting: 'मुख्य परीक्षा उत्तर लेखन',
+    currentAffairsActivity: 'करंट अफेयर्स',
+    revision: 'पुनरावृत्ति',
+    saveStudyHours: 'अध्ययन समय सहेजें',
 
     // Syllabus Screen
     subjectsAndSyllabus: 'विषय और पाठ्यक्रम',
@@ -362,21 +650,26 @@ export const translations = {
     logOfflineHours: '+ घंटे दर्ज करें',
     closeLogger: 'लॉगर बंद करें',
     offlineLoggerTitle: 'ऑफलाइन / पुस्तक अध्ययन घंटे दर्ज करें',
-    offlineLoggerDesc: 'मानक पुस्तकों (लक्ष्मीकांत, स्पेक्ट्रम, NCERT) या लाइब्रेरी में पढ़ा? घंटे तुरंत जोड़ें।',
+    offlineLoggerDesc: 'मानक पुस्तकों (लक्ष्मीकांत, स्पेक्ट्रम, एनसीईआरटी) या लाइब्रेरी में पढ़ा? घंटे तुरंत जोड़ें।',
     examSection: 'परीक्षा पाठ्यक्रम अनुभाग',
     topicsChecklistTap: 'विषय चेकलिस्ट (स्थिति बदलने के लिए टैप करें)',
     viewTopicInSyllabus: 'पाठ्यक्रम में देखें →',
     redirectedFromTask: 'प्लानर कार्य से पुनर्निर्देशित',
+    jumpToTopic: 'विषय देखें ↓',
     topicsMastered: 'विषय पूर्ण',
-    spacedRepetitionQueue: 'पुनरावृत्ति कतार (Spaced Repetition)',
+    spacedRepetitionQueue: 'पुनरावृत्ति कतार',
     neglectedModuleNotice: 'पाठ्यक्रम संतुलन: छूटा हुआ विषय',
     dueOn: 'नियत',
     spent: 'व्यतीत',
     revs: 'पुनरावृत्ति',
     donePct: 'पूर्ण',
+    plusOneRevise: '+१ पुनरावृत्ति',
+    logHours: 'समय दर्ज करें',
+    revise: 'पुनरावृत्ति',
+    viewTopic: 'विषय देखें',
 
     // Planner Screen
-    studyPlannerTitle: 'अध्ययन योजनाकार (Planner)',
+    studyPlannerTitle: 'अध्ययन योजनाकार',
     plannerTimeframe: 'योजना समय-सीमा',
     todaysPlan: 'आज की योजना',
     tomorrowsPlan: 'कल की योजना',
@@ -384,12 +677,11 @@ export const translations = {
     workloadRoutine: 'कार्यभार और दिनचर्या',
     examFilter: 'परीक्षा फ़िल्टर',
     allExamTasks: 'सभी परीक्षा कार्य',
-    upscPlans: 'UPSC योजनाएं',
-    mpscPlans: 'MPSC योजनाएं',
+    upscPlans: 'यूपीएससी योजनाएं',
+    mpscPlans: 'एमपीएससी योजनाएं',
     selectDay7: 'दिन चुनें (अगले 7 दिन)',
     addStudyBlock: '+ नया अध्ययन ब्लॉक जोड़ें',
-    addStudyBlockDesc: 'अपने MPSC या UPSC पाठ्यक्रम के अनुसार फोकस अंतराल निर्धारित करें।',
-    targetExamSection: 'लक्षित परीक्षा अनुभाग',
+    addStudyBlockDesc: 'अपने एमपीएससी या यूपीएससी पाठ्यक्रम के अनुसार फोकस अंतराल निर्धारित करें।',
     selectTargetSubject: 'विषय चुनें',
     quickPickUnfinished: 'अपूर्ण पाठ्यक्रम से तुरंत चुनें',
     topicOrChapterTitle: 'विषय या अध्याय शीर्षक',
@@ -410,6 +702,39 @@ export const translations = {
     todaysStudyLoad: 'आज का अध्ययन भार',
 
     // Analytics Screen
+    studyAnalytics: 'अध्ययन विश्लेषण',
+    analyticsSubtitleMain: 'अपनी आदतों को समझें, प्रगति ट्रैक करें और निरंतरता बनाएं',
+    yourStudyOverview: 'आपका अध्ययन अवलोकन',
+    sevenDays: '७ दिन',
+    thirtyDays: '३० दिन',
+    overview: 'अवलोकन',
+    activity: 'गतिविधि',
+    subjects: 'विषय',
+    sessionsTab: 'सत्र',
+    todaysStudyGoal: 'आज का अध्ययन लक्ष्य',
+    buildHabitDesc: 'प्रतिदिन एक केंद्रित सत्र के साथ अपनी अध्ययन आदत विकसित करें।',
+    studiedToday: 'आज अध्ययन किया',
+    dailyGoalReached: 'दैनिक लक्ष्य पूरा हुआ!',
+    remainingOf: 'शेष (कुल',
+    studyTime: 'अध्ययन समय',
+    totalRecorded: 'कुल दर्ज',
+    completedRecords: 'पूर्ण सत्र',
+    averageFocus: 'औसत एकाग्रता',
+    recordedFocusScore: 'दर्ज एकाग्रता स्कोर',
+    avgSession: 'औसत सत्र अवधि',
+    perRecordedSession: 'प्रति दर्ज सत्र',
+    focusQuality: 'एकाग्रता गुणवत्ता',
+    avgFocusScoreDesc: 'दर्ज किए गए सत्रों से औसत एकाग्रता स्कोर।',
+    dailyStudyActivity: 'दैनिक अध्ययन गतिविधि',
+    minutesStudiedWeek: 'इस सप्ताह प्रत्येक दिन अध्ययन किए गए मिनट',
+    minutesStudiedMonth: 'चयनित महीने में अध्ययन किए गए मिनट',
+    activeDays: 'सक्रिय दिन',
+    studyConsistency: 'अध्ययन निरंतरता',
+    heatmapDesc: 'प्रत्येक वर्ग एक दिन दर्शाता है। गहरा रंग अधिक अध्ययन समय का प्रतीक है।',
+    daysWithoutStudy: 'बिना अध्ययन के दिन',
+    subjectBreakdown: 'विषयवार विभाजन',
+    subjectBreakdownDesc: 'देखें कि आपका अध्ययन समय विभिन्न विषयों में कैसे वितरित है।',
+    noSubjectStudyTime: 'इस अवधि के लिए कोई विषय अध्ययन समय दर्ज नहीं है।',
     analyticsTitle: 'अध्ययन विश्लेषण और अंतर्दृष्टि',
     totalStudyTime: 'कुल अध्ययन समय',
     weeklyAvg: 'साप्ताहिक औसत',
@@ -418,56 +743,109 @@ export const translations = {
     last7DaysTrend: 'दैनिक अध्ययन रुझान (पिछले 7 दिन)',
     hoursPerDay: 'घंटे / दिन',
     noAnalyticsData: 'व्यक्तिगत तैयारी अंतर्दृष्टि देखने के लिए अध्ययन सत्र दर्ज करें।',
-
-    // Extra Navigation, Routine & Blueprint keys
-    jumpToTopic: 'विषय देखें ↓',
-    morningBriefing: 'प्रातःकालीन अध्ययन ब्रीफिंग',
-    eveningPlanning: 'सायंकालीन योजना दिनचर्या',
-    blueprintIdealRoutine: '3-स्लॉट आदर्श दैनिक अध्ययन दिनचर्या',
-    blueprintRoutineDesc: 'UPSC और MPSC अभ्यर्थियों के लिए अनुशंसित मानक दैनिक समय सारणी।',
-    slot1DeepWork: 'स्लॉट 1: सुबह का गहन अध्ययन (06:00 - 09:00 • 3 घंटे)',
-    slot1Desc: 'सिद्धांत, मुख्य अवधारणाएं और स्थिर पाठ्यक्रम पढ़ना जब दिमाग सबसे तरोताजा हो।',
-    slot2Practice: 'स्लॉट 2: दोपहर का अभ्यास और प्रश्न हल (14:00 - 17:00 • 3 घंटे)',
-    slot2Desc: 'पिछले वर्षों के प्रश्न (PYQs), मॉक टेस्ट, CSAT और सक्रिय अभ्यास।',
-    slot3CurrentAffairs: 'स्लॉट 3: शाम का करंट अफेयर्स और संश्लेषण (20:00 - 22:00 • 2 घंटे)',
-    slot3Desc: 'दैनिक समाचार पत्र संपादकीय, मासिक पत्रिकाएं, नोट्स और उत्तर लेखन।',
-    blueprintForToday: 'आज का ब्लूप्रिंट',
-    blueprintForTomorrow: 'कल का ब्लूप्रिंट',
-    tapToViewTopic: 'पाठ्यक्रम में विषय देखने के लिए टैप करें →',
-    tapToViewTasks: 'कार्य देखने के लिए टैप करें',
-    autoPlanTomorrow: 'कल की योजना स्वतः बनाएं',
-    curriculumBalanceNeglected: 'पाठ्यक्रम संतुलन: छूटा हुआ विषय',
-    offlineStudyLogger: 'ऑफलाइन / पुस्तक अध्ययन घंटे दर्ज करें',
-    offlineStudyLoggerDesc: 'मानक पुस्तकों (लक्ष्मीकांत, स्पेक्ट्रम, NCERT) या लाइब्रेरी से पढ़ा? सीधे दर्ज करें।',
+    topicNoteOptional: 'अध्याय / विषय टिप्पणी (वैकल्पिक)',
+    topicNotePlaceholder: 'उदा. मौलिक अधिकार अनुच्छेद 19-22 नोट्स और प्रश्न',
+    resetSessionPrompt: 'अध्ययन सत्र रीसेट करें?',
+    resetSessionDesc: 'आपका वर्तमान असहेजा हुआ अध्ययन समय खारिज कर दिया जाएगा।',
+    exitFocusModePrompt: 'फोकस मोड से बाहर निकलें?',
+    exitFocusModeDesc: 'क्या आप वाकई फोकस मोड छोड़कर सामान्य नेविगेशन पर लौटना चाहते हैं?',
+    stayFocused: 'फोकस बनाए रखें',
+    exitFocusMode: 'फोकस मोड से बाहर निकलें',
+    studyStreak: 'अध्ययन निरंतरता',
+    currentStreak: 'वर्तमान निरंतरता',
+    streakDescription: 'निरंतरता सिविल सेवा सफलता की नींव है। अपनी निरंतरता बनाए रखने के लिए हर दिन अध्ययन सत्र पूरा करें!',
+    days: 'दिन',
+    autoPlanFullWeek: 'पूरे सप्ताह की योजना बनाएं',
+    entireWeek: 'संपूर्ण सप्ताह (सभी 7 दिन)',
+    singleDayFocus: 'एकल दिवस फोकस',
+    weeklyScheduleView: 'साप्ताहिक समय-सारणी दृश्य',
+    noTasksForDay: 'इस दिन के लिए कोई कार्य निर्धारित नहीं है',
+    addTask: '+ कार्य जोड़ें',
+    autoPlanThisDay: 'इस दिन की स्वचालित योजना बनाएं',
+    workloadCapacityGauges: 'कार्यभार क्षमता मापक',
+    todaysStudyLoad: 'आज का अध्ययन भार',
+    weeklyCumulativeLoad: 'साप्ताहिक संचयी भार',
+    plannedAcross7Days: '7 दिनों में नियोजित',
+    examSyllabusAllocation: 'परीक्षा पाठ्यक्रम आवंटन',
+    subjectWiseAllocation: 'विषयवार समय आवंटन',
+    noSubjectHoursPlanned: 'अभी तक कोई विषय घंटे नियोजित नहीं हैं। विषय वितरण देखने के लिए अध्ययन कार्य जोड़ें।',
+    targetExam: 'लक्षित परीक्षा',
+    selectExamSubject: '{exam} विषय चुनें',
+    saveHoursPrefix: 'सहेजें',
+    hoursShort: 'घं',
+    minsShort: 'मि',
+    subtopics: 'उप-विषय',
+    recentStudySessions: 'इस सप्ताह के हालिया अध्ययन सत्र (बीते दिन)',
     startLiveTimer: 'लाइव टाइमर शुरू करें',
-    logPastHours: 'पिछले घंटे दर्ज करें',
-    topicChecklistHeader: 'विषय चेकलिस्ट (स्थिति बदलने के लिए टैप करें)',
-    viewTopic: 'विषय देखें',
-    planForToday: 'आज की योजना',
-    plusOneRevise: '+१ पुनरावृत्ती',
-    logHours: 'समय दर्ज करें',
-    revise: 'पुनरावृत्ती',
-    mastered: 'पारंगत',
-    remaining: 'शेष',
-    confirmSignOut: 'क्या आप वाकई साइन आउट करना चाहते हैं?',
-    signOut: 'साइन आउट',
-    confirm: 'पुष्टि करें',
-    cancel: 'रद्द करें',
-    scheduled: 'निर्धारित किया गया!',
-    scheduledMsg: 'आज के अध्ययन योजना में जोड़ा गया।',
-    studyHoursLogged: 'अध्ययन समय दर्ज किया गया! ',
-    tenHourSchedule: '१० घंटे की समय सारणी',
-    tenHourScheduleTitle: 'यूपीएससी / एमपीएससी अभ्यर्थियों के लिए १० घंटे की अध्ययन समय सारणी',
-    tenHourScheduleDesc: 'गहरे ध्यान और अधिकतम अवधारण के लिए ४ स्लॉट की अनुशासित दैनिक दिनचर्या।',
-    apply10hToday: 'आज की योजना में लागू करें',
-    apply10hTomorrow: 'कल की योजना में लागू करें',
-    currentSlotActive: 'वर्तमान सक्रिय स्लॉट',
-    honestStudyQuote: 'केवल घंटे गिनने के लिए न बैठें, पूरी ईमानदारी से अध्ययन करने का प्रयास करें।',
-    seeDetails: 'विवरण देखें',
-    hideDetails: 'विवरण छिपाएं',
-    progressTrackerTitle: 'प्रगति ट्रैकर',
-    timeSpent: 'बिताया गया समय',
-    startFocus: 'अध्ययन शुरू करें'
+    logPastHours: 'बीते घंटे दर्ज करें',
+    myProfile: 'मेरी प्रोफाइल',
+    studentAccount: 'छात्र खाता',
+    aspirantSubtitle: 'एमपीएससी / यूपीएससी अभ्यर्थी',
+    studyOverview: 'अध्ययन विवरण',
+    dailyStudyGoal: 'दैनिक अध्ययन लक्ष्य',
+    personalInfo: 'व्यक्तिगत जानकारी',
+    fullName: 'पूरा नाम',
+    emailAddress: 'ईमेल पता',
+    mobileNumber: 'मोबाइल नंबर',
+    examTarget: 'लक्षित परीक्षा',
+    preferredSubjects: 'पसंदीदा विषय',
+    preferences: 'प्राथमिकताएं',
+    studyReminders: 'अध्ययन अनुस्मारक',
+    setDailyReminderDesc: 'अपना दैनिक अध्ययन अनुस्मारक सेट करें',
+    privacyAndAccount: 'गोपनीयता और खाता',
+    manageAccountSettings: 'अपनी खाता सेटिंग्स प्रबंधित करें',
+    saveChanges: 'परिवर्तन सहेजें',
+    savingChanges: 'सहेजा जा रहा है...',
+    editProfile: 'प्रोफाइल संपादित करें',
+    signOutPrompt: 'साइन आउट करें?',
+    signOutConfirmDesc: 'क्या आप वाकई अभ्यास ट्रैकर से साइन आउट करना चाहते हैं?',
+    yesSignOut: 'हाँ, साइन आउट करें',
+    yourPrepYourProgress: 'आपकी तैयारी, आपकी प्रगति।',
+    buildConsistentRoutine: 'एक सुसंगत दिनचर्या बनाएं',
+    reminderHeroDesc: 'अपने अध्ययन लक्ष्यों को प्राप्त करने के लिए दैनिक अनुस्मारक समय चुनें।',
+    dailyStudyReminder: 'दैनिक अध्ययन अनुस्मारक',
+    reminderEnabled: 'अनुस्मारक प्राथमिकता सक्षम है',
+    reminderDisabled: 'अनुस्मारक प्राथमिकता अक्षम है',
+    reminderTime: 'अनुस्मारक समय',
+    selectPreferredTime: 'अपना पसंदीदा समय चुनें।',
+    reminderDeviceNote: 'ये प्राथमिकताएं इस डिवाइस पर सहेजी गई हैं।',
+    announcements: 'सूचनाएं',
+    allAnnouncements: '← सभी घोषणाएं',
+    backToApp: '← ऐप पर वापस जाएं',
+    announcementDetails: 'घोषणा विवरण',
+    completeAnnouncementInfo: 'घोषणा की पूरी जानकारी',
+    announcementsAndStatus: 'घोषणाएं और पठन स्थिति',
+    readStatus: 'पढ़ा गया',
+    unreadStatus: 'अपठित',
+    noAnnouncementsYet: 'अभी तक कोई घोषणा नहीं है',
+    announcementCol: 'घोषणा',
+    dateCol: 'दिनांक',
+    statusCol: 'स्थिति',
+    actionCol: 'कार्रवाई',
+    viewAction: 'देखें',
+    studentHelpDesk: 'छात्र सहायता केंद्र',
+    helpDeskSubtitle: 'समर्पित छात्र सहायता, बग रिपोर्ट और नई सुविधा के अनुरोध',
+    createTicket: 'नया टिकट बनाएं',
+    viewMyTickets: 'मेरे टिकट देखें',
+    appName: 'अभ्यास ट्रैकर',
+    examFocusTag: 'यूपीएससी व एमपीएससी',
+    examYearBadge: 'यूपीएससी / एमपीएससी {year}',
+    selectDayNext7: 'दिन चुनें (अगले 7 दिन)',
+    ofHours: '{h}घं का',
+    capacityPercentOf: '{hours} का {pct}%',
+    studyBlock: 'ब्लॉक',
+    recentSessions: 'हालिया सत्र',
+    recentSessionsDesc: 'इस अवधि के दौरान आपके नवीनतम दर्ज अध्ययन सत्र।',
+    noSessionsRecorded: 'इस अवधि के दौरान कोई सत्र दर्ज नहीं किया गया।',
+    studySession: 'अध्ययन सत्र',
+    dateUnavailable: 'तारीख अनुपलब्ध',
+    latestCount: 'नवीनतम {count}',
+    totalStudied: 'कुल अध्ययन',
+    totalSessions: 'कुल सत्र',
+    leadingSubject: 'शीर्ष विषय',
+    subjectDetails: 'विषय विवरण',
+    basedOnSessions: 'इस अवधि में दर्ज {count} {sessions} पर आधारित।',
+    completeSessionToTrack: 'फोकस गुणवत्ता ट्रैक करने के लिए एक अध्ययन सत्र पूरा करें।'
   },
 
   // ==================== MARATHI (मराठी) ====================
@@ -526,11 +904,23 @@ export const translations = {
     signOut: 'बाहेर पडा',
     confirmSignOut: 'तुम्हाला नक्की बाहेर पडायचे आहे का?',
     signedInAs: 'लॉगिन नाव',
+    start: 'सुरू करा',
+    active: 'सक्रिय',
+    new: 'नवीन',
+    on: 'सुरू',
+    off: 'बंद',
+    set: 'सेट करा',
+    ok: 'ठीक आहे',
+
+    // Greetings & Header
+    goodMorning: 'शुभ सकाळ',
+    goodEvening: 'शुभ संध्याकाळ',
+    aspirant: 'अभ्यासक',
 
     // Settings Modal
     settingsTitle: 'सेटिंग्ज आणि प्राधान्ये',
     appLanguage: 'अ‍ॅपची भाषा',
-    chooseLanguage: 'तुमची पसंतीची भाषा निवडा',
+    chooseLanguage: 'संपूर्ण अ‍ॅपसाठी तुमची पसंतीची भाषा निवडा',
     appearance: 'दिसणे आणि थीम',
     themeDescription: 'डोळ्यांच्या आरामासाठी लाइट किंवा डार्क मोड निवडा',
     notificationsTitle: 'सूचना आणि दैनंदिन स्मरणपत्रे',
@@ -542,15 +932,13 @@ export const translations = {
     studyTargetDesc: 'तुमचे दैनंदिन अभ्यास उद्दिष्ट ठरवा',
     primaryExam: 'प्राथमिक परीक्षा लक्ष्य',
     primaryExamDesc: 'डिफॉल्ट अभ्यासक्रम दृश्य निवडा',
-    allExams: 'सर्व परीक्षा (UPSC + MPSC)',
-    upscOnly: 'UPSC नागरी सेवा',
-    mpscOnly: 'MPSC महाराष्ट्र लोकसेवा',
+    allExams: 'सर्व परीक्षा (यूपीएससी + एमपीएससी)',
+    upscOnly: 'यूपीएससी नागरी सेवा',
+    mpscOnly: 'एमपीएससी महाराष्ट्र लोकसेवा',
     soundAlerts: 'टायमर ध्वनी अलर्ट',
     soundAlertsDesc: 'टायमर पूर्ण झाल्यावर ध्वनी वाजवा',
-    on: 'सुरू',
-    off: 'बंद',
     appInfo: 'अभ्यास ट्रॅकर बद्दल',
-    appVersion: 'अभ्यास ट्रॅकर v1.2.0 • UPSC आणि MPSC तयारी सूट',
+    appVersion: 'अभ्यास ट्रॅकर v1.2.0 • यूपीएससी आणि एमपीएससी तयारी सूट',
 
     // Dashboard
     dailyQuote: 'सातत्यच सामान्य प्रयत्नांना यशात बदलते.',
@@ -560,144 +948,311 @@ export const translations = {
     days: 'दिवस',
     curriculumProgress: 'अभ्यासक्रम प्रगती',
     overallCurriculum: 'एकूण अभ्यासक्रम पूर्णता',
-    upscMastery: 'UPSC पूर्ण घटक',
-    mpscMastery: 'MPSC पूर्ण घटक',
+    upscMastery: 'यूपीएससी पूर्ण घटक',
+    mpscMastery: 'एमपीएससी पूर्ण घटक',
     todayTasks: 'आजची नियोजित कामे',
-    noTasksToday: 'आजसाठी कोणतेही काम नियोजित नाही. आताच अभ्यास सुरू करा!',
+    noTasksToday: 'आजसाठी कोणतेही काम नियोजित नाही.',
+    noTasksTodayDesc: 'निश्चित ध्येयाने दिवसाची सुरुवात केल्याने अभ्यासाची कार्यक्षमता वाढते.',
+    addScheduledTask: '+ नियोजित काम जोडा',
     openTomorrowPlanner: 'उद्याचे नियोजन उघडा',
     autoPlanTomorrowBtn: 'उद्याचे नियोजन ऑटो-प्लॅन करा',
     quickTimerStart: 'झटपट टायमर सुरू करा',
     recentStudySessions: 'अलीकडील अभ्यास सत्रे',
     noSessionsLogged: 'आज कोणतेही सत्र नोंदवले नाही. अभ्यास सुरू करण्यासाठी टायमर दाबा!',
+    noSessionsLoggedYet: 'आज अजून कोणतेही सत्र नोंदवलेले नाही. अभ्यास सुरू करण्यास तयार आहात का?',
     openSyllabusBtn: 'अभ्यासक्रम व चेकलिस्ट उघडा →',
+    startTimer: 'टायमर सुरू करा',
+    pauseTimer: 'थांबवा',
+    resumeTimer: 'पुन्हा सुरू करा',
+    subjectBalanceAlert: 'विषय समतोल इशारा: दुर्लक्षित घटक',
+    neglectedAlertIntro: 'तुम्ही गेल्या {days}+ दिवसांत',
+    inTheLastDays: 'साठी कोणताही अभ्यास वेळ नोंदवलेला नाही.',
+    highWeightageWarning: 'जास्त गुणांचा महत्त्वाचा घटक — नियमित अभ्यासामुळे शेवटच्या क्षणी होणारा गोंधळ टळतो!',
+    backlogWarning: 'परीक्षेपूर्वी अभ्यासक्रमाचा अनुशेष साचू देऊ नका!',
+    otherLowHourSubjects: 'इतर कमी तास झालेले विषय:',
+    focusOn: '{subject} वर लक्ष द्या',
+    addToPlanner: 'नियोजनामध्ये जोडा',
+    quickActions: 'झटपट कृती',
+    focusTimer: 'फोकस टायमर',
+    activeSession: 'सक्रिय सत्र',
+    startSession: 'सत्र सुरू करा',
+    studyPlan: 'अभ्यास योजना',
+    schedule: 'नियोजन',
+    reports: 'अहवाल',
+    attendance: 'हजेरी',
+    presentToday: 'आज उपस्थित',
+    dayStreak: '{streak}-दिवस सातत्य',
+    quiz: 'प्रश्नमंजुषा',
+    comingSoon: 'लवकरच येत आहे',
+    session: 'सत्र',
+    sessions: 'सत्रे',
+    logged: 'नोंदवले',
+    loggedToday: 'आज नोंदवलेला वेळ',
+    dailyGoal: 'दैनंदिन ध्येय',
+    goalMet: 'ध्येय पूर्ण झाले!',
+    scheduleDailySyllabusDesc: 'दैनंदिन अभ्यासक्रमाचे नियोजन करा, उद्याच्या उजळणीची आधीच तयारी करा आणि अभ्यासाचा समतोल साधा.',
+    expandAll: 'सर्व उघडा',
+    collapse: 'संक्षिप्त करा',
 
     // Timer Screen
-    studyStopwatch: 'अभ्यास स्टॉपवॉच आणि फोकस टायमर',
+    studyTimer: 'अभ्यास टायमर',
+    studyStopwatch: 'सखोल अभ्यास स्टॉपवॉच आणि फोकस ट्रॅकर',
+    trackStudySessions: 'तुमच्या अभ्यास सत्रांची नोंद ठेवा आणि सातत्य राखा.',
+    exitFocusMode: 'फोकस मोडमधून बाहेर पडा',
+    enterFocusMode: 'फोकस मोड सुरू करा',
+    focusStyle: 'फोकस प्रकार',
+    lightZen: 'लाइट झेन (लवचिक)',
+    deepZen: 'डीप झेन (कडक लॉक)',
+    stopwatchLightZenOnly: 'स्टॉपवॉच फक्त लाइट झेनला सपोर्ट करतो.',
+    deepZenDesc: 'डीप झेन काउंटडाउन दरम्यान थांबवणे, रीसेट करणे, समाप्त करणे व बाहेर पडणे लॉक करते. वेळ संपल्यावर ते अनलॉक होते.',
+    lightZenDesc: 'लाइट झेन तुम्हाला हवे तेव्हा फोकस मोड सोडण्याची मुभा देते.',
+    pomodoro: 'पोमोडोरो',
+    stopwatch: 'स्टॉपवॉच',
+    custom: 'कस्टम',
+    studySubject: 'अभ्यास विषय',
+    customDuration: 'कस्टम वेळ',
+    enterOwnTime: 'किंवा तुमची स्वतःची वेळ टाका (मिनिटे)',
+    enterMinutesPlaceholder: 'मिनिटे प्रविष्ट करा (१ - ७२०)',
+    currentTarget: 'सध्याचे ध्येय',
+    saveSession: 'सत्र जतन करा',
+    reset: 'रीसेट करा',
+    saving: 'जतन करत आहे...',
+    finish: 'समाप्त करा',
+    allSubjects: 'सर्व विषय',
+    upsc: 'यूपीएससी',
+    mpsc: 'एमपीएससी',
     runningFocus: 'सखोल अभ्यास सत्र सुरू आहे',
     pausedFocus: 'सत्र थांबवले आहे',
     readyToFocus: 'अभ्यासासाठी सज्ज',
     sessionFocusTopic: 'सत्र अभ्यास विषय',
     whatAreYouStudying: 'तुम्ही कोणता धडा किंवा विषय शिकत आहात?',
-    startTimer: 'टायमर सुरू करा',
-    pauseTimer: 'थांबवा',
-    resumeTimer: 'पुन्हा सुरू करा',
-    saveSessionBtn: 'सत्र जतन करा',
-    resetTimer: 'रीसेट करा',
-    selectSubjectToTrack: 'अभ्यासाचा विषय निवडा',
-    pomodoroIntervals: 'पोमोडोरो कालावधी पर्याय',
+    selectSubjectToTrack: 'ट्रॅक करण्यासाठी विषय निवडा',
+    pomodoroIntervals: 'पोमोडोरो पर्याय',
+
+    // Offline / Manual Study Logging
+    manualOfflineLogging: 'मॅन्युअल आणि ऑफलाइन अभ्यास नोंदणी',
+    manualOfflineDesc: 'पाठ्यपुस्तक वाचन, लायब्ररी सत्र आणि मागील अभ्यास तास नोंदवा.',
+    logOfflineBookStudy: 'ऑफलाइन पुस्तक अभ्यास नोंदवा',
+    logOfflineBookDesc: 'मागील तासांची नोंद, पाठ्यपुस्तके आणि लायब्ररी अभ्यास समाविष्ट',
+    pastHoursEntry: 'मागील तासांची नोंद',
+    pastHoursDesc: 'मागील अभ्यास सत्रांसाठी मॅन्युअल नोंद',
+    targetExamSection: 'लक्ष्यित परीक्षा विभाग',
+    selectSubject: 'विषय निवडा',
+    studyDate: 'अभ्यास तारीख (दिवस/महिना/वर्ष)',
+    specificDate: 'विशिष्ट तारीख',
+    studyActivity: 'अभ्यास कृती',
+    durationStudied: 'अभ्यास वेळ (तास आणि मिनिटे)',
+    hoursHrs: 'तास (तास)',
+    minutesMins: 'मिनिटे (मि)',
+    theoryReading: 'सिद्धांत आणि वाचन',
+    pyqsMcqs: 'मागील प्रश्न व सराव प्रश्न',
+    mainsWriting: 'मुख्य परीक्षा उत्तर लेखन',
+    currentAffairsActivity: 'चालू घडामोडी',
+    revision: 'उजळणी',
+    saveStudyHours: 'अभ्यास वेळ जतन करा',
 
     // Syllabus Screen
     subjectsAndSyllabus: 'विषय आणि अभ्यासक्रम',
     curriculumChecklist: 'संवादी अभ्यासक्रम चेकलिस्ट आणि ऑफलाइन तास नोंदणी',
     logOfflineHours: '+ तास नोंदवा',
     closeLogger: 'लॉगर बंद करा',
-    offlineLoggerTitle: 'पुस्तकी / ऑफलाइन अभ्यास तास नोंदवा',
-    offlineLoggerDesc: 'संदर्भ पुस्तके (लक्ष्मीकांत, स्पेक्ट्रम, NCERT) किंवा वाचनालयात अभ्यास केला? तास नोंदवा.',
+    offlineLoggerTitle: 'ऑफलाइन / पुस्तक अभ्यास तास नोंदवा',
+    offlineLoggerDesc: 'मानक पुस्तके (लक्ष्मीकांत, स्पेक्ट्रम, एनसीईआरटी) किंवा लायब्ररीमध्ये अभ्यास केला? थेट तास जोडा.',
     examSection: 'परीक्षा अभ्यासक्रम विभाग',
-    topicsChecklistTap: 'विषय चेकलिस्ट (स्थिती बदलण्यासाठी टॅप करा)',
+    topicsChecklistTap: 'घटक चेकलिस्ट (स्थिती बदलण्यासाठी टॅप करा)',
     viewTopicInSyllabus: 'अभ्यासक्रमात पहा →',
-    redirectedFromTask: 'प्लॅनर कामावरून पुनर्निर्देशित',
+    redirectedFromTask: 'नियोजक कामावरून पुनर्निर्देशित',
+    jumpToTopic: 'घटक पहा ↓',
     topicsMastered: 'घटक पूर्ण',
-    spacedRepetitionQueue: 'उजळणी यादी (Spaced Repetition)',
-    neglectedModuleNotice: 'अभ्यासक्रम समतोल: दुर्लक्षित विषय',
-    dueOn: 'नियत तारीख',
-    spent: 'झालेला वेळ',
+    spacedRepetitionQueue: 'उजळणी रांग',
+    neglectedModuleNotice: 'अभ्यासक्रम समतोल: दुर्लक्षित घटक',
+    dueOn: 'नियत',
+    spent: 'व्यतीत',
     revs: 'उजळणी',
     donePct: 'पूर्ण',
+    plusOneRevise: '+१ उजळणी',
+    logHours: 'तास नोंदवा',
+    revise: 'उजळणी',
+    viewTopic: 'विषय पहा',
 
     // Planner Screen
-    studyPlannerTitle: 'अभ्यास नियोजक (Planner)',
-    plannerTimeframe: 'नियोजनाची वेळ-मर्यादा',
+    studyPlannerTitle: 'अभ्यास नियोजक',
+    plannerTimeframe: 'नियोजन कालमर्यादा',
     todaysPlan: 'आजचे नियोजन',
     tomorrowsPlan: 'उद्याचे नियोजन',
     weeklyView: 'साप्ताहिक दृश्य',
-    workloadRoutine: 'कामाचा भार आणि दिनक्रम',
+    workloadRoutine: 'अभ्यास भार व दिनक्रम',
     examFilter: 'परीक्षा फिल्टर',
     allExamTasks: 'सर्व परीक्षा कामे',
-    upscPlans: 'UPSC नियोजन',
-    mpscPlans: 'MPSC नियोजन',
+    upscPlans: 'यूपीएससी नियोजन',
+    mpscPlans: 'एमपीएससी नियोजन',
     selectDay7: 'दिवस निवडा (पुढील ७ दिवस)',
-    addStudyBlock: '+ नवीन अभ्यास ब्लॉक जोडा',
-    addStudyBlockDesc: 'तुमच्या MPSC किंवा UPSC अभ्यासक्रमानुसार अभ्यासाचे नियोजन करा.',
-    targetExamSection: 'लक्ष्य परीक्षा विभाग',
+    addStudyBlock: '+ नवीन अभ्यास स्लॉट जोडा',
+    addStudyBlockDesc: 'तुमच्या एमपीएससी किंवा यूपीएससी अभ्यासक्रमानुसार सखोल अभ्यास वेळ ठरवा.',
     selectTargetSubject: 'विषय निवडा',
-    quickPickUnfinished: 'अपूर्ण अभ्यासक्रमातून झटपट निवडा',
-    topicOrChapterTitle: 'विषय किंवा धड्याचे नाव',
+    quickPickUnfinished: 'अपूर्ण अभ्यासक्रम घटकांमधून झटपट निवडा',
+    topicOrChapterTitle: 'घटक किंवा धड्याचे नाव',
     topicTitlePlaceholder: 'उदा. मूलभूत हक्क (कलम १४-१८)',
-    targetDurationMins: 'लक्ष्य कालावधी (मिनिटे)',
-    scheduleStudyBlockBtn: '+ अभ्यास ब्लॉक शेड्यूल करा',
+    targetDurationMins: 'लक्ष्यित वेळ (मिनिटे)',
+    scheduleStudyBlockBtn: '+ अभ्यास स्लॉट नियोजित करा',
     advancePlanningRoutine: 'आगाऊ नियोजन दिनक्रम',
-    advancePlanningDesc: 'उद्याच्या अभ्यासाचे आज रात्री नियोजन केल्याने सकाळी वेळ वाचतो आणि ताण येत नाही.',
-    noTasksTomorrow: 'उद्यासाठी अद्याप कोणतेही काम नियोजित नाही.',
-    autoGenerateBlueprint: 'उद्याचे मुख्य विषय ऑटो-प्लॅन करा',
-    browseSyllabusToSchedule: 'अभ्यासक्रम विषय पहा',
-    tomorrowsWorkloadTarget: 'उद्याचा भार विरुद्ध ८ तास ध्येय',
+    advancePlanningDesc: 'उद्याच्या अभ्यासाचे आज रात्री नियोजन केल्यास सकाळचा वेळ वाचतो आणि स्पष्टता मिळते.',
+    noTasksTomorrow: 'उद्यासाठी अजून कोणतेही काम नियोजित नाही.',
+    autoGenerateBlueprint: 'उद्याचे मुख्य विषय ऑटो-शेड्यूल करा',
+    browseSyllabusToSchedule: 'अभ्यासक्रम घटक तपासून नियोजन करा',
+    tomorrowsWorkloadTarget: 'उद्याचा अभ्यास भार विरुद्ध ८ तास ध्येय',
     capacity: 'क्षमता',
-    weeklyGoalVs40h: 'साप्ताहिक ४० तास उद्दिष्ट',
-    tasksForDay: 'चे नियोजित कामे',
-    noTasksScheduledDate: 'या तारखेसाठी कोणतेही काम नियोजित नाही. खालील "+ नवीन ब्लॉक जोडा" वापरा.',
-    workloadGauges: 'कार्यक्षमता मापक',
+    weeklyGoalVs40h: 'साप्ताहिक ४० तास ध्येय',
+    tasksForDay: 'साठी नियोजित कामे',
+    noTasksScheduledDate: 'या तारखेसाठी कोणतेही काम नियोजित नाही. खालील "+ नवीन अभ्यास स्लॉट जोडा" वर टॅप करा.',
+    workloadGauges: 'अभ्यास भार क्षमता दर्शक',
     todaysStudyLoad: 'आजचा अभ्यास भार',
 
     // Analytics Screen
-    analyticsTitle: 'अभ्यास विश्लेषण आणि माहिती',
+    studyAnalytics: 'अभ्यास विश्लेषण',
+    analyticsSubtitleMain: 'तुमच्या सवयी समजून घ्या, प्रगती ट्रॅक करा आणि सातत्य राखा',
+    yourStudyOverview: 'तुमचा अभ्यास आढावा',
+    sevenDays: '७ दिवस',
+    thirtyDays: '३० दिवस',
+    overview: 'आढावा',
+    activity: 'कृती',
+    subjects: 'विषय',
+    sessionsTab: 'सत्रे',
+    todaysStudyGoal: 'आजचे अभ्यास ध्येय',
+    buildHabitDesc: 'एकाग्रतेने अभ्यास करून दैनंदिन सवय विकसित करा.',
+    studiedToday: 'आज अभ्यास केला',
+    dailyGoalReached: 'दैनंदिन ध्येय गाठले!',
+    remainingOf: 'उर्वरित (एकूण',
+    studyTime: 'अभ्यास वेळ',
+    totalRecorded: 'एकूण नोंदवलेले',
+    completedRecords: 'पूर्ण सत्रे',
+    averageFocus: 'सरासरी एकाग्रता',
+    recordedFocusScore: 'नोंदवलेला एकाग्रता स्कोअर',
+    avgSession: 'सरासरी सत्र वेळ',
+    perRecordedSession: 'प्रत्येक सत्रामागे',
+    focusQuality: 'एकाग्रता गुणवत्ता',
+    avgFocusScoreDesc: 'नोंदवलेल्या सत्रांमधून सरासरी एकाग्रता स्कोअर.',
+    dailyStudyActivity: 'दैनंदिन अभ्यास कृती',
+    minutesStudiedWeek: 'या आठवड्यात दररोज अभ्यास केलेली मिनिटे',
+    minutesStudiedMonth: 'निवडलेल्या महिन्यात अभ्यास केलेली मिनिटे',
+    activeDays: 'सक्रिय दिवस',
+    studyConsistency: 'अभ्यास सातत्य',
+    heatmapDesc: 'प्रत्येक चौकोन एक दिवस दर्शवतो. गडद रंग जास्त अभ्यास वेळ दर्शवतो.',
+    daysWithoutStudy: 'अभ्यासाशिवायचे दिवस',
+    subjectBreakdown: 'विषयानुसार विभागणी',
+    subjectBreakdownDesc: 'तुमचा अभ्यास वेळ विषयांमध्ये कसा विभागला गेला आहे ते पहा.',
+    noSubjectStudyTime: 'या कालावधीसाठी कोणताही विषय अभ्यास वेळ नोंदवलेला नाही.',
+    analyticsTitle: 'अभ्यास आकडेवारी आणि अंतर्दृष्टी',
     totalStudyTime: 'एकूण अभ्यास वेळ',
     weeklyAvg: 'साप्ताहिक सरासरी',
-    completionRate: 'काम पूर्ण होण्याचा दर',
-    subjectDistribution: 'विषयानुसार वेळेचे वाटप',
+    completionRate: 'काम पूर्णता प्रमाण',
+    subjectDistribution: 'विषयानुसार वेळ वाटप',
     last7DaysTrend: 'दैनंदिन अभ्यास कल (मागील ७ दिवस)',
     hoursPerDay: 'तास / दिवस',
-    noAnalyticsData: 'वैयक्तिकृत तयारी माहिती पाहण्यासाठी अभ्यास सत्रे नोंदवा.',
-
-    // Extra Navigation, Routine & Blueprint keys
-    jumpToTopic: 'विषय पहा ↓',
-    morningBriefing: 'सकाळची अभ्यास माहिती',
-    eveningPlanning: 'संध्याकाळचे नियोजन दिनक्रम',
-    blueprintIdealRoutine: '३-स्लॉट आदर्श दैनंदिन अभ्यास दिनक्रम',
-    blueprintRoutineDesc: 'UPSC आणि MPSC विद्यार्थ्यांसाठी शिफारस केलेले प्रमाणित वेळापत्रक.',
-    slot1DeepWork: 'स्लॉट १: सकाळचा सखोल अभ्यास (०६:०० - ०९:०० • ३ तास)',
-    slot1Desc: 'थिअरी, संकल्पना आणि मुख्य अभ्यासक्रम वाचन जेव्हा मन सर्वात ताजे असते.',
-    slot2Practice: 'स्लॉट २: दुपारचा सराव आणि प्रश्न सोडवणे (१४:०० - १७:०० • ३ तास)',
-    slot2Desc: 'मागील वर्षांचे प्रश्न (PYQs), सराव चाचण्या, CSAT आणि रिव्हिजन.',
-    slot3CurrentAffairs: 'स्लॉट ३: संध्याकाळचे चालू घडामोडी व विश्लेषण (२०:०० - २२:०० • २ तास)',
-    slot3Desc: 'वृत्तपत्र संपादकीय, मासिके, नोट्स सारांश आणि उत्तर लेखन सराव.',
-    blueprintForToday: 'आजचा ब्लूप्रिंट',
-    blueprintForTomorrow: 'उद्याचा ब्लूप्रिंट',
-    tapToViewTopic: 'अभ्यासक्रमात विषय पाहण्यासाठी टॅप करा →',
-    tapToViewTasks: 'कामे पाहण्यासाठी टॅप करा',
-    autoPlanTomorrow: 'उद्याचे नियोजन ऑटो-प्लॅन करा',
-    curriculumBalanceNeglected: 'अभ्यासक्रम समतोल: राहिलेला विषय',
-    offlineStudyLogger: 'ऑफलाइन / पुस्तक अभ्यास तास नोंदवा',
-    offlineStudyLoggerDesc: 'प्रमाणित पुस्तके (लक्ष्मीकांत, स्पेक्ट्रम, NCERT) किंवा लायब्ररीमध्ये अभ्यास केला? थेट नोंदवा.',
+    noAnalyticsData: 'वैयक्तिक तयारी अंतर्दृष्टी पाहण्यासाठी अभ्यास सत्रे नोंदवा.',
+    topicNoteOptional: 'धडा / घटक नोंद (पर्यायी)',
+    topicNotePlaceholder: 'उदा. मूलभूत हक्क कलम १९-२२ नोट्स व प्रश्न',
+    resetSessionPrompt: 'अभ्यास सत्र रीसेट करायचे?',
+    resetSessionDesc: 'आपला सध्याचा जतन न केलेला अभ्यास वेळ काढून टाकण्यात येईल.',
+    exitFocusModePrompt: 'फोकस मोडमधून बाहेर पडायचे?',
+    exitFocusModeDesc: 'तुम्हाला नक्की फोकस मोड सोडून सामान्य नेव्हिगेशनवर परत यायचे आहे का?',
+    stayFocused: 'फोकस कायम ठेवा',
+    exitFocusMode: 'फोकस मोडमधून बाहेर पडा',
+    studyStreak: 'अभ्यास सातत्य',
+    currentStreak: 'सध्याचे सातत्य',
+    streakDescription: 'सातत्य हा नागरी सेवा यशाचा पाया आहे. आपले सातत्य टिकवून ठेवण्यासाठी दररोज अभ्यास सत्र पूर्ण करा!',
+    days: 'दिवस',
+    autoPlanFullWeek: 'पूर्ण आठवड्याचे नियोजन करा',
+    entireWeek: 'संपूर्ण आठवडा (सर्व ७ दिवस)',
+    singleDayFocus: 'एका दिवसावर लक्ष केंद्रित',
+    weeklyScheduleView: 'साप्ताहिक वेळापत्रक दृश्य',
+    noTasksForDay: 'या दिवसासाठी कोणतेही कार्य नियोजित नाही',
+    addTask: '+ कार्य जोडा',
+    autoPlanThisDay: 'या दिवसाचे स्वयंचलित नियोजन करा',
+    workloadCapacityGauges: 'कामाचा ताण क्षमता मापक',
+    todaysStudyLoad: 'आजचा अभ्यास भार',
+    weeklyCumulativeLoad: 'साप्ताहिक संचयी भार',
+    plannedAcross7Days: '७ दिवसांमध्ये नियोजित',
+    examSyllabusAllocation: 'परीक्षा अभ्यासक्रम वाटप',
+    subjectWiseAllocation: 'विषयानुसार वेळ वाटप',
+    noSubjectHoursPlanned: 'अद्याप कोणतेही विषय तास नियोजित नाहीत. विषय वितरण पाहण्यासाठी अभ्यास कार्य जोडा.',
+    targetExam: 'लक्षित परीक्षा',
+    selectExamSubject: '{exam} विषय निवडा',
+    saveHoursPrefix: 'जतन करा',
+    hoursShort: 'तास',
+    minsShort: 'मि',
+    subtopics: 'उप-घटक',
+    recentStudySessions: 'या आठवड्यातील मागील अभ्यास सत्रे (मागील दिवस)',
     startLiveTimer: 'थेट टायमर सुरू करा',
     logPastHours: 'मागील तास नोंदवा',
-    topicChecklistHeader: 'विषय चेकलिस्ट (स्थिती बदलण्यासाठी टॅप करा)',
-    viewTopic: 'विषय पहा',
-    planForToday: 'आजचे नियोजन',
-    plusOneRevise: '+१ उजळणी',
-    logHours: 'वेळ नोंदवा',
-    revise: 'उजळणी',
-    mastered: 'पारंगत',
-    remaining: 'शिल्लक',
-    confirmSignOut: 'तुम्हाला खात्री आहे की तुम्ही साइन आउट करू इच्छिता?',
-    signOut: 'साइन आउट',
-    confirm: 'निश्चित करा',
-    cancel: 'रद्द करा',
-    scheduled: 'नियोजित केले!',
-    scheduledMsg: 'आजच्या अभ्यास नियोजकात जोडले गेले.',
-    studyHoursLogged: 'अभ्यास वेळ नोंदवली गेली! ',
-    tenHourSchedule: '१० तासांचे वेळापत्रक',
-    tenHourScheduleTitle: 'यूपीएससी / एमपीएससी उमेदवारांसाठी १० तासांचे अभ्यास वेळापत्रक',
-    tenHourScheduleDesc: 'सखोल एकाग्रता आणि जास्तीत जास्त स्मरणशक्तीसाठी ४ सत्रांचे शिस्तबद्ध वेळापत्रक.',
-    apply10hToday: 'आजच्या नियोजनात लागू करा',
-    apply10hTomorrow: 'उद्याच्या नियोजनात लागू करा',
-    currentSlotActive: 'सध्याचे चालू सत्र',
-    honestStudyQuote: 'केवळ तासांची मोजणी करण्यासाठी बसू नका, मनापासून आणि प्रामाणिकपणे अभ्यास करा.',
-    seeDetails: 'तपशील पहा',
-    hideDetails: 'तपशील लपवा',
-    progressTrackerTitle: 'प्रगती ट्रॅकर',
-    timeSpent: 'अभ्यास वेळ',
-    startFocus: 'अभ्यास सुरू करा'
+    myProfile: 'माझे प्रोफाईल',
+    studentAccount: 'विद्यार्थी खाते',
+    aspirantSubtitle: 'एमपीएससी / यूपीएससी विद्यार्थी',
+    studyOverview: 'अभ्यास विहंगावलोकन',
+    dailyStudyGoal: 'दैनंदिन अभ्यास ध्येय',
+    personalInfo: 'वैयक्तिक माहिती',
+    fullName: 'पूर्ण नाव',
+    emailAddress: 'ईमेल पत्ता',
+    mobileNumber: 'मोबाइल नंबर',
+    examTarget: 'लक्षित परीक्षा',
+    preferredSubjects: 'प्राधान्य दिलेले विषय',
+    preferences: 'प्राधान्ये',
+    studyReminders: 'अभ्यास स्मरणपत्रे',
+    setDailyReminderDesc: 'आपले दैनंदिन अभ्यास स्मरणपत्र सेट करा',
+    privacyAndAccount: 'गोपनीयता आणि खाते',
+    manageAccountSettings: 'आपल्या खात्याच्या सेटिंग्ज व्यवस्थापित करा',
+    saveChanges: 'बदल जतन करा',
+    savingChanges: 'जतन करत आहे...',
+    editProfile: 'प्रोफाईल संपादित करा',
+    signOutPrompt: 'साइन आउट करायचे?',
+    signOutConfirmDesc: 'तुम्हाला नक्की अभ्यास ट्रॅकरमधून साइन आउट करायचे आहे का?',
+    yesSignOut: 'होय, साइन आउट करा',
+    yourPrepYourProgress: 'तुमची तयारी, तुमची प्रगती.',
+    buildConsistentRoutine: 'एक नियमित दिनचर्या तयार करा',
+    reminderHeroDesc: 'आपल्या अभ्यास ध्येयांवर राहण्यासाठी दैनंदिन स्मरणपत्र वेळ निवडा.',
+    dailyStudyReminder: 'दैनंदिन अभ्यास स्मरणपत्र',
+    reminderEnabled: 'स्मरणपत्र प्राधान्य सक्षम आहे',
+    reminderDisabled: 'स्मरणपत्र प्राधान्य अक्षम आहे',
+    reminderTime: 'स्मरणपत्र वेळ',
+    selectPreferredTime: 'आपली पसंतीची वेळ निवडा.',
+    reminderDeviceNote: 'ही प्राधान्ये या डिव्हाइसवर जतन केली आहेत.',
+    announcements: 'सूचना',
+    allAnnouncements: '← सर्व घोषणा',
+    backToApp: '← ॲपवर परत जा',
+    announcementDetails: 'घोषणा तपशील',
+    completeAnnouncementInfo: 'संपूर्ण घोषणा माहिती',
+    announcementsAndStatus: 'घोषणा आणि वाचन स्थिती',
+    readStatus: 'वाचलेले',
+    unreadStatus: 'न वाचलेले',
+    noAnnouncementsYet: 'अद्याप कोणत्याही घोषणा नाहीत',
+    announcementCol: 'घोषणा',
+    dateCol: 'दिनांक',
+    statusCol: 'स्थिती',
+    actionCol: 'कृती',
+    viewAction: 'पहा',
+    studentHelpDesk: 'विद्यार्थी मदत केंद्र',
+    helpDeskSubtitle: 'विद्यार्थी मदत, त्रुटी अहवाल आणि नवीन वैशिष्ट्यांची मागणी',
+    createTicket: 'नवीन तक्रार नोंदवा',
+    viewMyTickets: 'माझ्या तक्रारी पहा',
+    appName: 'अभ्यास ट्रॅकर',
+    examFocusTag: 'यूपीएससी व एमपीएससी',
+    examYearBadge: 'यूपीएससी / एमपीएससी {year}',
+    selectDayNext7: 'दिवस निवडा (पुढील ७ दिवस)',
+    ofHours: '{h} तासांचे',
+    capacityPercentOf: '{hours} चे {pct}%',
+    studyBlock: 'ब्लॉक',
+    recentSessions: 'मागील सत्रे',
+    recentSessionsDesc: 'या कालावधीतील तुमची नोंदवलेली नवीनतम अभ्यास सत्रे.',
+    noSessionsRecorded: 'या कालावधीत कोणतेही सत्र नोंदवले गेलेले नाही.',
+    studySession: 'अभ्यास सत्र',
+    dateUnavailable: 'दिनांक अनुपलब्ध',
+    latestCount: 'नवीनतम {count}',
+    totalStudied: 'एकूण अभ्यास',
+    totalSessions: 'एकूण सत्रे',
+    leadingSubject: 'अग्रणी विषय',
+    subjectDetails: 'विषय तपशील',
+    basedOnSessions: 'या कालावधीत नोंदवलेल्या {count} {sessions}वर आधारित.',
+    completeSessionToTrack: 'फोकस गुणवत्ता ट्रॅक करण्यासाठी अभ्यास सत्र पूर्ण करा.'
   }
 };
 
@@ -713,668 +1268,1132 @@ export const getTranslation = (lang, key, fallback = '') => {
   );
 };
 
-// ==================== BILINGUAL SUBJECT TRANSLATIONS ====================
+// ==================== TRILINGUAL SUBJECT TRANSLATIONS ====================
 export const SUBJECT_TRANSLATIONS = {
   // UPSC Civil Services
   'upsc-history-culture': {
+    id: 'upsc-history-culture',
+    exam: 'UPSC',
     en: 'History and Culture',
+    hi: 'इतिहास और संस्कृति',
     mr: 'इतिहास आणि संस्कृती'
   },
   'upsc-geography': {
+    id: 'upsc-geography',
+    exam: 'UPSC',
     en: 'Geography',
+    hi: 'भूगोल',
     mr: 'भूगोल'
   },
   'upsc-polity': {
+    id: 'upsc-polity',
+    exam: 'UPSC',
     en: 'Indian Polity and Governance',
+    hi: 'भारतीय राजव्यवस्था और शासन',
     mr: 'भारतीय राज्यव्यवस्था आणि प्रशासन'
   },
   'upsc-economy': {
+    id: 'upsc-economy',
+    exam: 'UPSC',
     en: 'Indian Economy',
+    hi: 'भारतीय अर्थव्यवस्था',
     mr: 'भारतीय अर्थव्यवस्था'
   },
   'upsc-environment': {
+    id: 'upsc-environment',
+    exam: 'UPSC',
     en: 'Environment and Ecology',
+    hi: 'पर्यावरण और पारिस्थितिकी',
     mr: 'पर्यावरण आणि परिसंस्था'
   },
   'upsc-science-tech': {
+    id: 'upsc-science-tech',
+    exam: 'UPSC',
     en: 'Science and Technology',
+    hi: 'विज्ञान और प्रौद्योगिकी',
     mr: 'विज्ञान आणि तंत्रज्ञान'
   },
   'upsc-current-affairs': {
+    id: 'upsc-current-affairs',
+    exam: 'UPSC',
     en: 'Current Affairs',
+    hi: 'समसामयिक घटनाएं (करंट अफेयर्स)',
     mr: 'चालू घडामोडी'
   },
   'upsc-csat': {
+    id: 'upsc-csat',
+    exam: 'UPSC',
     en: 'CSAT (Prelims Paper II)',
-    mr: 'CSAT (पूर्व परीक्षा पेपर II)'
+    hi: 'सीसैट (प्रारंभिक परीक्षा पेपर II)',
+    mr: 'सीसॅट (पूर्व परीक्षा पेपर II)'
   },
   'upsc-ethics': {
+    id: 'upsc-ethics',
+    exam: 'UPSC',
     en: 'Ethics, Integrity and Aptitude (Mains)',
+    hi: 'नीतिशास्त्र, सत्यनिष्ठा और अभिरुचि (मुख्य)',
     mr: 'नीतिशास्त्र, सत्यनिष्ठा आणि अभियोग्यता (मुख्य)'
   },
 
   // MPSC Maharashtra State Services
   'mpsc-history': {
+    id: 'mpsc-history',
+    exam: 'MPSC',
     en: 'Maharashtra and Indian History',
+    hi: 'महाराष्ट्र और भारत का इतिहास',
     mr: 'महाराष्ट्र आणि भारताचा इतिहास'
   },
   'mpsc-geography': {
+    id: 'mpsc-geography',
+    exam: 'MPSC',
     en: 'Maharashtra and Indian Geography',
+    hi: 'महाराष्ट्र और भारत का भूगोल',
     mr: 'महाराष्ट्र आणि भारताचा भूगोल'
   },
   'mpsc-polity': {
+    id: 'mpsc-polity',
+    exam: 'MPSC',
     en: 'Constitution & Administration',
-    mr: 'भारतीय राज्यव्यवस्था आणि प्रशासन'
+    hi: 'संविधान और प्रशासन',
+    mr: 'संविधान आणि प्रशासन'
   },
   'mpsc-economy': {
+    id: 'mpsc-economy',
+    exam: 'MPSC',
     en: 'Indian and Maharashtra Economy',
+    hi: 'भारतीय और महाराष्ट्र अर्थव्यवस्था',
     mr: 'भारतीय आणि महाराष्ट्राची अर्थव्यवस्था'
   },
   'mpsc-marathi': {
+    id: 'mpsc-marathi',
+    exam: 'MPSC',
     en: 'Marathi Language',
+    hi: 'मराठी भाषा',
     mr: 'मराठी भाषा'
   },
   'mpsc-english': {
+    id: 'mpsc-english',
+    exam: 'MPSC',
     en: 'English Language',
+    hi: 'अंग्रेजी भाषा',
     mr: 'इंग्रजी भाषा'
   },
   'mpsc-aptitude': {
+    id: 'mpsc-aptitude',
+    exam: 'MPSC',
     en: 'Aptitude and Reasoning',
+    hi: 'अभिक्षमता और तार्किक क्षमता',
     mr: 'अंकगणित आणि बुद्धिमत्ता चाचणी'
   },
   'mpsc-environment-science': {
+    id: 'mpsc-environment-science',
+    exam: 'MPSC',
     en: 'Environment and Science',
+    hi: 'पर्यावरण और सामान्य विज्ञान',
     mr: 'पर्यावरण आणि सामान्य विज्ञान'
   },
   'mpsc-current-affairs': {
+    id: 'mpsc-current-affairs',
+    exam: 'MPSC',
     en: 'Current Affairs',
+    hi: 'समसामयिक घटनाएं (करंट अफेयर्स)',
     mr: 'चालू घडामोडी'
   },
 
   // Legacy & Alias IDs
   'polity': {
     en: 'Indian Polity and Governance',
+    hi: 'भारतीय राजव्यवस्था और शासन',
     mr: 'भारतीय राज्यव्यवस्था आणि प्रशासन'
   },
   'history': {
     en: 'History of Modern India',
+    hi: 'आधुनिक भारत का इतिहास',
     mr: 'आधुनिक भारताचा इतिहास'
   },
   'economy': {
     en: 'Indian Economy',
+    hi: 'भारतीय अर्थव्यवस्था',
     mr: 'भारतीय अर्थव्यवस्था'
   },
   'geography': {
     en: 'Geography',
+    hi: 'भूगोल',
     mr: 'भूगोल'
   },
   'Indian Polity and Governance': {
     en: 'Indian Polity and Governance',
+    hi: 'भारतीय राजव्यवस्था और शासन',
     mr: 'भारतीय राज्यव्यवस्था आणि प्रशासन'
   },
   'History and Culture': {
     en: 'History and Culture',
+    hi: 'इतिहास और संस्कृति',
     mr: 'इतिहास आणि संस्कृती'
   },
   'History of Modern India': {
     en: 'History of Modern India',
+    hi: 'आधुनिक भारत का इतिहास',
     mr: 'आधुनिक भारताचा इतिहास'
   },
   'Maharashtra and Indian History': {
     en: 'Maharashtra and Indian History',
+    hi: 'महाराष्ट्र और भारत का इतिहास',
     mr: 'महाराष्ट्र आणि भारताचा इतिहास'
   },
   'Maharashtra and Indian Geography': {
     en: 'Maharashtra and Indian Geography',
+    hi: 'महाराष्ट्र और भारत का भूगोल',
     mr: 'महाराष्ट्र आणि भारताचा भूगोल'
   },
   'Indian Economy': {
     en: 'Indian Economy',
+    hi: 'भारतीय अर्थव्यवस्था',
     mr: 'भारतीय अर्थव्यवस्था'
   },
   'Indian and Maharashtra Economy': {
     en: 'Indian and Maharashtra Economy',
+    hi: 'भारतीय और महाराष्ट्र अर्थव्यवस्था',
     mr: 'भारतीय आणि महाराष्ट्राची अर्थव्यवस्था'
   },
   'Environment and Ecology': {
     en: 'Environment and Ecology',
+    hi: 'पर्यावरण और पारिस्थितिकी',
     mr: 'पर्यावरण आणि परिसंस्था'
   },
   'Science and Technology': {
     en: 'Science and Technology',
+    hi: 'विज्ञान और प्रौद्योगिकी',
     mr: 'विज्ञान आणि तंत्रज्ञान'
   },
   'Current Affairs': {
     en: 'Current Affairs',
+    hi: 'समसामयिक घटनाएं (करंट अफेयर्स)',
     mr: 'चालू घडामोडी'
+  },
+  'Constitution & Administration': {
+    en: 'Constitution & Administration',
+    hi: 'संविधान और प्रशासन',
+    mr: 'संविधान आणि प्रशासन'
+  },
+  'Indian Constitution and Maharashtra Administration': {
+    en: 'Constitution & Administration',
+    hi: 'संविधान और प्रशासन',
+    mr: 'संविधान आणि प्रशासन'
+  },
+  'CSAT (Prelims Paper II)': {
+    en: 'CSAT (Prelims Paper II)',
+    hi: 'सीसैट (प्रारंभिक परीक्षा पेपर II)',
+    mr: 'सीसॅट (पूर्व परीक्षा पेपर II)'
+  },
+  'Ethics, Integrity and Aptitude': {
+    en: 'Ethics, Integrity and Aptitude',
+    hi: 'नीतिशास्त्र, सत्यनिष्ठा और अभिरुचि',
+    mr: 'नीतिशास्त्र, सत्यनिष्ठा आणि अभियोग्यता'
+  },
+  'Ethics, Integrity and Aptitude (Mains)': {
+    en: 'Ethics, Integrity and Aptitude (Mains)',
+    hi: 'नीतिशास्त्र, सत्यनिष्ठा और अभिरुचि (मुख्य)',
+    mr: 'नीतिशास्त्र, सत्यनिष्ठा आणि अभियोग्यता (मुख्य)'
+  },
+  'Marathi Language': {
+    en: 'Marathi Language',
+    hi: 'मराठी भाषा',
+    mr: 'मराठी भाषा'
+  },
+  'English Language': {
+    en: 'English Language',
+    hi: 'अंग्रेजी भाषा',
+    mr: 'इंग्रजी भाषा'
+  },
+  'Aptitude and Reasoning': {
+    en: 'Aptitude and Reasoning',
+    hi: 'अभिक्षमता और तार्किक क्षमता',
+    mr: 'अंकगणित आणि बुद्धिमत्ता चाचणी'
+  },
+  'Environment and Science': {
+    en: 'Environment and Science',
+    hi: 'पर्यावरण और सामान्य विज्ञान',
+    mr: 'पर्यावरण आणि सामान्य विज्ञान'
   }
 };
 
-// ==================== BILINGUAL TOPIC TRANSLATIONS ====================
+// ==================== TRILINGUAL TOPIC TRANSLATIONS ====================
 export const TOPIC_TRANSLATIONS = {
   // Polity & Administration
-  'Fundamental Rights': {
-    en: 'Fundamental Rights',
-    mr: 'मूलभूत हक्क'
+  'Constitution of India': {
+    en: 'Constitution of India',
+    hi: 'भारत का संविधान',
+    mr: 'भारताचे संविधान'
   },
   'Fundamental Rights and Duties': {
     en: 'Fundamental Rights and Duties',
+    hi: 'मौलिक अधिकार और कर्तव्य',
     mr: 'मूलभूत हक्क आणि कर्तव्ये'
+  },
+  'Fundamental Rights': {
+    en: 'Fundamental Rights',
+    hi: 'मौलिक अधिकार',
+    mr: 'मूलभूत हक्क'
   },
   'Directive Principles of State Policy': {
     en: 'Directive Principles of State Policy',
+    hi: 'राज्य के नीति निर्देशक तत्व',
     mr: 'राज्याच्या धोरणाची मार्गदर्शक तत्त्वे'
-  },
-  'Constitution of India': {
-    en: 'Constitution of India',
-    mr: 'भारताचे संविधान'
   },
   'Parliament and state legislatures': {
     en: 'Parliament and state legislatures',
+    hi: 'संसद और राज्य विधानमंडल',
     mr: 'संसद आणि राज्य विधीमंडळ'
   },
   'Parliament and state legislature': {
     en: 'Parliament and state legislature',
+    hi: 'संसद और राज्य विधानमंडल',
     mr: 'संसद आणि राज्य विधीमंडळ'
   },
   'President, Prime Minister and judiciary': {
     en: 'President, Prime Minister and judiciary',
+    hi: 'राष्ट्रपति, प्रधानमंत्री और न्यायपालिका',
     mr: 'राष्ट्रपती, पंतप्रधान आणि न्यायव्यवस्था'
   },
   'President, Prime Minister and Judiciary': {
     en: 'President, Prime Minister and Judiciary',
+    hi: 'राष्ट्रपति, प्रधानमंत्री और न्यायपालिका',
     mr: 'राष्ट्रपती, पंतप्रधान आणि न्यायव्यवस्था'
   },
   'Panchayati Raj and local government': {
     en: 'Panchayati Raj and local government',
+    hi: 'पंचायती राज और स्थानीय शासन',
     mr: 'पंचायती राज आणि स्थानिक स्वराज्य'
   },
   'Constitutional and statutory bodies': {
     en: 'Constitutional and statutory bodies',
+    hi: 'संवैधानिक और वैधानिक निकाय',
     mr: 'संवैधानिक आणि वैधानिक संस्था'
+  },
+  'Indian Constitution and fundamental rights': {
+    en: 'Indian Constitution and fundamental rights',
+    hi: 'भारतीय संविधान और मौलिक अधिकार',
+    mr: 'भारतीय संविधान आणि मूलभूत हक्क'
   },
   'Governor and Chief Minister': {
     en: 'Governor and Chief Minister',
+    hi: 'राज्यपाल और मुख्यमंत्री',
     mr: 'राज्यपाल आणि मुख्यमंत्री'
   },
   'Maharashtra government structure': {
     en: 'Maharashtra government structure',
+    hi: 'महाराष्ट्र शासन संरचना',
     mr: 'महाराष्ट्र शासन संरचना'
   },
   'Local self-government': {
     en: 'Local self-government',
+    hi: 'स्थानीय स्वशासन',
     mr: 'स्थानिक स्वराज्य संस्था'
   },
   'Panchayati Raj and urban administration': {
     en: 'Panchayati Raj and urban administration',
+    hi: 'पंचायती राज और शहरी प्रशासन',
     mr: 'पंचायती राज आणि नागरी प्रशासन'
-  },
-  'Panchayati Raj and urban administration in Maharashtra': {
-    en: 'Panchayati Raj and urban administration in Maharashtra',
-    mr: 'महाराष्ट्रातील पंचायती राज आणि नागरी प्रशासन'
   },
 
   // History & Culture
-  'History of Modern India': {
-    en: 'History of Modern India',
-    mr: 'आधुनिक भारताचा इतिहास'
-  },
   'Ancient Indian history': {
     en: 'Ancient Indian history',
+    hi: 'प्राचीन भारत का इतिहास',
     mr: 'प्राचीन भारताचा इतिहास'
   },
   'Medieval Indian history': {
     en: 'Medieval Indian history',
+    hi: 'मध्यकालीन भारत का इतिहास',
     mr: 'मध्ययुगीन भारताचा इतिहास'
   },
   'Modern Indian history': {
     en: 'Modern Indian history',
+    hi: 'आधुनिक भारत का इतिहास',
+    mr: 'आधुनिक भारताचा इतिहास'
+  },
+  'History of Modern India': {
+    en: 'History of Modern India',
+    hi: 'आधुनिक भारत का इतिहास',
     mr: 'आधुनिक भारताचा इतिहास'
   },
   'Indian freedom struggle': {
     en: 'Indian freedom struggle',
+    hi: 'भारतीय स्वतंत्रता संग्राम',
     mr: 'भारतीय स्वातंत्र्य लढा'
   },
   'Indian freedom struggle & Gandhian Movements': {
     en: 'Indian freedom struggle & Gandhian Movements',
+    hi: 'भारतीय स्वतंत्रता संग्राम और गांधीवादी आंदोलन',
     mr: 'भारतीय स्वातंत्र्य लढा आणि गांधीवादी चळवळी'
   },
   'Art, architecture and culture': {
     en: 'Art, architecture and culture',
+    hi: 'कला, स्थापत्य और संस्कृति',
     mr: 'कला, स्थापत्य आणि संस्कृती'
   },
   'World history (Mains)': {
     en: 'World history (Mains)',
+    hi: 'विश्व इतिहास (मुख्य)',
     mr: 'जागतिक इतिहास (मुख्य)'
   },
   'Ancient and medieval Indian history': {
     en: 'Ancient and medieval Indian history',
+    hi: 'प्राचीन और मध्यकालीन भारत का इतिहास',
     mr: 'प्राचीन आणि मध्ययुगीन भारताचा इतिहास'
   },
   'Modern India and freedom struggle': {
     en: 'Modern India and freedom struggle',
+    hi: 'आधुनिक भारत और स्वतंत्रता संग्राम',
     mr: 'आधुनिक भारत आणि स्वातंत्र्य लढा'
   },
   'Chhatrapati Shivaji Maharaj': {
     en: 'Chhatrapati Shivaji Maharaj',
+    hi: 'छत्रपति शिवाजी महाराज',
     mr: 'छत्रपती शिवाजी महाराज'
   },
   'Maratha Empire and Peshwa period': {
     en: 'Maratha Empire and Peshwa period',
+    hi: 'मराठा साम्राज्य और पेशवा काल',
     mr: 'मराठा साम्राज्य आणि पेशवे काळ'
   },
   'Social reformers of Maharashtra': {
     en: 'Social reformers of Maharashtra',
+    hi: 'महाराष्ट्र के समाज सुधारक',
     mr: 'महाराष्ट्रातील समाजसुधारक'
   },
   "Maharashtra's formation in 1960": {
     en: "Maharashtra's formation in 1960",
+    hi: 'संयुक्त महाराष्ट्र आंदोलन और गठन (1960)',
     mr: 'संयुक्त महाराष्ट्र चळवळ व निर्मिती (१९६०)'
   },
 
   // Geography
   'Physical geography': {
     en: 'Physical geography',
+    hi: 'भौतिक भूगोल',
     mr: 'प्राकृतिक भूगोल'
   },
   'Indian geography': {
     en: 'Indian geography',
+    hi: 'भारत का भूगोल',
     mr: 'भारताचा भूगोल'
   },
   'World geography': {
     en: 'World geography',
+    hi: 'विश्व भूगोल',
     mr: 'जगाचा भूगोल'
   },
   'Climate, rivers and monsoons': {
     en: 'Climate, rivers and monsoons',
+    hi: 'जलवायु, नदियां और मानसून',
     mr: 'हवामान, नद्या आणि मान्सून'
   },
   'Agriculture and natural resources': {
     en: 'Agriculture and natural resources',
+    hi: 'कृषि और प्राकृतिक संसाधन',
     mr: 'शेती आणि नैसर्गिक संसाधने'
   },
   'Human and economic geography': {
     en: 'Human and economic geography',
+    hi: 'मानव और आर्थिक भूगोल',
     mr: 'मानवी आणि आर्थिक भूगोल'
   },
   'Sahyadri and Western Ghats': {
     en: 'Sahyadri and Western Ghats',
+    hi: 'सह्याद्री और पश्चिमी घाट',
     mr: 'सह्याद्री आणि पश्चिम घाट'
   },
   "Maharashtra's districts and divisions": {
     en: "Maharashtra's districts and divisions",
+    hi: 'महाराष्ट्र के जिले और संभाग',
     mr: 'महाराष्ट्राचे जिल्हे आणि प्रशासकीय विभाग'
   },
   'Godavari, Krishna and other river systems': {
     en: 'Godavari, Krishna and other river systems',
+    hi: 'गोदावरी, कृष्णा और अन्य नदी प्रणालियां',
     mr: 'गोदावरी, कृष्णा व इतर नद्यांची खोरी'
   },
   'Climate, rainfall and soils': {
     en: 'Climate, rainfall and soils',
+    hi: 'जलवायु, वर्षा और मिट्टी',
     mr: 'हवामान, पर्जन्य आणि मृदा'
   },
   'Agriculture and irrigation': {
     en: 'Agriculture and irrigation',
+    hi: 'कृषि और सिंचाई',
     mr: 'शेती आणि जलसिंचन'
   },
   'Minerals, industries and population': {
     en: 'Minerals, industries and population',
+    hi: 'खनिज, उद्योग और जनसंख्या',
     mr: 'खनिजे, उद्योग आणि लोकसंख्या'
   },
 
   // Economy
   'GDP, inflation and national income': {
     en: 'GDP, inflation and national income',
+    hi: 'जीडीपी, मुद्रास्फीति और राष्ट्रीय आय',
     mr: 'जीडीपी, महागाई आणि राष्ट्रीय उत्पन्न'
   },
   'Banking and monetary policy': {
     en: 'Banking and monetary policy',
+    hi: 'बैंकिंग और मौद्रिक नीति',
     mr: 'बँकिंग आणि चलनविषयक धोरण'
   },
   'Budget and taxation': {
     en: 'Budget and taxation',
+    hi: 'बजट और कराधान',
     mr: 'अर्थसंकल्प आणि करप्रणाली'
   },
   'Poverty, unemployment and development': {
     en: 'Poverty, unemployment and development',
+    hi: 'गरीबी, बेरोजगारी और विकास',
     mr: 'दारिद्र्य, बेरोजगारी आणि विकास'
   },
   'Agriculture and industry': {
     en: 'Agriculture and industry',
+    hi: 'कृषि और उद्योग',
     mr: 'शेती आणि उद्योग'
   },
   'Government economic schemes': {
     en: 'Government economic schemes',
+    hi: 'सरकारी आर्थिक योजनाएं',
     mr: 'सरकारी आर्थिक योजना'
   },
   'Basic economic concepts': {
     en: 'Basic economic concepts',
+    hi: 'बुनियादी आर्थिक अवधारणाएं',
     mr: 'मूलभूत आर्थिक संकल्पना'
   },
   'State budget and economic survey': {
     en: 'State budget and economic survey',
+    hi: 'राज्य बजट और आर्थिक सर्वेक्षण',
     mr: 'राज्य अर्थसंकल्प आणि आर्थिक पाहणी'
   },
   'Maharashtra agriculture and industries': {
     en: 'Maharashtra agriculture and industries',
-    mr: 'महाराष्ट्रातील कृषी आणि उद्योग'
+    hi: 'महाराष्ट्र में कृषि और उद्योग',
+    mr: 'महाराष्ट्रातील शेती आणि उद्योग'
   },
   'Banking, inflation and taxation': {
     en: 'Banking, inflation and taxation',
-    mr: 'बँकिंग, महागाई आणि कररचना'
+    hi: 'बैंकिंग, मुद्रास्फीति और कराधान',
+    mr: 'बँकिंग, महागाई आणि करप्रणाली'
   },
   'Poverty and unemployment': {
     en: 'Poverty and unemployment',
+    hi: 'गरीबी और बेरोजगारी',
     mr: 'दारिद्र्य आणि बेरोजगारी'
   },
   'State and central government schemes': {
     en: 'State and central government schemes',
+    hi: 'राज्य और केंद्र सरकार की योजनाएं',
     mr: 'राज्य व केंद्र सरकारच्या योजना'
   },
 
   // Environment & Science
   'Ecosystems and food chains': {
     en: 'Ecosystems and food chains',
+    hi: 'पारिस्थितिकी तंत्र और खाद्य श्रृंखला',
     mr: 'परिसंस्था आणि अन्नसाखळी'
   },
   'Biodiversity and conservation': {
     en: 'Biodiversity and conservation',
+    hi: 'जैव विविधता और संरक्षण',
     mr: 'जैवविविधता आणि संवर्धन'
   },
   'National parks and wildlife sanctuaries': {
     en: 'National parks and wildlife sanctuaries',
+    hi: 'राष्ट्रीय उद्यान और वन्यजीव अभयारण्य',
     mr: 'राष्ट्रीय उद्याने आणि वन्यजीव अभयारण्ये'
   },
   'Climate change and global warming': {
     en: 'Climate change and global warming',
-    mr: 'हवामान बदल आणि जागतिक तापमानवाढ'
+    hi: 'जलवायु परिवर्तन और ग्लोबल वार्मिंग',
+    mr: 'हवामान बदल आणि ग्लोबल वॉर्मिंग'
   },
   'Pollution and environmental laws': {
     en: 'Pollution and environmental laws',
+    hi: 'प्रदूषण और पर्यावरण कानून',
     mr: 'प्रदूषण आणि पर्यावरण कायदे'
   },
   'Ecology and biodiversity': {
     en: 'Ecology and biodiversity',
+    hi: 'पारिस्थितिकी और जैव विविधता',
     mr: 'पर्यावरण आणि जैवविविधता'
   },
   'Pollution and climate change': {
     en: 'Pollution and climate change',
+    hi: 'प्रदूषण और जलवायु परिवर्तन',
     mr: 'प्रदूषण आणि हवामान बदल'
   },
   'General science': {
     en: 'General science',
+    hi: 'सामान्य विज्ञान',
     mr: 'सामान्य विज्ञान'
   },
   'Health and technology': {
     en: 'Health and technology',
+    hi: 'स्वास्थ्य और प्रौद्योगिकी',
     mr: 'आरोग्य आणि तंत्रज्ञान'
   },
   'Maharashtra forests and wildlife': {
     en: 'Maharashtra forests and wildlife',
+    hi: 'महाराष्ट्र के वन और वन्यजीव',
     mr: 'महाराष्ट्रातील वने आणि वन्यजीव'
   },
   'Physics, chemistry and biology basics': {
     en: 'Physics, chemistry and biology basics',
+    hi: 'भौतिकी, रसायन और जीव विज्ञान की मूल बातें',
     mr: 'भौतिक, रसायन आणि जीवशास्त्र मूलभूत संकल्पना'
   },
   'Space technology and satellites': {
     en: 'Space technology and satellites',
+    hi: 'अंतरिक्ष प्रौद्योगिकी और उपग्रह',
     mr: 'अंतराळ तंत्रज्ञान आणि उपग्रह'
   },
   'Biotechnology': {
     en: 'Biotechnology',
+    hi: 'जैव प्रौद्योगिकी',
     mr: 'जैवतंत्रज्ञान'
   },
   'Artificial intelligence and emerging technologies': {
     en: 'Artificial intelligence and emerging technologies',
+    hi: 'कृत्रिम बुद्धिमत्ता और उभरती प्रौद्योगिकियां',
     mr: 'कृत्रिम बुद्धिमत्ता आणि उदयोन्मुख तंत्रज्ञान'
   },
   'Health and scientific developments': {
     en: 'Health and scientific developments',
+    hi: 'स्वास्थ्य और वैज्ञानिक विकास',
     mr: 'आरोग्य आणि वैज्ञानिक घडामोडी'
   },
 
   // CSAT & Languages
   'Reading comprehension': {
     en: 'Reading comprehension',
+    hi: 'गद्यांश और बोधगम्यता',
     mr: 'उतारे व आकलन'
   },
   'Logical reasoning': {
     en: 'Logical reasoning',
+    hi: 'तार्किक तर्कशक्ति',
     mr: 'तर्कशुद्ध विचारक्षमता'
   },
   'Analytical ability': {
     en: 'Analytical ability',
+    hi: 'विश्लेषणात्मक क्षमता',
     mr: 'विश्लेषण क्षमता'
   },
   'Basic mathematics': {
     en: 'Basic mathematics',
+    hi: 'बुनियादी गणित और अंकगणित',
     mr: 'मूलभूत गणित'
   },
   'Data interpretation': {
     en: 'Data interpretation',
-    mr: 'माहितीचे विश्लेषण (DI)'
+    hi: 'डेटा व्याख्या (डीआई)',
+    mr: 'माहितीचे विश्लेषण'
   },
   'Decision-making and problem-solving': {
     en: 'Decision-making and problem-solving',
-    mr: 'निर्णय क्षमता आणि समस्या निवारण'
+    hi: 'निर्णय लेना और समस्या समाधान',
+    mr: 'निर्णय प्रक्रिया व समस्या निवारण'
   },
   'Grammar and sentence structure': {
     en: 'Grammar and sentence structure',
+    hi: 'व्याकरण और वाक्य रचना',
     mr: 'व्याकरण आणि वाक्यरचना'
   },
   'Vocabulary and synonyms': {
     en: 'Vocabulary and synonyms',
+    hi: 'शब्दसंग्रह और पर्यायवाची',
     mr: 'शब्दसंग्रह आणि समानार्थी शब्द'
   },
   'Antonyms and idioms': {
     en: 'Antonyms and idioms',
+    hi: 'विलोम शब्द और मुहावरे',
     mr: 'विरुद्धार्थी शब्द आणि वाक्प्रचार'
   },
   'Sentence correction and usage': {
     en: 'Sentence correction and usage',
-    mr: 'वाक्य दुरुस्ती आणि शब्दप्रयोग'
+    hi: 'वाक्य शुद्धि और प्रयोग',
+    mr: 'वाक्य दुरुस्ती व उपयोग'
   },
   'Grammar and vocabulary': {
     en: 'Grammar and vocabulary',
+    hi: 'व्याकरण और शब्दावली',
     mr: 'व्याकरण आणि शब्दसंग्रह'
   },
   'Synonyms and antonyms': {
     en: 'Synonyms and antonyms',
+    hi: 'समानार्थी और विलोम शब्द',
     mr: 'समानार्थी आणि विरुद्धार्थी शब्द'
   },
   'Sentence correction': {
     en: 'Sentence correction',
-    mr: 'वाक्य शुद्धीकरण'
+    hi: 'वाक्य सुधार',
+    mr: 'वाक्य दुरुस्ती'
   },
   'Comprehension': {
     en: 'Comprehension',
-    mr: 'उतारा आकलन'
+    hi: 'बोधगम्यता और समझ',
+    mr: 'आकलन'
   },
   'Basic usage and writing skills': {
     en: 'Basic usage and writing skills',
-    mr: 'मूलभूत वापर आणि लेखन कौशल्य'
+    hi: 'बुनियादी प्रयोग और लेखन कौशल',
+    mr: 'मूलभूत उपयोग आणि लेखन कौशल्य'
   },
   'Number systems and percentages': {
     en: 'Number systems and percentages',
+    hi: 'संख्या प्रणाली और प्रतिशत',
     mr: 'संख्या पद्धती आणि टक्केवारी'
   },
   'Ratio and proportion': {
     en: 'Ratio and proportion',
+    hi: 'अनुपात और समानुपात',
     mr: 'गुणोत्तर आणि प्रमाण'
   },
   'Time, speed and distance': {
     en: 'Time, speed and distance',
+    hi: 'समय, गति और दूरी',
     mr: 'वेळ, वेग आणि अंतर'
   },
   'Mental ability': {
     en: 'Mental ability',
+    hi: 'मानसिक योग्यता',
     mr: 'मानसिक क्षमता चाचणी'
   },
 
   // Ethics & Current Affairs
   'Ethics and human values': {
     en: 'Ethics and human values',
+    hi: 'नीतिशास्त्र और मानवीय मूल्य',
     mr: 'नीतिशास्त्र आणि मानवी मूल्ये'
   },
   'Integrity and impartiality': {
     en: 'Integrity and impartiality',
+    hi: 'सत्यनिष्ठा और निष्पक्षता',
     mr: 'सत्यनिष्ठा आणि निष्पक्षता'
   },
   'Emotional intelligence': {
     en: 'Emotional intelligence',
+    hi: 'भावनात्मक बुद्धिमत्ता',
     mr: 'भावनिक बुद्धिमत्ता'
   },
   'Public service values': {
     en: 'Public service values',
+    hi: 'लोक सेवा मूल्य',
     mr: 'लोकसेवा मूल्ये'
   },
   'Case studies and ethical dilemmas': {
     en: 'Case studies and ethical dilemmas',
+    hi: 'केस स्टडीज और नैतिक दुविधाएं',
     mr: 'प्रकरण अभ्यास आणि नैतिक पेच'
   },
   'National and international news': {
     en: 'National and international news',
+    hi: 'राष्ट्रीय और अंतर्राष्ट्रीय समाचार',
     mr: 'राष्ट्रीय आणि आंतरराष्ट्रीय घडामोडी'
   },
   'Government policies and schemes': {
     en: 'Government policies and schemes',
+    hi: 'सरकारी नीतियां और योजनाएं',
     mr: 'सरकारी धोरणे आणि योजना'
   },
   'Important reports and indices': {
     en: 'Important reports and indices',
+    hi: 'महत्वपूर्ण रिपोर्ट और सूचकांक',
     mr: 'महत्त्वाचे अहवाल आणि निर्देशांक'
   },
   'International organisations': {
     en: 'International organisations',
+    hi: 'अंतर्राष्ट्रीय संगठन',
     mr: 'आंतरराष्ट्रीय संघटना'
   },
   'Awards, appointments and major events': {
     en: 'Awards, appointments and major events',
+    hi: 'पुरस्कार, नियुक्तियां और प्रमुख घटनाएं',
     mr: 'पुरस्कार, नियुक्त्या आणि महत्त्वाच्या घटना'
   },
   'Maharashtra government decisions': {
     en: 'Maharashtra government decisions',
+    hi: 'महाराष्ट्र सरकार के निर्णय',
     mr: 'महाराष्ट्र शासनाचे निर्णय'
   },
   'State and national schemes': {
     en: 'State and national schemes',
+    hi: 'राज्य और राष्ट्रीय योजनाएं',
     mr: 'राज्य व राष्ट्रीय योजना'
   },
   'National and international events': {
     en: 'National and international events',
+    hi: 'राष्ट्रीय और अंतर्राष्ट्रीय घटनाएं',
     mr: 'राष्ट्रीय आणि आंतरराष्ट्रीय घडामोडी'
   },
   'Important appointments and awards': {
     en: 'Important appointments and awards',
+    hi: 'महत्वपूर्ण नियुक्तियां और पुरस्कार',
     mr: 'महत्त्वाच्या नियुक्त्या आणि पुरस्कार'
   },
   'Maharashtra economic and social developments': {
     en: 'Maharashtra economic and social developments',
+    hi: 'महाराष्ट्र का आर्थिक और सामाजिक विकास',
     mr: 'महाराष्ट्रातील आर्थिक व सामाजिक घडामोडी'
   }
 };
 
-// ==================== BILINGUAL CHAPTER TRANSLATIONS ====================
+// ==================== TRILINGUAL CHAPTER TRANSLATIONS ====================
 export const CHAPTER_TRANSLATIONS = {
-  'History and Culture': { en: 'History and Culture', mr: 'इतिहास आणि संस्कृती' },
-  'Geography': { en: 'Geography', mr: 'भूगोल' },
-  'Indian Polity and Governance': { en: 'Indian Polity and Governance', mr: 'भारतीय राज्यव्यवस्था आणि प्रशासन' },
-  'Indian Economy': { en: 'Indian Economy', mr: 'भारतीय अर्थव्यवस्था' },
-  'Environment and Ecology': { en: 'Environment and Ecology', mr: 'पर्यावरण आणि परिसंस्था' },
-  'Science and Technology': { en: 'Science and Technology', mr: 'विज्ञान आणि तंत्रज्ञान' },
-  'Current Affairs': { en: 'Current Affairs', mr: 'चालू घडामोडी' },
-  'CSAT (Prelims Paper II)': { en: 'CSAT (Prelims Paper II)', mr: 'CSAT (पूर्व परीक्षा पेपर II)' },
-  'Ethics, Integrity and Aptitude': { en: 'Ethics, Integrity and Aptitude', mr: 'नीतिशास्त्र, सत्यनिष्ठा आणि अभियोग्यता' },
-  'Maharashtra and Indian History': { en: 'Maharashtra and Indian History', mr: 'महाराष्ट्र आणि भारताचा इतिहास' },
-  'Maharashtra and Indian Geography': { en: 'Maharashtra and Indian Geography', mr: 'महाराष्ट्र आणि भारताचा भूगोल' },
-  'Constitution & Administration': { en: 'Constitution & Administration', mr: 'संविधान आणि प्रशासन' },
-  'Indian and Maharashtra Economy': { en: 'Indian and Maharashtra Economy', mr: 'भारतीय आणि महाराष्ट्राची अर्थव्यवस्था' },
-  'Marathi Language': { en: 'Marathi Language', mr: 'मराठी भाषा' },
-  'English Language': { en: 'English Language', mr: 'इंग्रजी भाषा' },
-  'Aptitude and Reasoning': { en: 'Aptitude and Reasoning', mr: 'अंकगणित आणि बुद्धिमत्ता' },
-  'Environment and Science': { en: 'Environment and Science', mr: 'पर्यावरण आणि विज्ञान' }
+  'History and Culture': { en: 'History and Culture', hi: 'इतिहास और संस्कृति', mr: 'इतिहास आणि संस्कृती' },
+  'Geography': { en: 'Geography', hi: 'भूगोल', mr: 'भूगोल' },
+  'Indian Polity and Governance': { en: 'Indian Polity and Governance', hi: 'भारतीय राजव्यवस्था और शासन', mr: 'भारतीय राज्यव्यवस्था आणि प्रशासन' },
+  'Indian Economy': { en: 'Indian Economy', hi: 'भारतीय अर्थव्यवस्था', mr: 'भारतीय अर्थव्यवस्था' },
+  'Environment and Ecology': { en: 'Environment and Ecology', hi: 'पर्यावरण और पारिस्थितिकी', mr: 'पर्यावरण आणि परिसंस्था' },
+  'Science and Technology': { en: 'Science and Technology', hi: 'विज्ञान और प्रौद्योगिकी', mr: 'विज्ञान आणि तंत्रज्ञान' },
+  'Current Affairs': { en: 'Current Affairs', hi: 'समसामयिक घटनाएं (करंट अफेयर्स)', mr: 'चालू घडामोडी' },
+  'CSAT (Prelims Paper II)': { en: 'CSAT (Prelims Paper II)', hi: 'सीसैट (प्रारंभिक परीक्षा पेपर II)', mr: 'सीसॅट (पूर्व परीक्षा पेपर II)' },
+  'Ethics, Integrity and Aptitude': { en: 'Ethics, Integrity and Aptitude', hi: 'नीतिशास्त्र, सत्यनिष्ठा और अभिरुचि', mr: 'नीतिशास्त्र, सत्यनिष्ठा आणि अभियोग्यता' },
+  'Maharashtra and Indian History': { en: 'Maharashtra and Indian History', hi: 'महाराष्ट्र और भारत का इतिहास', mr: 'महाराष्ट्र आणि भारताचा इतिहास' },
+  'Maharashtra and Indian Geography': { en: 'Maharashtra and Indian Geography', hi: 'महाराष्ट्र और भारत का भूगोल', mr: 'महाराष्ट्र आणि भारताचा भूगोल' },
+  'Constitution & Administration': { en: 'Constitution & Administration', hi: 'संविधान और प्रशासन', mr: 'संविधान आणि प्रशासन' },
+  'Indian and Maharashtra Economy': { en: 'Indian and Maharashtra Economy', hi: 'भारतीय और महाराष्ट्र अर्थव्यवस्था', mr: 'भारतीय आणि महाराष्ट्राची अर्थव्यवस्था' },
+  'Marathi Language': { en: 'Marathi Language', hi: 'मराठी भाषा', mr: 'मराठी भाषा' },
+  'English Language': { en: 'English Language', hi: 'अंग्रेजी भाषा', mr: 'इंग्रजी भाषा' },
+  'Aptitude and Reasoning': { en: 'Aptitude and Reasoning', hi: 'अभिक्षमता और तार्किक क्षमता', mr: 'अंकगणित आणि बुद्धिमत्ता' },
+  'Environment and Science': { en: 'Environment and Science', hi: 'पर्यावरण और सामान्य विज्ञान', mr: 'पर्यावरण आणि सामान्य विज्ञान' }
 };
 
-// Helper methods:
+// ==================== TRILINGUAL MOTIVATIONAL QUOTES ====================
+export const DAILY_MOTIVATIONAL_QUOTES = [
+  {
+    quote: {
+      en: "Energy and persistence conquer all things.",
+      hi: "ऊर्जा और दृढ़ता से सब कुछ जीता जा सकता है।",
+      mr: "ऊर्जा आणि चिकाटीने सर्व काही साध्य करता येते."
+    },
+    author: {
+      en: "Benjamin Franklin",
+      hi: "बेंजामिन फ्रैंकलिन",
+      mr: "बेंजामिन फ्रँकलिन"
+    }
+  },
+  {
+    quote: {
+      en: "The secret of getting ahead is getting started. Break your syllabus into small manageable daily blocks.",
+      hi: "आगे बढ़ने का रहस्य शुरुआत करना है। अपने पाठ्यक्रम को छोटे, प्रबंधनीय दैनिक हिस्सों में बांटें।",
+      mr: "पुढे जाण्याचे रहस्य म्हणजे सुरुवात करणे. तुमचा अभ्यासक्रम लहान दैनंदिन घटकांमध्ये विभागा."
+    },
+    author: {
+      en: "Mark Twain",
+      hi: "मार्क ट्वेन",
+      mr: "मार्क ट्वेन"
+    }
+  },
+  {
+    quote: {
+      en: "It does not matter how slowly you go as long as you do not stop.",
+      hi: "यह मायने नहीं रखता कि आप कितनी धीमी गति से चलते हैं, जब तक कि आप रुकते नहीं हैं।",
+      mr: "तुम्ही किती हळू चालता याने फरक पडत नाही, जोपर्यंत तुम्ही थांबत नाही."
+    },
+    author: {
+      en: "Confucius",
+      hi: "कन्फ्यूशियस",
+      mr: "कन्फ्यूशियस"
+    }
+  },
+  {
+    quote: {
+      en: "The difference between ordinary and extraordinary is that little extra effort each day.",
+      hi: "साधारण और असाधारण के बीच का अंतर हर दिन का थोड़ा सा अतिरिक्त प्रयास है।",
+      mr: "सामान्य आणि असामान्य यांच्यातील फरक म्हणजे दररोजचा थोडासा अतिरिक्त प्रयत्न."
+    },
+    author: {
+      en: "Jimmy Johnson",
+      hi: "जिमी जॉनसन",
+      mr: "जिमी जॉन्सन"
+    }
+  },
+  {
+    quote: {
+      en: "Doubt kills more dreams than failure ever will. Trust your preparation and revision cycle.",
+      hi: "संदेह असफलता से अधिक सपनों को मार देता है। अपनी तैयारी और पुनरावृत्ति चक्र पर विश्वास रखें।",
+      mr: "अपयशापेक्षा शंका जास्त स्वप्ने नष्ट करते. तुमच्या तयारीवर आणि उजळणीवर विश्वास ठेवा."
+    },
+    author: {
+      en: "Suzy Kassem",
+      hi: "सुजी कासेम",
+      mr: "सुझी कासेम"
+    }
+  },
+  {
+    quote: {
+      en: "When you feel like quitting, remember why you started this civil services dream.",
+      hi: "जब आपका मन हार मानने का करे, तो याद करें कि आपने सिविल सेवा का यह सपना क्यों शुरू किया था।",
+      mr: "जेव्हा अभ्यास सोडावासा वाटेल, तेव्हा आठवा की तुम्ही हे नागरी सेवेचे स्वप्न का सुरू केले होते."
+    },
+    author: {
+      en: "MPSC & UPSC Aspirants",
+      hi: "यूपीएससी और एमपीएससी अभ्यर्थी",
+      mr: "यूपीएससी आणि एमपीएससी अभ्यासक"
+    }
+  },
+  {
+    quote: {
+      en: "Action is the foundational key to all success. Complete today's targets with sincerity.",
+      hi: "कर्म ही सभी सफलताओं की आधारशिला है। आज के लक्ष्यों को ईमानदारी से पूरा करें।",
+      mr: "कृती ही सर्व यशाची मूळ गुरुकिल्ली आहे. आजची उद्दिष्टे प्रामाणिकपणे पूर्ण करा."
+    },
+    author: {
+      en: "Pablo Picasso",
+      hi: "पाब्लो पिकासो",
+      mr: "पाब्लो पिकासो"
+    }
+  },
+  {
+    quote: {
+      en: "Self-discipline is the magic power that makes you virtually unstoppable.",
+      hi: "आत्म-अनुशासन वह जादुई शक्ति है जो आपको व्यावहारिक रूप से अजेय बनाती है।",
+      mr: "आत्मशिस्त ही ती जादूची शक्ती आहे जी तुम्हाला रोखणे अशक्य करते."
+    },
+    author: {
+      en: "Dan Kennedy",
+      hi: "डैन केनेडी",
+      mr: "डॅन केनेडी"
+    }
+  },
+  {
+    quote: {
+      en: "Great works are performed not by strength, but by perseverance.",
+      hi: "महान कार्य शक्ति से नहीं, बल्कि दृढ़ता और लगन से किए जाते हैं।",
+      mr: "महान कार्ये शक्तीने नाही, तर चिकाटीने पूर्ण होतात."
+    },
+    author: {
+      en: "Samuel Johnson",
+      hi: "सैमुअल जॉनसन",
+      mr: "सॅम्युअल जॉन्सन"
+    }
+  },
+  {
+    quote: {
+      en: "The man who moves a mountain begins by carrying away small stones.",
+      hi: "जो व्यक्ति पहाड़ को हिलाता है, वह छोटे पत्थरों को उठाने से शुरुआत करता है।",
+      mr: "जो मनुष्य पर्वत हलवतो, तो लहान दगड उचलण्यापासून सुरुवात करतो."
+    },
+    author: {
+      en: "Confucius",
+      hi: "कन्फ्यूशियस",
+      mr: "कन्फ्यूशियस"
+    }
+  }
+];
+
+export const getDailyQuote = (lang = 'en') => {
+  const now = new Date();
+  const startOfYear = new Date(now.getFullYear(), 0, 0);
+  const diff = now - startOfYear;
+  const oneDay = 1000 * 60 * 60 * 24;
+  const dayOfYear = Math.floor(diff / oneDay);
+  const item = DAILY_MOTIVATIONAL_QUOTES[dayOfYear % DAILY_MOTIVATIONAL_QUOTES.length];
+  return {
+    quote: item.quote[lang] || item.quote.en,
+    author: item.author[lang] || item.author.en
+  };
+};
+
+const DAY_TRANSLATIONS = {
+  Mon: { hi: 'सोम', mr: 'सोम' },
+  Tue: { hi: 'मंगल', mr: 'मंगळ' },
+  Wed: { hi: 'बुध', mr: 'बुध' },
+  Thu: { hi: 'गुरु', mr: 'गुरु' },
+  Fri: { hi: 'शुक्र', mr: 'शुक्र' },
+  Sat: { hi: 'शनि', mr: 'शनि' },
+  Sun: { hi: 'रवि', mr: 'रवि' },
+  Monday: { hi: 'सोमवार', mr: 'सोमवार' },
+  Tuesday: { hi: 'मंगलवार', mr: 'मंगळवार' },
+  Wednesday: { hi: 'बुधवार', mr: 'बुधवार' },
+  Thursday: { hi: 'गुरुवार', mr: 'गुरुवार' },
+  Friday: { hi: 'शुक्रवार', mr: 'शुक्रवार' },
+  Saturday: { hi: 'शनिवार', mr: 'शनिवार' },
+  Sunday: { hi: 'रविवार', mr: 'रविवार' }
+};
+
+const translateDay = (day, lang) => {
+  if (!day || lang === 'en') return day;
+  const trimmed = day.trim();
+  return DAY_TRANSLATIONS[trimmed]?.[lang] || trimmed;
+};
+
+// ==================== HELPER METHODS ====================
 export const getSubjectName = (subjectOrId, lang = 'en') => {
   if (!subjectOrId) return '';
   const id = typeof subjectOrId === 'string' ? subjectOrId : (subjectOrId.id || subjectOrId.name);
   const rawName = typeof subjectOrId === 'object' ? subjectOrId.name : subjectOrId;
-  if (lang !== 'mr') return rawName || id;
 
-  const entry = SUBJECT_TRANSLATIONS[id] || Object.values(SUBJECT_TRANSLATIONS).find(s => s.en === rawName);
-  return entry?.mr || rawName || id;
+  const entry = SUBJECT_TRANSLATIONS[id] || Object.values(SUBJECT_TRANSLATIONS).find(s => s.en === rawName || s.id === id);
+  if (entry) {
+    return entry[lang] || entry.en || rawName || id;
+  }
+  return rawName || id;
 };
 
 export const getTopicName = (topicOrName, lang = 'en') => {
   if (!topicOrName) return '';
   const rawName = typeof topicOrName === 'object' ? (topicOrName.name || topicOrName.id) : topicOrName;
-  if (lang !== 'mr') return rawName;
+  if (lang === 'en') return rawName;
 
-  const entry = TOPIC_TRANSLATIONS[rawName] || Object.values(TOPIC_TRANSLATIONS).find(t => t.en === rawName);
-  return entry?.mr || rawName;
+  const entry = TOPIC_TRANSLATIONS[rawName] || Object.values(TOPIC_TRANSLATIONS).find(t => t.en === rawName || t.id === rawName);
+  return entry?.[lang] || entry?.en || rawName;
 };
 
 export const getChapterName = (chapter, lang = 'en') => {
   if (!chapter) return '';
-  if (lang !== 'mr') return chapter;
-  return CHAPTER_TRANSLATIONS[chapter]?.mr || chapter;
+  if (lang === 'en') return chapter;
+  return CHAPTER_TRANSLATIONS[chapter]?.[lang] || CHAPTER_TRANSLATIONS[chapter]?.en || chapter;
 };
 
 export const getTaskTitle = (title, lang = 'en') => {
-  if (!title || lang !== 'mr') return title;
+  if (!title || typeof title !== 'string' || lang === 'en') return title || '';
 
-  // Direct match
-  if (TOPIC_TRANSLATIONS[title]?.mr) return TOPIC_TRANSLATIONS[title].mr;
+  // 1. Direct topic translation match
+  const topicMatch = TOPIC_TRANSLATIONS[title] || Object.values(TOPIC_TRANSLATIONS).find(t => t.en === title);
+  if (topicMatch?.[lang]) return topicMatch[lang];
 
-  // Composite check: "<Subject>: <Topic>"
+  // 2. Preset: "GS Core & Standard Theory (Tue)" or "GS Core & Standard Theory"
+  const gsCoreMatch = title.match(/^(?:(UPSC|MPSC)\s+)?GS Core\s*(?:&|and)\s*Standard Theory(?:\s*\(([^)]+)\))?/i);
+  if (gsCoreMatch) {
+    const examPrefix = gsCoreMatch[1] ? (lang === 'hi' || lang === 'mr' ? (gsCoreMatch[1].toUpperCase() === 'MPSC' ? 'एमपीएससी ' : 'यूपीएससी ') : `${gsCoreMatch[1]} `) : '';
+    const day = gsCoreMatch[2] ? ` (${translateDay(gsCoreMatch[2], lang)})` : '';
+    return lang === 'hi'
+      ? `${examPrefix}जीएस कोर और मानक सिद्धांत${day}`
+      : `${examPrefix}जीएस मुख्य व मानक सिद्धांत${day}`;
+  }
+
+  // 3. Preset: "PYQ Practice & CSAT (Tue)" or "PYQ Practice & CSAT"
+  const pyqMatch = title.match(/^(?:(UPSC|MPSC)\s+)?PYQ Practice\s*(?:&|and)\s*CSAT(?:\s*\(([^)]+)\))?/i);
+  if (pyqMatch) {
+    const examPrefix = pyqMatch[1] ? (lang === 'hi' || lang === 'mr' ? (pyqMatch[1].toUpperCase() === 'MPSC' ? 'एमपीएससी ' : 'यूपीएससी ') : `${pyqMatch[1]} `) : '';
+    const day = pyqMatch[2] ? ` (${translateDay(pyqMatch[2], lang)})` : '';
+    return lang === 'hi'
+      ? `${examPrefix}पीवाईक्यू अभ्यास और सीसैट${day}`
+      : `${examPrefix}मागील प्रश्न सराव व सीसॅट${day}`;
+  }
+
+  // 4. Preset: "Daily Current Affairs & Editorial (Tue)" or "Daily Current Affairs & Editorial"
+  const caMatch = title.match(/^(?:(UPSC|MPSC)\s+)?Daily Current Affairs\s*(?:&|and)\s*Editorial(?:\s*\(([^)]+)\))?/i);
+  if (caMatch) {
+    const examPrefix = caMatch[1] ? (lang === 'hi' || lang === 'mr' ? (caMatch[1].toUpperCase() === 'MPSC' ? 'एमपीएससी ' : 'यूपीएससी ') : `${caMatch[1]} `) : '';
+    const day = caMatch[2] ? ` (${translateDay(caMatch[2], lang)})` : '';
+    return lang === 'hi'
+      ? `${examPrefix}दैनिक समसामयिकी और संपादकीय${day}`
+      : `${examPrefix}दैनिक चालू घडामोडी व संपादकीय${day}`;
+  }
+
+  // 5. Preset: "GS Core & Theory (Deep Work)" or "UPSC GS Core & Theory (Deep Work)"
+  const deepWorkMatch = title.match(/^(?:(UPSC|MPSC)\s+)?GS Core\s*(?:&|and)\s*Theory\s*\(Deep Work\)/i);
+  if (deepWorkMatch) {
+    const examPrefix = deepWorkMatch[1] ? (lang === 'hi' || lang === 'mr' ? (deepWorkMatch[1].toUpperCase() === 'MPSC' ? 'एमपीएससी ' : 'यूपीएससी ') : `${deepWorkMatch[1]} `) : '';
+    return lang === 'hi'
+      ? `${examPrefix}जीएस कोर और सिद्धांत (गहन अध्ययन)`
+      : `${examPrefix}जीएस मुख्य व सिद्धांत (सखोल अभ्यास)`;
+  }
+
+  // 6. Composite format: "<Subject>: <Topic>"
   if (title.includes(':')) {
     const parts = title.split(':');
     const sPart = parts[0].trim();
     const tPart = parts.slice(1).join(':').trim();
-    const translatedSub = getSubjectName(sPart, 'mr');
-    const translatedTop = getTopicName(tPart, 'mr');
+    const translatedSub = getSubjectName(sPart, lang);
+    const translatedTop = getTopicName(tPart, lang);
     return `${translatedSub}: ${translatedTop}`;
   }
 
-  // Suffix checks (e.g. "Core Revision", "Priority Session", "Study Session", "45m Block")
+  // 7. Suffix checks
   if (title.endsWith(' Core Revision')) {
     const base = title.replace(' Core Revision', '').trim();
-    return `${getSubjectName(base, 'mr')} सखोल उजळणी`;
+    return lang === 'hi'
+      ? `${getSubjectName(base, lang)} सखोल पुनरावृत्ति`
+      : `${getSubjectName(base, lang)} सखोल उजळणी`;
   }
   if (title.endsWith(' Priority Session')) {
     const base = title.replace(' Priority Session', '').trim();
-    return `${getSubjectName(base, 'mr')} प्राधान्य सत्र`;
+    return lang === 'hi'
+      ? `${getSubjectName(base, lang)} प्राथमिकता सत्र`
+      : `${getSubjectName(base, lang)} प्राधान्य सत्र`;
   }
   if (title.endsWith(' Study Session')) {
     const base = title.replace(' Study Session', '').trim();
-    return `${getSubjectName(base, 'mr')} अभ्यास सत्र`;
+    return lang === 'hi'
+      ? `${getSubjectName(base, lang)} अध्ययन सत्र`
+      : `${getSubjectName(base, lang)} अभ्यास सत्र`;
   }
   if (title.endsWith(' 45m Block')) {
     const base = title.replace(' 45m Block', '').trim();
-    return `${getSubjectName(base, 'mr')} ४५ मि. स्लॉट`;
+    return lang === 'hi'
+      ? `${getSubjectName(base, lang)} ४५ मिनट ब्लॉक`
+      : `${getSubjectName(base, lang)} ४५ मि. स्लॉट`;
   }
 
-  return getTopicName(title, 'mr');
+  return getTopicName(title, lang);
 };
 
 export const getStatusLabel = (status, lang = 'en') => {
-  if (lang !== 'mr') return status;
+  if (!status || lang === 'en') return status || '';
+  const s = String(status).toLowerCase().replace(/[-_\s]/g, '');
   const map = {
-    'completed': 'पूर्ण',
-    'pending': 'प्रलंबित',
-    'in-progress': 'प्रगतीपथावर',
-    'inProgress': 'प्रगतीपथावर',
-    'mastered': 'पारंगत / पूर्ण',
-    'toRevise': 'उजळणी बाकी',
-    'notStarted': 'सुरू नाही केले'
+    hi: {
+      completed: 'पूर्ण',
+      mastered: 'कंठस्थ / पूर्ण',
+      pending: 'लंबित',
+      inprogress: 'प्रगति पर',
+      torevise: 'पुनरावृत्ति बाकी',
+      notstarted: 'शुरू नहीं हुआ'
+    },
+    mr: {
+      completed: 'पूर्ण',
+      mastered: 'पारंगत / पूर्ण',
+      pending: 'प्रलंबित',
+      inprogress: 'प्रगतीपथावर',
+      torevise: 'उजळणी बाकी',
+      notstarted: 'सुरू नाही केले'
+    }
   };
-  return map[status] || status;
+  return map[lang]?.[s] || status;
+};
+
+export const getPaperName = (paper, lang = 'en') => {
+  if (!paper || lang === 'en') return paper || '';
+  const PAPERS = {
+    'GS Paper I': { hi: 'जीएस पेपर I', mr: 'जीएस पेपर I' },
+    'GS Paper II': { hi: 'जीएस पेपर II', mr: 'जीएस पेपर II' },
+    'GS Paper III': { hi: 'जीएस पेपर III', mr: 'जीएस पेपर III' },
+    'GS Paper IV': { hi: 'जीएस पेपर IV', mr: 'जीएस पेपर IV' },
+    'GS Paper I-IV': { hi: 'जीएस पेपर I-IV', mr: 'जीएस पेपर I-IV' },
+    'Prelims Paper I': { hi: 'प्रारंभिक परीक्षा पेपर I', mr: 'पूर्व परीक्षा पेपर I' },
+    'Prelims Paper II': { hi: 'प्रारंभिक परीक्षा पेपर II (सीसैट)', mr: 'पूर्व परीक्षा पेपर II (सीसॅट)' },
+    'CSAT Paper II': { hi: 'सीसैट पेपर II', mr: 'सीसॅट पेपर II' },
+    'Language Paper I': { hi: 'भाषा पेपर I (मराठी)', mr: 'भाषा पेपर I (मराठी)' },
+    'Language Paper II': { hi: 'भाषा पेपर II (अंग्रेजी)', mr: 'भाषा पेपर II (इंग्रजी)' }
+  };
+  return PAPERS[paper]?.[lang] || paper;
 };
 
 export default {
   AVAILABLE_LANGUAGES,
+  DEFAULT_SYLLABUS_SUBJECTS,
   translations,
-  getTranslation
+  getTranslation,
+  SUBJECT_TRANSLATIONS,
+  TOPIC_TRANSLATIONS,
+  CHAPTER_TRANSLATIONS,
+  DAILY_MOTIVATIONAL_QUOTES,
+  getDailyQuote,
+  getSubjectName,
+  getTopicName,
+  getChapterName,
+  getTaskTitle,
+  getStatusLabel,
+  getPaperName
 };
