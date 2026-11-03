@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useMemo } from 'react';
 import AuthScreens from './AuthScreens';
 import { smartApiFetch, getApiBase, getCandidateApiUrls, setCustomApiBase, getCustomApiBase, testApiConnection } from './api';
 import {
+  AppState,
   View,
   Text,
   TextInput,
@@ -21,6 +22,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Svg, { Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { translations, AVAILABLE_LANGUAGES, getTranslation, getSubjectName, getTopicName, getChapterName, getTaskTitle, getStatusLabel } from './translations';
+import Timer from './Timer';
+import ReminderSettingsScreen from './ReminderSettingsScreen';
+import NotificationsScreen from './NotificationsScreen';
+import StudentProfileScreen from './StudentProfileScreen';
 import TicketSupportScreen from './TicketSupportScreen';
 import AbhyasMitra from './AbhyasMitra';
 
@@ -29,13 +34,16 @@ const LIGHT_THEME = {
   bg: '#f7f9fe',
   cardBg: '#ffffff',
   white: '#ffffff',
+  card: '#ffffff',
   ink: '#142841',
+  text: '#142841',
   muted: '#72849f',
   blue: '#37689f',
   blueLight: '#edf3fc',
   mid: '#80a9e5',
   soft: '#e9f0fc',
   line: '#e8eef8',
+  border: '#edf2fc',
   light: '#dce8fb',
   green: '#10b981',
   greenSoft: '#ecfdf5',
@@ -55,14 +63,17 @@ const DARK_THEME = {
   bg: '#0a0f1d',
   cardBg: '#131b2e',
   white: '#ffffff',
+  card: '#131b2e',
   surface: '#131b2e',
   ink: '#f8fafc',
+  text: '#f8fafc',
   muted: '#94a3b8',
   blue: '#60a5fa',
   blueLight: '#1e293b',
   mid: '#3b82f6',
   soft: '#1e2942',
   line: '#1e2d4d',
+  border: '#1e2d4d',
   light: '#1e2d4d',
   green: '#34d399',
   greenSoft: '#064e3b',
@@ -922,7 +933,27 @@ export default function App() {
   const [customMinutes, setCustomMinutes] = useState(30);
   const [focusMode, setFocusMode] = useState(false);
   const [exitFocusConfirmOpen, setExitFocusConfirmOpen] = useState(false);
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
   const [zenMode, setZenMode] = useState('Light Zen');
+  const [deepZenUnlocked, setDeepZenUnlocked] = useState(false);
+  const [deepZenInterruptions, setDeepZenInterruptions] = useState(0);
+  const deepZenLocked = zenMode === 'Deep Zen' && !deepZenUnlocked;
+  const deepZenSessionActive = deepZenLocked && (running || elapsed > 0);
+
+  // Timer and save reliability references
+  const interval = useRef(null);
+  const appStateRef = useRef(AppState.currentState);
+  const savingSession = useRef(false);
+  const activeStartedAt = useRef(null);
+  const elapsedBase = useRef(0);
+  const autoSaveTriggered = useRef(false);
+  const nativePinningActive = useRef(false);
+  const pinningPromptAttempted = useRef(false);
+
+  // Profile, Notification, and Analytics Range State
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [remindersOpen, setRemindersOpen] = useState(false);
+  const [analyticsRange, setAnalyticsRange] = useState('7');
   const [analyticsSubTab, setAnalyticsSubTab] = useState('Overview');
 
   // Planner State
@@ -1142,8 +1173,6 @@ export default function App() {
     } catch {}
   };
 
-  const interval = useRef(null);
-
   // Theme State (Dark / Light Night Mode)
   const [isDark, setIsDark] = useState(() => {
     if (Platform.OS === 'web' && typeof localStorage !== 'undefined') {
@@ -1220,6 +1249,29 @@ export default function App() {
     fontWeight: bold ? '700' : '400',
     color
   });
+
+  const card = {
+    backgroundColor: C.card || C.cardBg || C.white,
+    borderRadius: 20,
+    padding: 18,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: C.border || C.line
+  };
+
+  const handleTabChange = (nextTab) => {
+    if (deepZenSessionActive && nextTab !== 'Timer') {
+      Alert.alert(
+        'Deep Zen Active',
+        'You cannot switch to another screen while a Deep Zen session is active. Return to the Timer and finish or reset the session.'
+      );
+      return;
+    }
+    setProfileOpen(false);
+    setNotifOpen(false);
+    setRemindersOpen(false);
+    setTab(nextTab);
+  };
 
   // Daily Routine Reminders State
   const currentHour = new Date().getHours();
@@ -1430,10 +1482,225 @@ export default function App() {
     };
   }, []);
 
+  // Android screen pinning for an active Deep Zen countdown.
   useEffect(() => {
-    if (running) interval.current = setInterval(() => setElapsed(v => v + 1), 1000);
-    return () => clearInterval(interval.current);
-  }, [running]);
+    if (Platform.OS !== 'android' || !NativeModules.FocusLock) {
+      return;
+    }
+
+    const shouldPin = deepZenLocked && (running || elapsed > 0);
+
+    if (
+      shouldPin &&
+      !nativePinningActive.current &&
+      !pinningPromptAttempted.current
+    ) {
+      pinningPromptAttempted.current = true;
+
+      NativeModules.FocusLock.startPinning()
+        .then((status) => {
+          nativePinningActive.current = Boolean(status?.active);
+
+          if (status?.mode !== 'LOCKED') {
+            console.warn(
+              'Deep Zen enforcement status:',
+              status?.mode ?? 'UNKNOWN'
+            );
+          }
+        })
+        .catch((error) => {
+          nativePinningActive.current = false;
+          console.warn('Deep Zen screen pinning failed:', error);
+
+          Alert.alert(
+            'Screen pinning unavailable',
+            'Android could not start screen pinning. Strict app-switch prevention is not guaranteed on this device.'
+          );
+        });
+    } else if (!shouldPin && nativePinningActive.current) {
+      nativePinningActive.current = false;
+
+      NativeModules.FocusLock.stopPinning().catch((error) => {
+        console.warn('Could not stop screen pinning:', error);
+      });
+    }
+  }, [deepZenLocked, running, elapsed]);
+
+  // Recheck Android screen pinning when Abhyas returns to the foreground.
+  useEffect(() => {
+    if (Platform.OS !== 'android' || !NativeModules.FocusLock) {
+      return;
+    }
+
+    let checking = false;
+    let mounted = true;
+
+    const shouldKeepLocked = () =>
+      deepZenLocked && (running || elapsed > 0);
+
+    const subscription = AppState.addEventListener(
+      'change',
+      async (nextState) => {
+        if (
+          nextState !== 'active' ||
+          !shouldKeepLocked() ||
+          checking
+        ) {
+          return;
+        }
+
+        checking = true;
+
+        try {
+          const status =
+            await NativeModules.FocusLock.getPinningStatus();
+
+          if (!mounted || !shouldKeepLocked()) {
+            return;
+          }
+
+          nativePinningActive.current = status.active;
+
+          if (!status.active) {
+            pinningPromptAttempted.current = true;
+
+            const newStatus =
+              await NativeModules.FocusLock.startPinning();
+
+            if (mounted) {
+              nativePinningActive.current = Boolean(newStatus?.active);
+
+              if (newStatus?.mode !== 'LOCKED') {
+                console.warn(
+                  'Deep Zen recovery mode:',
+                  newStatus?.mode ?? 'UNKNOWN'
+                );
+              }
+            }
+          }
+
+        } catch (error) {
+          nativePinningActive.current = false;
+          console.warn(
+            'Deep Zen foreground lock recovery failed:',
+            error
+          );
+        } finally {
+          checking = false;
+        }
+      }
+    );
+
+    return () => {
+      mounted = false;
+      subscription.remove();
+    };
+  }, [deepZenLocked, running, elapsed]);
+
+  // Track when a student leaves Abhyas during an active Deep Zen session.
+  useEffect(() => {
+    if (Platform.OS !== 'android') {
+      return;
+    }
+
+    const subscription = AppState.addEventListener(
+      'change',
+      (nextState) => {
+        const previousState = appStateRef.current;
+        appStateRef.current = nextState;
+
+        const sessionActive =
+          deepZenLocked && running && !deepZenUnlocked;
+
+        const leftApp =
+          previousState === 'active' &&
+          (nextState === 'background' || nextState === 'inactive');
+
+        if (sessionActive && leftApp) {
+          setDeepZenInterruptions((count) => count + 1);
+
+          console.warn(
+            'Deep Zen interruption detected: Abhyas left the foreground.'
+          );
+        }
+
+        if (
+          sessionActive &&
+          nextState === 'active' &&
+          previousState !== 'active'
+        ) {
+          Alert.alert(
+            'Stay focused',
+            'You left Abhyas during Deep Zen. Return to your study session and continue focusing.'
+          );
+        }
+      }
+    );
+
+    return () => subscription.remove();
+  }, [deepZenLocked, running, deepZenUnlocked]);
+
+  // Update timer using timestamps and automatically save completed countdowns.
+  useEffect(() => {
+    if (!running || activeStartedAt.current === null) {
+      return;
+    }
+
+    const countdownSeconds =
+      mode === 'Pomodoro'
+        ? 25 * 60
+        : mode === 'Custom'
+          ? customMinutes * 60
+          : null;
+
+    interval.current = setInterval(() => {
+      const activeSeconds = Math.floor(
+        (Date.now() - activeStartedAt.current) / 1000
+      );
+
+      const nextElapsed = elapsedBase.current + activeSeconds;
+
+      if (
+        countdownSeconds !== null &&
+        nextElapsed >= countdownSeconds
+      ) {
+        // Freeze actual active study time at the selected duration.
+        elapsedBase.current = countdownSeconds;
+        activeStartedAt.current = null;
+
+        setElapsed(countdownSeconds);
+        setRunning(false);
+        setDeepZenUnlocked(true);
+
+        // Trigger the existing save flow once.
+        if (!autoSaveTriggered.current) {
+          autoSaveTriggered.current = true;
+          void finish(true);
+        }
+
+        return;
+      }
+
+      setElapsed(nextElapsed);
+    }, 250);
+
+    return () => {
+      if (interval.current) {
+        clearInterval(interval.current);
+        interval.current = null;
+      }
+    };
+  }, [running, mode, customMinutes]);
+
+  // Clean up the timer interval when the component unmounts.
+  useEffect(() => {
+    return () => {
+      if (interval.current) {
+        clearInterval(interval.current);
+        interval.current = null;
+      }
+    };
+  }, []);
 
   async function login(credentialsOrEmail, overridePassword) {
     setAuthError('');
@@ -1513,10 +1780,21 @@ export default function App() {
 
   async function handleSignOut() {
     setRunning(false);
+    if (interval.current) {
+      clearInterval(interval.current);
+      interval.current = null;
+    }
+    activeStartedAt.current = null;
+    elapsedBase.current = 0;
+    autoSaveTriggered.current = false;
     await AsyncStorage.removeItem('abhyasToken');
     setToken('');
     setUser(null);
     setTab('Dashboard');
+    setProfileOpen(false);
+    setSettingsOpen(false);
+    setNotifOpen(false);
+    setRemindersOpen(false);
   }
 
   function quickDemoFill(demoType = 'student') {
@@ -1531,17 +1809,154 @@ export default function App() {
     }
   }
 
-  async function finish() {
+  // Start a new session or resume a paused session.
+  function startSession() {
+    if (savingSession.current) return;
+    if (activeStartedAt.current !== null) return;
+    autoSaveTriggered.current = false;
+
+    const limitSeconds =
+      mode === 'Pomodoro'
+        ? 25 * 60
+        : mode === 'Custom'
+          ? customMinutes * 60
+          : null;
+
+    if (limitSeconds !== null && elapsed >= limitSeconds) {
+      Alert.alert(
+        'Timer complete',
+        'Your countdown has finished. Save the session or reset the timer before starting again.'
+      );
+      return;
+    }
+
+    activeStartedAt.current = Date.now();
+    setRunning(true);
+    playTimerTone('start');
+  }
+
+  // Accumulate only active study time.
+  function pauseSession() {
+    if (savingSession.current) return;
+
+    if (deepZenLocked && (running || elapsed > 0)) {
+      Alert.alert(
+        'Deep Zen Active',
+        'You cannot pause this session. Wait until the countdown reaches 00:00.'
+      );
+      return;
+    }
+
+    const activeSeconds = activeStartedAt.current !== null
+      ? Math.floor((Date.now() - activeStartedAt.current) / 1000)
+      : 0;
+
+    elapsedBase.current += activeSeconds;
+    activeStartedAt.current = null;
+
+    setElapsed(elapsedBase.current);
     setRunning(false);
+    playTimerTone('pause');
+  }
+
+  // Open the in-app reset confirmation dialog.
+  function resetSession() {
+    if (savingSession.current || deepZenLocked) return;
+    setResetConfirmOpen(true);
+  }
+
+  // Cancel must not change the timer or elapsed time.
+  function cancelReset() {
+    setResetConfirmOpen(false);
+  }
+
+  // Confirmed reset stops the timer and clears elapsed time.
+  function confirmReset() {
+    if (savingSession.current || deepZenLocked) return;
+
+    if (interval.current) {
+      clearInterval(interval.current);
+      interval.current = null;
+    }
+
+    activeStartedAt.current = null;
+    elapsedBase.current = 0;
+    autoSaveTriggered.current = false;
+
+    setRunning(false);
+    setElapsed(0);
+    setResetConfirmOpen(false);
+    playTimerTone('pause');
+  }
+
+  // Save the session with duplicate-submit guard and timestamp accuracy.
+  async function finish(automatic = false) {
+    const isAutomatic = automatic === true;
+
+    if (savingSession.current || (deepZenLocked && !isAutomatic)) {
+      return;
+    }
+
+    const finalElapsed =
+      elapsedBase.current +
+      (activeStartedAt.current !== null
+        ? Math.floor((Date.now() - activeStartedAt.current) / 1000)
+        : 0);
+
+    if (finalElapsed <= 0) {
+      Alert.alert('No study time', 'Start a session before saving.');
+      return;
+    }
+
+    savingSession.current = true;
     playTimerTone('save');
-    let mins = Math.max(1, Math.round(elapsed / 60));
+
+    // Freeze the timer at its final duration.
+    activeStartedAt.current = null;
+    elapsedBase.current = finalElapsed;
+
+    setRunning(false);
+    setElapsed(finalElapsed);
+
+    const minutes = Math.max(1, Math.round(finalElapsed / 60));
+
     try {
-      await req('/sessions', 'POST', { subjectId: selected, minutes: mins, focusScore: 94, mode });
+      await req('/sessions', 'POST', {
+        subjectId: selected,
+        minutes,
+        focusScore: 94,
+        mode
+      });
+
+      // Clear timer state only after the POST succeeds.
+      elapsedBase.current = 0;
+      activeStartedAt.current = null;
       setElapsed(0);
-      await refresh();
-      appAlert('Session saved', `${mins} minute(s) logged for ${subjects.find(x => x.id === selected)?.name || selected}!`);
-    } catch (e) {
-      appAlert('Error', e.message);
+
+      const refreshed = await refresh();
+
+      if (refreshed) {
+        Alert.alert('Session saved', `${minutes} minute(s) logged for ${subjects.find(x => x.id === selected)?.name || selected}!`);
+      } else {
+        Alert.alert(
+          'Session submitted',
+          'The server accepted your session, but history could not be refreshed. Reopen Analytics to verify it.'
+        );
+      }
+    } catch (error) {
+      // Keep the time available for a retry.
+      elapsedBase.current = finalElapsed;
+      activeStartedAt.current = null;
+
+      setElapsed(finalElapsed);
+      setRunning(false);
+
+      Alert.alert(
+        'Save failed',
+        `Your timer value has been kept. Check your connection before retrying.\n\n${error.message}`
+      );
+    } finally {
+      savingSession.current = false;
     }
   }
 
@@ -1679,17 +2094,21 @@ export default function App() {
   const handleStartFocus = (subjectId = null, topicTitle = '') => {
     if (subjectId) setSelected(subjectId);
     if (topicTitle) setSessionTopicTitle(topicTitle);
+    setProfileOpen(false);
+    setNotifOpen(false);
+    setRemindersOpen(false);
     setTab('Timer');
-    setRunning(true);
-    playTimerTone('start');
+    startSession();
   };
 
   function startPlanFocus(p) {
     if (p?.subjectId) setSelected(p.subjectId);
     if (p?.title) setSessionTopicTitle(p.title);
+    setProfileOpen(false);
+    setNotifOpen(false);
+    setRemindersOpen(false);
     setTab('Timer');
-    setRunning(true);
-    playTimerTone('start');
+    startSession();
   }
 
   function navigateToTopic(p) {
@@ -2619,166 +3038,6 @@ export default function App() {
     </>
     );
   };
-
-  // ---------------- TIMER TAB (CLEAN, SIMPLE, DISTRACTION-FREE) ----------------
-  const Timer = () => (
-    <>
-      {/* Focus Mode & Focus Style Bar */}
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <TouchableOpacity
-          onPress={() => {
-            if (focusMode) {
-              setExitFocusConfirmOpen(true);
-            } else {
-              setFocusMode(true);
-            }
-          }}
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            backgroundColor: focusMode ? (isDark ? '#1e3a8a' : '#dbeafe') : C.soft,
-            paddingHorizontal: 12,
-            paddingVertical: 7,
-            borderRadius: 12,
-            gap: 6
-          }}
-        >
-          <Ionicons
-            name={focusMode ? 'contract-outline' : 'expand-outline'}
-            size={16}
-            color={focusMode ? (isDark ? '#93c5fd' : '#1d4ed8') : C.blue}
-          />
-          <Text style={{ fontSize: 12, fontWeight: '700', color: focusMode ? (isDark ? '#93c5fd' : '#1d4ed8') : C.blue }}>
-            {focusMode ? 'Exit Focus Mode' : 'Enter Focus Mode'}
-          </Text>
-        </TouchableOpacity>
-
-        {/* Zen Style Selector */}
-        <View style={{ flexDirection: 'row', gap: 6 }}>
-          {['Light Zen', 'Deep Zen'].map(style => (
-            <TouchableOpacity
-              key={style}
-              onPress={() => setZenMode(style)}
-              style={{
-                backgroundColor: zenMode === style ? C.blue : (isDark ? '#1e293b' : '#f1f5f9'),
-                paddingHorizontal: 10,
-                paddingVertical: 6,
-                borderRadius: 10
-              }}
-            >
-              <Text style={{ fontSize: 11, fontWeight: '700', color: zenMode === style ? '#ffffff' : C.muted }}>
-                {style}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-
-      {/* Mode Selection */}
-      <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 10 }}>
-        {['Pomodoro', 'Stopwatch', 'Custom'].map(m => (
-          <Chip key={m} label={m} active={mode === m} onPress={() => setMode(m)} />
-        ))}
-      </View>
-
-      {mode === 'Custom' && (
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 6, marginBottom: 12 }}>
-          {[10, 15, 20, 30, 45, 60].map(mins => (
-            <Chip
-              key={mins}
-              label={`${mins}m`}
-              active={customMinutes === mins}
-              onPress={() => setCustomMinutes(mins)}
-            />
-          ))}
-        </View>
-      )}
-
-      {/* Main Focus Timer Card */}
-      <Card style={{ alignItems: 'center', paddingVertical: 26 }}>
-        <Text style={txt(12, true, C.blue)}>◉ DEEP FOCUS • {mode.toUpperCase()}</Text>
-
-        <View
-          style={{
-            width: 210,
-            height: 210,
-            borderRadius: 105,
-            borderWidth: 10,
-            borderColor: running ? C.blue : (isDark ? '#1e293b' : C.light),
-            justifyContent: 'center',
-            alignItems: 'center',
-            marginVertical: 18,
-            backgroundColor: isDark ? '#0a0f1d' : '#fafcff'
-          }}
-        >
-          <Text style={[txt(42, true, C.ink), { fontVariant: ['tabular-nums'], letterSpacing: 1 }]}>
-            {String(Math.floor(elapsed / 60)).padStart(2, '0')}:{String(elapsed % 60).padStart(2, '0')}
-          </Text>
-          <Text style={[txt(12, false, C.muted), { marginTop: 4 }]}>
-            {running ? t('runningFocus') : elapsed > 0 ? t('pausedFocus') : t('readyToFocus')}
-          </Text>
-        </View>
-
-        {/* Current Active Subject Display */}
-        <View style={{ alignItems: 'center', marginBottom: 14 }}>
-          <Text style={txt(14, true)}>
-            {getSubjectName(subjects.find(s => s.id === selected) || selected, lang) || t('studyStopwatch')}
-          </Text>
-        </View>
-
-        {/* Controls */}
-        <View style={{ width: '100%' }}>
-          <Button
-            label={running ? t('pauseTimer') : t('startTimer')}
-            onPress={() => {
-              const next = !running;
-              setRunning(next);
-              playTimerTone(next ? 'start' : 'pause');
-            }}
-          />
-          <Button subtle label={t('saveSessionBtn')} onPress={finish} />
-          <Button
-            subtle
-            label={t('resetTimer')}
-            onPress={() => {
-              setRunning(false);
-              setElapsed(0);
-              playTimerTone('pause');
-            }}
-          />
-          <TouchableOpacity
-            onPress={() => {
-              const next = !timerSoundEnabled;
-              setTimerSoundEnabled(next);
-              AsyncStorage.setItem('abhyas_timer_sound', String(next));
-              if (next) playTimerTone('start');
-            }}
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 6,
-              marginTop: 10,
-              paddingVertical: 6,
-              paddingHorizontal: 12,
-              borderRadius: 20,
-              alignSelf: 'center',
-              backgroundColor: timerSoundEnabled ? (isDark ? '#1e3a5f' : '#eff6ff') : C.soft
-            }}
-          >
-            <Ionicons
-              name={timerSoundEnabled ? 'volume-high' : 'volume-mute'}
-              size={15}
-              color={timerSoundEnabled ? C.blue : C.muted}
-            />
-            <Text style={txt(11, true, timerSoundEnabled ? C.blue : C.muted)}>
-              {timerSoundEnabled ? 'Audible Chimes Active' : 'Audible Chimes Muted'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </Card>
-    </>
-  );
 
   // ---------------- SYLLABUS TAB (COMPREHENSIVE CURRICULUM & LOGGING) ----------------
   const Syllabus = () => {
@@ -4251,514 +4510,1021 @@ export default function App() {
     );
   };
 
-  // ---------------- ANALYTICS TAB: TRACKIT PROGRESS TRACKER (IMAGE 1) ----------------
-  const Analytics = () => {
-    // Subject stats for TrackIt view with accurate percentage calculation
-    const trackSubjects = useMemo(() => {
-      const palette = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#06b6d4', '#ec4899', '#f97316', '#14b8a6', '#eab308'];
-      return subjects.map((s, idx) => {
-        const topics = SYLLABUS_TOPICS[s.id] || [];
-        const completed = topics.filter(t => topicProgress.some(p => p.topicId === t.id && (p.status === 'Completed' || p.status === 'To Revise'))).length;
-        const inProgress = topics.filter(t => topicProgress.some(p => p.topicId === t.id && p.status === 'In Progress')).length;
-        
-        // Filter sessions by selectedTrackDate (if selected) or all sessions
-        const subMins = sessions
-          .filter(sess => sess.subjectId === s.id && (selectedTrackDate ? (sess.startedAt && sess.startedAt.split('T')[0] === selectedTrackDate) : true))
-          .reduce((a, sess) => a + Number(sess.minutes || 0), 0);
+    // ---------------- ANALYTICS TAB ----------------
+const Analytics = () => {
+    const [analyticsTab, setAnalyticsTab] = useState('Overview');
+    const allDaily = Array.isArray(analytics.daily) ? analytics.daily : [];
+    const chartDays = allDaily.slice(analyticsRange === '7' ? -7 : -30);
 
-        // Subject completion percentage
-        let pct = 0;
-        if (topics.length > 0) {
-          // Completed topics count as 100%, In Progress count as 50%
-          pct = Math.round(((completed + inProgress * 0.5) / topics.length) * 100);
-        }
-        // If topics are not yet manually checked but study time logged, reflect study milestone (e.g. 10 hours = 600 min benchmark)
-        if (pct === 0 && subMins > 0) {
-          pct = Math.min(100, Math.round((subMins / 600) * 100));
-        }
-        pct = Math.min(100, Math.max(0, pct));
+    const today = new Date();
+    const todayKey = [
+      today.getFullYear(),
+      String(today.getMonth() + 1).padStart(2, '0'),
+      String(today.getDate()).padStart(2, '0')
+    ].join('-');
 
-        return {
-          ...s,
-          topics,
-          completedCount: completed,
-          inProgressCount: inProgress,
-          totalTopics: topics.length,
-          pct,
-          minutes: subMins,
-          color: palette[idx % palette.length]
+    const todayMinutes = Number(
+      allDaily.find(day => day.date === todayKey)?.minutes
+    ) || 0;
+
+    const dailyGoalMinutes = 120;
+    const goalProgress = Math.min(
+      100,
+      Math.round((todayMinutes / dailyGoalMinutes) * 100)
+    );
+
+    const visibleDates = new Set(chartDays.map(day => day.date));
+    const rangeSessions = sessions.filter(
+      session =>
+        session.startedAt &&
+        visibleDates.has(session.startedAt.slice(0, 10))
+    );
+
+    const rangeMinutes = chartDays.reduce(
+      (sum, day) => sum + (Number(day.minutes) || 0),
+      0
+    );
+
+    const maxMinutes = Math.max(
+      1,
+      ...chartDays.map(day => Number(day.minutes) || 0)
+    );
+
+    const rangeFocus = rangeSessions.length
+      ? Math.round(
+          rangeSessions.reduce(
+            (sum, session) => sum + (Number(session.focusScore) || 0),
+            0
+          ) / rangeSessions.length
+        )
+      : 0;
+
+    const averageSession = rangeSessions.length
+      ? Math.round(rangeMinutes / rangeSessions.length)
+      : 0;
+
+    const subjectTotals = rangeSessions.reduce((result, session) => {
+      const subject = subjects.find(
+        item => item.id === session.subjectId
+      );
+      const key = session.subjectId || 'unassigned';
+
+      if (!result[key]) {
+        result[key] = {
+          name: subject?.name || 'Unassigned',
+          minutes: 0,
+          count: 0
         };
-      });
-    }, [subjects, topicProgress, sessions, selectedTrackDate]);
+      }
 
-    // Total time spent for selected date
-    const selectedDateTotalMinutes = useMemo(() => {
-      return sessions
-        .filter(s => (selectedTrackDate ? (s.startedAt && s.startedAt.split('T')[0] === selectedTrackDate) : true))
-        .reduce((a, s) => a + Number(s.minutes || 0), 0);
-    }, [sessions, selectedTrackDate]);
+      result[key].minutes += Number(session.minutes) || 0;
+      result[key].count += 1;
+      return result;
+    }, {});
 
-    // Theme adaptive color definitions for Light & Dark mode
-    const ptCardBg = isDark ? '#111827' : '#FFFFFF';
-    const ptCardBorder = isDark ? '#1f2937' : '#E2E8F0';
-    const ptHeading = isDark ? '#F8FAFC' : '#172F5D';
-    const ptSub = isDark ? '#94A3B8' : '#64748B';
-    const ptSubCardBg = isDark ? '#1e293b' : '#F8FAFC';
-    const ptSubCardBorder = isDark ? '#334155' : '#E2E8F0';
-    const ptRingTrack = isDark ? '#334155' : '#E2E8F0';
-    const ptBarBg = isDark ? '#0F172A' : '#E2E8F0';
-    const ptSubjectCardBg = isDark ? '#1e293b' : '#FFFFFF';
+    const subjectRows = Object.values(subjectTotals).sort(
+      (a, b) => b.minutes - a.minutes
+    );
+
+    const recentSessions = rangeSessions
+      .slice()
+      .sort((a, b) =>
+        (b.startedAt || '').localeCompare(a.startedAt || '')
+      )
+      .slice(0, 8);
+
+    const activeDays = chartDays.filter(
+      day => (Number(day.minutes) || 0) > 0
+    ).length;
+
+    const formatMinutes = value => {
+      const minutes = Math.max(0, Number(value) || 0);
+      const hours = Math.floor(minutes / 60);
+      const remainder = Math.round(minutes % 60);
+
+      return hours
+        ? `${hours}h ${remainder}m`
+        : `${remainder}m`;
+    };
+
+    const sectionSubtitle = {
+      marginTop: 5,
+      marginBottom: 16
+    };
+
+    const sectionHeading = txt(16, true);
 
     return (
-    <>
-      {/* 4 SUB-TABS SELECTOR (DISHA'S FEATURE) */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 8,
-          paddingBottom: 12,
-          paddingRight: 4
-        }}
-      >
-        {['Overview', 'Activity', 'Subjects', 'Sessions'].map(sTab => (
-          <Chip
-            key={sTab}
-            label={sTab}
-            active={analyticsSubTab === sTab}
-            onPress={() => setAnalyticsSubTab(sTab)}
-          />
-        ))}
-      </ScrollView>
+      <>
+        <Title sub="Understand your habits, track progress and build consistency">
+          Study Analytics
+        </Title>
 
-      {analyticsSubTab === 'Overview' && (
-        <>
-          <Title sub={t('analyticsSubtitle')}>
-            {t('analyticsTitle')}
-          </Title>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 4, marginBottom: 14 }}>
-            {[
-              [t('totalStudyTime'), `${Math.floor(total / 60)}h ${total % 60}m`],
-              [t('completionRate'), `${focus}%`],
-              [t('tasks'), analytics.sessionCount || sessions.length || 0],
-              [t('studyTargetGoal'), `${dailyGoalHours}h 00m`]
-            ].map(([k, v]) => (
-              <View
-                key={k}
-                style={{
-                  width: '48%',
-                  backgroundColor: C.cardBg,
-                  borderWidth: 1,
-                  borderColor: C.line,
-                  borderRadius: 18,
-                  padding: 16
-                }}
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 16
+          }}
+        >
+          <Text style={txt(12, false, C.muted)}>
+            Your study overview
+          </Text>
+
+          <View style={{ flexDirection: 'row' }}>
+            <Chip
+              label="7 Days"
+              active={analyticsRange === '7'}
+              onPress={() => setAnalyticsRange('7')}
+            />
+            <View style={{ width: 6 }} />
+            <Chip
+              label="30 Days"
+              active={analyticsRange === '30'}
+              onPress={() => setAnalyticsRange('30')}
+            />
+          </View>
+        </View>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 8,
+            paddingBottom: 12,
+            paddingRight: 4
+          }}
+        >
+          {['Overview', 'Activity', 'Subjects', 'Sessions'].map(tab => (
+            <Chip
+              key={tab}
+              label={tab}
+              active={analyticsTab === tab}
+              onPress={() => setAnalyticsTab(tab)}
+            />
+          ))}
+        </ScrollView>
+
+        {analyticsTab === 'Overview' && (
+          <>
+        <Card>
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start'
+            }}
+          >
+            <View style={{ flex: 1, paddingRight: 8 }}>
+              <Text style={txt(17, true)}>Today's Study Goal</Text>
+              <Text
+                style={[
+                  txt(12, false, C.muted),
+                  { marginTop: 6, lineHeight: 19 }
+                ]}
               >
-                <Text style={txt(11, false, C.muted)}>{k}</Text>
-                <Text style={[txt(24, true), { marginTop: 12 }]}>{v}</Text>
-              </View>
-            ))}
+                Build a daily habit, one focused session at a time.
+              </Text>
+            </View>
+
+            <View
+              style={{
+                backgroundColor: C.soft,
+                paddingHorizontal: 10,
+                paddingVertical: 6,
+                borderRadius: 12
+              }}
+            >
+              <Text style={txt(11, true, C.blue)}>
+                {goalProgress}% done
+              </Text>
+            </View>
           </View>
 
-          {/* FOCUS QUALITY CARD (DISHA'S FEATURE) */}
-          <Card>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-              <Text style={txt(15, true, C.ink)}>Focus Quality</Text>
-              <Ionicons name="sparkles" size={18} color={C.blue} />
-            </View>
-            <Text style={[txt(12, false, C.muted), { marginBottom: 10 }]}>
-              Average focus score from recorded sessions.
-            </Text>
-
-            <View style={{ alignItems: 'center', paddingVertical: 12 }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-around',
+              marginTop: 18,
+              marginBottom: 8
+            }}
+          >
+            <View style={{ alignItems: 'center' }}>
               <Ring
-                value={Math.round(focus || 88)}
-                size={155}
-                label="Average focus"
+                value={goalProgress}
+                size={125}
+                label="Daily goal"
               />
             </View>
 
-            <Text style={[txt(12, false, C.muted), { textAlign: 'center', lineHeight: 19 }]}>
-              {sessions.length
-                ? `Based on ${sessions.length} recorded ${sessions.length === 1 ? 'session' : 'sessions'} in this period.`
-                : 'Complete a study session to begin tracking focus quality.'}
-            </Text>
-          </Card>
+            <View style={{ flex: 1, marginLeft: 18 }}>
+              <Text style={txt(22, true)}>
+                {formatMinutes(todayMinutes)}
+              </Text>
+              <Text
+                style={[
+                  txt(12, false, C.muted),
+                  { marginTop: 4 }
+                ]}
+              >
+                studied today
+              </Text>
 
-          {/* SYLLABUS COMPLETION RATE CARD */}
-          <Card>
-            <Text style={txt(16, true)}>{t('completionRate')}</Text>
-            <View style={{ alignItems: 'center', padding: 20 }}>
-              <Ring value={syllabusStats.overallPct || focus} size={180} label={t('mastered')} />
-            </View>
-            <Text style={txt(12, false, C.muted)}>
-              {t('last7DaysTrend')}
-            </Text>
-          </Card>
-        </>
-      )}
-      {/* ACTIVITY SUB-TAB: 7-DAY PROGRESS ACTIVITY */}
-      {analyticsSubTab === 'Activity' && (
-      <Card style={{ backgroundColor: ptCardBg, borderColor: ptCardBorder, paddingVertical: 16, marginBottom: 16 }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <View>
-            <Text style={{ fontSize: 18, fontWeight: '800', color: ptHeading }}>
-              {t('progressTrackerTitle') || 'Progress Tracker'}
-            </Text>
-            <Text style={{ fontSize: 11, color: ptSub, marginTop: 2 }}>
-              Syllabus mastery & active study timers
-            </Text>
-          </View>
-          <TouchableOpacity
-            onPress={() => setSelectedTrackDate(null)}
-            style={{
-              backgroundColor: !selectedTrackDate ? (isDark ? '#2563EB' : '#2457C5') : (isDark ? '#1E293B' : '#F1F5F9'),
-              paddingHorizontal: 12,
-              paddingVertical: 6,
-              borderRadius: 8
-            }}
-          >
-            <Text style={{ fontSize: 11, fontWeight: '700', color: !selectedTrackDate ? '#FFFFFF' : (isDark ? '#94A3B8' : '#475569') }}>
-              {selectedTrackDate ? 'Show All Time' : 'All Time Active'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Top Horizontal Date Selector Strip (7 Days) */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            {past7Days.map(d => {
-              const isSelected = selectedTrackDate === d.dateStr;
-              const dayMins = sessions
-                .filter(s => s.startedAt && s.startedAt.split('T')[0] === d.dateStr)
-                .reduce((a, s) => a + Number(s.minutes || 0), 0);
-              const dayHours = Math.floor(dayMins / 60);
-              const dayRemainingMins = dayMins % 60;
-              const formattedTime = dayMins > 0 ? `${dayHours}:${String(dayRemainingMins).padStart(2, '0')}` : '0:00';
-
-              return (
-                <TouchableOpacity
-                  key={d.dateStr}
-                  onPress={() => setSelectedTrackDate(d.dateStr)}
-                  style={{
-                    backgroundColor: isSelected ? (isDark ? '#1E3A5F' : '#EBF3FE') : (isDark ? '#1E293B' : '#F8FAFC'),
-                    borderColor: isSelected ? '#3B82F6' : (isDark ? '#334155' : '#E2E8F0'),
-                    borderWidth: 1.5,
-                    borderRadius: 14,
-                    paddingVertical: 8,
-                    paddingHorizontal: 12,
-                    alignItems: 'center',
-                    minWidth: 62
-                  }}
-                >
-                  <Text style={{ fontSize: 10, fontWeight: '600', color: isSelected ? (isDark ? '#93C5FD' : '#2563EB') : (isDark ? '#94A3B8' : '#64748B') }}>
-                    {d.label}
-                  </Text>
-                  <Text style={{ fontSize: 12, fontWeight: '800', color: isSelected ? (isDark ? '#60A5FA' : '#1D4ED8') : (isDark ? '#F8FAFC' : '#1E293B'), marginTop: 3 }}>
-                    {formattedTime}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </ScrollView>
-
-        {/* Top 2 Metric Cards (Completed % & Time Spent) */}
-        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 14 }}>
-          {/* Completed Metric Card */}
-          <View
-            style={{
-              flex: 1,
-              backgroundColor: ptSubCardBg,
-              borderRadius: 14,
-              padding: 12,
-              borderWidth: 1,
-              borderColor: ptSubCardBorder
-            }}
-          >
-            <Text style={{ fontSize: 10, color: ptSub, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-              {t('completed')}
-            </Text>
-            <Text style={{ fontSize: 20, fontWeight: '900', color: ptHeading, marginTop: 4 }}>
-              {syllabusStats.overallPct}%
-            </Text>
-            <View style={{ height: 4, backgroundColor: ptBarBg, borderRadius: 2, marginTop: 8 }}>
-              <View style={{ height: '100%', width: `${syllabusStats.overallPct}%`, backgroundColor: '#3b82f6', borderRadius: 2 }} />
-            </View>
-          </View>
-
-          {/* Time Spent Metric Card */}
-          <View
-            style={{
-              flex: 1,
-              backgroundColor: ptSubCardBg,
-              borderRadius: 14,
-              padding: 12,
-              borderWidth: 1,
-              borderColor: ptSubCardBorder
-            }}
-          >
-            <Text style={{ fontSize: 10, color: ptSub, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-              {t('timeSpent') || 'Time Spent'}
-            </Text>
-            <Text style={{ fontSize: 20, fontWeight: '900', color: ptHeading, marginTop: 4 }}>
-              {Math.floor(selectedDateTotalMinutes / 60)}h {selectedDateTotalMinutes % 60}m
-            </Text>
-            <Text style={{ fontSize: 10, color: ptSub, marginTop: 4 }}>
-              {selectedTrackDate ? `Date: ${selectedTrackDate}` : 'Cumulative Total'}
-            </Text>
-          </View>
-        </View>
-      </Card>
-      )}
-
-      {/* SUBJECTS SUB-TAB: SUBJECT BREAKDOWN & CHECKLISTS */}
-      {analyticsSubTab === 'Subjects' && (
-      <Card style={{ backgroundColor: ptCardBg, borderColor: ptCardBorder, paddingVertical: 16 }}>
-        <View style={{ marginBottom: 12 }}>
-          <Text style={{ fontSize: 18, fontWeight: '800', color: ptHeading }}>
-            Subject Breakdown
-          </Text>
-          <Text style={{ fontSize: 11, color: ptSub, marginTop: 2 }}>
-            Detailed study distribution and syllabus mastery per subject
-          </Text>
-        </View>
-
-        {/* Subject Cards List with Circle View */}
-        <View style={{ gap: 10 }}>
-          {trackSubjects.map(sub => {
-            const isExpanded = expandedSubjectId === sub.id;
-            const subHrs = Math.floor(sub.minutes / 60);
-            const subMins = sub.minutes % 60;
-            const timeText = sub.minutes > 0 ? `${subHrs}h ${subMins}m` : '0h 00m';
-
-            // SVG Circular Ring parameters
-            const size = 52;
-            const strokeWidth = 4.5;
-            const radius = (size - strokeWidth) / 2;
-            const circumference = 2 * Math.PI * radius;
-            const strokeDashoffset = circumference - (circumference * sub.pct) / 100;
-
-            return (
               <View
-                key={sub.id}
                 style={{
-                  backgroundColor: ptSubjectCardBg,
-                  borderRadius: 16,
-                  padding: 12,
-                  borderWidth: 1.5,
-                  borderColor: isExpanded ? sub.color : ptSubCardBorder
+                  height: 8,
+                  borderRadius: 8,
+                  backgroundColor: C.soft,
+                  overflow: 'hidden',
+                  marginTop: 14
                 }}
               >
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  {/* Left Circular Progress Ring (Shows % in circle view) */}
-                  <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
-                    <Svg width={size} height={size}>
-                      <Circle
-                        cx={size / 2}
-                        cy={size / 2}
-                        r={radius}
-                        stroke={ptRingTrack}
-                        strokeWidth={strokeWidth}
-                        fill="none"
-                      />
-                      {sub.pct > 0 && (
-                        <Circle
-                          cx={size / 2}
-                          cy={size / 2}
-                          r={radius}
-                          stroke={sub.color}
-                          strokeWidth={strokeWidth}
-                          fill="none"
-                          strokeDasharray={circumference}
-                          strokeDashoffset={strokeDashoffset}
-                          strokeLinecap="round"
-                          transform={`rotate(-90 ${size / 2} ${size / 2})`}
-                        />
-                      )}
-                    </Svg>
-                    <Text
+                <View
+                  style={{
+                    height: '100%',
+                    width: `${goalProgress}%`,
+                    backgroundColor: C.blue,
+                    borderRadius: 8
+                  }}
+                />
+              </View>
+
+              <Text
+                style={[
+                  txt(11, false, C.muted),
+                  { marginTop: 7 }
+                ]}
+              >
+                {todayMinutes >= dailyGoalMinutes
+                  ? 'Daily goal reached!'
+                  : `${formatMinutes(
+                      dailyGoalMinutes - todayMinutes
+                    )} remaining of 2h`}
+              </Text>
+            </View>
+          </View>
+        </Card>
+
+        <View
+          style={{
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            justifyContent: 'space-between',
+            marginBottom: 4
+          }}
+        >
+          {[
+            {
+              label: 'Study Time',
+              value: formatMinutes(rangeMinutes),
+              detail: 'Total recorded'
+            },
+            {
+              label: 'Sessions',
+              value: String(rangeSessions.length),
+              detail: 'Completed records'
+            },
+            {
+              label: 'Average Focus',
+              value: `${rangeFocus}%`,
+              detail: 'Recorded focus score'
+            },
+            {
+              label: 'Avg. Session',
+              value: formatMinutes(averageSession),
+              detail: 'Per recorded session'
+            }
+          ].map((item, index) => (
+            <View
+              key={item.label}
+              style={[
+                card,
+                {
+                  width: '48%',
+marginBottom: 10,
+padding: 15,
+borderRadius: 16,
+backgroundColor: [
+  '#EEF2FF',
+  '#E6FFFA',
+  '#FFF1E6',
+  '#FCE7F3'
+][index % 4],
+borderWidth: 1,
+borderColor: [
+  '#C7D2FE',
+  '#99F6E4',
+  '#FED7AA',
+  '#FBCFE8'
+][index % 4]
+                }
+              ]}
+            >
+              <View
+                style={{
+                  width: 34,
+                  height: 5,
+                  borderRadius: 5,
+                  backgroundColor:
+                    index % 2 === 0 ? C.blue : C.muted,
+                  marginBottom: 12
+                }}
+              />
+
+              <Text style={txt(11, false, C.muted)}>
+                {item.label}
+              </Text>
+              <Text
+                style={[
+                  txt(22, true),
+                  { marginTop: 8 }
+                ]}
+              >
+                {item.value}
+              </Text>
+              <Text
+                style={[
+                  txt(10, false, C.muted),
+                  { marginTop: 5 }
+                ]}
+              >
+                {item.detail}
+              </Text>
+            </View>
+          ))}
+        </View>
+                  <Card>
+          <Text style={sectionHeading}>Focus Quality</Text>
+          <Text
+            style={[
+              txt(12, false, C.muted),
+              sectionSubtitle
+            ]}
+          >
+            Average focus score from recorded sessions.
+          </Text>
+
+          <View
+            style={{
+              alignItems: 'center',
+              paddingVertical: 12
+            }}
+          >
+            <Ring
+              value={rangeFocus}
+              size={155}
+              label="Average focus"
+            />
+          </View>
+
+          <Text
+            style={[
+              txt(12, false, C.muted),
+              { textAlign: 'center', lineHeight: 19 }
+            ]}
+          >
+            {rangeSessions.length
+              ? `Based on ${rangeSessions.length} recorded ${
+                  rangeSessions.length === 1 ? 'session' : 'sessions'
+                } in this period.`
+              : 'Complete a study session to begin tracking focus quality.'}
+          </Text>
+        </Card>
+</>
+        )}
+
+
+        {analyticsTab === 'Activity' && (
+          <>
+        <Card>
+          <Text style={sectionHeading}>Daily Study Activity</Text>
+          <Text
+            style={[
+              txt(12, false, C.muted),
+              sectionSubtitle
+            ]}
+          >
+            {analyticsRange === '7'
+              ? 'Minutes studied each day this week'
+              : 'Minutes studied across the selected month'}
+          </Text>
+
+          {chartDays.length === 0 ? (
+            <Text style={txt(12, false, C.muted)}>
+              Daily analytics are not available yet. Refresh after the API is running.
+            </Text>
+          ) : (
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'flex-end',
+                height: 155,
+                justifyContent: 'space-between'
+              }}
+            >
+              {chartDays.map((day, index) => {
+                const minutes = Number(day.minutes) || 0;
+                const barHeight =
+                  minutes > 0
+                    ? Math.max(5, (minutes / maxMinutes) * 105)
+                    : 3;
+
+                const date = new Date(`${day.date}T12:00:00`);
+                const label =
+                  analyticsRange === '7'
+                    ? date.toLocaleDateString(undefined, {
+                        weekday: 'short'
+                      })
+                    : date.getDate() % 5 === 0 || index === 0
+                      ? String(date.getDate())
+                      : '';
+
+                return (
+                  <View
+                    key={day.date}
+                    style={{
+                      flex: 1,
+                      alignItems: 'center',
+                      justifyContent: 'flex-end',
+                      height: '100%'
+                    }}
+                  >
+                    {minutes > 0 && analyticsRange === '7' && (
+                      <Text style={txt(9, false, C.muted)}>
+                        {minutes}
+                      </Text>
+                    )}
+
+                    <View
                       style={{
-                        position: 'absolute',
-                        fontSize: 11,
-                        fontWeight: '800',
-                        color: ptHeading
+                        width: analyticsRange === '7' ? '55%' : '65%',
+                        maxWidth: 18,
+                        height: barHeight,
+                        borderRadius: 5,
+                        backgroundColor:
+  minutes > 0
+    ? [
+        '#5B6CFF',
+        '#22B8A7',
+        '#FF9F43',
+        '#E879F9',
+        '#F06464',
+        '#38BDF8',
+        '#A3E635'
+      ][index % 7]
+    : C.soft,
+                        marginTop: 5
+                      }}
+                    />
+
+                    <Text
+                      style={[
+                        txt(9, false, C.muted),
+                        { marginTop: 7, height: 14 }
+                      ]}
+                    >
+                      {label}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+          )}
+
+          <View
+            style={{
+              borderTopWidth: 1,
+              borderColor: C.line,
+              marginTop: 14,
+              paddingTop: 13,
+              flexDirection: 'row',
+              justifyContent: 'space-between'
+            }}
+          >
+            <View>
+              <Text style={txt(11, false, C.muted)}>
+                Total study time
+              </Text>
+              <Text
+                style={[
+                  txt(17, true),
+                  { marginTop: 4 }
+                ]}
+              >
+                {formatMinutes(rangeMinutes)}
+              </Text>
+            </View>
+
+            <View style={{ alignItems: 'flex-end' }}>
+              <Text style={txt(11, false, C.muted)}>
+                Active days
+              </Text>
+              <Text
+                style={[
+                  txt(17, true),
+                  { marginTop: 4 }
+                ]}
+              >
+                {activeDays} / {chartDays.length}
+              </Text>
+            </View>
+          </View>
+        </Card>
+
+        <Card>
+          <Text style={sectionHeading}>Study Consistency</Text>
+          <Text
+            style={[
+              txt(12, false, C.muted),
+              sectionSubtitle
+            ]}
+          >
+            Each square represents one day. Stronger color means more study time.
+          </Text>
+
+          {chartDays.length === 0 ? (
+            <Text style={txt(12, false, C.muted)}>
+              Activity will appear when daily analytics are available.
+            </Text>
+          ) : (
+            <>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  flexWrap: 'wrap',
+                  gap: 6
+                }}
+              >
+                {chartDays.map(day => {
+                  const minutes = Number(day.minutes) || 0;
+                  const intensity =
+                    minutes === 0
+                      ? 0
+                      : Math.ceil((minutes / maxMinutes) * 4);
+
+                  return (
+                    <View
+                      key={day.date}
+                      style={{
+                        width: analyticsRange === '7' ? '12%' : '8.2%',
+                        aspectRatio: 1,
+                        minWidth: 14,
+                        maxWidth: 28,
+                        borderRadius: 5,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor:
+  intensity === 0
+    ? C.soft
+    : intensity === 1
+      ? "#DBEAFE"
+      : intensity === 2
+        ? "#93C5FD"
+        : "#60A5FA"
                       }}
                     >
-                      {sub.pct}%
-                    </Text>
-                  </View>
-
-                  {/* Middle Subject Info */}
-                  <View style={{ flex: 1, marginRight: 8 }}>
-                    <Text style={{ fontSize: 14, fontWeight: '800', color: ptHeading }} numberOfLines={1}>
-                      {getSubjectName(sub, lang)}
-                    </Text>
-                    <Text style={{ fontSize: 12, fontWeight: '600', color: ptSub, marginTop: 2 }}>
-                      {timeText}
-                    </Text>
-                    <TouchableOpacity
-                      onPress={() => setExpandedSubjectId(isExpanded ? null : sub.id)}
-                      style={{ flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 4 }}
-                    >
-                      <Text style={{ fontSize: 10, fontWeight: '700', color: sub.color }}>
-                        {isExpanded ? (t('hideDetails') || 'Hide Details ⌃') : (t('seeDetails') || 'See Details ⌄')}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-
-                  {/* Right Floating Play (▶) Action Button */}
-                  <TouchableOpacity
-                    onPress={() => handleStartFocus(sub.id, `${getSubjectName(sub, lang)} Focus Session`)}
-                    style={{
-                      width: 44,
-                      height: 44,
-                      borderRadius: 22,
-                      backgroundColor: sub.color,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      shadowColor: sub.color,
-                      shadowOffset: { width: 0, height: 4 },
-                      shadowOpacity: 0.35,
-                      shadowRadius: 8,
-                      elevation: 5
-                    }}
-                  >
-                    <Ionicons name="play" size={20} color="#ffffff" style={{ marginLeft: 2 }} />
-                  </TouchableOpacity>
-                </View>
-
-                {/* Collapsible Details Drawer */}
-                {isExpanded && (
-                  <View style={{ marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderColor: ptSubCardBorder }}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
-                      <Text style={{ fontSize: 11, color: ptSub }}>
-                        {sub.completedCount} of {sub.totalTopics} {t('topicsMastered')}
-                      </Text>
-                      <Text style={{ fontSize: 11, fontWeight: '700', color: sub.color }}>
-                        {sub.pct}% {t('completed')}
+                      <Text
+                        style={{
+                          fontSize: 9,
+                          color: intensity >= 2 ? "#1E3A8A" : C.text,
+                        }}
+                      >
+                        {new Date(
+                          `${day.date}T12:00:00`
+                        ).getDate()}
                       </Text>
                     </View>
-                    <View style={{ height: 4, backgroundColor: ptBarBg, borderRadius: 2, marginBottom: 10 }}>
-                      <View style={{ height: '100%', width: `${sub.pct}%`, backgroundColor: sub.color, borderRadius: 2 }} />
-                    </View>
-
-                    <Text style={{ fontSize: 10, fontWeight: '600', color: ptSub, marginBottom: 6 }}>
-                      Tap topic to toggle completion status:
-                    </Text>
-
-                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-                      {sub.topics.slice(0, 6).map(topItem => {
-                        const topProg = topicProgress.find(p => p.topicId === topItem.id);
-                        const isDone = topProg?.status === 'Completed' || topProg?.status === 'To Revise';
-                        const inProg = topProg?.status === 'In Progress';
-                        
-                        return (
-                          <TouchableOpacity
-                            key={topItem.id}
-                            onPress={() => updateTopicStatus(topItem, topProg?.status || 'Not Started', sub.id)}
-                            style={{
-                              backgroundColor: isDone
-                                ? (isDark ? '#064E3B' : '#ECFDF5')
-                                : (inProg ? (isDark ? '#1E3A5F' : '#EFF6FF') : (isDark ? '#0F172A' : '#F8FAFC')),
-                              borderColor: isDone
-                                ? (isDark ? '#10B981' : '#A7F3D0')
-                                : (inProg ? (isDark ? '#3B82F6' : '#BFDBFE') : (isDark ? '#334155' : '#E2E8F0')),
-                              borderWidth: 1,
-                              paddingHorizontal: 8,
-                              paddingVertical: 4,
-                              borderRadius: 8
-                            }}
-                          >
-                            <Text
-                              style={{
-                                fontSize: 10,
-                                fontWeight: '600',
-                                color: isDone
-                                  ? (isDark ? '#34D399' : '#047857')
-                                  : (inProg ? (isDark ? '#93C5FD' : '#1D4ED8') : (isDark ? '#CBD5E1' : '#475569'))
-                              }}
-                            >
-                              {isDone ? 'Done • ' : (inProg ? 'Active • ' : '○ ')}{getTopicName(topItem, lang)}
-                            </Text>
-                          </TouchableOpacity>
-                        );
-                      })}
-                    </View>
-                  </View>
-                )}
+                  );
+                })}
               </View>
-            );
-          })}
-        </View>
-      </Card>
-      )}
 
-      {/* SESSIONS SUB-TAB: RECENT STUDY SESSIONS */}
-      {analyticsSubTab === 'Sessions' && (
-      <Card>
-        <Text style={txt(15, true)}>{t('recentStudySessions')}</Text>
-        {sessions.length === 0 ? (
-          <Text style={[txt(12, false, C.muted), { marginTop: 8 }]}>{t('noSessionsLogged')}</Text>
-        ) : (
-          sessions.slice(0, 8).map(s => {
-            const sub = subjects.find(x => x.id === s.subjectId);
-            const hrs = Math.floor(s.minutes / 60);
-            const mins = s.minutes % 60;
-            const timeFormatted = hrs > 0 ? (mins > 0 ? `${hrs}h ${mins}m` : `${hrs}h`) : `${mins}m`;
-            const isOffline = s.mode === 'Offline Study';
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  marginTop: 16
+                }}
+              >
+                <Text style={txt(11, false, C.muted)}>
+                  {activeDays} active days
+                </Text>
+                <Text style={txt(11, false, C.muted)}>
+                  {chartDays.length - activeDays} days without study
+                </Text>
+              </View>
+            </>
+          )}
+        </Card>
+          </>
+        )}
 
-            return (
-              <View key={s.id} style={{ paddingVertical: 12, borderBottomWidth: 1, borderColor: C.line }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text style={txt(14, true)}>
-                    {getSubjectName(sub || s.subjectId, lang) || t('studyStopwatch')}
+
+
+        {analyticsTab === 'Subjects' && (
+        <Card>
+          <Text style={txt(17, true)}>Subject Breakdown</Text>
+          <Text
+            style={[
+              txt(12, false, C.muted),
+              { marginTop: 5, marginBottom: 18 }
+            ]}
+          >
+            See how your study time is distributed across subjects.
+          </Text>
+
+          {subjectRows.length === 0 ||
+          subjectRows.reduce(
+            (sum, subject) => sum + subject.minutes,
+            0
+          ) === 0 ? (
+            <Text style={txt(12, false, C.muted)}>
+              No subject study time recorded for this period.
+            </Text>
+          ) : (
+            <>
+              {/*
+                Donut chart based on actual subject minutes.
+                Each segment represents one subject.
+              */}
+              <View
+                style={{
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: 22
+                }}
+              >
+                <View
+                  style={{
+                    width: 210,
+                    height: 210,
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  {(() => {
+                    const chartColors = [
+                      '#5B6CFF',
+                      '#22B8A7',
+                      '#FF9F43',
+                      '#E879F9',
+                      '#F06464',
+                      '#38BDF8',
+                      '#A3E635',
+                      '#F472B6'
+                    ];
+
+                    const total = subjectRows.reduce(
+                      (sum, subject) => sum + subject.minutes,
+                      0
+                    );
+
+                    const radius = 68;
+                    const strokeWidth = 25;
+                    const circumference = 2 * Math.PI * radius;
+                    let offset = 0;
+
+                    return (
+                      <>
+                        <Svg
+                          width={190}
+                          height={190}
+                          viewBox="0 0 200 200"
+                        >
+                          <Circle
+                            cx="100"
+                            cy="100"
+                            r={radius}
+                            fill="none"
+                            stroke={C.soft}
+                            strokeWidth={strokeWidth}
+                          />
+
+                          {subjectRows.map((subject, index) => {
+                            const fraction = subject.minutes / total;
+                            const segmentLength =
+                              fraction * circumference;
+                            const currentOffset = offset;
+
+                            offset += segmentLength;
+
+                            return (
+                              <Circle
+                                key={subject.name}
+                                cx="100"
+                                cy="100"
+                                r={radius}
+                                fill="none"
+                                stroke={
+                                  chartColors[
+                                    index % chartColors.length
+                                  ]
+                                }
+                                strokeWidth={strokeWidth}
+                                strokeDasharray={`${segmentLength} ${
+                                  circumference - segmentLength
+                                }`}
+                                strokeDashoffset={-currentOffset}
+                                strokeLinecap="butt"
+                                rotation={-90}
+                                origin="100, 100"
+                              />
+                            );
+                          })}
+                        </Svg>
+
+                        <View
+                          style={{
+                            position: 'absolute',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
+                        >
+                          <Text style={txt(11, false, C.muted)}>
+                            Total studied
+                          </Text>
+                          <Text
+                            style={[
+                              txt(22, true),
+                              { marginTop: 5 }
+                            ]}
+                          >
+                            {formatMinutes(total)}
+                          </Text>
+                          <Text
+                            style={[
+                              txt(10, false, C.muted),
+                              { marginTop: 4 }
+                            ]}
+                          >
+                            {subjectRows.length}{' '}
+                            {subjectRows.length === 1
+                              ? 'subject'
+                              : 'subjects'}
+                          </Text>
+                        </View>
+                      </>
+                    );
+                  })()}
+                </View>
+              </View>
+
+              <View
+                style={{
+                  backgroundColor: C.soft,
+                  borderRadius: 14,
+                  padding: 13,
+                  marginBottom: 18,
+                  flexDirection: 'row',
+                  justifyContent: 'space-between'
+                }}
+              >
+                <View>
+                  <Text style={txt(11, false, C.muted)}>
+                    Total sessions
                   </Text>
                   <Text
-                    style={{
-                      fontSize: 10,
-                      fontWeight: '700',
-                      color: isOffline ? C.amber : C.blue,
-                      backgroundColor: isOffline ? C.amberSoft : C.soft,
-                      paddingHorizontal: 7,
-                      paddingVertical: 2,
-                      borderRadius: 6
-                    }}
+                    style={[
+                      txt(18, true),
+                      { marginTop: 5 }
+                    ]}
                   >
-                    {isOffline ? t('logOfflineHours') : t('timer')}
+                    {subjectRows.reduce(
+                      (sum, subject) => sum + subject.count,
+                      0
+                    )}
                   </Text>
                 </View>
-                {s.note || s.topic ? (
-                  <Text style={[txt(12, false, C.ink), { marginTop: 4 }]}>
-                    {s.note || s.topic}
-                  </Text>
-                ) : null}
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
-                  <Text style={txt(11, true, C.blue)}>
-                    {timeFormatted}
-                  </Text>
-                  <Text style={txt(11, false, C.muted)}>•</Text>
+
+                <View style={{ alignItems: 'flex-end' }}>
                   <Text style={txt(11, false, C.muted)}>
-                    {s.activity || (isOffline ? 'Physical Reading' : `${s.mode || 'Focus'} Session`)}
+                    Leading subject
                   </Text>
-                  <Text style={txt(11, false, C.muted)}>•</Text>
-                  <Text style={txt(11, false, C.muted)}>
-                    {formatDateDMY(s.startedAt)}
+                  <Text
+                    style={[
+                      txt(14, true),
+                      { marginTop: 5 }
+                    ]}
+                  >
+                    {subjectRows
+                      .slice()
+                      .sort((a, b) => b.minutes - a.minutes)[0]
+                      .name}
                   </Text>
                 </View>
               </View>
-            );
-          })
+
+              <Text
+                style={[
+                  txt(13, true),
+                  { marginBottom: 13 }
+                ]}
+              >
+                Subject details
+              </Text>
+
+              {subjectRows.map((subject, index) => {
+                const chartColors = [
+                  '#5B6CFF',
+                  '#22B8A7',
+                  '#FF9F43',
+                  '#E879F9',
+                  '#F06464',
+                  '#38BDF8',
+                  '#A3E635',
+                  '#F472B6'
+                ];
+
+                const total = subjectRows.reduce(
+                  (sum, item) => sum + item.minutes,
+                  0
+                );
+
+                const percentage = total > 0
+                  ? Math.round((subject.minutes / total) * 100)
+                  : 0;
+
+                const color =
+                  chartColors[index % chartColors.length];
+
+                return (
+                  <View
+                    key={subject.name}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      paddingVertical: 12,
+                      borderBottomWidth:
+                        index === subjectRows.length - 1 ? 0 : 1,
+                      borderColor: C.line
+                    }}
+                  >
+                    <View
+                      style={{
+                        width: 12,
+                        height: 12,
+                        borderRadius: 4,
+                        backgroundColor: color,
+                        marginRight: 11
+                      }}
+                    />
+
+                    <View style={{ flex: 1, marginRight: 8 }}>
+                      <Text style={txt(13, true)}>
+                        {subject.name}
+                      </Text>
+                      <Text
+                        style={[
+                          txt(11, false, C.muted),
+                          { marginTop: 4 }
+                        ]}
+                      >
+                        {subject.count}{' '}
+                        {subject.count === 1
+                          ? 'session'
+                          : 'sessions'}
+                      </Text>
+                    </View>
+
+                    <View style={{ alignItems: 'flex-end' }}>
+                      <Text style={txt(13, true)}>
+                        {formatMinutes(subject.minutes)}
+                      </Text>
+                      <Text
+                        style={[
+                          txt(11, false, C.muted),
+                          { marginTop: 4 }
+                        ]}
+                      >
+                        {percentage}%
+                      </Text>
+                    </View>
+                  </View>
+                );
+              })}
+            </>
+          )}
+        </Card>
         )}
-      </Card>
-      )}
-    </>
+{analyticsTab === 'Sessions' && (
+        <Card>
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 4
+            }}
+          >
+            <Text style={sectionHeading}>Recent Sessions</Text>
+            <Text style={txt(11, false, C.muted)}>
+              Latest {recentSessions.length}
+            </Text>
+          </View>
+
+          <Text
+            style={[
+              txt(12, false, C.muted),
+              { marginTop: 5, marginBottom: 8 }
+            ]}
+          >
+            Your latest recorded study sessions in this period.
+          </Text>
+
+          {recentSessions.length === 0 ? (
+            <Text
+              style={[
+                txt(12, false, C.muted),
+                { marginTop: 12 }
+              ]}
+            >
+              No sessions recorded during this period.
+            </Text>
+          ) : (
+            recentSessions.map((session, index) => {
+              const subjectName = subjects.find(
+                subject => subject.id === session.subjectId
+              )?.name || 'Study Session';
+
+              return (
+                <View
+                  key={session.id || `${session.startedAt}-${index}`}
+                  style={{
+                    paddingVertical: 13,
+                    borderBottomWidth:
+                      index === recentSessions.length - 1 ? 0 : 1,
+                    borderColor: C.line
+                  }}
+                >
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center'
+                    }}
+                  >
+                    <View
+                      style={{
+                        width: 38,
+                        height: 38,
+                        borderRadius: 12,
+                        backgroundColor: C.soft,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginRight: 11
+                      }}
+                    >
+                      <Text style={txt(11, true, C.blue)}>
+                        {String(index + 1).padStart(2, '0')}
+                      </Text>
+                    </View>
+
+                    <View style={{ flex: 1 }}>
+                      <Text style={txt(13, true)}>
+                        {subjectName}
+                      </Text>
+                      <Text
+                        style={[
+                          txt(11, false, C.muted),
+                          { marginTop: 5 }
+                        ]}
+                      >
+                        {session.startedAt
+                          ? new Date(
+                              session.startedAt
+                            ).toLocaleDateString()
+                          : 'Date unavailable'}
+                      </Text>
+                    </View>
+
+                    <View style={{ alignItems: 'flex-end' }}>
+                      <Text style={txt(13, true)}>
+                        {formatMinutes(session.minutes)}
+                      </Text>
+                      <Text
+                        style={[
+                          txt(10, false, C.muted),
+                          { marginTop: 4 }
+                        ]}
+                      >
+                        {Number(session.focusScore) || 0}% focus
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              );
+            })
+          )}
+        </Card>
+        )}
+
+      </>
     );
   };
 
-  const SettingsModal = () => {
+    const SettingsModal = () => {
     if (!settingsOpen) return null;
 
     return (
@@ -5534,7 +6300,7 @@ export default function App() {
         {!focusMode && (
         <View
           style={{
-            paddingHorizontal: 14,
+            paddingHorizontal: 16,
             paddingVertical: 12,
             backgroundColor: C.cardBg,
             flexDirection: 'row',
@@ -5563,10 +6329,13 @@ export default function App() {
             </Text>
           </View>
 
-          {/* Clean Settings Button (Icon Symbol Only) */}
+          {/* Header Action Buttons */}
           <TouchableOpacity
-            onPress={() => setSettingsOpen(true)}
-            accessibilityLabel="Settings"
+            onPress={() => {
+              setProfileOpen(false);
+              setNotifOpen(!notifOpen);
+            }}
+            accessibilityLabel="Notifications"
             style={{
               width: 36,
               height: 36,
@@ -5576,10 +6345,15 @@ export default function App() {
               backgroundColor: isDark ? '#1e2942' : '#f0f4fd',
               borderWidth: 1,
               borderColor: isDark ? '#334155' : '#dbeafe',
-              position: 'relative'
+              position: 'relative',
+              marginRight: 6
             }}
           >
-            <Ionicons name="settings-outline" size={18} color={C.blue} />
+            <Ionicons
+              name={notifOpen ? "notifications" : "notifications-outline"}
+              size={18}
+              color={C.blue}
+            />
             {unread.length > 0 && (
               <View
                 style={{
@@ -5594,90 +6368,139 @@ export default function App() {
               />
             )}
           </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => {
+              setNotifOpen(false);
+              setProfileOpen(true);
+            }}
+            accessibilityLabel="Student Profile"
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 12,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: isDark ? '#1e2942' : '#f0f4fd',
+              borderWidth: 1,
+              borderColor: isDark ? '#334155' : '#dbeafe',
+              marginRight: 6
+            }}
+          >
+            <Ionicons
+              name={profileOpen ? "person-circle" : "person-circle-outline"}
+              size={20}
+              color={C.blue}
+            />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => setSettingsOpen(true)}
+            accessibilityLabel="Settings"
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 12,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: isDark ? '#1e2942' : '#f0f4fd',
+              borderWidth: 1,
+              borderColor: isDark ? '#334155' : '#dbeafe'
+            }}
+          >
+            <Ionicons name="settings-outline" size={18} color={C.blue} />
+          </TouchableOpacity>
         </View>
         )}
 
         {/* Main Content Area */}
-        <ScrollView ref={mainScrollRef} style={{ flex: 1, width: '100%' }} contentContainerStyle={{ padding: 12, paddingBottom: 30, width: '100%', maxWidth: 720, alignSelf: 'center' }}>
-          {notifOpen ? (
-            <>
-              <TouchableOpacity onPress={() => setNotifOpen(false)} style={{ marginBottom: 12 }}>
-                <Text style={txt(13, true, C.blue)}>← Back to {tab}</Text>
-              </TouchableOpacity>
-              <Title sub="Daily study routine reminders and spaced repetition">Notifications & Routine Alerts</Title>
-
-              {/* Daily Routine Alert Settings Card */}
-              <Card style={{ borderColor: isDark ? '#1e3a5f' : '#bfdbfe', backgroundColor: isDark ? '#0f233a' : '#eff6ff' }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                  <Ionicons name="notifications" size={20} color={C.blue} style={{ marginRight: 8 }} />
-                  <Text style={txt(15, true, C.ink)}>Daily Study Routine Reminders</Text>
-                </View>
-                <Text style={[txt(12, false, isDark ? '#94a3b8' : '#475569'), { lineHeight: 18, marginBottom: 12 }]}>
-                  Automatic morning briefings at 7:00 AM (showing today's tasks) and evening planning alerts at 9:00 PM (to schedule tomorrow).
-                </Text>
-                <Button
-                  label="Enable Device Push / Browser Alerts"
-                  onPress={requestBrowserReminder}
-                />
-              </Card>
-
-              {/* Morning Protocol Card */}
-              <Card>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text style={txt(11, true, '#d97706')}>07:00 AM MORNING BRIEFING PROTOCOL</Text>
-                  <Chip label="Daily Active" active style={{ paddingVertical: 2, paddingHorizontal: 6, borderRadius: 10, marginRight: 0, marginBottom: 0 }} textStyle={{ fontSize: 9 }} />
-                </View>
-                <Text style={[txt(15, true), { marginTop: 6 }]}>Today's Target Briefing</Text>
-                <Text style={[txt(12, false, C.muted), { marginTop: 4, lineHeight: 18 }]}>
-                  {todayReminderPlans.length > 0
-                    ? `You have ${todayReminderPlans.length} tasks scheduled today (${todayReminderMins} mins total). First task: "${todayReminderPlans[0].title}".`
-                    : 'No tasks scheduled yet today. Open the planner to schedule your study sessions!'}
-                </Text>
-                <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
-                  <Button label="Go to Study Timer" onPress={() => { setNotifOpen(false); handleStartFocus(todayReminderPlans[0]?.subjectId, todayReminderPlans[0]?.title); }} />
-                </View>
-              </Card>
-
-              {/* Evening Protocol Card */}
-              <Card>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text style={txt(11, true, '#6366f1')}>09:00 PM EVENING PLANNING PROTOCOL</Text>
-                  <Chip label="Daily Active" active style={{ paddingVertical: 2, paddingHorizontal: 6, borderRadius: 10, marginRight: 0, marginBottom: 0 }} textStyle={{ fontSize: 9 }} />
-                </View>
-                <Text style={[txt(15, true), { marginTop: 6 }]}>Tomorrow's Schedule Plan</Text>
-                <Text style={[txt(12, false, C.muted), { marginTop: 4, lineHeight: 18 }]}>
-                  {tomorrowReminderPlans.length > 0
-                    ? `Tomorrow is prepared with ${tomorrowReminderPlans.length} study tasks (${tomorrowReminderMins} mins). Excellent planning habits!`
-                    : 'Tomorrow currently has 0 tasks scheduled. Prepare tomorrow tonight to beat morning procrastination.'}
-                </Text>
-                <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
-                  <Button label="Open Tomorrow Planner" onPress={() => { setNotifOpen(false); setPlannerView("Tomorrow's Plan"); setPlanDateType('tomorrow'); setTab('Planner'); }} />
-                  {tomorrowReminderPlans.length === 0 && (
-                    <Button label="Auto-Plan Tomorrow" subtle onPress={autoPlanTomorrow} />
-                  )}
-                </View>
-              </Card>
-            </>
-          ) : tab === 'Dashboard' ? (
-            <Dashboard />
-          ) : tab === 'Timer' ? (
-            <Timer />
-          ) : tab === 'Syllabus' ? (
-            <Syllabus />
-          ) : tab === 'Planner' ? (
-            <Planner />
-          ) : tab === 'Ticket Support' || tab === 'Support' ? (
-            <TicketSupportScreen
+        {remindersOpen ? (
+          <View style={{ flex: 1, width: '100%' }}>
+            <ReminderSettingsScreen onBack={() => setRemindersOpen(false)} />
+          </View>
+        ) : profileOpen ? (
+          <View style={{ flex: 1, width: '100%' }}>
+            <StudentProfileScreen
               user={user}
-              theme={C}
-              isDarkMode={isDark}
-              onBack={() => setTab('Dashboard')}
-              req={req}
+              onBack={() => setProfileOpen(false)}
+              onSignOut={handleSignOut}
+              onOpenSettings={() => setSettingsOpen(true)}
+              onOpenReminders={() => setRemindersOpen(true)}
+              onProfileUpdated={async (updatedUser) => {
+                const data = await req('/me', 'PATCH', {
+                  name: updatedUser.name,
+                  email: updatedUser.email,
+                  phone: updatedUser.phone || updatedUser.mobile || '',
+                  examTarget: updatedUser.examTarget,
+                  preferredSubjects: updatedUser.preferredSubjects,
+                });
+                setUser(data.user);
+                return data.user;
+              }}
+              studyGoal={6}
+              studyStreak={Number(analytics.currentStreak) || 0}
             />
-          ) : (
-            <Analytics />
-          )}
-        </ScrollView>
+          </View>
+        ) : (
+          <ScrollView
+            ref={mainScrollRef}
+            style={{ flex: 1, width: '100%' }}
+            contentContainerStyle={{ padding: 12, paddingBottom: 30, width: '100%' }}
+          >
+            {notifOpen ? (
+              <NotificationsScreen
+                notes={notes}
+                user={user}
+                onMarkRead={markNote}
+                onBack={() => setNotifOpen(false)}
+                C={C}
+              />
+            ) : tab === 'Dashboard' ? (
+              <Dashboard />
+            ) : tab === 'Timer' ? (
+              <Timer
+                elapsed={elapsed}
+                running={running}
+                mode={mode}
+                setMode={setMode}
+                startSession={startSession}
+                pauseSession={pauseSession}
+                finish={finish}
+                resetSession={resetSession}
+                saving={savingSession.current}
+                selected={selected}
+                subjects={subjects}
+                setSelected={setSelected}
+                customMinutes={customMinutes}
+                setCustomMinutes={setCustomMinutes}
+                focusMode={focusMode}
+                setFocusMode={setFocusMode}
+                zenMode={zenMode}
+                setZenMode={setZenMode}
+                deepZenUnlocked={deepZenUnlocked}
+                setDeepZenUnlocked={setDeepZenUnlocked}
+                deepZenLocked={deepZenLocked}
+                requestExitFocus={() => setExitFocusConfirmOpen(true)}
+                theme={C}
+                isDarkMode={isDark}
+              />
+            ) : tab === 'Syllabus' ? (
+              <Syllabus />
+            ) : tab === 'Planner' ? (
+              <Planner />
+            ) : tab === 'Ticket Support' || tab === 'Support' ? (
+              <TicketSupportScreen
+                user={user}
+                theme={C}
+                isDarkMode={isDark}
+                onBack={() => setTab('Dashboard')}
+                req={req}
+              />
+            ) : (
+              <Analytics />
+            )}
+          </ScrollView>
+        )}
 
         {/* Settings Modal Sheet */}
         <SettingsModal />
@@ -5821,7 +6644,8 @@ export default function App() {
             borderTopWidth: 1,
             borderColor: C.line,
             flexDirection: 'row',
-            paddingVertical: 10
+            paddingVertical: 10,
+            width: '100%'
           }}
         >
           {tabs.map(([tName, ic]) => {
@@ -5840,8 +6664,7 @@ export default function App() {
                 key={tName}
                 style={{ flex: 1, alignItems: 'center' }}
                 onPress={() => {
-                  setTab(tName);
-                  setNotifOpen(false);
+                  handleTabChange(tName);
                   refresh();
                 }}
               >
@@ -5873,7 +6696,84 @@ export default function App() {
           />
         )}
 
-        {/* Exit Focus Mode Confirmation Dialog (Aditya's Feature) */}
+        {/* Reset confirmation dialog */}
+        {resetConfirmOpen && (
+          <View
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(15, 23, 42, 0.5)',
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: 24,
+              zIndex: 999,
+              elevation: 20
+            }}
+          >
+            <View
+              style={{
+                width: '100%',
+                maxWidth: 380,
+                backgroundColor: C.white,
+                borderRadius: 18,
+                padding: 24,
+                borderWidth: 1,
+                borderColor: C.line
+              }}
+            >
+              <Text style={{ fontSize: 20, fontWeight: '700', color: C.ink }}>
+                Reset study session?
+              </Text>
+
+              <Text
+                style={{
+                  marginTop: 10,
+                  marginBottom: 24,
+                  color: C.muted,
+                  fontSize: 14,
+                  lineHeight: 21
+                }}
+              >
+                Your current unsaved study time will be discarded.
+              </Text>
+
+              <View style={{ flexDirection: 'row', gap: 12 }}>
+                <TouchableOpacity
+                  onPress={cancelReset}
+                  style={{
+                    flex: 1,
+                    padding: 13,
+                    borderRadius: 10,
+                    backgroundColor: C.soft,
+                    alignItems: 'center'
+                  }}
+                >
+                  <Text style={{ color: C.blue, fontWeight: '600' }}>Cancel</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={confirmReset}
+                  disabled={savingSession.current}
+                  style={{
+                    flex: 1,
+                    padding: 13,
+                    borderRadius: 10,
+                    backgroundColor: '#DC2626',
+                    alignItems: 'center',
+                    opacity: savingSession.current ? 0.55 : 1
+                  }}
+                >
+                  <Text style={{ color: C.white, fontWeight: '600' }}>Reset</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* Exit Focus Mode Confirmation Dialog */}
         {exitFocusConfirmOpen && (
           <View
             style={{
