@@ -12,6 +12,7 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { getTranslation } from './translations';
 
 
 const BLUE = '#3478F6';
@@ -63,7 +64,9 @@ export default function StudentProfileScreen({
   onOpenSettings, onOpenReminders, onProfileUpdated,
   studyGoal = 6,
   studyStreak = 0,
+  lang = 'en'
 }) {
+  const t = (k, fb = '') => getTranslation(lang, k, fb);
   const [editing, setEditing] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [name, setName] = useState(user?.name || '');
@@ -232,7 +235,7 @@ export default function StudentProfileScreen({
             <Ionicons name="arrow-back" size={23} color={INK} />
           </TouchableOpacity>
 
-          <Text style={styles.headerTitle}>My Profile</Text>
+          <Text style={styles.headerTitle}>{t('myProfile', 'My Profile')}</Text>
 
           <View style={styles.headerButton}>
             <Ionicons name="person-circle-outline" size={25} color={BLUE} />
@@ -244,40 +247,40 @@ export default function StudentProfileScreen({
             <Ionicons name="person" size={39} color={BLUE} />
           </View>
 
-          <Text style={styles.name}>{name || 'Student Name'}</Text>
-          <Text style={styles.subtitle}>MPSC / UPSC Aspirant</Text>
+          <Text style={styles.name}>{name || t('aspirant', 'Student Name')}</Text>
+          <Text style={styles.subtitle}>{t('aspirantSubtitle', 'MPSC / UPSC Aspirant')}</Text>
 
           <View style={styles.accountBadge}>
             <View style={styles.activeDot} />
-            <Text style={styles.accountBadgeText}>Student Account</Text>
+            <Text style={styles.accountBadgeText}>{t('studentAccount', 'Student Account')}</Text>
           </View>
         </View>
 
-        <Text style={styles.sectionTitle}>Study Overview</Text>
+        <Text style={styles.sectionTitle}>{t('studyOverview', 'Study Overview')}</Text>
 
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
             <View style={styles.statIcon}>
               <Ionicons name="flag-outline" size={22} color={BLUE} />
             </View>
-            <Text style={styles.statValue}>{studyGoal} hrs</Text>
-            <Text style={styles.statLabel}>Daily Study Goal</Text>
+            <Text style={styles.statValue}>{studyGoal} {t('hours', 'hrs')}</Text>
+            <Text style={styles.statLabel}>{t('dailyStudyGoal', 'Daily Study Goal')}</Text>
           </View>
 
           <View style={styles.statCard}>
             <View style={[styles.statIcon, { backgroundColor: '#FFF0E2' }]}>
               <Ionicons name="flame-outline" size={22} color="#E58A38" />
             </View>
-            <Text style={styles.statValue}>{studyStreak} days</Text>
-            <Text style={styles.statLabel}>Study Streak</Text>
+            <Text style={styles.statValue}>{studyStreak} {t('days', 'days')}</Text>
+            <Text style={styles.statLabel}>{t('studyStreak', 'Study Streak')}</Text>
           </View>
         </View>
 
-        <Text style={styles.sectionTitle}>Personal Information</Text>
+        <Text style={styles.sectionTitle}>{t('personalInfo', 'Personal Information')}</Text>
 
         <View style={styles.detailsCard}>
           <ProfileField
-            label="Full Name"
+            label={t('fullName', 'Full Name')}
             value={name}
             onChangeText={(value) => { setName(value); if (!showValidation) setShowValidation(true); }}
             icon="person-outline"
@@ -286,7 +289,7 @@ export default function StudentProfileScreen({
           <View style={styles.separator} />
 
           <ProfileField
-            label="Email Address"
+            label={t('emailAddress', 'Email Address')}
             value={email}
             onChangeText={(value) => { setEmail(value); if (!showValidation) setShowValidation(true); }}
             icon="mail-outline"
@@ -296,7 +299,7 @@ export default function StudentProfileScreen({
           <View style={styles.separator} />
 
           <ProfileField
-            label="Mobile Number"
+            label={t('mobileNumber', 'Mobile Number')}
             value={mobile}
             onChangeText={(value) => { setMobile(value); if (!showValidation) setShowValidation(true); }}
             icon="call-outline"
@@ -306,7 +309,7 @@ export default function StudentProfileScreen({
           <View style={styles.separator} />
 
           <ProfileField
-            label="Exam Target"
+            label={t('examTarget', 'Exam Target')}
             value={exam}
             onChangeText={(value) => { setExam(value); if (!showValidation) setShowValidation(true); }}
             icon="school-outline"
@@ -315,7 +318,7 @@ export default function StudentProfileScreen({
           <View style={styles.separator} />
 
           <ProfileField
-            label="Preferred Subjects"
+            label={t('preferredSubjects', 'Preferred Subjects')}
             value={subjects}
             onChangeText={(value) => { setSubjects(value); if (!showValidation) setShowValidation(true); }}
             icon="book-outline"
@@ -323,15 +326,15 @@ export default function StudentProfileScreen({
             error={profileErrors.subjects} />
         </View>
 
-        <Text style={styles.sectionTitle}>Preferences</Text>
+        <Text style={styles.sectionTitle}>{t('preferences', 'Preferences')}</Text>
 
         <View style={styles.detailsCard}>
           <TouchableOpacity style={styles.preferenceRow} activeOpacity={0.75} onPress={onOpenReminders} accessibilityRole="button" accessibilityLabel="Study Reminders"><View style={styles.fieldIcon}><Ionicons name="notifications-outline" size={21} color={BLUE} />
             </View>
             <View style={styles.fieldContent}>
-              <Text style={styles.fieldValue}>Study Reminders</Text>
+              <Text style={styles.fieldValue}>{t('studyReminders', 'Study Reminders')}</Text>
               <Text style={styles.preferenceHint}>
-                Set your daily study reminder
+                {t('setDailyReminderDesc', 'Set your daily study reminder')}
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={MUTED} />
@@ -342,9 +345,9 @@ export default function StudentProfileScreen({
           <TouchableOpacity style={styles.preferenceRow} activeOpacity={0.75} onPress={onOpenSettings} accessibilityRole="button" accessibilityLabel="Privacy and Account"><View style={styles.fieldIcon}><Ionicons name="shield-checkmark-outline" size={21} color={BLUE} />
             </View>
             <View style={styles.fieldContent}>
-              <Text style={styles.fieldValue}>Privacy & Account</Text>
+              <Text style={styles.fieldValue}>{t('privacyAndAccount', 'Privacy & Account')}</Text>
               <Text style={styles.preferenceHint}>
-                Manage your account settings
+                {t('manageAccountSettings', 'Manage your account settings')}
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={MUTED} />
@@ -364,7 +367,7 @@ export default function StudentProfileScreen({
                 setEditing(false);
               }}
             >
-              <Text style={styles.cancelText}>Cancel</Text>
+              <Text style={styles.cancelText}>{t('cancel', 'Cancel')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -378,7 +381,7 @@ export default function StudentProfileScreen({
                 color="#FFFFFF"
               />
               <Text style={styles.saveText}>
-                {savingProfile ? 'Saving...' : 'Save Changes'}
+                {savingProfile ? t('savingChanges', 'Saving...') : t('saveChanges', 'Save Changes')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -388,7 +391,7 @@ export default function StudentProfileScreen({
             onPress={() => setEditing(true)}
           >
             <Ionicons name="create-outline" size={20} color="#FFFFFF" />
-            <Text style={styles.editButtonText}>Edit Profile</Text>
+            <Text style={styles.editButtonText}>{t('editProfile', 'Edit Profile')}</Text>
           </TouchableOpacity>
         )}
 
@@ -397,18 +400,18 @@ export default function StudentProfileScreen({
           onPress={confirmSignOut}
         >
           <Ionicons name="log-out-outline" size={21} color="#D43B46" />
-          <Text style={styles.signOutText}>Sign Out</Text>
+          <Text style={styles.signOutText}>{t('signOut', 'Sign Out')}</Text>
         </TouchableOpacity>
 
-        <Text style={styles.footerText}>Your preparation, your progress.</Text>
+        <Text style={styles.footerText}>{t('yourPrepYourProgress', 'Your preparation, your progress.')}</Text>
       </ScrollView>
       {signOutConfirmOpen && (
   <View style={styles.signOutOverlay}>
     <View style={styles.signOutDialog}>
-      <Text style={styles.signOutTitle}>Sign Out?</Text>
+      <Text style={styles.signOutTitle}>{t('signOutPrompt', 'Sign Out?')}</Text>
 
       <Text style={styles.signOutMessage}>
-        Are you sure you want to sign out of Abhyas?
+        {t('signOutConfirmDesc', 'Are you sure you want to sign out of Abhyas?')}
       </Text>
 
       <View style={styles.signOutActions}>
@@ -416,7 +419,7 @@ export default function StudentProfileScreen({
           onPress={() => setSignOutConfirmOpen(false)}
           style={styles.cancelSignOutButton}
         >
-          <Text>Stay Focused</Text>
+          <Text>{t('stayFocused', 'Stay Focused')}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -426,7 +429,7 @@ export default function StudentProfileScreen({
           }}
           style={styles.confirmSignOutButton}
         >
-          <Text style={{ color: '#FFFFFF' }}>Yes, Sign Out</Text>
+          <Text style={{ color: '#FFFFFF' }}>{t('yesSignOut', 'Yes, Sign Out')}</Text>
         </TouchableOpacity>
       </View>
     </View>

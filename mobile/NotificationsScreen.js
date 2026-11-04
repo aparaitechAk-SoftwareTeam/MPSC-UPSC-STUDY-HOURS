@@ -1,5 +1,6 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { getTranslation } from './translations';
 
 export default function NotificationsScreen({
   notes = [],
@@ -7,7 +8,9 @@ export default function NotificationsScreen({
   onMarkRead,
   onBack,
   C,
+  lang = 'en',
 }) {
+  const t = (k, fb = '') => getTranslation(lang, k, fb);
   const [selectedId, setSelectedId] = useState(null);
 
   const isRead = note =>
@@ -62,18 +65,18 @@ export default function NotificationsScreen({
         style={{ marginBottom: 14 }}
       >
         <Text style={{ color: C.blue, fontSize: 13, fontWeight: '700' }}>
-          {selectedNote ? '← All announcements' : '← Back to app'}
+          {selectedNote ? t('allAnnouncements', '← All announcements') : t('backToApp', '← Back to app')}
         </Text>
       </TouchableOpacity>
 
       <Text style={{ color: C.ink, fontSize: 23, fontWeight: '800' }}>
-        {selectedNote ? 'Announcement Details' : 'Notifications'}
+        {selectedNote ? t('announcementDetails', 'Announcement Details') : t('announcements', 'Notifications')}
       </Text>
 
       <Text style={{ color: C.muted, fontSize: 12, marginTop: 5, marginBottom: 16 }}>
         {selectedNote
-          ? 'Complete announcement information'
-          : 'Announcements and read status'}
+          ? t('completeAnnouncementInfo', 'Complete announcement information')
+          : t('announcementsAndStatus', 'Announcements and read status')}
       </Text>
 
       {selectedNote ? (
@@ -91,11 +94,11 @@ export default function NotificationsScreen({
             fontSize: 12,
             fontWeight: '800',
           }}>
-            {isRead(selectedNote) ? 'READ' : 'UNREAD'}
+            {isRead(selectedNote) ? t('readStatus', 'READ') : t('unreadStatus', 'UNREAD')}
           </Text>
 
           <Text style={{ color: C.muted, fontSize: 12, marginTop: 8 }}>
-            Posted: {formatDate(selectedNote.createdAt)}
+            {t('posted', 'Posted')}: {formatDate(selectedNote.createdAt)}
           </Text>
 
           <Text style={{
@@ -123,7 +126,7 @@ export default function NotificationsScreen({
           padding: 20,
         }}>
           <Text style={{ color: C.ink, fontWeight: '700' }}>
-            No announcements yet
+            {t('noAnnouncementsYet', 'No announcements yet')}
           </Text>
         </View>
       ) : (
@@ -143,16 +146,16 @@ export default function NotificationsScreen({
             borderBottomColor: C.border,
           }}>
             <View style={cell(3, { borderRightWidth: 1, borderRightColor: C.border })}>
-              <Text style={headerText}>ANNOUNCEMENT</Text>
+              <Text style={headerText}>{t('announcementCol', 'ANNOUNCEMENT')}</Text>
             </View>
             <View style={cell(1.6, { borderRightWidth: 1, borderRightColor: C.border })}>
-              <Text style={headerText}>DATE</Text>
+              <Text style={headerText}>{t('dateCol', 'DATE')}</Text>
             </View>
             <View style={cell(1.15, { borderRightWidth: 1, borderRightColor: C.border })}>
-              <Text style={headerText}>STATUS</Text>
+              <Text style={headerText}>{t('statusCol', 'STATUS')}</Text>
             </View>
             <View style={cell(1)}>
-              <Text style={headerText}>ACTION</Text>
+              <Text style={headerText}>{t('actionCol', 'ACTION')}</Text>
             </View>
           </View>
 
@@ -194,7 +197,7 @@ export default function NotificationsScreen({
                     fontSize: 9,
                     fontWeight: '800',
                   }}>
-                    {read ? 'READ' : 'UNREAD'}
+                    {read ? t('readStatus', 'READ') : t('unreadStatus', 'UNREAD')}
                   </Text>
                 </View>
 
@@ -210,7 +213,7 @@ export default function NotificationsScreen({
                     }}
                   >
                     <Text style={{ color: C.blue, fontSize: 10, fontWeight: '700' }}>
-                      View
+                      {t('viewAction', 'View')}
                     </Text>
                   </TouchableOpacity>
                 </View>
