@@ -720,35 +720,35 @@ export default function AbhyasMitra({
 
   // Color Palette tailored to Complete Light & Dark Modes
   const colors = {
-    screenBg: chatbotDark ? '#080E1E' : '#F8FAFC',
-    cardBg: chatbotDark ? '#111B33' : '#FFFFFF',
-    headerBg: chatbotDark ? '#0B1736' : '#FFFFFF',
-    headerBorder: chatbotDark ? '#1E293B' : '#E2E8F0',
-    titleText: chatbotDark ? '#FFFFFF' : '#0F172A',
-    subtitleText: chatbotDark ? '#94A3B8' : '#64748B',
-    backBtnColor: chatbotDark ? '#CBD5E1' : '#1E293B',
-    headerBtnBg: chatbotDark ? '#1E293B' : '#F1F5F9',
-    headerBtnBorder: chatbotDark ? '#334155' : '#CBD5E1',
-    headerBtnIcon: chatbotDark ? '#94A3B8' : '#475569',
-    singleLangBadgeBg: chatbotDark ? '#0F1D3D' : '#F1F5F9',
-    singleLangBadgeBorder: chatbotDark ? '#334155' : '#CBD5E1',
-    singleLangBadgeText: chatbotDark ? '#F8FAFC' : '#0F172A',
-    border: chatbotDark ? '#1E293B' : '#E2E8F0',
-    userBubble: '#2563EB',
-    userBubbleBorder: '#3B82F6',
+    screenBg: chatbotDark ? '#111A22' : '#F4F7FA',
+    cardBg: chatbotDark ? '#1D2A35' : '#FFFFFF',
+    headerBg: chatbotDark ? '#1D2A35' : '#FFFFFF',
+    headerBorder: chatbotDark ? '#354956' : '#E1E9ED',
+    titleText: chatbotDark ? '#E8F0F3' : '#243746',
+    subtitleText: chatbotDark ? '#A2B2BC' : '#718391',
+    backBtnColor: chatbotDark ? '#D0DCE2' : '#405563',
+    headerBtnBg: chatbotDark ? '#253440' : '#EDF2F5',
+    headerBtnBorder: chatbotDark ? '#455966' : '#D5E0E6',
+    headerBtnIcon: chatbotDark ? '#A2B2BC' : '#718391',
+    singleLangBadgeBg: chatbotDark ? '#20353D' : '#EAF1F3',
+    singleLangBadgeBorder: chatbotDark ? '#35545A' : '#C9DEDE',
+    singleLangBadgeText: chatbotDark ? '#E8F0F3' : '#243746',
+    border: chatbotDark ? '#354956' : '#E1E9ED',
+    userBubble: chatbotDark ? '#247C78' : '#247C78',
+    userBubbleBorder: chatbotDark ? '#55B8A8' : '#55A69E',
     userText: '#FFFFFF',
-    mitraBubble: chatbotDark ? '#141D35' : '#FFFFFF',
-    mitraBubbleBorder: chatbotDark ? '#223259' : '#E2E8F0',
-    mitraText: chatbotDark ? '#F1F5F9' : '#0F172A',
-    muted: chatbotDark ? '#8A99B5' : '#64748B',
-    chipBg: chatbotDark ? '#111B33' : '#FFFFFF',
-    chipBorder: chatbotDark ? '#223055' : '#CBD5E1',
-    chipText: chatbotDark ? '#D8E2F5' : '#1E293B',
-    inputBg: chatbotDark ? '#0D152A' : '#FFFFFF',
-    inputBorder: chatbotDark ? '#223259' : '#CBD5E1',
-    inputText: chatbotDark ? '#FFFFFF' : '#0F172A',
-    placeholder: chatbotDark ? '#64748B' : '#94A3B8',
-    sendBg: '#2563EB'
+    mitraBubble: chatbotDark ? '#253440' : '#FFFFFF',
+    mitraBubbleBorder: chatbotDark ? '#354956' : '#E1E9ED',
+    mitraText: chatbotDark ? '#E8F0F3' : '#243746',
+    muted: chatbotDark ? '#A2B2BC' : '#718391',
+    chipBg: chatbotDark ? '#1D2A35' : '#FFFFFF',
+    chipBorder: chatbotDark ? '#354956' : '#D5E0E6',
+    chipText: chatbotDark ? '#D0DCE2' : '#405563',
+    inputBg: chatbotDark ? '#15232D' : '#FFFFFF',
+    inputBorder: chatbotDark ? '#354956' : '#D5E0E6',
+    inputText: chatbotDark ? '#E8F0F3' : '#243746',
+    placeholder: chatbotDark ? '#8499A5' : '#91A0AA',
+    sendBg: '#247C78'
   };
 
   return (
@@ -762,7 +762,7 @@ export default function AbhyasMitra({
           accessibilityLabel="Abhyas Mitra Study Companion"
         >
           <View style={styles.fabGlowRing} />
-          <View style={[styles.fabInnerCircle, { backgroundColor: '#1E3A8A', borderColor: '#38BDF8' }]}>
+          <View style={[styles.fabInnerCircle, { backgroundColor: colors.sendBg, borderColor: colors.userBubbleBorder }]}>
             <Ionicons name="school" size={26} color="#FFFFFF" />
             <View style={styles.fabOnlineDot} />
           </View>

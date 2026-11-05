@@ -31,61 +31,61 @@ import AbhyasMitra from './AbhyasMitra';
 
 const LIGHT_THEME = {
   isDark: false,
-  bg: '#f7f9fe',
-  cardBg: '#ffffff',
-  white: '#ffffff',
-  card: '#ffffff',
-  ink: '#142841',
-  text: '#142841',
-  muted: '#72849f',
-  blue: '#37689f',
-  blueLight: '#edf3fc',
-  mid: '#80a9e5',
-  soft: '#e9f0fc',
-  line: '#e8eef8',
-  border: '#edf2fc',
-  light: '#dce8fb',
-  green: '#10b981',
-  greenSoft: '#ecfdf5',
-  amber: '#f59e0b',
-  amberSoft: '#fffbeb',
-  purple: '#8b5cf6',
-  purpleSoft: '#f5f3ff',
-  red: '#ef4444',
-  redSoft: '#fef2f2',
-  reminderBg: '#eff6ff',
-  reminderBorder: '#bfdbfe',
-  reminderAccent: '#1d4ed8'
+  bg: '#F4F7FA',
+  cardBg: '#FFFFFF',
+  white: '#FFFFFF',
+  card: '#FFFFFF',
+  ink: '#243746',
+  text: '#243746',
+  muted: '#718391',
+  blue: '#247C78',
+  blueLight: '#E3EDF0',
+  mid: '#5B9C98',
+  soft: '#EAF1F3',
+  line: '#E1E9ED',
+  border: '#E1E9ED',
+  light: '#D5E4E8',
+  green: '#269B78',
+  greenSoft: '#E5F4EE',
+  amber: '#D99536',
+  amberSoft: '#FFF3DF',
+  purple: '#8275B5',
+  purpleSoft: '#F0EDFA',
+  red: '#D75B62',
+  redSoft: '#FCEBED',
+  reminderBg: '#EDF5F5',
+  reminderBorder: '#C9DEDE',
+  reminderAccent: '#247C78'
 };
 
 const DARK_THEME = {
   isDark: true,
-  bg: '#0a0f1d',
-  cardBg: '#131b2e',
-  white: '#ffffff',
-  card: '#131b2e',
-  surface: '#131b2e',
-  ink: '#f8fafc',
-  text: '#f8fafc',
-  muted: '#94a3b8',
-  blue: '#60a5fa',
-  blueLight: '#1e293b',
-  mid: '#3b82f6',
-  soft: '#1e2942',
-  line: '#1e2d4d',
-  border: '#1e2d4d',
-  light: '#1e2d4d',
-  green: '#34d399',
-  greenSoft: '#064e3b',
-  amber: '#fbbf24',
-  amberSoft: '#451a03',
-  purple: '#a78bfa',
-  purpleSoft: '#2e1065',
-  red: '#f87171',
-  redSoft: '#450a0a',
-  reminderBg: '#0f233a',
-  reminderBorder: '#1e3a5f',
-  reminderAccent: '#38bdf8'
+  bg: '#111A22',
+  cardBg: '#1D2A35',
+  white: '#1D2A35',
+  card: '#1D2A35',
+  surface: '#1D2A35',
+  ink: '#E8F0F3',
+  text: '#E8F0F3',
+  muted: '#A2B2BC',
+  blue: '#55B8A8',
+  blueLight: '#293F48',
+  mid: '#64AFA5',
+  soft: '#293B47',
+  line: '#354956',
+  border: '#354956',
+  light: '#354956',
+  green: '#55B89A',
+  greenSoft: '#203F3A',
+  amber: '#E8B65F',
+  amberSoft: '#493B27',
+  purple: '#B5A5E0',
+  purpleSoft: '#39334F',
+  red: '#F08A91',
+  redSoft: '#492D35',
+  reminderBg: '#20353D',
+  reminderBorder: '#35545A',
+  reminderAccent: '#55B8A8'
 };
 
 const ThemeContext = React.createContext(LIGHT_THEME);
@@ -312,13 +312,13 @@ const getNext7Days = (lang = 'en') => {
   const curr = new Date();
   const weekdayMap = {
     en: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-    hi: ['रवि', 'सोम', 'मंगल', 'बुध', 'गुरु', 'शुक्र', 'शनि'],
-    mr: ['रवि', 'सोम', 'मंगळ', 'बुध', 'गुरु', 'शुक्र', 'शनि']
+    hi: ['à¤°à¤µà¤¿', 'à¤¸à¥‹à¤®', 'à¤®à¤‚à¤—à¤²', 'à¤¬à¥à¤§', 'à¤—à¥à¤°à¥', 'à¤¶à¥à¤•à¥à¤°', 'à¤¶à¤¨à¤¿'],
+    mr: ['à¤°à¤µà¤¿', 'à¤¸à¥‹à¤®', 'à¤®à¤‚à¤—à¤³', 'à¤¬à¥à¤§', 'à¤—à¥à¤°à¥', 'à¤¶à¥à¤•à¥à¤°', 'à¤¶à¤¨à¤¿']
   };
   const monthMap = {
     en: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-    hi: ['जन', 'फ़र', 'मार्च', 'अप्रै', 'मई', 'जून', 'जुला', 'अग', 'सितं', 'अक्टू', 'नव', 'दिस'],
-    mr: ['जाने', 'फेब्रु', 'मार्च', 'एप्रि', 'मे', 'जून', 'जुलै', 'ऑग', 'सप्टें', 'ऑक्टो', 'नोव्हें', 'डिसें']
+    hi: ['à¤œà¤¨', 'à¤«à¤¼à¤°', 'à¤®à¤¾à¤°à¥à¤š', 'à¤…à¤ªà¥à¤°à¥ˆ', 'à¤®à¤ˆ', 'à¤œà¥‚à¤¨', 'à¤œà¥à¤²à¤¾', 'à¤…à¤—', 'à¤¸à¤¿à¤¤à¤‚', 'à¤…à¤•à¥à¤Ÿà¥‚', 'à¤¨à¤µ', 'à¤¦à¤¿à¤¸'],
+    mr: ['à¤œà¤¾à¤¨à¥‡', 'à¤«à¥‡à¤¬à¥à¤°à¥', 'à¤®à¤¾à¤°à¥à¤š', 'à¤à¤ªà¥à¤°à¤¿', 'à¤®à¥‡', 'à¤œà¥‚à¤¨', 'à¤œà¥à¤²à¥ˆ', 'à¤‘à¤—', 'à¤¸à¤ªà¥à¤Ÿà¥‡à¤‚', 'à¤‘à¤•à¥à¤Ÿà¥‹', 'à¤¨à¥‹à¤µà¥à¤¹à¥‡à¤‚', 'à¤¡à¤¿à¤¸à¥‡à¤‚']
   };
   const currentWMap = weekdayMap[lang] || weekdayMap.en;
   const currentMMap = monthMap[lang] || monthMap.en;
@@ -729,13 +729,13 @@ const UPSC_10H_SCHEDULE = [
     breakNote: '15 Min Break: 12:15 PM - 12:30 PM (Hydrate & eye rest)',
     title: {
       en: 'GS Core Theory & Heavy Concepts',
-      mr: 'सामान्य अध्ययन मुख्य सिद्धांत व सखोल अभ्यास',
-      hi: 'सामान्य अध्ययन मुख्य सिद्धांत और गहन अध्ययन'
+      mr: 'à¤¸à¤¾à¤®à¤¾à¤¨à¥à¤¯ à¤…à¤§à¥à¤¯à¤¯à¤¨ à¤®à¥à¤–à¥à¤¯ à¤¸à¤¿à¤¦à¥à¤§à¤¾à¤‚à¤¤ à¤µ à¤¸à¤–à¥‹à¤² à¤…à¤­à¥à¤¯à¤¾à¤¸',
+      hi: 'à¤¸à¤¾à¤®à¤¾à¤¨à¥à¤¯ à¤…à¤§à¥à¤¯à¤¯à¤¨ à¤®à¥à¤–à¥à¤¯ à¤¸à¤¿à¤¦à¥à¤§à¤¾à¤‚à¤¤ à¤”à¤° à¤—à¤¹à¤¨ à¤…à¤§à¥à¤¯à¤¯à¤¨'
     },
     subTitle: {
       en: 'Polity, Modern History or Geography (Reference books: Laxmikanth, Spectrum)',
-      mr: 'राज्यव्यवस्था, आधुनिक इतिहास किंवा भूगोल (संदर्भ पुस्तके: लक्ष्मीकांत, स्पेक्ट्रम)',
-      hi: 'राजव्यवस्था, आधुनिक इतिहास या भूगोल (मानक पुस्तकें: लक्ष्मीकांत, स्पेक्ट्रम)'
+      mr: 'à¤°à¤¾à¤œà¥à¤¯à¤µà¥à¤¯à¤µà¤¸à¥à¤¥à¤¾, à¤†à¤§à¥à¤¨à¤¿à¤• à¤‡à¤¤à¤¿à¤¹à¤¾à¤¸ à¤•à¤¿à¤‚à¤µà¤¾ à¤­à¥‚à¤—à¥‹à¤² (à¤¸à¤‚à¤¦à¤°à¥à¤­ à¤ªà¥à¤¸à¥à¤¤à¤•à¥‡: à¤²à¤•à¥à¤·à¥à¤®à¥€à¤•à¤¾à¤‚à¤¤, à¤¸à¥à¤ªà¥‡à¤•à¥à¤Ÿà¥à¤°à¤®)',
+      hi: 'à¤°à¤¾à¤œà¤µà¥à¤¯à¤µà¤¸à¥à¤¥à¤¾, à¤†à¤§à¥à¤¨à¤¿à¤• à¤‡à¤¤à¤¿à¤¹à¤¾à¤¸ à¤¯à¤¾ à¤­à¥‚à¤—à¥‹à¤² (à¤®à¤¾à¤¨à¤• à¤ªà¥à¤¸à¥à¤¤à¤•à¥‡à¤‚: à¤²à¤•à¥à¤·à¥à¤®à¥€à¤•à¤¾à¤‚à¤¤, à¤¸à¥à¤ªà¥‡à¤•à¥à¤Ÿà¥à¤°à¤®)'
     },
     defaultSubjectId: 'upsc-polity',
     color: '#3b82f6',
@@ -754,13 +754,13 @@ const UPSC_10H_SCHEDULE = [
     timeRange: '1:15 PM - 3:00 PM',
     title: {
       en: 'Nutritious Lunch & 20-min Power Nap',
-      mr: 'पौष्टिक दुपारचे जेवण व २० मिनिटांची विश्रांती',
-      hi: 'पौष्टिक भोजन और २० मिनट का विश्राम'
+      mr: 'à¤ªà¥Œà¤·à¥à¤Ÿà¤¿à¤• à¤¦à¥à¤ªà¤¾à¤°à¤šà¥‡ à¤œà¥‡à¤µà¤£ à¤µ à¥¨à¥¦ à¤®à¤¿à¤¨à¤¿à¤Ÿà¤¾à¤‚à¤šà¥€ à¤µà¤¿à¤¶à¥à¤°à¤¾à¤‚à¤¤à¥€',
+      hi: 'à¤ªà¥Œà¤·à¥à¤Ÿà¤¿à¤• à¤­à¥‹à¤œà¤¨ à¤”à¤° à¥¨à¥¦ à¤®à¤¿à¤¨à¤Ÿ à¤•à¤¾ à¤µà¤¿à¤¶à¥à¤°à¤¾à¤®'
     },
     subTitle: {
       en: 'Hydrate well, rest eyes & completely disconnect to recharge cognitive energy',
-      mr: 'पाणी प्या, डोळ्यांना विश्रांती द्या आणि मनाला ताजेतवाने करा',
-      hi: 'पर्याप्त पानी पिएं, आंखों को आराम दें और ऊर्जा पुनः प्राप्त करें'
+      mr: 'à¤ªà¤¾à¤£à¥€ à¤ªà¥à¤¯à¤¾, à¤¡à¥‹à¤³à¥à¤¯à¤¾à¤‚à¤¨à¤¾ à¤µà¤¿à¤¶à¥à¤°à¤¾à¤‚à¤¤à¥€ à¤¦à¥à¤¯à¤¾ à¤†à¤£à¤¿ à¤®à¤¨à¤¾à¤²à¤¾ à¤¤à¤¾à¤œà¥‡à¤¤à¤µà¤¾à¤¨à¥‡ à¤•à¤°à¤¾',
+      hi: 'à¤ªà¤°à¥à¤¯à¤¾à¤ªà¥à¤¤ à¤ªà¤¾à¤¨à¥€ à¤ªà¤¿à¤à¤‚, à¤†à¤‚à¤–à¥‹à¤‚ à¤•à¥‹ à¤†à¤°à¤¾à¤® à¤¦à¥‡à¤‚ à¤”à¤° à¤Šà¤°à¥à¤œà¤¾ à¤ªà¥à¤¨à¤ƒ à¤ªà¥à¤°à¤¾à¤ªà¥à¤¤ à¤•à¤°à¥‡à¤‚'
     },
     color: '#10b981',
     softColor: '#ecfdf5',
@@ -779,13 +779,13 @@ const UPSC_10H_SCHEDULE = [
     timeRange: '3:00 PM - 5:00 PM',
     title: {
       en: 'Secondary Subject / Optional Revision',
-      mr: 'दुसरा विषय किंवा वैकल्पिक विषयाची उजळणी',
-      hi: 'द्वितीय विषय या वैकल्पिक विषय पुनरावलोकन'
+      mr: 'à¤¦à¥à¤¸à¤°à¤¾ à¤µà¤¿à¤·à¤¯ à¤•à¤¿à¤‚à¤µà¤¾ à¤µà¥ˆà¤•à¤²à¥à¤ªà¤¿à¤• à¤µà¤¿à¤·à¤¯à¤¾à¤šà¥€ à¤‰à¤œà¤³à¤£à¥€',
+      hi: 'à¤¦à¥à¤µà¤¿à¤¤à¥€à¤¯ à¤µà¤¿à¤·à¤¯ à¤¯à¤¾ à¤µà¥ˆà¤•à¤²à¥à¤ªà¤¿à¤• à¤µà¤¿à¤·à¤¯ à¤ªà¥à¤¨à¤°à¤¾à¤µà¤²à¥‹à¤•à¤¨'
     },
     subTitle: {
       en: 'Economy, Environment or State Specific Curriculum & Notes synthesis',
-      mr: 'अर्थव्यवस्था, पर्यावरण किंवा महाराष्ट्र विशेष घटक व टिप्पण्या',
-      hi: 'अर्थव्यवस्था, पर्यावरण या राज्य विशेष पाठ्यक्रम'
+      mr: 'à¤…à¤°à¥à¤¥à¤µà¥à¤¯à¤µà¤¸à¥à¤¥à¤¾, à¤ªà¤°à¥à¤¯à¤¾à¤µà¤°à¤£ à¤•à¤¿à¤‚à¤µà¤¾ à¤®à¤¹à¤¾à¤°à¤¾à¤·à¥à¤Ÿà¥à¤° à¤µà¤¿à¤¶à¥‡à¤· à¤˜à¤Ÿà¤• à¤µ à¤Ÿà¤¿à¤ªà¥à¤ªà¤£à¥à¤¯à¤¾',
+      hi: 'à¤…à¤°à¥à¤¥à¤µà¥à¤¯à¤µà¤¸à¥à¤¥à¤¾, à¤ªà¤°à¥à¤¯à¤¾à¤µà¤°à¤£ à¤¯à¤¾ à¤°à¤¾à¤œà¥à¤¯ à¤µà¤¿à¤¶à¥‡à¤· à¤ªà¤¾à¤ à¥à¤¯à¤•à¥à¤°à¤®'
     },
     defaultSubjectId: 'upsc-history-culture',
     color: '#8b5cf6',
@@ -804,13 +804,13 @@ const UPSC_10H_SCHEDULE = [
     timeRange: '5:00 PM - 6:00 PM',
     title: {
       en: 'Evening Break Time & Fresh Air Walk',
-      mr: 'संध्याकाळचा चहा, चालणे व ताजी हवा',
-      hi: 'शाम का चाय काल और ताजी हवा में टहलना'
+      mr: 'à¤¸à¤‚à¤§à¥à¤¯à¤¾à¤•à¤¾à¤³à¤šà¤¾ à¤šà¤¹à¤¾, à¤šà¤¾à¤²à¤£à¥‡ à¤µ à¤¤à¤¾à¤œà¥€ à¤¹à¤µà¤¾',
+      hi: 'à¤¶à¤¾à¤® à¤•à¤¾ à¤šà¤¾à¤¯ à¤•à¤¾à¤² à¤”à¤° à¤¤à¤¾à¤œà¥€ à¤¹à¤µà¤¾ à¤®à¥‡à¤‚ à¤Ÿà¤¹à¤²à¤¨à¤¾'
     },
     subTitle: {
       en: 'Outdoor walking, tea/snack, light physical movement to beat afternoon slump',
-      mr: 'बाहेर फिरा, चहा/अल्पोपहार घ्या आणि शारीरिक हालचाल करा',
-      hi: 'टहलें, चाय/हल्का नाश्ता लें और ताजगी महसूस करें'
+      mr: 'à¤¬à¤¾à¤¹à¥‡à¤° à¤«à¤¿à¤°à¤¾, à¤šà¤¹à¤¾/à¤…à¤²à¥à¤ªà¥‹à¤ªà¤¹à¤¾à¤° à¤˜à¥à¤¯à¤¾ à¤†à¤£à¤¿ à¤¶à¤¾à¤°à¥€à¤°à¤¿à¤• à¤¹à¤¾à¤²à¤šà¤¾à¤² à¤•à¤°à¤¾',
+      hi: 'à¤Ÿà¤¹à¤²à¥‡à¤‚, à¤šà¤¾à¤¯/à¤¹à¤²à¥à¤•à¤¾ à¤¨à¤¾à¤¶à¥à¤¤à¤¾ à¤²à¥‡à¤‚ à¤”à¤° à¤¤à¤¾à¤œà¤—à¥€ à¤®à¤¹à¤¸à¥‚à¤¸ à¤•à¤°à¥‡à¤‚'
     },
     color: '#f59e0b',
     softColor: '#fffbeb',
@@ -829,13 +829,13 @@ const UPSC_10H_SCHEDULE = [
     timeRange: '6:00 PM - 8:00 PM',
     title: {
       en: 'Answer Writing & PYQs / MCQs Practice',
-      mr: 'उत्तर लेखन सराव व मागील वर्षांचे प्रश्न',
-      hi: 'उत्तर लेखन अभ्यास और पूर्व वर्ष प्रश्न'
+      mr: 'à¤‰à¤¤à¥à¤¤à¤° à¤²à¥‡à¤–à¤¨ à¤¸à¤°à¤¾à¤µ à¤µ à¤®à¤¾à¤—à¥€à¤² à¤µà¤°à¥à¤·à¤¾à¤‚à¤šà¥‡ à¤ªà¥à¤°à¤¶à¥à¤¨',
+      hi: 'à¤‰à¤¤à¥à¤¤à¤° à¤²à¥‡à¤–à¤¨ à¤…à¤­à¥à¤¯à¤¾à¤¸ à¤”à¤° à¤ªà¥‚à¤°à¥à¤µ à¤µà¤°à¥à¤· à¤ªà¥à¤°à¤¶à¥à¤¨'
     },
     subTitle: {
       en: 'Timed 50 MCQs or 2 Mains answers; evaluate mistakes and model answers',
-      mr: '५० वस्तुनिष्ठ प्रश्न किंवा २ मुख्य परीक्षेची उत्तरे वेळेत सोडवा',
-      hi: '५० एमसीक्यू या २ मुख्य परीक्षा उत्तर हल करें'
+      mr: 'à¥«à¥¦ à¤µà¤¸à¥à¤¤à¥à¤¨à¤¿à¤·à¥à¤  à¤ªà¥à¤°à¤¶à¥à¤¨ à¤•à¤¿à¤‚à¤µà¤¾ à¥¨ à¤®à¥à¤–à¥à¤¯ à¤ªà¤°à¥€à¤•à¥à¤·à¥‡à¤šà¥€ à¤‰à¤¤à¥à¤¤à¤°à¥‡ à¤µà¥‡à¤³à¥‡à¤¤ à¤¸à¥‹à¤¡à¤µà¤¾',
+      hi: 'à¥«à¥¦ à¤à¤®à¤¸à¥€à¤•à¥à¤¯à¥‚ à¤¯à¤¾ à¥¨ à¤®à¥à¤–à¥à¤¯ à¤ªà¤°à¥€à¤•à¥à¤·à¤¾ à¤‰à¤¤à¥à¤¤à¤° à¤¹à¤² à¤•à¤°à¥‡à¤‚'
     },
     defaultSubjectId: 'upsc-csat',
     color: '#ec4899',
@@ -854,13 +854,13 @@ const UPSC_10H_SCHEDULE = [
     timeRange: '8:00 PM - 10:00 PM',
     title: {
       en: 'Dinner Break & Decompression',
-      mr: 'रात्रीचे जेवण व आराम',
-      hi: 'रात्रिभोज और विश्राम'
+      mr: 'à¤°à¤¾à¤¤à¥à¤°à¥€à¤šà¥‡ à¤œà¥‡à¤µà¤£ à¤µ à¤†à¤°à¤¾à¤®',
+      hi: 'à¤°à¤¾à¤¤à¥à¤°à¤¿à¤­à¥‹à¤œ à¤”à¤° à¤µà¤¿à¤¶à¥à¤°à¤¾à¤®'
     },
     subTitle: {
       en: 'Family dinner, gentle conversation, relaxed mind before final night push',
-      mr: 'शांतपणे रात्रीचे जेवण घ्या आणि मन शांत ठेवा',
-      hi: 'रात्रिभोज और शांत मन से विश्राम'
+      mr: 'à¤¶à¤¾à¤‚à¤¤à¤ªà¤£à¥‡ à¤°à¤¾à¤¤à¥à¤°à¥€à¤šà¥‡ à¤œà¥‡à¤µà¤£ à¤˜à¥à¤¯à¤¾ à¤†à¤£à¤¿ à¤®à¤¨ à¤¶à¤¾à¤‚à¤¤ à¤ à¥‡à¤µà¤¾',
+      hi: 'à¤°à¤¾à¤¤à¥à¤°à¤¿à¤­à¥‹à¤œ à¤”à¤° à¤¶à¤¾à¤‚à¤¤ à¤®à¤¨ à¤¸à¥‡ à¤µà¤¿à¤¶à¥à¤°à¤¾à¤®'
     },
     color: '#06b6d4',
     softColor: '#ecfeff',
@@ -879,13 +879,13 @@ const UPSC_10H_SCHEDULE = [
     timeRange: '10:00 PM - 12:00 AM',
     title: {
       en: 'Current Affairs & Daily Consolidation',
-      mr: 'चालू घडामोडी व दिवसभराचा आढावा',
-      hi: 'समसामयिकी और दैनिक समीक्षा'
+      mr: 'à¤šà¤¾à¤²à¥‚ à¤˜à¤¡à¤¾à¤®à¥‹à¤¡à¥€ à¤µ à¤¦à¤¿à¤µà¤¸à¤­à¤°à¤¾à¤šà¤¾ à¤†à¤¢à¤¾à¤µà¤¾',
+      hi: 'à¤¸à¤®à¤¸à¤¾à¤®à¤¯à¤¿à¤•à¥€ à¤”à¤° à¤¦à¥ˆà¤¨à¤¿à¤• à¤¸à¤®à¥€à¤•à¥à¤·à¤¾'
     },
     subTitle: {
       en: 'The Hindu / Indian Express editorials, monthly compilation, consolidate day',
-      mr: 'वर्तमानपत्रातील महत्त्वाचे लेख, चालू घडामोडी व दिवसभराच्या अभ्यासाची नोंद',
-      hi: 'दैनिक समाचार पत्र संपादकीय और समसामयिकी पत्रिका'
+      mr: 'à¤µà¤°à¥à¤¤à¤®à¤¾à¤¨à¤ªà¤¤à¥à¤°à¤¾à¤¤à¥€à¤² à¤®à¤¹à¤¤à¥à¤¤à¥à¤µà¤¾à¤šà¥‡ à¤²à¥‡à¤–, à¤šà¤¾à¤²à¥‚ à¤˜à¤¡à¤¾à¤®à¥‹à¤¡à¥€ à¤µ à¤¦à¤¿à¤µà¤¸à¤­à¤°à¤¾à¤šà¥à¤¯à¤¾ à¤…à¤­à¥à¤¯à¤¾à¤¸à¤¾à¤šà¥€ à¤¨à¥‹à¤‚à¤¦',
+      hi: 'à¤¦à¥ˆà¤¨à¤¿à¤• à¤¸à¤®à¤¾à¤šà¤¾à¤° à¤ªà¤¤à¥à¤° à¤¸à¤‚à¤ªà¤¾à¤¦à¤•à¥€à¤¯ à¤”à¤° à¤¸à¤®à¤¸à¤¾à¤®à¤¯à¤¿à¤•à¥€ à¤ªà¤¤à¥à¤°à¤¿à¤•à¤¾'
     },
     defaultSubjectId: 'upsc-current-affairs',
     color: '#f97316',
@@ -1057,7 +1057,7 @@ export default function App() {
       }
       await refresh();
       showAppDialog({
-        title: '10-Hour Schedule Applied! ⏱️',
+        title: '10-Hour Schedule Applied! â±ï¸',
         message: `${isTargetTomorrow ? "Tomorrow's" : "Today's"} study planner now has all 4 disciplined study blocks scheduled (10 hours total).`,
         confirmText: t('done') || 'Great!',
         cancelText: null
@@ -2501,7 +2501,7 @@ export default function App() {
         break;
       }
     }
-    const currentStreak = Math.max(14, streakCount);
+    const currentStreak = analytics.currentStreak == null ? streakCount : Math.max(0, Number(analytics.currentStreak) || 0);
     const currentYear = new Date().getFullYear();
     const dailyQuote = getDailyQuote(lang);
 
@@ -2630,7 +2630,7 @@ export default function App() {
           "{dailyQuote.quote}"
         </Text>
         <Text style={[txt(11, false, C.muted), { marginTop: 6 }]}>
-          — {dailyQuote.author}
+          â€” {dailyQuote.author}
         </Text>
       </Card>
 
@@ -2701,9 +2701,9 @@ export default function App() {
                     </Text>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 }}>
                       <Text style={txt(11, false, C.muted)}>
-                        {p.minutes} {t('mins')} • {t((p.priority || 'Medium').toLowerCase(), p.priority || 'Medium')}
+                        {p.minutes} {t('mins')} â€¢ {t((p.priority || 'Medium').toLowerCase(), p.priority || 'Medium')}
                       </Text>
-                      <Text style={{ fontSize: 10, fontWeight: '700', color: C.blue }}>• {t('viewTopic')}</Text>
+                      <Text style={{ fontSize: 10, fontWeight: '700', color: C.blue }}>â€¢ {t('viewTopic')}</Text>
                     </View>
                   </TouchableOpacity>
                   {!p.done && (
@@ -3104,7 +3104,7 @@ export default function App() {
                   {navigatedTopicInfo.topicName || navigatedTopicInfo.taskTitle}
                 </Text>
                 <Text style={txt(11, false, C.muted)}>
-                  {navigatedTopicInfo.subjectName} • {navigatedTopicInfo.exam}
+                  {navigatedTopicInfo.subjectName} â€¢ {navigatedTopicInfo.exam}
                 </Text>
               </View>
               <TouchableOpacity
@@ -3248,7 +3248,7 @@ export default function App() {
                   alignItems: 'center'
                 }}
               >
-                <Text style={txt(11, true, '#ffffff')}>▶ {t('startLiveTimer', 'Start Live Timer')}</Text>
+                <Text style={txt(11, true, '#ffffff')}>â–¶ {t('startLiveTimer', 'Start Live Timer')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => {
@@ -3353,11 +3353,11 @@ export default function App() {
                   </View>
                   <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4, flexWrap: 'wrap', gap: 4 }}>
                     <Text style={txt(12, false, C.muted)}>
-                      {sCompleted} / {topicsList.length} {t('topicsMastered')} • {sPct}%
+                      {sCompleted} / {topicsList.length} {t('topicsMastered')} â€¢ {sPct}%
                     </Text>
                     <View style={{ backgroundColor: isExpanded ? (isDark ? '#1e3a5f' : '#dbeafe') : C.soft, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6 }}>
                       <Text style={{ fontSize: 10, fontWeight: '700', color: isExpanded ? C.blue : C.muted }}>
-                        {topicsList.length} {t('subtopics', 'subtopics')} {isExpanded ? '▲' : '▼'}
+                        {topicsList.length} {t('subtopics', 'subtopics')} {isExpanded ? 'â–²' : 'â–¼'}
                       </Text>
                     </View>
                   </View>
@@ -3507,7 +3507,7 @@ export default function App() {
                           style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}
                         >
                           <Ionicons name="play-circle" size={13} color={C.blue} />
-                          <Text style={txt(11, true, C.blue)}>▶ {t('focus')}</Text>
+                          <Text style={txt(11, true, C.blue)}>â–¶ {t('focus')}</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -3730,7 +3730,7 @@ export default function App() {
 
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4, flexWrap: 'wrap', gap: 6 }}>
                 <Text style={txt(11, false, C.muted)}>
-                  {p.minutes} {t('mins', 'mins')} • {p.done ? getStatusLabel('completed', lang) : getStatusLabel('pending', lang)}
+                  {p.minutes} {t('mins', 'mins')} â€¢ {p.done ? getStatusLabel('completed', lang) : getStatusLabel('pending', lang)}
                 </Text>
                 <View
                   style={{
@@ -3762,7 +3762,7 @@ export default function App() {
                     borderRadius: 8
                   }}
                 >
-                  <Text style={txt(11, true, C.white)}>▶ {t('focus')}</Text>
+                  <Text style={txt(11, true, C.white)}>â–¶ {t('focus')}</Text>
                 </TouchableOpacity>
               )}
               <TouchableOpacity onPress={() => deletePlan(p)} style={{ padding: 4 }}>
@@ -3850,7 +3850,7 @@ export default function App() {
                 />
               </View>
               <Text style={txt(12, false, C.muted)}>
-                {todayPlannedMinutes} {t('minPlanned')} ({Math.floor(todayPlannedMinutes / 60)}h {todayPlannedMinutes % 60}m) • {dailyGoalHours}h ({dailyGoalHours * 60}m)
+                {todayPlannedMinutes} {t('minPlanned')} ({Math.floor(todayPlannedMinutes / 60)}h {todayPlannedMinutes % 60}m) â€¢ {dailyGoalHours}h ({dailyGoalHours * 60}m)
               </Text>
             </Card>
 
@@ -3891,7 +3891,7 @@ export default function App() {
                 />
               </View>
               <Text style={txt(12, false, C.muted)}>
-                {tomorrowPlannedMinutes} {t('minPlanned')} ({Math.floor(tomorrowPlannedMinutes / 60)}h {tomorrowPlannedMinutes % 60}m) • {t('tomorrow')} ({formatDateDMY(tomorrow())})
+                {tomorrowPlannedMinutes} {t('minPlanned')} ({Math.floor(tomorrowPlannedMinutes / 60)}h {tomorrowPlannedMinutes % 60}m) â€¢ {t('tomorrow')} ({formatDateDMY(tomorrow())})
               </Text>
             </Card>
 
@@ -3993,7 +3993,7 @@ export default function App() {
                 />
               </View>
               <Text style={txt(12, false, C.muted)}>
-                {Math.floor(weeklyPlannedMinutes / 60)}h {weeklyPlannedMinutes % 60}m {t('minPlanned')} • {weeklyPlans.filter(p => p.done).length}/{weeklyPlans.length} {t('tasks')} {t('completed')}
+                {Math.floor(weeklyPlannedMinutes / 60)}h {weeklyPlannedMinutes % 60}m {t('minPlanned')} â€¢ {weeklyPlans.filter(p => p.done).length}/{weeklyPlans.length} {t('tasks')} {t('completed')}
               </Text>
             </Card>
 
@@ -4837,18 +4837,13 @@ marginBottom: 10,
 padding: 15,
 borderRadius: 16,
 backgroundColor: [
-  '#EEF2FF',
-  '#E6FFFA',
-  '#FFF1E6',
-  '#FCE7F3'
+  C.blueLight,
+  C.greenSoft,
+  C.amberSoft,
+  C.purpleSoft
 ][index % 4],
 borderWidth: 1,
-borderColor: [
-  '#C7D2FE',
-  '#99F6E4',
-  '#FED7AA',
-  '#FBCFE8'
-][index % 4]
+borderColor: C.border
                 }
               ]}
             >
@@ -5105,20 +5100,13 @@ borderColor: [
                         borderRadius: 5,
                         alignItems: 'center',
                         justifyContent: 'center',
-                        backgroundColor:
-  intensity === 0
-    ? C.soft
-    : intensity === 1
-      ? "#DBEAFE"
-      : intensity === 2
-        ? "#93C5FD"
-        : "#60A5FA"
+                        backgroundColor: intensity === 0 ? C.soft : intensity === 1 ? C.blueLight : C.blue
                       }}
                     >
                       <Text
                         style={{
                           fontSize: 9,
-                          color: intensity >= 2 ? "#1E3A8A" : C.text,
+                          color: intensity >= 2 ? (isDark ? "#102B2B" : "#FFFFFF") : C.text,
                         }}
                       >
                         {new Date(
@@ -5619,7 +5607,7 @@ borderColor: [
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text numberOfLines={1} style={txt(14, true)}>{t('settingsTitle')}</Text>
                   <Text numberOfLines={1} style={txt(10, false, C.muted)}>
-                    {user?.name || 'Aspirant'} • {user?.email || 'student@abhyas.local'}
+                    {user?.name || 'Aspirant'} â€¢ {user?.email || 'student@abhyas.local'}
                   </Text>
                 </View>
               </View>
@@ -6355,7 +6343,7 @@ borderColor: [
           <View style={{ flex: 1, marginLeft: 10, minWidth: 0 }}>
             <Text numberOfLines={1} style={txt(15, true)}>{t('appName', 'Abhyas Tracker')}</Text>
             <Text numberOfLines={1} style={txt(10, false, C.muted)}>
-              {t('examFocusTag', 'UPSC & MPSC')} • {tab === 'Dashboard' ? t('dashboard') : tab === 'Timer' ? t('timer') : tab === 'Syllabus' ? t('syllabus') : tab === 'Planner' ? t('planner') : tab === 'Analytics' ? t('analytics') : (tab === 'Ticket Support' || tab === 'Support') ? t('ticketSupport', 'Ticket Support') : tab}
+              {t('examFocusTag', 'UPSC & MPSC')} â€¢ {tab === 'Dashboard' ? t('dashboard') : tab === 'Timer' ? t('timer') : tab === 'Syllabus' ? t('syllabus') : tab === 'Planner' ? t('planner') : tab === 'Analytics' ? t('analytics') : (tab === 'Ticket Support' || tab === 'Support') ? t('ticketSupport', 'Ticket Support') : tab}
             </Text>
           </View>
 
@@ -6446,7 +6434,7 @@ borderColor: [
         {/* Main Content Area */}
         {remindersOpen ? (
           <View style={{ flex: 1, width: '100%' }}>
-            <ReminderSettingsScreen onBack={() => setRemindersOpen(false)} lang={lang} />
+            <ReminderSettingsScreen onBack={() => setRemindersOpen(false)} lang={lang} theme={C} isDarkMode={isDark} />
           </View>
         ) : profileOpen ? (
           <View style={{ flex: 1, width: '100%' }}>
@@ -6470,6 +6458,8 @@ borderColor: [
               studyGoal={6}
               studyStreak={Number(analytics.currentStreak) || 0}
               lang={lang}
+              theme={C}
+              isDarkMode={isDark}
             />
           </View>
         ) : (
@@ -6917,3 +6907,5 @@ const styles = StyleSheet.create({
     borderColor: '#edf2fc'
   }
 });
+
+

@@ -1,4 +1,4 @@
-
+﻿
 import React, { useState } from 'react';
 import {
   View,
@@ -15,12 +15,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { getTranslation } from './translations';
 
 
-const BLUE = '#3478F6';
-const BG = '#F3F7FF';
-const INK = '#172B4D';
-const MUTED = '#738199';
-const BORDER = '#E5EAF3';
-
 const ProfileField = ({
   label,
   value,
@@ -29,10 +23,12 @@ const ProfileField = ({
   keyboardType,
   editing,
   error,
+  styles,
+  C,
 }) => (
   <View style={styles.field}>
     <View style={styles.fieldIcon}>
-      <Ionicons name={icon} size={20} color={error ? '#DC2626' : BLUE} />
+      <Ionicons name={icon} size={20} color={error ? C.red : C.blue} />
     </View>
 
     <View style={styles.fieldContent}>
@@ -45,7 +41,7 @@ const ProfileField = ({
             keyboardType={keyboardType || 'default'}
             style={[styles.input, error ? styles.inputError : null]}
             placeholder={`Enter ${label.toLowerCase()}`}
-            placeholderTextColor="#A0AABC"
+            placeholderTextColor={C.muted}
           />
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
         </>
@@ -64,9 +60,25 @@ export default function StudentProfileScreen({
   onOpenSettings, onOpenReminders, onProfileUpdated,
   studyGoal = 6,
   studyStreak = 0,
-  lang = 'en'
+  lang = 'en',
+  theme,
+  isDarkMode = false
 }) {
   const t = (k, fb = '') => getTranslation(lang, k, fb);
+  const C = {
+    bg: theme?.bg || (isDarkMode ? '#111A22' : '#F4F7FA'),
+    card: theme?.cardBg || (isDarkMode ? '#1D2A35' : '#FFFFFF'),
+    ink: theme?.ink || (isDarkMode ? '#E8F0F3' : '#243746'),
+    muted: theme?.muted || (isDarkMode ? '#A2B2BC' : '#718391'),
+    blue: theme?.blue || (isDarkMode ? '#55B8A8' : '#247C78'),
+    blueLight: theme?.blueLight || (isDarkMode ? '#293F48' : '#E3EDF0'),
+    border: theme?.border || (isDarkMode ? '#354956' : '#E1E9ED'),
+    green: theme?.green || '#269B78',
+    amber: theme?.amber || '#D99536',
+    amberSoft: theme?.amberSoft || '#FFF3DF',
+    red: theme?.red || (isDarkMode ? '#F08A91' : '#D75B62'),
+  };
+  const styles = createStyles(C);
   const [editing, setEditing] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [name, setName] = useState(user?.name || '');
@@ -232,19 +244,19 @@ export default function StudentProfileScreen({
             onPress={onBack}
             accessibilityLabel="Go back"
           >
-            <Ionicons name="arrow-back" size={23} color={INK} />
+            <Ionicons name="arrow-back" size={23} color={C.ink} />
           </TouchableOpacity>
 
           <Text style={styles.headerTitle}>{t('myProfile', 'My Profile')}</Text>
 
           <View style={styles.headerButton}>
-            <Ionicons name="person-circle-outline" size={25} color={BLUE} />
+            <Ionicons name="person-circle-outline" size={25} color={C.blue} />
           </View>
         </View>
 
         <View style={styles.profileCard}>
           <View style={styles.avatar}>
-            <Ionicons name="person" size={39} color={BLUE} />
+            <Ionicons name="person" size={39} color={C.blue} />
           </View>
 
           <Text style={styles.name}>{name || t('aspirant', 'Student Name')}</Text>
@@ -261,14 +273,14 @@ export default function StudentProfileScreen({
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
             <View style={styles.statIcon}>
-              <Ionicons name="flag-outline" size={22} color={BLUE} />
+              <Ionicons name="flag-outline" size={22} color={C.blue} />
             </View>
             <Text style={styles.statValue}>{studyGoal} {t('hours', 'hrs')}</Text>
             <Text style={styles.statLabel}>{t('dailyStudyGoal', 'Daily Study Goal')}</Text>
           </View>
 
           <View style={styles.statCard}>
-            <View style={[styles.statIcon, { backgroundColor: '#FFF0E2' }]}>
+            <View style={[styles.statIcon, { backgroundColor: C.amberSoft }]}>
               <Ionicons name="flame-outline" size={22} color="#E58A38" />
             </View>
             <Text style={styles.statValue}>{studyStreak} {t('days', 'days')}</Text>
@@ -285,7 +297,9 @@ export default function StudentProfileScreen({
             onChangeText={(value) => { setName(value); if (!showValidation) setShowValidation(true); }}
             icon="person-outline"
            editing={editing}
-            error={profileErrors.name} />
+            error={profileErrors.name}
+              styles={styles}
+              C={C} />
           <View style={styles.separator} />
 
           <ProfileField
@@ -295,7 +309,9 @@ export default function StudentProfileScreen({
             icon="mail-outline"
             keyboardType="email-address"
            editing={editing}
-            error={profileErrors.email} />
+            error={profileErrors.email}
+              styles={styles}
+              C={C} />
           <View style={styles.separator} />
 
           <ProfileField
@@ -305,7 +321,9 @@ export default function StudentProfileScreen({
             icon="call-outline"
             keyboardType="phone-pad"
            editing={editing}
-            error={profileErrors.mobile} />
+            error={profileErrors.mobile}
+              styles={styles}
+              C={C} />
           <View style={styles.separator} />
 
           <ProfileField
@@ -314,7 +332,9 @@ export default function StudentProfileScreen({
             onChangeText={(value) => { setExam(value); if (!showValidation) setShowValidation(true); }}
             icon="school-outline"
            editing={editing}
-            error={profileErrors.exam} />
+            error={profileErrors.exam}
+              styles={styles}
+              C={C} />
           <View style={styles.separator} />
 
           <ProfileField
@@ -323,13 +343,15 @@ export default function StudentProfileScreen({
             onChangeText={(value) => { setSubjects(value); if (!showValidation) setShowValidation(true); }}
             icon="book-outline"
            editing={editing}
-            error={profileErrors.subjects} />
+            error={profileErrors.subjects}
+              styles={styles}
+              C={C} />
         </View>
 
         <Text style={styles.sectionTitle}>{t('preferences', 'Preferences')}</Text>
 
         <View style={styles.detailsCard}>
-          <TouchableOpacity style={styles.preferenceRow} activeOpacity={0.75} onPress={onOpenReminders} accessibilityRole="button" accessibilityLabel="Study Reminders"><View style={styles.fieldIcon}><Ionicons name="notifications-outline" size={21} color={BLUE} />
+          <TouchableOpacity style={styles.preferenceRow} activeOpacity={0.75} onPress={onOpenReminders} accessibilityRole="button" accessibilityLabel="Study Reminders"><View style={styles.fieldIcon}><Ionicons name="notifications-outline" size={21} color={C.blue} />
             </View>
             <View style={styles.fieldContent}>
               <Text style={styles.fieldValue}>{t('studyReminders', 'Study Reminders')}</Text>
@@ -337,12 +359,12 @@ export default function StudentProfileScreen({
                 {t('setDailyReminderDesc', 'Set your daily study reminder')}
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color={MUTED} />
+            <Ionicons name="chevron-forward" size={20} color={C.muted} />
           </TouchableOpacity>
 
           <View style={styles.separator} />
 
-          <TouchableOpacity style={styles.preferenceRow} activeOpacity={0.75} onPress={onOpenSettings} accessibilityRole="button" accessibilityLabel="Privacy and Account"><View style={styles.fieldIcon}><Ionicons name="shield-checkmark-outline" size={21} color={BLUE} />
+          <TouchableOpacity style={styles.preferenceRow} activeOpacity={0.75} onPress={onOpenSettings} accessibilityRole="button" accessibilityLabel="Privacy and Account"><View style={styles.fieldIcon}><Ionicons name="shield-checkmark-outline" size={21} color={C.blue} />
             </View>
             <View style={styles.fieldContent}>
               <Text style={styles.fieldValue}>{t('privacyAndAccount', 'Privacy & Account')}</Text>
@@ -350,7 +372,7 @@ export default function StudentProfileScreen({
                 {t('manageAccountSettings', 'Manage your account settings')}
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color={MUTED} />
+            <Ionicons name="chevron-forward" size={20} color={C.muted} />
           </TouchableOpacity>
         </View>
 
@@ -439,10 +461,10 @@ export default function StudentProfileScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (C) => StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: BG,
+    backgroundColor: C.bg,
   },
   container: {
     padding: 16,
@@ -458,17 +480,17 @@ const styles = StyleSheet.create({
     width: 43,
     height: 43,
     borderRadius: 14,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: C.card,
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerTitle: {
-    color: INK,
+    color: C.ink,
     fontSize: 20,
     fontWeight: '800',
   },
   profileCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: C.card,
     borderRadius: 23,
     padding: 23,
     alignItems: 'center',
@@ -478,26 +500,26 @@ const styles = StyleSheet.create({
     width: 82,
     height: 82,
     borderRadius: 41,
-    backgroundColor: '#DCEAFF',
+    backgroundColor: C.blueLight,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
   },
   name: {
-    color: INK,
+    color: C.ink,
     fontSize: 21,
     fontWeight: '800',
     textAlign: 'center',
   },
   subtitle: {
-    color: MUTED,
+    color: C.muted,
     fontSize: 13,
     marginTop: 5,
   },
   accountBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#EAF3FF',
+    backgroundColor: C.blueLight,
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 7,
@@ -507,16 +529,16 @@ const styles = StyleSheet.create({
     width: 7,
     height: 7,
     borderRadius: 4,
-    backgroundColor: '#20A56B',
+    backgroundColor: C.green,
     marginRight: 7,
   },
   accountBadgeText: {
-    color: BLUE,
+    color: C.blue,
     fontSize: 11,
     fontWeight: '700',
   },
   sectionTitle: {
-    color: INK,
+    color: C.ink,
     fontSize: 16,
     fontWeight: '800',
     marginBottom: 12,
@@ -528,7 +550,7 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: C.card,
     borderRadius: 18,
     padding: 15,
   },
@@ -536,23 +558,23 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 13,
-    backgroundColor: '#E8F1FF',
+    backgroundColor: C.blueLight,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
   },
   statValue: {
-    color: INK,
+    color: C.ink,
     fontSize: 20,
     fontWeight: '800',
   },
   statLabel: {
-    color: MUTED,
+    color: C.muted,
     fontSize: 11,
     marginTop: 5,
   },
   detailsCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: C.card,
     borderRadius: 18,
     paddingHorizontal: 14,
     marginBottom: 24,
@@ -567,7 +589,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: '#EEF4FF',
+    backgroundColor: C.blueLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -575,26 +597,26 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   fieldLabel: {
-    color: MUTED,
+    color: C.muted,
     fontSize: 11,
     marginBottom: 4,
   },
   fieldValue: {
-    color: INK,
+    color: C.ink,
     fontSize: 13,
     fontWeight: '700',
   },
   input: {
-    color: INK,
+    color: C.ink,
     fontSize: 13,
     fontWeight: '600',
     paddingVertical: 2,
     borderBottomWidth: 1,
-    borderBottomColor: BORDER,
+    borderBottomColor: C.border,
   },
   separator: {
     height: 1,
-    backgroundColor: '#EDF1F7',
+    backgroundColor: C.border,
   },
   preferenceRow: {
     flexDirection: 'row',
@@ -603,7 +625,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   preferenceHint: {
-    color: MUTED,
+    color: C.muted,
     fontSize: 11,
     marginTop: 4,
   },
@@ -617,20 +639,20 @@ const styles = StyleSheet.create({
     minHeight: 49,
     borderRadius: 15,
     borderWidth: 1,
-    borderColor: BORDER,
-    backgroundColor: '#FFFFFF',
+    borderColor: C.border,
+    backgroundColor: C.card,
     alignItems: 'center',
     justifyContent: 'center',
   },
   cancelText: {
-    color: INK,
+    color: C.ink,
     fontWeight: '700',
   },
   saveButton: {
     flex: 2,
     minHeight: 49,
     borderRadius: 15,
-    backgroundColor: BLUE,
+    backgroundColor: C.blue,
     flexDirection: 'row',
     gap: 7,
     alignItems: 'center',
@@ -643,7 +665,7 @@ const styles = StyleSheet.create({
   editButton: {
     minHeight: 50,
     borderRadius: 15,
-    backgroundColor: BLUE,
+    backgroundColor: C.blue,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -658,7 +680,7 @@ const styles = StyleSheet.create({
   signOutButton: {
     minHeight: 50,
     borderRadius: 15,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: C.card,
     borderWidth: 1,
     borderColor: '#F2CACA',
     flexDirection: 'row',
@@ -673,7 +695,7 @@ const styles = StyleSheet.create({
   },
   footerText: {
     textAlign: 'center',
-    color: MUTED,
+    color: C.muted,
     fontSize: 11,
     marginTop: 18,
   },
@@ -703,7 +725,7 @@ const styles = StyleSheet.create({
 signOutDialog: {
   width: '100%',
   maxWidth: 380,
-  backgroundColor: '#FFFFFF',
+  backgroundColor: C.card,
   borderRadius: 18,
   padding: 24,
 },
@@ -711,7 +733,7 @@ signOutDialog: {
 signOutTitle: {
   fontSize: 20,
   fontWeight: '700',
-  color: '#172033',
+  color: C.ink,
 },
 
 signOutMessage: {
@@ -719,7 +741,7 @@ signOutMessage: {
   marginBottom: 24,
   fontSize: 14,
   lineHeight: 21,
-  color: '#64748B',
+  color: C.muted,
 },
 
 signOutActions: {
@@ -731,7 +753,7 @@ cancelSignOutButton: {
   flex: 1,
   padding: 13,
   borderRadius: 10,
-  backgroundColor: '#E9F0FC',
+  backgroundColor: C.blueLight,
   alignItems: 'center',
   justifyContent: 'center',
 },
@@ -740,11 +762,14 @@ confirmSignOutButton: {
   flex: 1,
   padding: 13,
   borderRadius: 10,
-  backgroundColor: '#2563EB',
+  backgroundColor: C.blue,
   alignItems: 'center',
   justifyContent: 'center',
 },
 });
+
+
+
 
 
 

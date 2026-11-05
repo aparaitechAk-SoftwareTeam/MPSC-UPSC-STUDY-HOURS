@@ -81,7 +81,74 @@ export default function Timer({
 
     return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   };
+  
 
+    // Forest growth is based only on active elapsed study time.
+  const treeStages = [
+    {
+      icon: '\uD83C\uDF31',
+      title: 'Seed',
+      titleKey: 'forestSeed',
+      description: 'Your focus journey begins.',
+      descriptionKey: 'forestSeedDesc',
+    },
+    {
+      icon: '\uD83C\uDF3F',
+      title: 'Sprout',
+      titleKey: 'forestSprout',
+      description: 'You are building consistency.',
+      descriptionKey: 'forestSproutDesc',
+    },
+    {
+      icon: '\uD83E\uDEB4',
+      title: 'Sapling',
+      titleKey: 'forestSapling',
+      description: 'Your dedication is growing.',
+      descriptionKey: 'forestSaplingDesc',
+    },
+    {
+      icon: '\uD83C\uDF33',
+      title: 'Growing Tree',
+      titleKey: 'forestGrowingTree',
+      description: 'Strong focus creates strong roots.',
+      descriptionKey: 'forestGrowingDesc',
+    },
+    {
+      icon: '\uD83C\uDF32',
+      title: 'Mature Tree',
+      titleKey: 'forestMatureTree',
+      description: 'A beautiful session of dedication.',
+      descriptionKey: 'forestMatureDesc',
+    },
+  ];
+
+  const treeThresholds = [0, 300, 900, 1500, 2700, 3600];
+
+  const treeStageIndex =
+    elapsed >= 2700 ? 4 :
+    elapsed >= 1500 ? 3 :
+    elapsed >= 900 ? 2 :
+    elapsed >= 300 ? 1 : 0;
+
+  const treeStage = treeStages[treeStageIndex];
+
+  const treeStageProgress =
+    treeStageIndex === 4
+      ? 100
+      : Math.min(
+          100,
+          Math.max(
+            0,
+            ((elapsed - treeThresholds[treeStageIndex]) /
+              (treeThresholds[treeStageIndex + 1] -
+                treeThresholds[treeStageIndex])) * 100
+          )
+        );
+
+  const nextTreeMilestone =
+    treeStageIndex === 4
+      ? null
+      : treeThresholds[treeStageIndex + 1] / 60;
   const changeMode = (nextMode) => {
     if (running || elapsed > 0 || saving) {
       Alert.alert(
@@ -103,7 +170,7 @@ export default function Timer({
         <TouchableOpacity
           style={[
             styles.focusButton,
-            isDarkMode && { backgroundColor: '#1e3a8a' },
+            { backgroundColor: C.blueLight },
           ]}
           onPress={() => {
             if (deepZenSessionLocked) {
@@ -120,7 +187,7 @@ export default function Timer({
           <Text
             style={[
               styles.focusButtonText,
-              isDarkMode && { color: '#93c5fd' },
+              { color: C.blue },
             ]}
           >
             {t('exitFocusMode', 'Exit Focus Mode')}
@@ -130,14 +197,14 @@ export default function Timer({
         <TouchableOpacity
           style={[
             styles.focusButton,
-            isDarkMode && { backgroundColor: '#1e3a8a' },
+            { backgroundColor: C.blueLight },
           ]}
           onPress={() => setFocusMode?.(true)}
         >
           <Text
             style={[
               styles.focusButtonText,
-              isDarkMode && { color: '#93c5fd' },
+              { color: C.blue },
             ]}
           >
             {t('enterFocusMode', 'Enter Focus Mode')}
@@ -151,6 +218,7 @@ export default function Timer({
       <Text style={[styles.subtitle, { color: C.muted }]}>
         {t('trackStudySessions', 'Track your study sessions and stay consistent.')}
       </Text>
+
 
       {/* Focus Style */}
       <Text style={[styles.label, { color: C.muted, marginTop: 18 }]}>
@@ -288,8 +356,8 @@ export default function Timer({
                       style={{
                         fontSize: 9,
                         fontWeight: '700',
-                        color: isMpsc ? '#b45309' : '#1e40af',
-                        backgroundColor: isMpsc ? '#fef3c7' : '#dbeafe',
+                        color: isMpsc ? C.amber : C.blue,
+                        backgroundColor: isMpsc ? C.amberSoft : C.blueLight,
                         paddingHorizontal: 5,
                         paddingVertical: 1,
                         borderRadius: 4
@@ -375,13 +443,41 @@ export default function Timer({
             />
           </View>
         )}
-
-        {/* Timer Circle */}
-        <View style={[styles.timerCircle, { borderColor: C.soft }]}>
-          <Text style={[styles.timerLabel, { color: C.muted }]}>
-            {t('studyTime', 'STUDY TIME')}
+        {/* Tree-Based Timer UI */}
+        <View
+          style={[
+            styles.forestCard,
+            {
+              backgroundColor: C.white,
+              borderColor: C.line,
+              alignItems: 'center',
+              paddingVertical: 28,
+            },
+          ]}
+        >
+          <Text style={[styles.forestEyebrow, { color: C.muted }]}>
+            YOUR FOCUS FOREST
           </Text>
-          <Text style={[styles.time, { color: C.ink }]}>
+
+          <Text style={{ fontSize: 105, marginVertical: 15 }}>
+            {treeStage.icon}
+          </Text>
+
+          <Text style={[styles.forestStageTitle, { color: C.ink, fontSize: 22 }]}>
+            {t(treeStage.titleKey, treeStage.title)}
+          </Text>
+
+          <Text style={[
+            styles.forestDescription,
+            { color: C.muted, textAlign: 'center', marginTop: 6 },
+          ]}>
+            {t(treeStage.descriptionKey, treeStage.description)}
+          </Text>
+
+          <Text style={[
+            styles.time,
+            { color: C.ink, marginTop: 20, marginBottom: 4 },
+          ]}>
             {formatTime(
               mode === 'Pomodoro'
                 ? Math.max(0, 25 * 60 - elapsed)
@@ -390,6 +486,7 @@ export default function Timer({
                   : elapsed
             )}
           </Text>
+
           <Text style={[styles.status, { color: C.muted }]}>
             {saving
               ? t('saving', 'Saving session...')
@@ -398,6 +495,30 @@ export default function Timer({
                 : elapsed > 0
                   ? t('pausedFocus', 'Session paused')
                   : t('readyToFocus', 'Ready to focus')}
+          </Text>
+
+          <View style={[
+            styles.forestProgressTrack,
+            { backgroundColor: C.soft, width: '100%' },
+          ]}>
+            <View
+              style={[
+                styles.forestProgressFill,
+                { width: `${treeStageProgress}%`, backgroundColor: C.green },
+              ]}
+            />
+          </View>
+
+          <Text style={[
+            styles.forestNext,
+            { color: C.muted, textAlign: 'center' },
+          ]}>
+            {nextTreeMilestone === null
+              ? t('forestFullyGrown', 'Your tree has fully grown!')
+              : `${t('nextGrowthStage', 'Next growth stage in')} ${Math.max(
+                  0,
+                  nextTreeMilestone - Math.floor(elapsed / 60)
+                )} ${t('mins', 'min')}`}
           </Text>
         </View>
 
@@ -554,23 +675,6 @@ const styles = StyleSheet.create({
     color: COLORS.ink,
     fontSize: 12,
   },
-  timerCircle: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 8,
-    borderColor: COLORS.soft,
-    borderRadius: 120,
-    width: 220,
-    height: 220,
-    alignSelf: 'center',
-    marginVertical: 28,
-  },
-  timerLabel: {
-    fontSize: 11,
-    letterSpacing: 1.5,
-    color: COLORS.muted,
-    fontWeight: '700',
-  },
   time: {
     color: COLORS.ink,
     fontSize: 42,
@@ -615,4 +719,58 @@ const styles = StyleSheet.create({
     color: COLORS.muted,
     fontWeight: '600',
   },
+    forestCard: {
+    borderWidth: 1,
+    borderRadius: 20,
+    padding: 16,
+    marginTop: 18,
+    marginBottom: 8,
+  },
+  forestTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  forestIcon: {
+    fontSize: 43,
+  },
+  forestEyebrow: {
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 1.3,
+    marginBottom: 4,
+  },
+  forestStageTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+  },
+  forestDescription: {
+    fontSize: 11,
+    marginTop: 3,
+  },
+  forestTime: {
+    fontSize: 22,
+    fontWeight: '800',
+  },
+  forestTimeLabel: {
+    fontSize: 9,
+  },
+  forestProgressTrack: {
+    height: 7,
+    borderRadius: 10,
+    overflow: 'hidden',
+    marginTop: 15,
+  },
+  forestProgressFill: {
+    height: 7,
+    backgroundColor: '#65A66A',
+    borderRadius: 10,
+  },
+  forestNext: {
+    fontSize: 10,
+    marginTop: 8,
+  },
 });
+
+
+

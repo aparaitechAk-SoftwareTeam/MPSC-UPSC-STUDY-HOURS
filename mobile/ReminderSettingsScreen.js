@@ -16,7 +16,7 @@ import { getTranslation } from './translations';
 const STORAGE_KEY = 'abhyas_study_reminder_preferences';
 const TIMES = ['06:00 AM', '07:00 AM', '08:00 AM', '06:00 PM', '07:00 PM', '08:00 PM'];
 
-export default function ReminderSettingsScreen({ onBack, lang = 'en' }) {
+export default function ReminderSettingsScreen({ onBack, lang = 'en', theme, isDarkMode = false }) {
   const t = (k, fb = '') => getTranslation(lang, k, fb);
   const [enabled, setEnabled] = useState(false);
   const [selectedTime, setSelectedTime] = useState('07:00 AM');
@@ -60,12 +60,13 @@ export default function ReminderSettingsScreen({ onBack, lang = 'en' }) {
   };
 
   const C = {
-    background: '#F3F7FF',
-    card: '#FFFFFF',
-    text: '#172B4D',
-    muted: '#738199',
-    blue: '#3478F6',
-    border: '#E5EAF3',
+    background: theme?.bg || (isDarkMode ? '#111A22' : '#F4F7FA'),
+    card: theme?.cardBg || (isDarkMode ? '#1D2A35' : '#FFFFFF'),
+    text: theme?.ink || (isDarkMode ? '#E8F0F3' : '#243746'),
+    muted: theme?.muted || (isDarkMode ? '#A2B2BC' : '#718391'),
+    blue: theme?.blue || (isDarkMode ? '#55B8A8' : '#247C78'),
+    border: theme?.border || theme?.line || (isDarkMode ? '#354956' : '#E1E9ED'),
+    blueLight: theme?.blueLight || (isDarkMode ? '#293F48' : '#E3EDF0'),
   };
 
   return (
@@ -73,7 +74,7 @@ export default function ReminderSettingsScreen({ onBack, lang = 'en' }) {
       <View style={styles.header}>
         <TouchableOpacity
           onPress={onBack}
-          style={styles.backButton}
+          style={[styles.backButton, { backgroundColor: C.card, borderColor: C.border, borderWidth: 1 }]}
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
@@ -84,7 +85,7 @@ export default function ReminderSettingsScreen({ onBack, lang = 'en' }) {
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={[styles.hero, { backgroundColor: C.card, borderColor: C.border }]}>
-          <View style={styles.heroIcon}>
+          <View style={[styles.heroIcon, { backgroundColor: C.blueLight }]}>
             <Ionicons name="notifications-outline" size={30} color={C.blue} />
           </View>
           <Text style={[styles.title, { color: C.text }]}>{t('buildConsistentRoutine', 'Build a consistent routine')}</Text>
@@ -128,7 +129,7 @@ export default function ReminderSettingsScreen({ onBack, lang = 'en' }) {
                 style={[
                   styles.timeOption,
                   {
-                    backgroundColor: selected ? '#E6EFFF' : C.card,
+                    backgroundColor: selected ? C.blueLight : C.card,
                     borderColor: selected ? C.blue : C.border,
                   },
                 ]}
