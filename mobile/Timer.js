@@ -83,72 +83,55 @@ export default function Timer({
   };
   
 
-    // Forest growth is based only on active elapsed study time.
+  // Forest growth follows the selected countdown duration.
+  // Stopwatch retains its original elapsed-time milestones.
   const treeStages = [
-    {
-      icon: '\uD83C\uDF31',
-      title: 'Seed',
-      titleKey: 'forestSeed',
-      description: 'Your focus journey begins.',
-      descriptionKey: 'forestSeedDesc',
-    },
-    {
-      icon: '\uD83C\uDF3F',
-      title: 'Sprout',
-      titleKey: 'forestSprout',
-      description: 'You are building consistency.',
-      descriptionKey: 'forestSproutDesc',
-    },
-    {
-      icon: '\uD83E\uDEB4',
-      title: 'Sapling',
-      titleKey: 'forestSapling',
-      description: 'Your dedication is growing.',
-      descriptionKey: 'forestSaplingDesc',
-    },
-    {
-      icon: '\uD83C\uDF33',
-      title: 'Growing Tree',
-      titleKey: 'forestGrowingTree',
-      description: 'Strong focus creates strong roots.',
-      descriptionKey: 'forestGrowingDesc',
-    },
-    {
-      icon: '\uD83C\uDF32',
-      title: 'Mature Tree',
-      titleKey: 'forestMatureTree',
-      description: 'A beautiful session of dedication.',
-      descriptionKey: 'forestMatureDesc',
-    },
+    { icon: '\uD83C\uDF31', title: 'Seed', titleKey: 'forestSeed', description: 'Your focus journey begins.', descriptionKey: 'forestSeedDesc' },
+    { icon: '\uD83C\uDF3F', title: 'Sprout', titleKey: 'forestSprout', description: 'You are building consistency.', descriptionKey: 'forestSproutDesc' },
+    { icon: '\uD83E\uDEB4', title: 'Sapling', titleKey: 'forestSapling', description: 'Your dedication is growing.', descriptionKey: 'forestSaplingDesc' },
+    { icon: '\uD83C\uDF33', title: 'Growing Tree', titleKey: 'forestGrowingTree', description: 'Strong focus creates strong roots.', descriptionKey: 'forestGrowingDesc' },
+    { icon: '\uD83C\uDF32', title: 'Mature Tree', titleKey: 'forestMatureTree', description: 'A beautiful session of dedication.', descriptionKey: 'forestMatureDesc' },
   ];
 
-  const treeThresholds = [0, 300, 900, 1500, 2700, 3600];
+  const countdownDurationSeconds =
+    mode === 'Pomodoro' ? 25 * 60 :
+    mode === 'Custom' ? Number(customMinutes) * 60 : null;
 
-  const treeStageIndex =
-    elapsed >= 2700 ? 4 :
-    elapsed >= 1500 ? 3 :
-    elapsed >= 900 ? 2 :
-    elapsed >= 300 ? 1 : 0;
+  const hasCountdownDuration =
+    countdownDurationSeconds !== null &&
+    Number.isFinite(countdownDurationSeconds) &&
+    countdownDurationSeconds > 0;
 
+  const treeThresholds = hasCountdownDuration
+    ? Array.from({ length: 6 }, (_, index) =>
+        Math.round((countdownDurationSeconds * index) / 5)
+      )
+    : [0, 300, 900, 1500, 2700, 3600];
+
+  const nextStageIndex = treeThresholds.slice(1).findIndex(
+    (threshold) => elapsed < threshold
+  );
+
+  const treeStageIndex = nextStageIndex === -1 ? 4 : nextStageIndex;
   const treeStage = treeStages[treeStageIndex];
 
   const treeStageProgress =
-    treeStageIndex === 4
+    !hasCountdownDuration && treeStageIndex === 4
       ? 100
-      : Math.min(
-          100,
-          Math.max(
-            0,
-            ((elapsed - treeThresholds[treeStageIndex]) /
-              (treeThresholds[treeStageIndex + 1] -
-                treeThresholds[treeStageIndex])) * 100
-          )
-        );
+      : Math.min(100, Math.max(0,
+          ((elapsed - treeThresholds[treeStageIndex]) /
+            (treeThresholds[treeStageIndex + 1] - treeThresholds[treeStageIndex])) * 100
+        ));
 
   const nextTreeMilestone =
-    treeStageIndex === 4
-      ? null
-      : treeThresholds[treeStageIndex + 1] / 60;
+    hasCountdownDuration
+      ? elapsed >= countdownDurationSeconds
+        ? null
+        : treeThresholds[treeStageIndex + 1] / 60
+      : treeStageIndex === 4
+        ? null
+        : treeThresholds[treeStageIndex + 1] / 60;
+
   const changeMode = (nextMode) => {
     if (running || elapsed > 0 || saving) {
       Alert.alert(
@@ -517,7 +500,7 @@ export default function Timer({
               ? t('forestFullyGrown', 'Your tree has fully grown!')
               : `${t('nextGrowthStage', 'Next growth stage in')} ${Math.max(
                   0,
-                  nextTreeMilestone - Math.floor(elapsed / 60)
+                  Math.ceil((nextTreeMilestone * 60 - elapsed) / 60)
                 )} ${t('mins', 'min')}`}
           </Text>
         </View>
