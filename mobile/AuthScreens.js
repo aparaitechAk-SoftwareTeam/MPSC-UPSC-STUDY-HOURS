@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { smartApiFetch, getApiBase, setCustomApiBase, getCustomApiBase, testApiConnection } from "./api";
+import { smartApiFetch, getApiBase } from "./api";
 import {
   View,
   Text,
@@ -284,40 +284,6 @@ export default function AuthScreens({
 
   const theme = getAuthTheme(isDark);
   // Screens: 'login' | 'signup' | 'login-otp' | 'verify-otp' | 'forgot-contact' | 'forgot-otp' | 'forgot-reset' | 'forgot-success'
-  // Server IP management
-  const [showServerModal, setShowServerModal] = useState(false);
-  const [serverUrlInput, setServerUrlInput] = useState(() => getCustomApiBase() || "http://10.185.72.214:4000/api");
-  const [testingServer, setTestingServer] = useState(false);
-  const [serverStatusMessage, setServerStatusMessage] = useState(null);
-
-  const handleSaveServer = async () => {
-    if (!serverUrlInput || !serverUrlInput.trim()) {
-      await setCustomApiBase(null);
-      setShowServerModal(false);
-      return;
-    }
-    setTestingServer(true);
-    setServerStatusMessage(null);
-    let target = serverUrlInput.trim();
-    if (!target.startsWith("http://") && !target.startsWith("https://")) {
-      target = "http://" + target;
-    }
-    if (!target.endsWith("/api")) {
-      target = target.replace(/\/+$/, "") + "/api";
-    }
-    const ok = await testApiConnection(target);
-    setTestingServer(false);
-    if (ok) {
-      await setCustomApiBase(target);
-      setServerStatusMessage({ ok: true, text: "Connected to server successfully!" });
-      setLocalError("");
-      setTimeout(() => setShowServerModal(false), 1000);
-    } else {
-      await setCustomApiBase(target);
-      setServerStatusMessage({ ok: false, text: "Server saved! If still unreachable, verify your laptop and phone are on the exact same Wi-Fi network." });
-    }
-  };
-
   const [screen, setScreen] = useState("login");
   const [loginRole, setLoginRole] = useState("student"); // "student" | "admin"
   const [method, setMethod] = useState("email"); // Email OTP exclusive
@@ -823,31 +789,7 @@ export default function AuthScreens({
             zIndex: 999,
           }}
         >
-          <TouchableOpacity
-            onPress={() => { setServerStatusMessage(null); setShowServerModal(true); }}
-            activeOpacity={0.8}
-            accessibilityLabel="Configure Backend Server IP"
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 5,
-              paddingHorizontal: 12,
-              height: 38,
-              borderRadius: 19,
-              backgroundColor: theme.toggleBg,
-              borderWidth: 1,
-              borderColor: theme.toggleBorder,
-              shadowColor: "#000",
-              shadowOpacity: isDark ? 0.35 : 0.08,
-              shadowRadius: 6,
-              elevation: 4,
-            }}
-          >
-            <Ionicons name="server-outline" size={16} color={theme.toggleColor} />
-            <Text style={{ fontSize: 12, fontWeight: "600", color: theme.toggleColor }}>Server IP</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
+<TouchableOpacity
             onPress={handleToggleTheme}
             activeOpacity={0.8}
             accessibilityLabel={isDark ? "Switch to Day Mode" : "Switch to Night Mode"}
@@ -901,33 +843,7 @@ export default function AuthScreens({
             {Boolean(effectiveError) && (
               <View style={styles.errorBanner}>
                 <Text style={styles.errorText}>{effectiveError}</Text>
-                {(effectiveError.toLowerCase().includes("fetch") ||
-                  effectiveError.toLowerCase().includes("server") ||
-                  effectiveError.toLowerCase().includes("network") ||
-                  effectiveError.toLowerCase().includes("connect")) && (
-                  <TouchableOpacity
-                    onPress={() => { setServerStatusMessage(null); setShowServerModal(true); }}
-                    activeOpacity={0.8}
-                    style={{
-                      marginTop: 10,
-                      alignSelf: "flex-start",
-                      backgroundColor: "rgba(220, 38, 38, 0.15)",
-                      paddingVertical: 6,
-                      paddingHorizontal: 12,
-                      borderRadius: 8,
-                      borderWidth: 1,
-                      borderColor: "rgba(220, 38, 38, 0.3)",
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-                  >
-                    <Ionicons name="settings-outline" size={14} color="#DC2626" />
-                    <Text style={{ fontSize: 12, fontWeight: "700", color: "#DC2626" }}>
-                      Tap to Configure Server IP
-                    </Text>
-                  </TouchableOpacity>
-                )}
+
               </View>
             )}
 
@@ -1726,102 +1642,7 @@ export default function AuthScreens({
             </Text>
           </ScrollView>
 
-        {/* Server IP Configuration Modal */}
-        <Modal
-          visible={showServerModal}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setShowServerModal(false)}
-        >
-          <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.65)", justifyContent: "center", alignItems: "center", padding: 20 }}>
-            <View style={{ width: "100%", maxWidth: 420, backgroundColor: theme.cardBg, borderRadius: 20, padding: 22, borderWidth: 1, borderColor: theme.cardBorder, shadowColor: "#000", shadowOpacity: 0.25, shadowRadius: 16, elevation: 8 }}>
-              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                  <Ionicons name="server" size={20} color={BLUE} />
-                  <Text style={{ fontSize: 18, fontWeight: "bold", color: theme.cardText }}>Server Connection</Text>
-                </View>
-                <TouchableOpacity onPress={() => setShowServerModal(false)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                  <Ionicons name="close" size={22} color={theme.subText} />
-                </TouchableOpacity>
-              </View>
 
-              <Text style={{ fontSize: 13, color: theme.subText, marginBottom: 14, lineHeight: 18 }}>
-                Enter your laptop's IP address so your phone can reach the backend server:
-              </Text>
-
-              <Text style={{ fontSize: 11, fontWeight: "700", color: theme.subText, marginBottom: 6, textTransform: "uppercase" }}>
-                Backend API URL
-              </Text>
-              <TextInput
-                value={serverUrlInput}
-                onChangeText={setServerUrlInput}
-                placeholder="http://10.185.72.214:4000/api"
-                placeholderTextColor={theme.placeholder}
-                autoCapitalize="none"
-                autoCorrect={false}
-                style={{
-                  borderWidth: 1,
-                  borderColor: theme.inputBorder,
-                  backgroundColor: theme.inputBg,
-                  color: theme.inputText,
-                  borderRadius: 12,
-                  paddingHorizontal: 14,
-                  paddingVertical: 12,
-                  fontSize: 14,
-                  marginBottom: 14,
-                }}
-              />
-
-              {Boolean(serverStatusMessage) && (
-                <View style={{ padding: 10, borderRadius: 10, backgroundColor: serverStatusMessage.ok ? "rgba(34, 197, 94, 0.15)" : "rgba(239, 68, 68, 0.15)", marginBottom: 14 }}>
-                  <Text style={{ fontSize: 12, color: serverStatusMessage.ok ? "#15803D" : "#DC2626", fontWeight: "600", lineHeight: 16 }}>
-                    {serverStatusMessage.text}
-                  </Text>
-                </View>
-              )}
-
-              <View style={{ flexDirection: "row", gap: 10 }}>
-                <TouchableOpacity
-                  onPress={() => {
-                    setServerUrlInput("http://10.185.72.214:4000/api");
-                    setServerStatusMessage(null);
-                  }}
-                  style={{
-                    flex: 1,
-                    paddingVertical: 12,
-                    borderRadius: 12,
-                    borderWidth: 1,
-                    borderColor: theme.inputBorder,
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Text style={{ fontSize: 13, fontWeight: "600", color: theme.subText }}>Reset Default</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={handleSaveServer}
-                  disabled={testingServer}
-                  style={{
-                    flex: 1.5,
-                    paddingVertical: 12,
-                    borderRadius: 12,
-                    backgroundColor: BLUE,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    opacity: testingServer ? 0.7 : 1,
-                  }}
-                >
-                  {testingServer ? (
-                    <ActivityIndicator size="small" color="#FFFFFF" />
-                  ) : (
-                    <Text style={{ fontSize: 14, fontWeight: "bold", color: "#FFFFFF" }}>Test & Connect</Text>
-                  )}
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Modal>
         </KeyboardAvoidingView>
       </SafeAreaView>
     </AuthThemeContext.Provider>

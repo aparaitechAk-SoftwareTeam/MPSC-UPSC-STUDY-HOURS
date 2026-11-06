@@ -11,7 +11,7 @@
     },
     "android": {
       "package": "com.aparaitech.abhyastracker",
-      "versionCode": 2
+      "versionCode": 3
     },
     "web": {
       "bundler": "metro"

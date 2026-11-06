@@ -5568,8 +5568,8 @@ borderColor: C.border
               backgroundColor: C.cardBg,
               width: '100%',
               maxWidth: 460,
-              maxHeight: Platform.OS === 'web' ? '86vh' : '90%',
-              height: Platform.OS === 'web' ? '86vh' : undefined,
+              height: Platform.OS === 'web' ? '84vh' : '82%',
+              maxHeight: 660,
               borderRadius: 16,
               borderWidth: 1,
               borderColor: C.line,
@@ -5629,8 +5629,9 @@ borderColor: C.border
             {/* Scrollable Settings Content */}
             <ScrollView
               style={{ flex: 1, minHeight: 0, width: '100%' }}
-              contentContainerStyle={{ paddingHorizontal: 14, paddingVertical: 14 }}
+              contentContainerStyle={{ paddingHorizontal: 14, paddingVertical: 14, paddingBottom: 32 }}
               showsVerticalScrollIndicator={true}
+              keyboardShouldPersistTaps="handled"
             >
               {/* 1. Language Selector (Compact Size) */}
               <View style={{ marginBottom: 16 }}>
@@ -6671,7 +6672,8 @@ borderColor: C.border
             borderTopWidth: 1,
             borderColor: C.line,
             flexDirection: 'row',
-            paddingVertical: 10,
+            paddingTop: 8,
+            paddingBottom: Platform.OS === 'android' ? 22 : 10,
             width: '100%'
           }}
         >
@@ -6689,14 +6691,16 @@ borderColor: C.border
             return (
               <TouchableOpacity
                 key={tName}
-                style={{ flex: 1, alignItems: 'center' }}
+                style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 2 }}
                 onPress={() => {
                   handleTabChange(tName);
                   refresh();
                 }}
               >
-                <Ionicons name={ic} size={22} color={tab === tName ? C.blue : (isDark ? '#94a3b8' : '#667080')} />
-                <Text style={txt(10, tab === tName, tab === tName ? C.blue : C.muted)}>{t(tabKey, tName)}</Text>
+                <Ionicons name={ic} size={20} color={tab === tName ? C.blue : (isDark ? '#94a3b8' : '#667080')} />
+                <Text numberOfLines={1} style={[txt(9.5, tab === tName, tab === tName ? C.blue : C.muted), { marginTop: 2 }]}>
+                  {t(tabKey, tName)}
+                </Text>
               </TouchableOpacity>
             );
           })}

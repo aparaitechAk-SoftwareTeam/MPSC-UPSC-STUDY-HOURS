@@ -11,7 +11,8 @@ import {
   Platform,
   Linking,
   StyleSheet,
-  ActivityIndicator
+  ActivityIndicator,
+  Keyboard
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
@@ -451,6 +452,21 @@ export default function AbhyasMitra({
     }
   }, [messages, isOpen]);
 
+  // Auto scroll to bottom when keyboard appears so input/messages stay visible
+  useEffect(() => {
+    const showSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      () => {
+        setTimeout(() => {
+          scrollRef.current?.scrollToEnd({ animated: true });
+        }, 120);
+      }
+    );
+    return () => {
+      showSub.remove();
+    };
+  }, []);
+
   // Clean speech when closing or changing message
   useEffect(() => {
     if (!isOpen) {
@@ -779,7 +795,7 @@ export default function AbhyasMitra({
         <SafeAreaView style={[styles.modalSafe, { backgroundColor: colors.screenBg }]}>
           <KeyboardAvoidingView
             style={{ flex: 1 }}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           >
             {/* Top Navigation Header: Ultra-clean and compact for narrow frames */}
             <View style={[styles.header, { backgroundColor: colors.headerBg, borderBottomColor: colors.headerBorder }]}>
@@ -2469,8 +2485,8 @@ const styles = StyleSheet.create({
   // Input Bar
   inputBar: {
     paddingHorizontal: 8,
-    paddingBottom: Platform.OS === 'ios' ? 8 : 6,
-    paddingTop: 4,
+    paddingBottom: Platform.OS === 'android' ? 24 : (Platform.OS === 'ios' ? 12 : 8),
+    paddingTop: 6,
     borderTopWidth: 1
   },
   inputPill: {

@@ -10,6 +10,7 @@ import {
   StyleSheet,
   SafeAreaView,
   Platform,
+  KeyboardAvoidingView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { getTranslation } from './translations';
@@ -233,6 +234,7 @@ export default function StudentProfileScreen({
 
   return (
     <SafeAreaView style={styles.safe}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
@@ -427,6 +429,7 @@ export default function StudentProfileScreen({
 
         <Text style={styles.footerText}>{t('yourPrepYourProgress', 'Your preparation, your progress.')}</Text>
       </ScrollView>
+      </KeyboardAvoidingView>
       {signOutConfirmOpen && (
   <View style={styles.signOutOverlay}>
     <View style={styles.signOutDialog}>
