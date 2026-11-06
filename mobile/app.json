@@ -10,7 +10,8 @@
       "supportsTablet": true
     },
     "android": {
-      "package": "com.aparaitech.abhyastracker"
+      "package": "com.aparaitech.abhyastracker",
+      "versionCode": 1
     },
     "web": {
       "bundler": "metro"

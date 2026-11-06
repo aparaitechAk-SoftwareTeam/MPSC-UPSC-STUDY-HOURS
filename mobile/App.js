@@ -928,14 +928,14 @@ export default function App() {
 
   // Timer State
   const [elapsed, setElapsed] = useState(() => {
-    if (typeof window !== 'undefined') {
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.location?.search) {
       const e = new URLSearchParams(window.location.search).get('elapsed');
       if (e) return Number(e);
     }
     return 0;
   });
   const [running, setRunning] = useState(() => {
-    if (typeof window !== 'undefined') {
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.location?.search) {
       return new URLSearchParams(window.location.search).get('running') === 'true';
     }
     return false;
@@ -1132,7 +1132,7 @@ export default function App() {
   const playTimerTone = (type = 'start') => {
     if (!timerSoundEnabled) return;
     try {
-      if (typeof window !== 'undefined') {
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
         if (!AudioCtx) return;
         const ctx = new AudioCtx();
