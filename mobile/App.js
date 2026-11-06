@@ -6466,7 +6466,9 @@ borderColor: C.border
           <ScrollView
             ref={mainScrollRef}
             style={{ flex: 1, width: '100%' }}
-            contentContainerStyle={{ padding: 12, paddingBottom: 30, width: '100%' }}
+            contentContainerStyle={{ padding: 12, paddingBottom: 120, width: '100%' }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
           >
             {notifOpen ? (
               <NotificationsScreen

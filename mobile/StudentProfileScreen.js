@@ -468,7 +468,7 @@ const createStyles = (C) => StyleSheet.create({
   },
   container: {
     padding: 16,
-    paddingBottom: 32,
+    paddingBottom: 140,
   },
   header: {
     flexDirection: 'row',

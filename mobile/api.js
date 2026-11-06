@@ -1,13 +1,28 @@
 import { Platform, NativeModules } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 let customApiBase = null;
 
-export const setCustomApiBase = (url) => {
-  if (url) {
-    customApiBase = url.replace(/\/+$/, '');
+// Immediately restore saved server IP from local storage
+AsyncStorage.getItem('@abhyas_custom_api_base').then((saved) => {
+  if (saved && saved.trim()) {
+    customApiBase = saved.trim().replace(/\/+$/, '');
     cachedApiBase = customApiBase;
+  }
+}).catch(() => {});
+
+export const setCustomApiBase = async (url) => {
+  if (url && url.trim()) {
+    customApiBase = url.trim().replace(/\/+$/, '');
+    cachedApiBase = customApiBase;
+    try {
+      await AsyncStorage.setItem('@abhyas_custom_api_base', customApiBase);
+    } catch {}
   } else {
     customApiBase = null;
+    try {
+      await AsyncStorage.removeItem('@abhyas_custom_api_base');
+    } catch {}
   }
 };
 
@@ -58,6 +73,9 @@ export const getCandidateApiUrls = () => {
       candidates.push(`http://${metroHost}:4000/api`);
     }
   }
+
+  // 4b. Local Development Machine IP (for physical Android devices on same Wi-Fi)
+  candidates.push('http://10.185.72.214:4000/api');
 
   // 5. Android emulator loopback alias
   if (Platform.OS === 'android') {
