@@ -2057,7 +2057,7 @@ function generateClientFallback(msg, lang, sessions, plans) {
 const styles = StyleSheet.create({
   fabContainer: {
     position: 'absolute',
-    bottom: 84,
+    bottom: Platform.OS === 'android' ? 104 : 84,
     right: 18,
     zIndex: 9999
   },

@@ -312,13 +312,13 @@ const getNext7Days = (lang = 'en') => {
   const curr = new Date();
   const weekdayMap = {
     en: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-    hi: ['à¤°à¤µà¤¿', 'à¤¸à¥‹à¤®', 'à¤®à¤‚à¤—à¤²', 'à¤¬à¥à¤§', 'à¤—à¥à¤°à¥', 'à¤¶à¥à¤•à¥à¤°', 'à¤¶à¤¨à¤¿'],
-    mr: ['à¤°à¤µà¤¿', 'à¤¸à¥‹à¤®', 'à¤®à¤‚à¤—à¤³', 'à¤¬à¥à¤§', 'à¤—à¥à¤°à¥', 'à¤¶à¥à¤•à¥à¤°', 'à¤¶à¤¨à¤¿']
+    hi: ['रवि', 'सोम', 'मंगल', 'बुध', 'गुरु', 'शुक्र', 'शनि'],
+    mr: ['रवि', 'सोम', 'मंगळ', 'बुध', 'गुरु', 'शुक्र', 'शनि']
   };
   const monthMap = {
     en: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-    hi: ['à¤œà¤¨', 'à¤«à¤¼à¤°', 'à¤®à¤¾à¤°à¥à¤š', 'à¤…à¤ªà¥à¤°à¥ˆ', 'à¤®à¤ˆ', 'à¤œà¥‚à¤¨', 'à¤œà¥à¤²à¤¾', 'à¤…à¤—', 'à¤¸à¤¿à¤¤à¤‚', 'à¤…à¤•à¥à¤Ÿà¥‚', 'à¤¨à¤µ', 'à¤¦à¤¿à¤¸'],
-    mr: ['à¤œà¤¾à¤¨à¥‡', 'à¤«à¥‡à¤¬à¥à¤°à¥', 'à¤®à¤¾à¤°à¥à¤š', 'à¤à¤ªà¥à¤°à¤¿', 'à¤®à¥‡', 'à¤œà¥‚à¤¨', 'à¤œà¥à¤²à¥ˆ', 'à¤‘à¤—', 'à¤¸à¤ªà¥à¤Ÿà¥‡à¤‚', 'à¤‘à¤•à¥à¤Ÿà¥‹', 'à¤¨à¥‹à¤µà¥à¤¹à¥‡à¤‚', 'à¤¡à¤¿à¤¸à¥‡à¤‚']
+    hi: ['जन', 'फ़र', 'मार्च', 'अप्रैल', 'मई', 'जून', 'जुलाई', 'अग', 'सित', 'अक्तू', 'नव', 'दिस'],
+    mr: ['जाने', 'फेब्रु', 'मार्च', 'एप्रिल', 'मे', 'जून', 'जुलै', 'ऑग', 'सप्टें', 'ऑक्टो', 'नोव्हें', 'डिसें']
   };
   const currentWMap = weekdayMap[lang] || weekdayMap.en;
   const currentMMap = monthMap[lang] || monthMap.en;
@@ -729,13 +729,13 @@ const UPSC_10H_SCHEDULE = [
     breakNote: '15 Min Break: 12:15 PM - 12:30 PM (Hydrate & eye rest)',
     title: {
       en: 'GS Core Theory & Heavy Concepts',
-      mr: 'à¤¸à¤¾à¤®à¤¾à¤¨à¥à¤¯ à¤…à¤§à¥à¤¯à¤¯à¤¨ à¤®à¥à¤–à¥à¤¯ à¤¸à¤¿à¤¦à¥à¤§à¤¾à¤‚à¤¤ à¤µ à¤¸à¤–à¥‹à¤² à¤…à¤­à¥à¤¯à¤¾à¤¸',
-      hi: 'à¤¸à¤¾à¤®à¤¾à¤¨à¥à¤¯ à¤…à¤§à¥à¤¯à¤¯à¤¨ à¤®à¥à¤–à¥à¤¯ à¤¸à¤¿à¤¦à¥à¤§à¤¾à¤‚à¤¤ à¤”à¤° à¤—à¤¹à¤¨ à¤…à¤§à¥à¤¯à¤¯à¤¨'
+      mr: 'सामान्य अध्ययन मुख्य सिद्धांत व सखोल अभ्यास',
+      hi: 'सामान्य अध्ययन मुख्य सिद्धांत और गहन अध्ययन'
     },
     subTitle: {
       en: 'Polity, Modern History or Geography (Reference books: Laxmikanth, Spectrum)',
-      mr: 'à¤°à¤¾à¤œà¥à¤¯à¤µà¥à¤¯à¤µà¤¸à¥à¤¥à¤¾, à¤†à¤§à¥à¤¨à¤¿à¤• à¤‡à¤¤à¤¿à¤¹à¤¾à¤¸ à¤•à¤¿à¤‚à¤µà¤¾ à¤­à¥‚à¤—à¥‹à¤² (à¤¸à¤‚à¤¦à¤°à¥à¤­ à¤ªà¥à¤¸à¥à¤¤à¤•à¥‡: à¤²à¤•à¥à¤·à¥à¤®à¥€à¤•à¤¾à¤‚à¤¤, à¤¸à¥à¤ªà¥‡à¤•à¥à¤Ÿà¥à¤°à¤®)',
-      hi: 'à¤°à¤¾à¤œà¤µà¥à¤¯à¤µà¤¸à¥à¤¥à¤¾, à¤†à¤§à¥à¤¨à¤¿à¤• à¤‡à¤¤à¤¿à¤¹à¤¾à¤¸ à¤¯à¤¾ à¤­à¥‚à¤—à¥‹à¤² (à¤®à¤¾à¤¨à¤• à¤ªà¥à¤¸à¥à¤¤à¤•à¥‡à¤‚: à¤²à¤•à¥à¤·à¥à¤®à¥€à¤•à¤¾à¤‚à¤¤, à¤¸à¥à¤ªà¥‡à¤•à¥à¤Ÿà¥à¤°à¤®)'
+      mr: 'राज्यव्यवस्था, आधुनिक इतिहास किंवा भूगोल (संदर्भ पुस्तके: लक्ष्मीकांत, स्पेक्ट्रम)',
+      hi: 'राजव्यवस्था, आधुनिक इतिहास या भूगोल (मानक पुस्तकें: लक्ष्मीकांत, स्पेक्ट्रम)'
     },
     defaultSubjectId: 'upsc-polity',
     color: '#3b82f6',
@@ -754,13 +754,13 @@ const UPSC_10H_SCHEDULE = [
     timeRange: '1:15 PM - 3:00 PM',
     title: {
       en: 'Nutritious Lunch & 20-min Power Nap',
-      mr: 'à¤ªà¥Œà¤·à¥à¤Ÿà¤¿à¤• à¤¦à¥à¤ªà¤¾à¤°à¤šà¥‡ à¤œà¥‡à¤µà¤£ à¤µ à¥¨à¥¦ à¤®à¤¿à¤¨à¤¿à¤Ÿà¤¾à¤‚à¤šà¥€ à¤µà¤¿à¤¶à¥à¤°à¤¾à¤‚à¤¤à¥€',
-      hi: 'à¤ªà¥Œà¤·à¥à¤Ÿà¤¿à¤• à¤­à¥‹à¤œà¤¨ à¤”à¤° à¥¨à¥¦ à¤®à¤¿à¤¨à¤Ÿ à¤•à¤¾ à¤µà¤¿à¤¶à¥à¤°à¤¾à¤®'
+      mr: 'पौष्टिक दुपारचे जेवण व २० मिनिटांची विश्रांती',
+      hi: 'पौष्टिक भोजन और २० मिनट का विश्राम'
     },
     subTitle: {
       en: 'Hydrate well, rest eyes & completely disconnect to recharge cognitive energy',
-      mr: 'à¤ªà¤¾à¤£à¥€ à¤ªà¥à¤¯à¤¾, à¤¡à¥‹à¤³à¥à¤¯à¤¾à¤‚à¤¨à¤¾ à¤µà¤¿à¤¶à¥à¤°à¤¾à¤‚à¤¤à¥€ à¤¦à¥à¤¯à¤¾ à¤†à¤£à¤¿ à¤®à¤¨à¤¾à¤²à¤¾ à¤¤à¤¾à¤œà¥‡à¤¤à¤µà¤¾à¤¨à¥‡ à¤•à¤°à¤¾',
-      hi: 'à¤ªà¤°à¥à¤¯à¤¾à¤ªà¥à¤¤ à¤ªà¤¾à¤¨à¥€ à¤ªà¤¿à¤à¤‚, à¤†à¤‚à¤–à¥‹à¤‚ à¤•à¥‹ à¤†à¤°à¤¾à¤® à¤¦à¥‡à¤‚ à¤”à¤° à¤Šà¤°à¥à¤œà¤¾ à¤ªà¥à¤¨à¤ƒ à¤ªà¥à¤°à¤¾à¤ªà¥à¤¤ à¤•à¤°à¥‡à¤‚'
+      mr: 'पाणी प्या, डोळ्यांना विश्रांती द्या आणि मनाला ताजेतवाने करा',
+      hi: 'पर्याप्त पानी पिएं, आंखों को आराम दें और ऊर्जा पुनः प्राप्त करें'
     },
     color: '#10b981',
     softColor: '#ecfdf5',
@@ -779,13 +779,13 @@ const UPSC_10H_SCHEDULE = [
     timeRange: '3:00 PM - 5:00 PM',
     title: {
       en: 'Secondary Subject / Optional Revision',
-      mr: 'à¤¦à¥à¤¸à¤°à¤¾ à¤µà¤¿à¤·à¤¯ à¤•à¤¿à¤‚à¤µà¤¾ à¤µà¥ˆà¤•à¤²à¥à¤ªà¤¿à¤• à¤µà¤¿à¤·à¤¯à¤¾à¤šà¥€ à¤‰à¤œà¤³à¤£à¥€',
-      hi: 'à¤¦à¥à¤µà¤¿à¤¤à¥€à¤¯ à¤µà¤¿à¤·à¤¯ à¤¯à¤¾ à¤µà¥ˆà¤•à¤²à¥à¤ªà¤¿à¤• à¤µà¤¿à¤·à¤¯ à¤ªà¥à¤¨à¤°à¤¾à¤µà¤²à¥‹à¤•à¤¨'
+      mr: 'दुसरा विषय किंवा वैकल्पिक विषयाची उजळणी',
+      hi: 'द्वितीय विषय या वैकल्पिक विषय पुनरावलोकन'
     },
     subTitle: {
       en: 'Economy, Environment or State Specific Curriculum & Notes synthesis',
-      mr: 'à¤…à¤°à¥à¤¥à¤µà¥à¤¯à¤µà¤¸à¥à¤¥à¤¾, à¤ªà¤°à¥à¤¯à¤¾à¤µà¤°à¤£ à¤•à¤¿à¤‚à¤µà¤¾ à¤®à¤¹à¤¾à¤°à¤¾à¤·à¥à¤Ÿà¥à¤° à¤µà¤¿à¤¶à¥‡à¤· à¤˜à¤Ÿà¤• à¤µ à¤Ÿà¤¿à¤ªà¥à¤ªà¤£à¥à¤¯à¤¾',
-      hi: 'à¤…à¤°à¥à¤¥à¤µà¥à¤¯à¤µà¤¸à¥à¤¥à¤¾, à¤ªà¤°à¥à¤¯à¤¾à¤µà¤°à¤£ à¤¯à¤¾ à¤°à¤¾à¤œà¥à¤¯ à¤µà¤¿à¤¶à¥‡à¤· à¤ªà¤¾à¤ à¥à¤¯à¤•à¥à¤°à¤®'
+      mr: 'अर्थव्यवस्था, पर्यावरण किंवा महाराष्ट्र विशेष घटक व टिप्पण्या',
+      hi: 'अर्थव्यवस्था, पर्यावरण या राज्य विशेष पाठ्यक्रम'
     },
     defaultSubjectId: 'upsc-history-culture',
     color: '#8b5cf6',
@@ -804,13 +804,13 @@ const UPSC_10H_SCHEDULE = [
     timeRange: '5:00 PM - 6:00 PM',
     title: {
       en: 'Evening Break Time & Fresh Air Walk',
-      mr: 'à¤¸à¤‚à¤§à¥à¤¯à¤¾à¤•à¤¾à¤³à¤šà¤¾ à¤šà¤¹à¤¾, à¤šà¤¾à¤²à¤£à¥‡ à¤µ à¤¤à¤¾à¤œà¥€ à¤¹à¤µà¤¾',
-      hi: 'à¤¶à¤¾à¤® à¤•à¤¾ à¤šà¤¾à¤¯ à¤•à¤¾à¤² à¤”à¤° à¤¤à¤¾à¤œà¥€ à¤¹à¤µà¤¾ à¤®à¥‡à¤‚ à¤Ÿà¤¹à¤²à¤¨à¤¾'
+      mr: 'संध्याकाळचा चहा, चालणे व ताजी हवा',
+      hi: 'शाम का चाय काल और ताजी हवा में टहलना'
     },
     subTitle: {
       en: 'Outdoor walking, tea/snack, light physical movement to beat afternoon slump',
-      mr: 'à¤¬à¤¾à¤¹à¥‡à¤° à¤«à¤¿à¤°à¤¾, à¤šà¤¹à¤¾/à¤…à¤²à¥à¤ªà¥‹à¤ªà¤¹à¤¾à¤° à¤˜à¥à¤¯à¤¾ à¤†à¤£à¤¿ à¤¶à¤¾à¤°à¥€à¤°à¤¿à¤• à¤¹à¤¾à¤²à¤šà¤¾à¤² à¤•à¤°à¤¾',
-      hi: 'à¤Ÿà¤¹à¤²à¥‡à¤‚, à¤šà¤¾à¤¯/à¤¹à¤²à¥à¤•à¤¾ à¤¨à¤¾à¤¶à¥à¤¤à¤¾ à¤²à¥‡à¤‚ à¤”à¤° à¤¤à¤¾à¤œà¤—à¥€ à¤®à¤¹à¤¸à¥‚à¤¸ à¤•à¤°à¥‡à¤‚'
+      mr: 'बाहेर फिरा, चहा/अल्पोपहार घ्या आणि शारीरिक हालचाल करा',
+      hi: 'टहलें, चाय/हल्का नाश्ता लें और ताजगी महसूस करें'
     },
     color: '#f59e0b',
     softColor: '#fffbeb',
@@ -829,13 +829,13 @@ const UPSC_10H_SCHEDULE = [
     timeRange: '6:00 PM - 8:00 PM',
     title: {
       en: 'Answer Writing & PYQs / MCQs Practice',
-      mr: 'à¤‰à¤¤à¥à¤¤à¤° à¤²à¥‡à¤–à¤¨ à¤¸à¤°à¤¾à¤µ à¤µ à¤®à¤¾à¤—à¥€à¤² à¤µà¤°à¥à¤·à¤¾à¤‚à¤šà¥‡ à¤ªà¥à¤°à¤¶à¥à¤¨',
-      hi: 'à¤‰à¤¤à¥à¤¤à¤° à¤²à¥‡à¤–à¤¨ à¤…à¤­à¥à¤¯à¤¾à¤¸ à¤”à¤° à¤ªà¥‚à¤°à¥à¤µ à¤µà¤°à¥à¤· à¤ªà¥à¤°à¤¶à¥à¤¨'
+      mr: 'उत्तर लेखन सराव व मागील वर्षांचे प्रश्न',
+      hi: 'उत्तर लेखन अभ्यास और पूर्व वर्ष प्रश्न'
     },
     subTitle: {
       en: 'Timed 50 MCQs or 2 Mains answers; evaluate mistakes and model answers',
-      mr: 'à¥«à¥¦ à¤µà¤¸à¥à¤¤à¥à¤¨à¤¿à¤·à¥à¤  à¤ªà¥à¤°à¤¶à¥à¤¨ à¤•à¤¿à¤‚à¤µà¤¾ à¥¨ à¤®à¥à¤–à¥à¤¯ à¤ªà¤°à¥€à¤•à¥à¤·à¥‡à¤šà¥€ à¤‰à¤¤à¥à¤¤à¤°à¥‡ à¤µà¥‡à¤³à¥‡à¤¤ à¤¸à¥‹à¤¡à¤µà¤¾',
-      hi: 'à¥«à¥¦ à¤à¤®à¤¸à¥€à¤•à¥à¤¯à¥‚ à¤¯à¤¾ à¥¨ à¤®à¥à¤–à¥à¤¯ à¤ªà¤°à¥€à¤•à¥à¤·à¤¾ à¤‰à¤¤à¥à¤¤à¤° à¤¹à¤² à¤•à¤°à¥‡à¤‚'
+      mr: '५० वस्तुनिष्ठ प्रश्न किंवा २ मुख्य परीक्षेची उत्तरे वेळेत सोडवा',
+      hi: '५० एमसीक्यू या २ मुख्य परीक्षा उत्तर हल करें'
     },
     defaultSubjectId: 'upsc-csat',
     color: '#ec4899',
@@ -854,13 +854,13 @@ const UPSC_10H_SCHEDULE = [
     timeRange: '8:00 PM - 10:00 PM',
     title: {
       en: 'Dinner Break & Decompression',
-      mr: 'à¤°à¤¾à¤¤à¥à¤°à¥€à¤šà¥‡ à¤œà¥‡à¤µà¤£ à¤µ à¤†à¤°à¤¾à¤®',
-      hi: 'à¤°à¤¾à¤¤à¥à¤°à¤¿à¤­à¥‹à¤œ à¤”à¤° à¤µà¤¿à¤¶à¥à¤°à¤¾à¤®'
+      mr: 'रात्रीचे जेवण व आराम',
+      hi: 'रात्रिभोज और विश्राम'
     },
     subTitle: {
       en: 'Family dinner, gentle conversation, relaxed mind before final night push',
-      mr: 'à¤¶à¤¾à¤‚à¤¤à¤ªà¤£à¥‡ à¤°à¤¾à¤¤à¥à¤°à¥€à¤šà¥‡ à¤œà¥‡à¤µà¤£ à¤˜à¥à¤¯à¤¾ à¤†à¤£à¤¿ à¤®à¤¨ à¤¶à¤¾à¤‚à¤¤ à¤ à¥‡à¤µà¤¾',
-      hi: 'à¤°à¤¾à¤¤à¥à¤°à¤¿à¤­à¥‹à¤œ à¤”à¤° à¤¶à¤¾à¤‚à¤¤ à¤®à¤¨ à¤¸à¥‡ à¤µà¤¿à¤¶à¥à¤°à¤¾à¤®'
+      mr: 'शांतपणे रात्रीचे जेवण घ्या आणि मन शांत ठेवा',
+      hi: 'रात्रिभोज और शांत मन से विश्राम'
     },
     color: '#06b6d4',
     softColor: '#ecfeff',
@@ -879,13 +879,13 @@ const UPSC_10H_SCHEDULE = [
     timeRange: '10:00 PM - 12:00 AM',
     title: {
       en: 'Current Affairs & Daily Consolidation',
-      mr: 'à¤šà¤¾à¤²à¥‚ à¤˜à¤¡à¤¾à¤®à¥‹à¤¡à¥€ à¤µ à¤¦à¤¿à¤µà¤¸à¤­à¤°à¤¾à¤šà¤¾ à¤†à¤¢à¤¾à¤µà¤¾',
-      hi: 'à¤¸à¤®à¤¸à¤¾à¤®à¤¯à¤¿à¤•à¥€ à¤”à¤° à¤¦à¥ˆà¤¨à¤¿à¤• à¤¸à¤®à¥€à¤•à¥à¤·à¤¾'
+      mr: 'चालू घडामोडी व दिवसभराचा आढावा',
+      hi: 'समसामयिकी और दैनिक समीक्षा'
     },
     subTitle: {
       en: 'The Hindu / Indian Express editorials, monthly compilation, consolidate day',
-      mr: 'à¤µà¤°à¥à¤¤à¤®à¤¾à¤¨à¤ªà¤¤à¥à¤°à¤¾à¤¤à¥€à¤² à¤®à¤¹à¤¤à¥à¤¤à¥à¤µà¤¾à¤šà¥‡ à¤²à¥‡à¤–, à¤šà¤¾à¤²à¥‚ à¤˜à¤¡à¤¾à¤®à¥‹à¤¡à¥€ à¤µ à¤¦à¤¿à¤µà¤¸à¤­à¤°à¤¾à¤šà¥à¤¯à¤¾ à¤…à¤­à¥à¤¯à¤¾à¤¸à¤¾à¤šà¥€ à¤¨à¥‹à¤‚à¤¦',
-      hi: 'à¤¦à¥ˆà¤¨à¤¿à¤• à¤¸à¤®à¤¾à¤šà¤¾à¤° à¤ªà¤¤à¥à¤° à¤¸à¤‚à¤ªà¤¾à¤¦à¤•à¥€à¤¯ à¤”à¤° à¤¸à¤®à¤¸à¤¾à¤®à¤¯à¤¿à¤•à¥€ à¤ªà¤¤à¥à¤°à¤¿à¤•à¤¾'
+      mr: 'वर्तमानपत्रातील महत्त्वाचे लेख, चालू घडामोडी व दिवसभराच्या अभ्यासाची नोंद',
+      hi: 'दैनिक समाचार पत्र संपादकीय और समसामयिकी पत्रिका'
     },
     defaultSubjectId: 'upsc-current-affairs',
     color: '#f97316',
@@ -1057,7 +1057,7 @@ export default function App() {
       }
       await refresh();
       showAppDialog({
-        title: '10-Hour Schedule Applied! â±ï¸',
+        title: '10-Hour Schedule Applied! ⏱️',
         message: `${isTargetTomorrow ? "Tomorrow's" : "Today's"} study planner now has all 4 disciplined study blocks scheduled (10 hours total).`,
         confirmText: t('done') || 'Great!',
         cancelText: null
@@ -2630,7 +2630,7 @@ export default function App() {
           "{dailyQuote.quote}"
         </Text>
         <Text style={[txt(11, false, C.muted), { marginTop: 6 }]}>
-          â€” {dailyQuote.author}
+          — {dailyQuote.author}
         </Text>
       </Card>
 
@@ -2701,9 +2701,9 @@ export default function App() {
                     </Text>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 }}>
                       <Text style={txt(11, false, C.muted)}>
-                        {p.minutes} {t('mins')} â€¢ {t((p.priority || 'Medium').toLowerCase(), p.priority || 'Medium')}
+                        {p.minutes} {t('mins')} • {t((p.priority || 'Medium').toLowerCase(), p.priority || 'Medium')}
                       </Text>
-                      <Text style={{ fontSize: 10, fontWeight: '700', color: C.blue }}>â€¢ {t('viewTopic')}</Text>
+                      <Text style={{ fontSize: 10, fontWeight: '700', color: C.blue }}>• {t('viewTopic')}</Text>
                     </View>
                   </TouchableOpacity>
                   {!p.done && (
@@ -3104,7 +3104,7 @@ export default function App() {
                   {navigatedTopicInfo.topicName || navigatedTopicInfo.taskTitle}
                 </Text>
                 <Text style={txt(11, false, C.muted)}>
-                  {navigatedTopicInfo.subjectName} â€¢ {navigatedTopicInfo.exam}
+                  {navigatedTopicInfo.subjectName} • {navigatedTopicInfo.exam}
                 </Text>
               </View>
               <TouchableOpacity
@@ -3248,7 +3248,7 @@ export default function App() {
                   alignItems: 'center'
                 }}
               >
-                <Text style={txt(11, true, '#ffffff')}>â–¶ {t('startLiveTimer', 'Start Live Timer')}</Text>
+                <Text style={txt(11, true, '#ffffff')}>▶ {t('startLiveTimer', 'Start Live Timer')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => {
@@ -3353,11 +3353,11 @@ export default function App() {
                   </View>
                   <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4, flexWrap: 'wrap', gap: 4 }}>
                     <Text style={txt(12, false, C.muted)}>
-                      {sCompleted} / {topicsList.length} {t('topicsMastered')} â€¢ {sPct}%
+                      {sCompleted} / {topicsList.length} {t('topicsMastered')} • {sPct}%
                     </Text>
                     <View style={{ backgroundColor: isExpanded ? (isDark ? '#1e3a5f' : '#dbeafe') : C.soft, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6 }}>
                       <Text style={{ fontSize: 10, fontWeight: '700', color: isExpanded ? C.blue : C.muted }}>
-                        {topicsList.length} {t('subtopics', 'subtopics')} {isExpanded ? 'â–²' : 'â–¼'}
+                        {topicsList.length} {t('subtopics', 'subtopics')} {isExpanded ? '▲' : '▼'}
                       </Text>
                     </View>
                   </View>
@@ -3507,7 +3507,7 @@ export default function App() {
                           style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}
                         >
                           <Ionicons name="play-circle" size={13} color={C.blue} />
-                          <Text style={txt(11, true, C.blue)}>â–¶ {t('focus')}</Text>
+                          <Text style={txt(11, true, C.blue)}>▶ {t('focus')}</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -3730,7 +3730,7 @@ export default function App() {
 
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4, flexWrap: 'wrap', gap: 6 }}>
                 <Text style={txt(11, false, C.muted)}>
-                  {p.minutes} {t('mins', 'mins')} â€¢ {p.done ? getStatusLabel('completed', lang) : getStatusLabel('pending', lang)}
+                  {p.minutes} {t('mins', 'mins')} • {p.done ? getStatusLabel('completed', lang) : getStatusLabel('pending', lang)}
                 </Text>
                 <View
                   style={{
@@ -3762,7 +3762,7 @@ export default function App() {
                     borderRadius: 8
                   }}
                 >
-                  <Text style={txt(11, true, C.white)}>â–¶ {t('focus')}</Text>
+                  <Text style={txt(11, true, C.white)}>▶ {t('focus')}</Text>
                 </TouchableOpacity>
               )}
               <TouchableOpacity onPress={() => deletePlan(p)} style={{ padding: 4 }}>
@@ -3835,9 +3835,13 @@ export default function App() {
         {plannerView === "Today's Plan" && (
           <>
             <Card>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={txt(15, true)}>{t('todaysStudyLoad')} vs. {dailyGoalHours}{t('hoursShort', 'h')} {t('studyTargetGoal')}</Text>
-                <Text style={txt(13, true, C.blue)}>{todayCapacityPct}% {t('capacity')}</Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 2 }}>
+                <Text style={[txt(14, true), { flex: 1, flexShrink: 1, paddingRight: 4 }]} numberOfLines={2}>
+                  {t('todaysStudyLoad')} vs. {dailyGoalHours}{t('hoursShort', 'h')} {t('studyTargetGoal')}
+                </Text>
+                <View style={{ backgroundColor: C.soft, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, flexShrink: 0 }}>
+                  <Text style={txt(12, true, C.blue)}>{todayCapacityPct}% {t('capacity')}</Text>
+                </View>
               </View>
               <View style={{ height: 8, backgroundColor: C.soft, borderRadius: 6, marginVertical: 10 }}>
                 <View
@@ -3850,7 +3854,7 @@ export default function App() {
                 />
               </View>
               <Text style={txt(12, false, C.muted)}>
-                {todayPlannedMinutes} {t('minPlanned')} ({Math.floor(todayPlannedMinutes / 60)}h {todayPlannedMinutes % 60}m) â€¢ {dailyGoalHours}h ({dailyGoalHours * 60}m)
+                {todayPlannedMinutes} {t('minPlanned')} ({Math.floor(todayPlannedMinutes / 60)}h {todayPlannedMinutes % 60}m) • {dailyGoalHours}h ({dailyGoalHours * 60}m)
               </Text>
             </Card>
 
@@ -3876,9 +3880,13 @@ export default function App() {
         {plannerView === "Tomorrow's Plan" && (
           <>
             <Card>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={txt(15, true)}>{t('tomorrowsWorkloadTarget')}</Text>
-                <Text style={txt(13, true, C.blue)}>{tomorrowCapacityPct}% {t('capacity')}</Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 2 }}>
+                <Text style={[txt(14, true), { flex: 1, flexShrink: 1, paddingRight: 4 }]} numberOfLines={2}>
+                  {t('tomorrowsWorkloadTarget')}
+                </Text>
+                <View style={{ backgroundColor: C.soft, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, flexShrink: 0 }}>
+                  <Text style={txt(12, true, C.blue)}>{tomorrowCapacityPct}% {t('capacity')}</Text>
+                </View>
               </View>
               <View style={{ height: 8, backgroundColor: C.soft, borderRadius: 6, marginVertical: 10 }}>
                 <View
@@ -3891,7 +3899,7 @@ export default function App() {
                 />
               </View>
               <Text style={txt(12, false, C.muted)}>
-                {tomorrowPlannedMinutes} {t('minPlanned')} ({Math.floor(tomorrowPlannedMinutes / 60)}h {tomorrowPlannedMinutes % 60}m) â€¢ {t('tomorrow')} ({formatDateDMY(tomorrow())})
+                {tomorrowPlannedMinutes} {t('minPlanned')} ({Math.floor(tomorrowPlannedMinutes / 60)}h {tomorrowPlannedMinutes % 60}m) • {t('tomorrow')} ({formatDateDMY(tomorrow())})
               </Text>
             </Card>
 
@@ -3993,7 +4001,7 @@ export default function App() {
                 />
               </View>
               <Text style={txt(12, false, C.muted)}>
-                {Math.floor(weeklyPlannedMinutes / 60)}h {weeklyPlannedMinutes % 60}m {t('minPlanned')} â€¢ {weeklyPlans.filter(p => p.done).length}/{weeklyPlans.length} {t('tasks')} {t('completed')}
+                {Math.floor(weeklyPlannedMinutes / 60)}h {weeklyPlannedMinutes % 60}m {t('minPlanned')} • {weeklyPlans.filter(p => p.done).length}/{weeklyPlans.length} {t('tasks')} {t('completed')}
               </Text>
             </Card>
 
@@ -4476,51 +4484,99 @@ export default function App() {
             ))}
           </View>
 
-          {/* Priority & Date Selector */}
-          <View style={{ flexDirection: 'row', gap: 12, marginTop: 4, flexWrap: 'wrap' }}>
-            <View style={{ flex: 1, minWidth: 150 }}>
-              <Text style={txt(11, true, C.muted)}>{t('priority')}</Text>
-              <View style={{ flexDirection: 'row', marginTop: 6 }}>
-                {[
-                  ['High', t('high')],
-                  ['Medium', t('medium')],
-                  ['Low', t('low')]
-                ].map(([pKey, pLabel]) => (
-                  <Chip
+          {/* Priority & Date Selector (Stacked & Full-Width to Prevent Text Squashing) */}
+          <View style={{ marginTop: 10 }}>
+            <Text style={txt(11, true, C.muted)}>{t('priority')}</Text>
+            <View style={{ flexDirection: 'row', marginTop: 6, gap: 8 }}>
+              {[
+                ['High', t('high')],
+                ['Medium', t('medium')],
+                ['Low', t('low')]
+              ].map(([pKey, pLabel]) => {
+                const isActive = planPriority === pKey;
+                return (
+                  <TouchableOpacity
                     key={pKey}
-                    label={pLabel}
-                    active={planPriority === pKey}
                     onPress={() => setPlanPriority(pKey)}
-                  />
-                ))}
-              </View>
-            </View>
-
-            <View style={{ flex: 1, minWidth: 150 }}>
-              <Text style={txt(11, true, C.muted)}>{t('day')}</Text>
-              <View style={{ flexDirection: 'row', marginTop: 6, flexWrap: 'wrap', gap: 6 }}>
-                <Chip
-                  label={t('today')}
-                  active={planDateType === 'today'}
-                  onPress={() => setPlanDateType('today')}
-                />
-                <Chip
-                  label={t('tomorrow')}
-                  active={planDateType === 'tomorrow'}
-                  onPress={() => setPlanDateType('tomorrow')}
-                />
-                {selectedWeekDate !== today() && selectedWeekDate !== tomorrow() && (
-                  <Chip
-                    label={`Selected (${selectedWeekDate})`}
-                    active={planDateType === 'selected'}
-                    onPress={() => setPlanDateType('selected')}
-                  />
-                )}
-              </View>
+                    activeOpacity={0.75}
+                    style={{
+                      flex: 1,
+                      backgroundColor: isActive ? C.blue : C.soft,
+                      paddingVertical: 9,
+                      paddingHorizontal: 4,
+                      borderRadius: 12,
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <Text
+                      numberOfLines={1}
+                      style={txt(12, true, isActive ? '#ffffff' : (isDark ? '#93c5fd' : C.blue))}
+                    >
+                      {pLabel}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </View>
 
-          <View style={{ marginTop: 8 }}>
+          <View style={{ marginTop: 12 }}>
+            <Text style={txt(11, true, C.muted)}>{t('day')}</Text>
+            <View style={{ flexDirection: 'row', marginTop: 6, gap: 8, flexWrap: 'wrap' }}>
+              {[
+                ['today', t('today')],
+                ['tomorrow', t('tomorrow')]
+              ].map(([dKey, dLabel]) => {
+                const isActive = planDateType === dKey;
+                return (
+                  <TouchableOpacity
+                    key={dKey}
+                    onPress={() => setPlanDateType(dKey)}
+                    activeOpacity={0.75}
+                    style={{
+                      backgroundColor: isActive ? C.blue : C.soft,
+                      paddingVertical: 9,
+                      paddingHorizontal: 14,
+                      borderRadius: 12,
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <Text
+                      numberOfLines={1}
+                      style={txt(12, true, isActive ? '#ffffff' : (isDark ? '#93c5fd' : C.blue))}
+                    >
+                      {dLabel}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+              {selectedWeekDate !== today() && selectedWeekDate !== tomorrow() && (
+                <TouchableOpacity
+                  onPress={() => setPlanDateType('selected')}
+                  activeOpacity={0.75}
+                  style={{
+                    backgroundColor: planDateType === 'selected' ? C.blue : C.soft,
+                    paddingVertical: 9,
+                    paddingHorizontal: 14,
+                    borderRadius: 12,
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <Text
+                    numberOfLines={1}
+                    style={txt(12, true, planDateType === 'selected' ? '#ffffff' : (isDark ? '#93c5fd' : C.blue))}
+                  >
+                    {`Selected (${selectedWeekDate})`}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+
+          <View style={{ marginTop: 12 }}>
             <Button
               label={t('scheduleStudyBlockBtn')}
               onPress={addPlan}
@@ -5607,7 +5663,7 @@ borderColor: C.border
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text numberOfLines={1} style={txt(14, true)}>{t('settingsTitle')}</Text>
                   <Text numberOfLines={1} style={txt(10, false, C.muted)}>
-                    {user?.name || 'Aspirant'} â€¢ {user?.email || 'student@abhyas.local'}
+                    {user?.name || 'Aspirant'} • {user?.email || 'student@abhyas.local'}
                   </Text>
                 </View>
               </View>
@@ -6344,7 +6400,7 @@ borderColor: C.border
           <View style={{ flex: 1, marginLeft: 10, minWidth: 0 }}>
             <Text numberOfLines={1} style={txt(15, true)}>{t('appName', 'Abhyas Tracker')}</Text>
             <Text numberOfLines={1} style={txt(10, false, C.muted)}>
-              {t('examFocusTag', 'UPSC & MPSC')} â€¢ {tab === 'Dashboard' ? t('dashboard') : tab === 'Timer' ? t('timer') : tab === 'Syllabus' ? t('syllabus') : tab === 'Planner' ? t('planner') : tab === 'Analytics' ? t('analytics') : (tab === 'Ticket Support' || tab === 'Support') ? t('ticketSupport', 'Ticket Support') : tab}
+              {t('examFocusTag', 'UPSC & MPSC')} • {tab === 'Dashboard' ? t('dashboard') : tab === 'Timer' ? t('timer') : tab === 'Syllabus' ? t('syllabus') : tab === 'Planner' ? t('planner') : tab === 'Analytics' ? t('analytics') : (tab === 'Ticket Support' || tab === 'Support') ? t('ticketSupport', 'Ticket Support') : tab}
             </Text>
           </View>
 
@@ -6467,7 +6523,7 @@ borderColor: C.border
           <ScrollView
             ref={mainScrollRef}
             style={{ flex: 1, width: '100%' }}
-            contentContainerStyle={{ padding: 12, paddingBottom: 120, width: '100%' }}
+            contentContainerStyle={{ padding: 12, paddingBottom: 160, width: '100%' }}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
@@ -6673,7 +6729,7 @@ borderColor: C.border
             borderColor: C.line,
             flexDirection: 'row',
             paddingTop: 8,
-            paddingBottom: Platform.OS === 'android' ? 22 : 10,
+            paddingBottom: Platform.OS === 'android' ? 36 : 12,
             width: '100%'
           }}
         >

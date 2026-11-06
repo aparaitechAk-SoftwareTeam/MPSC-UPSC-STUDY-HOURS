@@ -925,7 +925,7 @@ app.post('/api/sessions', auth(), async (req, res) => {
         const { subjectId, minutes, mode, focusScore } = req.body || {};
         const m = Number(minutes);
         if (!Number.isFinite(m) || m <= 0 || m > 1440) {
-            return res.status(400).json({ error: 'Minutes must be 1â€“1440' });
+            return res.status(400).json({ error: 'Minutes must be 1-1440' });
         }
         const newSession = {
             id: Date.now().toString(),
