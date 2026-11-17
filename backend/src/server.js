@@ -253,6 +253,32 @@ app.post('/api/auth/send-otp', async (req, res) => {
   `;
 
   let recipientEmail = cleanTarget;
+  let user = null;
+
+  if (cleanTarget.includes('@')) {
+    let existingUser = null;
+    try {
+      existingUser = await withDb(
+        () => User.findOne({ email: cleanTarget }),
+        () => {
+          const db = readJsonDb();
+          return (db.users || []).find(u => u.email && u.email.toLowerCase() === cleanTarget);
+        }
+      );
+    } catch {}
+
+    if (type === 'signup' && existingUser) {
+      return res.status(409).json({
+        error: 'An account with this email already exists. Please log in with your password or use Instant OTP Login.'
+      });
+    }
+
+    if ((type === 'login' || type === 'forgot' || type === 'reset-password') && !existingUser) {
+      return res.status(404).json({
+        error: `No registered student account found for ${cleanTarget}. Please verify your email address or sign up first!`
+      });
+    }
+  }
 
   if (method === 'mobile' || !cleanTarget.includes('@')) {
     const cleanMobile = cleanTarget.replace(/\D/g, '');
@@ -432,13 +458,15 @@ app.post('/api/auth/reset-password', async (req, res) => {
 // -------------------------------------------------------------
 app.post('/api/auth/register', async (req, res) => {
     try {
-        const { name, email, password, phone, mobile } = req.body || {};
+        const { name, email, password, phone, mobile, gender } = req.body || {};
         if (!name || !email || !password || password.length < 6) {
             return res.status(400).json({ error: 'Name, email, and password (6+ characters) required' });
         }
         const normalizedEmail = String(email).trim().toLowerCase();
         const cleanPhone = String(phone || mobile || '').trim();
         const hash = bcrypt.hashSync(password, 10);
+        const isGirlName = /^(bhumika|pooja|priya|sneha|shreya|anita|sunita|radha|rani|komal|kajal|deepa|divya|aarti|jyoti|kavita|swati|neha|rupali|pranita|pratiksha|ashwini|monika|pallavi|sheetal|rohini|smita|sonali|anuradha|varsha|megha|namrata|tejaswini|manisha|shubhangi|vaishali|renuka|sayali|shital|rutuja|sakshi|tanvi|akanksha|aishwarya|ananya|diya|ishita|anushka|ria|riya|aditi)\b/i.test(String(name).trim());
+        const userGender = gender ? (gender.toLowerCase().includes('boy') ? 'boy' : 'girl') : (isGirlName ? 'girl' : 'boy');
         const newUser = {
             id: Date.now().toString(),
             name: String(name).trim(),
@@ -446,7 +474,10 @@ app.post('/api/auth/register', async (req, res) => {
             phone: cleanPhone,
             mobile: cleanPhone,
             role: 'student',
-            passwordHash: hash
+            passwordHash: hash,
+            gender: userGender,
+            examTarget: 'MPSC / UPSC',
+            preferredSubjects: 'Polity, History'
         };
 
         const registered = await withDb(
@@ -568,7 +599,11 @@ app.patch('/api/me', auth(), async (req, res) => {
             'email',
             'phone',
             'examTarget',
-            'preferredSubjects'
+            'preferredSubjects',
+            'gender',
+            'subscriptionTier',
+            'subscriptionPlan',
+            'subscriptionExpiresAt'
         ];
 
         const suppliedFields = allowedFields.filter(
@@ -637,6 +672,23 @@ app.patch('/api/me', auth(), async (req, res) => {
                     return res.status(400).json({ error: 'Preferred subjects are required and must be under 500 characters' });
                 }
                 updates.preferredSubjects = trimmed;
+            }
+
+            if (field === 'gender') {
+                const g = trimmed.toLowerCase();
+                updates.gender = (g === 'boy' || g === 'male') ? 'boy' : 'girl';
+            }
+
+            if (field === 'subscriptionTier') {
+                updates.subscriptionTier = trimmed || 'free';
+            }
+
+            if (field === 'subscriptionPlan') {
+                updates.subscriptionPlan = trimmed;
+            }
+
+            if (field === 'subscriptionExpiresAt') {
+                updates.subscriptionExpiresAt = trimmed;
             }
         }
 
@@ -934,7 +986,11 @@ app.post('/api/sessions', auth(), async (req, res) => {
             minutes: m,
             mode: mode || 'Pomodoro',
             focusScore: Math.min(100, Math.max(0, Number(focusScore) || 90)),
-            startedAt: new Date().toISOString()
+            startedAt: (req.body?.startedAt && !isNaN(new Date(req.body.startedAt).getTime()))
+                ? new Date(req.body.startedAt).toISOString()
+                : new Date().toISOString(),
+            activity: req.body?.activity || null,
+            note: req.body?.note || null
         };
         const created = await withDb(
             async () => {
@@ -1254,25 +1310,43 @@ app.get('/api/analytics', auth(), async (req, res) => {
             }
         }
 
-        const studiedDates = new Set(
-            sessions
-                .filter(session => Number(session.minutes) > 0)
-                .map(session => (session.startedAt || '').slice(0, 10))
-                .filter(date => /^\d{4}-\d{2}-\d{2}$/.test(date))
-        );
+        const studiedDates = new Set();
+        for (const session of sessions) {
+            if (Number(session.minutes) > 0 && session.startedAt) {
+                const isoDate = String(session.startedAt).slice(0, 10);
+                if (/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) {
+                    studiedDates.add(isoDate);
+                }
+                const d = new Date(session.startedAt);
+                if (!isNaN(d.getTime())) {
+                    const localY = d.getFullYear();
+                    const localM = String(d.getMonth() + 1).padStart(2, '0');
+                    const localD = String(d.getDate()).padStart(2, '0');
+                    studiedDates.add(`${localY}-${localM}-${localD}`);
+                }
+            }
+        }
 
         // Current streak: count consecutive study days, starting today
         // or yesterday if no session has been recorded today.
         let currentStreak = 0;
-        const streakCursor = new Date(today);
+        let streakCursor = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const todayLocalKey = `${streakCursor.getFullYear()}-${String(streakCursor.getMonth() + 1).padStart(2, '0')}-${String(streakCursor.getDate()).padStart(2, '0')}`;
+        const todayUtcKey = now.toISOString().slice(0, 10);
 
-        if (!studiedDates.has(streakCursor.toISOString().slice(0, 10))) {
-            streakCursor.setUTCDate(streakCursor.getUTCDate() - 1);
+        if (!studiedDates.has(todayLocalKey) && !studiedDates.has(todayUtcKey)) {
+            streakCursor.setDate(streakCursor.getDate() - 1);
         }
 
-        while (studiedDates.has(streakCursor.toISOString().slice(0, 10))) {
-            currentStreak += 1;
-            streakCursor.setUTCDate(streakCursor.getUTCDate() - 1);
+        while (true) {
+            const curLocal = `${streakCursor.getFullYear()}-${String(streakCursor.getMonth() + 1).padStart(2, '0')}-${String(streakCursor.getDate()).padStart(2, '0')}`;
+            const curUtc = streakCursor.toISOString().slice(0, 10);
+            if (studiedDates.has(curLocal) || studiedDates.has(curUtc)) {
+                currentStreak += 1;
+                streakCursor.setDate(streakCursor.getDate() - 1);
+            } else {
+                break;
+            }
         }
 
         const daysStudiedLast30 = daily.filter(day => day.minutes > 0).length;

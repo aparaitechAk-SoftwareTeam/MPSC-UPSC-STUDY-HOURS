@@ -2057,8 +2057,8 @@ function generateClientFallback(msg, lang, sessions, plans) {
 const styles = StyleSheet.create({
   fabContainer: {
     position: 'absolute',
-    bottom: Platform.OS === 'android' ? 104 : 84,
-    right: 18,
+    bottom: Platform.OS === 'android' ? 84 : 74,
+    right: 16,
     zIndex: 9999
   },
   fabButton: {
@@ -2127,6 +2127,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     flex: 1,
+    minWidth: 0,
+    flexShrink: 1,
     marginRight: 6
   },
   headerRight: {
@@ -2161,6 +2163,8 @@ const styles = StyleSheet.create({
   },
   titleContainer: {
     flex: 1,
+    minWidth: 0,
+    flexShrink: 1,
     justifyContent: 'center'
   },
   headerTitle: {
@@ -2170,7 +2174,8 @@ const styles = StyleSheet.create({
   },
   headerSubtitle: {
     fontSize: 9.5,
-    fontWeight: '500'
+    fontWeight: '500',
+    flexShrink: 1
   },
   headerVoiceBtn: {
     width: 28,

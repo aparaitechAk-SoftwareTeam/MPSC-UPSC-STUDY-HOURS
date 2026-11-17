@@ -2,6 +2,7 @@ import { Platform, NativeModules } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 let customApiBase = null;
+let cachedApiBase = null;
 
 // Immediately restore saved server IP from local storage
 AsyncStorage.getItem('@abhyas_custom_api_base').then((saved) => {
@@ -28,8 +29,6 @@ export const setCustomApiBase = async (url) => {
 
 export const getCustomApiBase = () => customApiBase;
 
-let cachedApiBase = null;
-
 if (typeof window !== 'undefined' && window.addEventListener) {
   window.addEventListener('online', () => {
     cachedApiBase = null;
@@ -47,7 +46,12 @@ if (typeof window !== 'undefined' && window.addEventListener) {
 export const getCandidateApiUrls = () => {
   const candidates = [];
 
-  // 1. Web browser: prioritize current origin host and local loopbacks
+  // 1. User-defined custom server override (if configured, highest priority)
+  if (customApiBase) {
+    candidates.push(customApiBase);
+  }
+
+  // 2. Web browser: prioritize current origin host and local loopbacks
   if (Platform.OS === 'web' && typeof window !== 'undefined' && window.location?.hostname) {
     const host = window.location.hostname;
     candidates.push(`http://${host}:4000/api`);
@@ -55,14 +59,9 @@ export const getCandidateApiUrls = () => {
     if (host !== '127.0.0.1') candidates.push('http://127.0.0.1:4000/api');
   }
 
-  // 2. Environment variable override for deployed remote backend or APK builds
+  // 3. Environment variable override for deployed remote backend or APK builds
   if (process.env.EXPO_PUBLIC_API_URL && typeof process.env.EXPO_PUBLIC_API_URL === 'string' && process.env.EXPO_PUBLIC_API_URL.trim()) {
     candidates.push(process.env.EXPO_PUBLIC_API_URL.trim().replace(/\/+$/, ''));
-  }
-
-  // 3. User-defined custom server override (if set)
-  if (customApiBase) {
-    candidates.push(customApiBase);
   }
 
   // 4. Metro Bundler dynamic host (Expo Go on physical mobile devices / emulators)
@@ -74,8 +73,16 @@ export const getCandidateApiUrls = () => {
     }
   }
 
-  // 4b. Local Development Machine IP (for physical Android devices on same Wi-Fi)
+  // 4b. Local Development Machine IPs (Current active Wi-Fi IP and common local subnets)
+  candidates.push('http://10.116.34.214:4000/api');
   candidates.push('http://10.185.72.214:4000/api');
+
+  // 4c. Mobile Hotspot Gateways (Windows Mobile Hotspot, Android Hotspot, iOS Hotspot)
+  candidates.push('http://192.168.137.1:4000/api'); // Windows Mobile Hotspot default host gateway
+  candidates.push('http://192.168.43.1:4000/api');  // Android Hotspot default gateway
+  candidates.push('http://172.20.10.1:4000/api');   // iOS Personal Hotspot default gateway
+  candidates.push('http://192.168.1.100:4000/api'); // Common Home Wi-Fi
+  candidates.push('http://192.168.0.100:4000/api'); // Common Office Wi-Fi
 
   // 5. Android emulator loopback alias
   if (Platform.OS === 'android') {
@@ -94,11 +101,11 @@ export const getCandidateApiUrls = () => {
  * Returns the currently active working API base URL.
  */
 export const getApiBase = () => {
+  if (customApiBase) return customApiBase;
   if (Platform.OS === 'web' && typeof window !== 'undefined' && window.location?.hostname) {
     const currentHost = window.location.hostname;
     return `http://${currentHost}:4000/api`;
   }
-  if (customApiBase) return customApiBase;
   if (process.env.EXPO_PUBLIC_API_URL && typeof process.env.EXPO_PUBLIC_API_URL === 'string' && process.env.EXPO_PUBLIC_API_URL.trim()) {
     return process.env.EXPO_PUBLIC_API_URL.trim().replace(/\/+$/, '');
   }
@@ -115,11 +122,11 @@ export const setApiBase = (url) => {
  */
 export async function testApiConnection(baseUrl) {
   try {
-    const clean = baseUrl.replace(/\/+$/, '');
+    const clean = (baseUrl || getApiBase()).replace(/\/+$/, '');
     const res = await fetch(`${clean}/health`, {
       method: 'GET',
       headers: { 'Accept': 'application/json' },
-      signal: AbortSignal.timeout ? AbortSignal.timeout(2000) : undefined
+      signal: AbortSignal.timeout ? AbortSignal.timeout(2500) : undefined
     });
     return res.ok;
   } catch (err) {
@@ -147,8 +154,8 @@ export async function smartApiFetch(route, options = {}) {
     const base = candidates[i];
     const fullUrl = base + path;
 
-    // Fast adaptive timeout: 2s for probing candidates, max 2.5s on web or 4s on mobile
-    const maxTimeout = Platform.OS === 'web' ? 2500 : 4000;
+    // Fast adaptive timeout: 2s for probing candidates, max 3s on web or 4s on mobile
+    const maxTimeout = Platform.OS === 'web' ? 3000 : 4500;
     const timeoutMs = options.timeout || (candidates.length > 1 && i < candidates.length - 1 ? 2000 : maxTimeout);
 
     const controller = new AbortController();
@@ -178,10 +185,10 @@ export async function smartApiFetch(route, options = {}) {
   }
 
   if (lastError && (lastError.name === 'AbortError' || String(lastError.message).toLowerCase().includes('abort'))) {
-    throw new Error('Connection timed out. Please verify your Wi-Fi or hotspot connection.');
+    throw new Error('Connection timed out. Please verify your Wi-Fi, hotspot, or server address.');
   }
 
-  throw lastError || new Error(`Cannot connect to server across Wi-Fi. Tried: ${candidates.join(', ')}`);
+  throw lastError || new Error(`Cannot connect to server across network. Tried: ${candidates.join(', ')}`);
 }
 
 export default {

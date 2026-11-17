@@ -285,8 +285,7 @@ export default function AuthScreens({
   const theme = getAuthTheme(isDark);
   // Screens: 'login' | 'signup' | 'login-otp' | 'verify-otp' | 'forgot-contact' | 'forgot-otp' | 'forgot-reset' | 'forgot-success'
   const [screen, setScreen] = useState("login");
-  const [loginRole, setLoginRole] = useState("student"); // "student" | "admin"
-  const [method, setMethod] = useState("email"); // Email OTP exclusive
+    const [method, setMethod] = useState("email"); // Email OTP exclusive
 
   // Input States
   const [name, setName] = useState("");
@@ -300,10 +299,7 @@ export default function AuthScreens({
   const [successMsg, setSuccessMsg] = useState("");
 
   // Admin credentials state
-  const [adminEmail, setAdminEmail] = useState("");
-  const [adminPassword, setAdminPassword] = useState("");
-  const [showAdminPassword, setShowAdminPassword] = useState(false);
-  const [isLocalSubmitting, setIsLocalSubmitting] = useState(false);
+        const [isLocalSubmitting, setIsLocalSubmitting] = useState(false);
   const isSubmitting = Boolean(isLocalSubmitting || propSubmitting);
 
   // Countdown timer for OTP resend
@@ -493,54 +489,6 @@ export default function AuthScreens({
     }
   }
 
-  // --- Passwordless Login via OTP ---
-  async function handleRequestLoginOtp() {
-    setLocalError("");
-    const target = email.trim().toLowerCase();
-    if (!target || !isEmailValid(target)) {
-      setLocalError("Please enter a valid registered email address.");
-      return;
-    }
-
-    const result = await requestOtp(target, "login");
-    if (result) {
-      setOtp("");
-      setScreen("login-otp");
-    }
-  }
-
-  async function handleVerifyLoginOtp(otpCode = otp) {
-    setLocalError("");
-    const cleaned = String(otpCode || "").replace(/\D/g, "");
-    if (cleaned.length < 6) {
-      setLocalError("Please enter the complete 6-digit code.");
-      return;
-    }
-
-    setIsLocalSubmitting(true);
-    try {
-      const target = email.trim().toLowerCase();
-      const res = await smartApiFetch("/auth/login-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ target, code: cleaned, otp: cleaned }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Unable to sign in with OTP");
-
-      if (typeof onLogin === "function") {
-        await onLogin({
-          token: data.token,
-          user: data.user,
-        });
-      }
-    } catch (e) {
-      setLocalError(e.message || "Unable to sign in with OTP");
-    } finally {
-      setIsLocalSubmitting(false);
-    }
-  }
-
   // --- Forgot Password: Step 1 Send Code ---
   async function handleForgotSendOtp() {
     setLocalError("");
@@ -646,115 +594,7 @@ export default function AuthScreens({
     }
   }
 
-  // Switch between Student and Admin Sign In
-  function handleSwitchToAdmin() {
-    setLocalError("");
-    setNoticeMsg("");
-    setLoginRole("admin");
-  }
-
-  function handleSwitchToStudent() {
-    setLocalError("");
-    setNoticeMsg("");
-    setLoginRole("student");
-  }
-
-  // Sign In as Student with entered email and password
-  async function handleSignInAsStudent() {
-    setLoginRole("student");
-    setLocalError("");
-    const targetEmail = (email || "").trim();
-    const targetPass = password;
-    if (!targetEmail) {
-      setLocalError("Please enter your registered student email address.");
-      return;
-    }
-    if (!targetPass) {
-      setLocalError("Please enter your student password.");
-      return;
-    }
-
-    setIsLocalSubmitting(true);
-    try {
-      const res = await smartApiFetch("/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: targetEmail,
-          password: targetPass,
-        }),
-        timeout: 10000
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Invalid credentials. Please verify your student email and password.");
-      }
-      if (typeof onLogin === "function") {
-        await onLogin({
-          token: data.token,
-          user: data.user,
-        });
-      }
-    } catch (err) {
-      setLocalError(err.message || "Failed to sign in. Please verify your credentials.");
-    } finally {
-      setIsLocalSubmitting(false);
-    }
-  }
-
-  // Sign In as Admin with entered admin email and password
-  async function handleSignInAsAdminSubmit() {
-    setLoginRole("admin");
-    setLocalError("");
-    const targetEmail = (adminEmail || "").trim();
-    const targetPass = adminPassword;
-    if (!targetEmail) {
-      setLocalError("Please enter your administrator email address.");
-      return;
-    }
-    if (!targetPass) {
-      setLocalError("Please enter your administrator password.");
-      return;
-    }
-
-    setIsLocalSubmitting(true);
-    try {
-      const res = await smartApiFetch("/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: targetEmail,
-          password: targetPass,
-        }),
-        timeout: 10000
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Invalid administrator credentials.");
-      }
-      if (data.user?.role !== "admin") {
-        throw new Error("Access restricted: Administrator account required.");
-      }
-
-      // If running on Web, immediately open the Admin Portal on port 5173!
-      if (Platform.OS === 'web' && typeof window !== 'undefined') {
-        const adminHost = window.location.hostname || 'localhost';
-        window.location.href = `http://${adminHost}:5173/?token=${encodeURIComponent(data.token)}`;
-        return;
-      }
-
-      if (typeof onLogin === "function") {
-        await onLogin({
-          token: data.token,
-          user: data.user,
-        });
-      }
-    } catch (err) {
-      setLocalError(err.message || "Admin login failed.");
-    } finally {
-      setIsLocalSubmitting(false);
-    }
-  }
+  
 
   // Password Strength Calculation
   const passwordStrength = (() => {

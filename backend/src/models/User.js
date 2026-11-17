@@ -1,4 +1,4 @@
-﻿const mongoose = require('mongoose');
+const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema(
   {
@@ -34,6 +34,36 @@ const userSchema = new mongoose.Schema(
     passwordHash: {
       type: String,
       required: true
+    },
+    gender: {
+      type: String,
+      trim: true,
+      default: 'girl'
+    },
+    examTarget: {
+      type: String,
+      trim: true,
+      default: 'MPSC / UPSC'
+    },
+    preferredSubjects: {
+      type: String,
+      trim: true,
+      default: 'Polity, History'
+    },
+    subscriptionTier: {
+      type: String,
+      trim: true,
+      default: 'free'
+    },
+    subscriptionPlan: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    subscriptionExpiresAt: {
+      type: String,
+      trim: true,
+      default: ''
     }
   },
   {

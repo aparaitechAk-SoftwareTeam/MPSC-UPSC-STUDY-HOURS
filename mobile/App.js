@@ -27,6 +27,7 @@ import ReminderSettingsScreen from './ReminderSettingsScreen';
 import NotificationsScreen from './NotificationsScreen';
 import StudentProfileScreen from './StudentProfileScreen';
 import TicketSupportScreen from './TicketSupportScreen';
+import ProSubscriptionScreen from './ProSubscriptionScreen';
 import AbhyasMitra from './AbhyasMitra';
 
 const LIGHT_THEME = {
@@ -644,7 +645,9 @@ function Card({ children, style }) {
           padding: 16,
           marginBottom: 14,
           borderWidth: 1,
-          borderColor: theme.line
+          borderColor: theme.line,
+          maxWidth: '100%',
+          overflow: 'hidden'
         },
         style
       ]}
@@ -965,6 +968,7 @@ export default function App() {
 
   // Profile, Notification, and Analytics Range State
   const [profileOpen, setProfileOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [remindersOpen, setRemindersOpen] = useState(false);
   const [analyticsRange, setAnalyticsRange] = useState('7');
   const [analyticsSubTab, setAnalyticsSubTab] = useState('Overview');
@@ -1008,6 +1012,43 @@ export default function App() {
 
   const [notifOpen, setNotifOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [serverUrlInput, setServerUrlInput] = useState(getApiBase());
+  const [serverStatus, setServerStatus] = useState('online');
+  const [serverTesting, setServerTesting] = useState(false);
+  const [serverTestMsg, setServerTestMsg] = useState('');
+
+  const handleTestServerConnection = async (targetOverride) => {
+    setServerTesting(true);
+    setServerTestMsg('');
+    try {
+      const target = (typeof targetOverride === 'string' ? targetOverride : serverUrlInput).trim() || getApiBase();
+      const ok = await testApiConnection(target);
+      if (ok) {
+        setServerStatus('online');
+        setServerTestMsg(lang === 'mr' ? '✅ सर्व्हर यशस्वीरित्या जोडला गेला! (200 OK)' : '✅ Server connected successfully! (200 OK)');
+      } else {
+        setServerStatus('offline');
+        setServerTestMsg(lang === 'mr' ? '❌ सर्व्हरशी संपर्क होऊ शकला नाही. वाय-फाय/हॉटस्पॉट तपासा.' : '❌ Server unreachable. Verify Wi-Fi or Hotspot.');
+      }
+    } catch (e) {
+      setServerStatus('offline');
+      setServerTestMsg('❌ ' + e.message);
+    } finally {
+      setServerTesting(false);
+    }
+  };
+
+  const handleSaveServerUrl = async (presetUrl) => {
+    const target = (typeof presetUrl === 'string' ? presetUrl : serverUrlInput).trim();
+    if (!target) {
+      await setCustomApiBase(null);
+      setServerTestMsg(lang === 'mr' ? 'ऑटो-डिटेक्शन रीसेट केले.' : 'Auto-detection reset.');
+    } else {
+      await setCustomApiBase(target);
+      await handleTestServerConnection(target);
+    }
+    refresh();
+  };
   const [selectedTrackDate, setSelectedTrackDate] = useState(today());
   const [expandedSubjectId, setExpandedSubjectId] = useState(null);
 
@@ -2432,6 +2473,45 @@ export default function App() {
 
   const topNeglected = neglectedSubjects[0] || null;
 
+  // Dynamic streak calculation based on days with study sessions (UTC & Local resilient)
+  const globalStreak = useMemo(() => {
+    const sessionDays = new Set();
+    (sessions || []).forEach(s => {
+      if (s.startedAt && (Number(s.minutes) > 0 || s.minutes == null)) {
+        sessionDays.add(s.startedAt.slice(0, 10));
+        const d = new Date(s.startedAt);
+        if (!isNaN(d.getTime())) {
+          const y = d.getFullYear();
+          const m = String(d.getMonth() + 1).padStart(2, '0');
+          const day = String(d.getDate()).padStart(2, '0');
+          sessionDays.add(`${y}-${m}-${day}`);
+        }
+      }
+    });
+
+    let streakCount = 0;
+    const nowObj = new Date();
+    const streakCheckDate = new Date(nowObj.getFullYear(), nowObj.getMonth(), nowObj.getDate());
+    const todayLocal = `${streakCheckDate.getFullYear()}-${String(streakCheckDate.getMonth() + 1).padStart(2, '0')}-${String(streakCheckDate.getDate()).padStart(2, '0')}`;
+    const todayUtc = nowObj.toISOString().slice(0, 10);
+
+    if (!sessionDays.has(todayLocal) && !sessionDays.has(todayUtc)) {
+      streakCheckDate.setDate(streakCheckDate.getDate() - 1);
+    }
+
+    while (true) {
+      const curLocal = `${streakCheckDate.getFullYear()}-${String(streakCheckDate.getMonth() + 1).padStart(2, '0')}-${String(streakCheckDate.getDate()).padStart(2, '0')}`;
+      const curUtc = streakCheckDate.toISOString().slice(0, 10);
+      if (sessionDays.has(curLocal) || sessionDays.has(curUtc)) {
+        streakCount++;
+        streakCheckDate.setDate(streakCheckDate.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+    return Math.max(streakCount, Number(analytics?.currentStreak) || 0);
+  }, [sessions, analytics?.currentStreak]);
+
   if (loading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', backgroundColor: C.bg }}>
@@ -2460,6 +2540,8 @@ export default function App() {
   const focus = analytics.averageFocus || 0;
   const unread = notes.filter(n => !(n.readBy || []).includes(user?.id));
 
+  // (globalStreak hook relocated above early returns to adhere to React Hook Rules)
+
   // ---------------- DASHBOARD TAB ----------------
   const Dashboard = () => {
     const todayDateStr = today();
@@ -2481,27 +2563,8 @@ export default function App() {
     const remainingHours = Math.floor(remainingMinutes / 60);
     const remainingMinsRemainder = remainingMinutes % 60;
 
-    // Dynamic streak calculation based on days with study sessions
-    const sessionDays = new Set(
-      sessions
-        .map(s => (s.startedAt ? s.startedAt.slice(0, 10) : null))
-        .filter(Boolean)
-    );
-    let streakCount = 0;
-    const streakCheckDate = new Date();
-    if (!sessionDays.has(todayDateStr)) {
-      streakCheckDate.setDate(streakCheckDate.getDate() - 1);
-    }
-    while (true) {
-      const dStr = streakCheckDate.toISOString().slice(0, 10);
-      if (sessionDays.has(dStr)) {
-        streakCount++;
-        streakCheckDate.setDate(streakCheckDate.getDate() - 1);
-      } else {
-        break;
-      }
-    }
-    const currentStreak = analytics.currentStreak == null ? streakCount : Math.max(0, Number(analytics.currentStreak) || 0);
+    // Dynamic streak calculation synchronized with globalStreak
+    const currentStreak = globalStreak;
     const currentYear = new Date().getFullYear();
     const dailyQuote = getDailyQuote(lang);
 
@@ -2960,19 +3023,21 @@ export default function App() {
 
       {/* 7. CURRICULUM PROGRESS */}
       <Card style={{ marginBottom: 14 }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Text style={txt(15, true)}>{t('curriculumProgress')}</Text>
-          <Text style={txt(13, true, C.blue)}>{syllabusStats.overallPct}% {t('overallCurriculum')}</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
+          <Text style={[txt(15, true), { flexShrink: 1 }]}>{t('curriculumProgress')}</Text>
+          <Text style={[txt(13, true, C.blue), { flexShrink: 1 }]}>
+            {Math.min(100, Math.max(0, Number(syllabusStats.overallPct) || 0))}% {t('overallCurriculum')}
+          </Text>
         </View>
 
         {/* Dual Progress: UPSC vs MPSC */}
         <View style={{ marginTop: 12, paddingBottom: 10, borderBottomWidth: 1, borderColor: C.line }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
             <Text style={txt(12, true, '#1e40af')}>{t('upscOnly')}</Text>
-            <Text style={txt(12, true, '#1e40af')}>{syllabusStats.upsc.pct}%</Text>
+            <Text style={txt(12, true, '#1e40af')}>{Math.min(100, Math.max(0, Number(syllabusStats.upsc.pct) || 0))}%</Text>
           </View>
           <View style={{ height: 6, backgroundColor: C.soft, borderRadius: 6, overflow: 'hidden' }}>
-            <View style={{ backgroundColor: '#1e40af', width: `${syllabusStats.upsc.pct}%`, height: 6, borderRadius: 6 }} />
+            <View style={{ backgroundColor: '#1e40af', width: `${Math.min(100, Math.max(0, Number(syllabusStats.upsc.pct) || 0))}%`, height: 6, borderRadius: 6 }} />
           </View>
           <Text style={[txt(10, false, C.muted), { marginTop: 3 }]}>
             {syllabusStats.upsc.completed} {t('remainingOf', 'of')} {syllabusStats.upsc.total} {t('topicsMastered')}
@@ -2982,10 +3047,10 @@ export default function App() {
         <View style={{ marginTop: 10, marginBottom: 8 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
             <Text style={txt(12, true, '#b45309')}>{t('mpscOnly')}</Text>
-            <Text style={txt(12, true, '#b45309')}>{syllabusStats.mpsc.pct}%</Text>
+            <Text style={txt(12, true, '#b45309')}>{Math.min(100, Math.max(0, Number(syllabusStats.mpsc.pct) || 0))}%</Text>
           </View>
           <View style={{ height: 6, backgroundColor: '#fef3c7', borderRadius: 6, overflow: 'hidden' }}>
-            <View style={{ backgroundColor: '#b45309', width: `${syllabusStats.mpsc.pct}%`, height: 6, borderRadius: 6 }} />
+            <View style={{ backgroundColor: '#b45309', width: `${Math.min(100, Math.max(0, Number(syllabusStats.mpsc.pct) || 0))}%`, height: 6, borderRadius: 6 }} />
           </View>
           <Text style={[txt(10, false, C.muted), { marginTop: 3 }]}>
             {syllabusStats.mpsc.completed} {t('remainingOf', 'of')} {syllabusStats.mpsc.total} {t('topicsMastered')}
@@ -3321,7 +3386,7 @@ export default function App() {
                   </View>
                 )}
 
-                <View style={{ flex: 1 }}>
+                <View style={{ flex: 1, minWidth: 0 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                     <Text
                       style={{
@@ -3429,7 +3494,7 @@ export default function App() {
                         </View>
                       )}
                       <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-                        <View style={{ flex: 1, marginRight: 8 }}>
+                        <View style={{ flex: 1, minWidth: 0, marginRight: 8 }}>
                           <Text style={txt(10, false, C.muted)}>{getChapterName(topicItem.chapter, lang)}</Text>
                           <Text
                             style={[
@@ -3478,7 +3543,8 @@ export default function App() {
                             paddingHorizontal: 9,
                             paddingVertical: 6,
                             borderRadius: 14,
-                            gap: 4
+                            gap: 4,
+                            flexShrink: 0
                           }}
                         >
                           <Ionicons name={cfg.icon} size={14} color={cfg.fg} />
@@ -5929,6 +5995,189 @@ borderColor: C.border
                 </View>
               </View>
 
+              {/* 5b. Server & Network Connection (Wi-Fi & Hotspot) */}
+              <View style={{ marginBottom: 16, paddingTop: 14, borderTopWidth: 1, borderColor: C.line }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Ionicons name="wifi-outline" size={16} color={C.blue} />
+                    <Text style={txt(12, true)}>{lang === 'mr' ? 'सर्व्हर व नेटवर्क कनेक्टिव्हिटी' : 'Server & Network Connectivity'}</Text>
+                  </View>
+                  <View style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: serverStatus === 'online' ? (isDark ? '#064e3b' : '#ecfdf5') : (isDark ? '#451a03' : '#fef3c7'),
+                    paddingHorizontal: 8,
+                    paddingVertical: 2,
+                    borderRadius: 10
+                  }}>
+                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: serverStatus === 'online' ? '#10b981' : '#f59e0b', marginRight: 4 }} />
+                    <Text style={{ fontSize: 9.5, fontWeight: '700', color: serverStatus === 'online' ? '#059669' : '#d97706' }}>
+                      {serverStatus === 'online' ? (lang === 'mr' ? 'सक्रिय' : 'Online') : (lang === 'mr' ? 'तपासा' : 'Check')}
+                    </Text>
+                  </View>
+                </View>
+                <Text style={[txt(10, false, C.muted), { marginBottom: 8 }]}>
+                  {lang === 'mr'
+                    ? 'वाय-फाय, हॉटस्पॉट किंवा क्लाउड सर्व्हर पत्ता कॉन्फिगर करा'
+                    : 'Works across all Wi-Fi networks & mobile hotspots. Set or test server IP.'}
+                </Text>
+
+                {/* Server Input */}
+                <View style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: isDark ? '#1e293b' : '#f8fafc',
+                  borderWidth: 1,
+                  borderColor: C.line,
+                  borderRadius: 10,
+                  paddingHorizontal: 10,
+                  marginBottom: 8
+                }}>
+                  <Ionicons name="link-outline" size={15} color={C.muted} style={{ marginRight: 6 }} />
+                  <TextInput
+                    value={serverUrlInput}
+                    onChangeText={(val) => {
+                      setServerUrlInput(val);
+                      setServerTestMsg('');
+                    }}
+                    placeholder="http://10.116.34.214:4000/api"
+                    placeholderTextColor={C.muted}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    style={{
+                      flex: 1,
+                      fontSize: 11.5,
+                      color: C.ink,
+                      paddingVertical: 8
+                    }}
+                  />
+                  {Boolean(serverUrlInput) && (
+                    <TouchableOpacity onPress={() => setServerUrlInput('')} style={{ padding: 4 }}>
+                      <Ionicons name="close-circle" size={15} color={C.muted} />
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                {/* Quick Presets */}
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setServerUrlInput('http://10.116.34.214:4000/api');
+                      setServerTestMsg('');
+                    }}
+                    style={{
+                      backgroundColor: isDark ? '#1e3850' : '#f0f9ff',
+                      paddingHorizontal: 8,
+                      paddingVertical: 4,
+                      borderRadius: 8,
+                      borderWidth: 1,
+                      borderColor: '#93c5fd'
+                    }}
+                  >
+                    <Text style={{ fontSize: 10, fontWeight: '700', color: '#1d4ed8' }}>
+                      Wi-Fi (10.116.34.214)
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={() => {
+                      setServerUrlInput('http://192.168.137.1:4000/api');
+                      setServerTestMsg('');
+                    }}
+                    style={{
+                      backgroundColor: isDark ? '#1e3850' : '#f0fdf4',
+                      paddingHorizontal: 8,
+                      paddingVertical: 4,
+                      borderRadius: 8,
+                      borderWidth: 1,
+                      borderColor: '#86efac'
+                    }}
+                  >
+                    <Text style={{ fontSize: 10, fontWeight: '700', color: '#15803d' }}>
+                      Win Hotspot (192.168.137.1)
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={() => {
+                      setServerUrlInput('http://192.168.43.1:4000/api');
+                      setServerTestMsg('');
+                    }}
+                    style={{
+                      backgroundColor: isDark ? '#3b2f15' : '#fffbeb',
+                      paddingHorizontal: 8,
+                      paddingVertical: 4,
+                      borderRadius: 8,
+                      borderWidth: 1,
+                      borderColor: '#fde68a'
+                    }}
+                  >
+                    <Text style={{ fontSize: 10, fontWeight: '700', color: '#b45309' }}>
+                      Phone Hotspot (192.168.43.1)
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Test & Save buttons */}
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  <TouchableOpacity
+                    onPress={() => handleTestServerConnection(serverUrlInput)}
+                    disabled={serverTesting}
+                    style={{
+                      flex: 1,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: isDark ? '#1e293b' : '#f1f5f9',
+                      paddingVertical: 8,
+                      borderRadius: 8,
+                      borderWidth: 1,
+                      borderColor: C.line
+                    }}
+                  >
+                    {serverTesting ? (
+                      <ActivityIndicator size="small" color={C.blue} />
+                    ) : (
+                      <>
+                        <Ionicons name="pulse-outline" size={14} color={C.blue} style={{ marginRight: 4 }} />
+                        <Text style={{ fontSize: 11, fontWeight: '700', color: C.blue }}>
+                          {lang === 'mr' ? 'कनेक्शन तपासा' : 'Test Connection'}
+                        </Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={() => handleSaveServerUrl(serverUrlInput)}
+                    style={{
+                      flex: 1,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: C.blue,
+                      paddingVertical: 8,
+                      borderRadius: 8
+                    }}
+                  >
+                    <Ionicons name="checkmark-sharp" size={14} color="#ffffff" style={{ marginRight: 4 }} />
+                    <Text style={{ fontSize: 11, fontWeight: '800', color: '#ffffff' }}>
+                      {lang === 'mr' ? 'लागू करा' : 'Save & Connect'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {Boolean(serverTestMsg) && (
+                  <Text style={{
+                    fontSize: 10.5,
+                    fontWeight: '600',
+                    marginTop: 6,
+                    color: serverTestMsg.includes('✅') ? '#059669' : '#dc2626'
+                  }}>
+                    {serverTestMsg}
+                  </Text>
+                )}
+              </View>
+
               {/* 6. Sign Out Button */}
               <View style={{ marginBottom: 12, paddingTop: 14, borderTopWidth: 1, borderColor: C.line }}>
                 <TouchableOpacity
@@ -6380,110 +6629,81 @@ borderColor: C.border
             backgroundColor: C.cardBg,
             flexDirection: 'row',
             alignItems: 'center',
+            justifyContent: 'space-between',
             borderBottomWidth: 1,
             borderColor: C.line,
             width: '100%'
           }}
         >
-          <View
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 10,
-              backgroundColor: C.soft,
-              justifyContent: 'center',
-              alignItems: 'center'
-            }}
-          >
-            <Ionicons name="book-outline" color={C.blue} size={20} />
-          </View>
-          <View style={{ flex: 1, marginLeft: 10, minWidth: 0 }}>
-            <Text numberOfLines={1} style={txt(15, true)}>{t('appName', 'Abhyas Tracker')}</Text>
-            <Text numberOfLines={1} style={txt(10, false, C.muted)}>
-              {t('examFocusTag', 'UPSC & MPSC')} • {tab === 'Dashboard' ? t('dashboard') : tab === 'Timer' ? t('timer') : tab === 'Syllabus' ? t('syllabus') : tab === 'Planner' ? t('planner') : tab === 'Analytics' ? t('analytics') : (tab === 'Ticket Support' || tab === 'Support') ? t('ticketSupport', 'Ticket Support') : tab}
-            </Text>
+          {/* Brand & Active Section (3-lines menu removed) */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, minWidth: 0, marginRight: 12 }}>
+            <View
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 10,
+                backgroundColor: C.soft,
+                justifyContent: 'center',
+                alignItems: 'center',
+                marginRight: 10,
+                borderWidth: 1,
+                borderColor: isDark ? '#334155' : '#dbeafe'
+              }}
+            >
+              <Ionicons name="book" color={C.blue} size={20} />
+            </View>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text numberOfLines={1} style={txt(15, true)}>{t('appName', 'Abhyas Tracker')}</Text>
+              <Text numberOfLines={1} style={txt(10, false, C.muted)}>
+                {t('examFocusTag', 'UPSC & MPSC')} • {tab === 'Dashboard' ? t('dashboard') : tab === 'Timer' ? t('timer') : tab === 'Syllabus' ? t('syllabus') : (tab === 'Pro' || tab === 'Premium') ? t('premium', 'Premium') : tab === 'Planner' ? t('planner') : tab === 'Analytics' ? t('analytics') : (tab === 'Ticket Support' || tab === 'Support') ? t('ticketSupport', 'Ticket Support') : tab}
+              </Text>
+            </View>
           </View>
 
-          {/* Header Action Buttons */}
+          {/* Header Action: Dignified & Professional Student Profile Avatar Button */}
           <TouchableOpacity
             onPress={() => {
-              setProfileOpen(false);
-              setNotifOpen(!notifOpen);
+              setNotifOpen(false);
+              setSettingsOpen(false);
+              setRemindersOpen(false);
+              setProfileOpen(true);
             }}
-            accessibilityLabel="Notifications"
+            accessibilityLabel="Student Profile"
+            activeOpacity={0.8}
             style={{
-              width: 36,
-              height: 36,
-              borderRadius: 12,
+              width: 38,
+              height: 38,
+              borderRadius: 19,
+              backgroundColor: isDark ? '#1e3a5f' : '#e0f2fe',
+              borderWidth: 1.5,
+              borderColor: profileOpen ? C.blue : (isDark ? '#334155' : '#bae6fd'),
               alignItems: 'center',
               justifyContent: 'center',
-              backgroundColor: isDark ? '#1e2942' : '#f0f4fd',
-              borderWidth: 1,
-              borderColor: isDark ? '#334155' : '#dbeafe',
-              position: 'relative',
-              marginRight: 6
+              position: 'relative'
             }}
           >
-            <Ionicons
-              name={notifOpen ? "notifications" : "notifications-outline"}
-              size={18}
-              color={C.blue}
-            />
+            {user?.name ? (
+              <Text style={{ fontSize: 15, fontWeight: '800', color: C.blue }}>
+                {user.name.trim().charAt(0).toUpperCase()}
+              </Text>
+            ) : (
+              <Ionicons name="person" size={18} color={C.blue} />
+            )}
             {unread.length > 0 && (
               <View
                 style={{
                   position: 'absolute',
-                  top: 6,
-                  right: 6,
-                  width: 8,
-                  height: 8,
-                  borderRadius: 4,
-                  backgroundColor: '#e44242'
+                  top: -1,
+                  right: -1,
+                  width: 9,
+                  height: 9,
+                  borderRadius: 4.5,
+                  backgroundColor: '#ef4444',
+                  borderWidth: 1.5,
+                  borderColor: C.cardBg
                 }}
               />
             )}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => {
-              setNotifOpen(false);
-              setProfileOpen(true);
-            }}
-            accessibilityLabel="Student Profile"
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 12,
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: isDark ? '#1e2942' : '#f0f4fd',
-              borderWidth: 1,
-              borderColor: isDark ? '#334155' : '#dbeafe',
-              marginRight: 6
-            }}
-          >
-            <Ionicons
-              name={profileOpen ? "person-circle" : "person-circle-outline"}
-              size={20}
-              color={C.blue}
-            />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => setSettingsOpen(true)}
-            accessibilityLabel="Settings"
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 12,
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: isDark ? '#1e2942' : '#f0f4fd',
-              borderWidth: 1,
-              borderColor: isDark ? '#334155' : '#dbeafe'
-            }}
-          >
-            <Ionicons name="settings-outline" size={18} color={C.blue} />
           </TouchableOpacity>
         </View>
         )}
@@ -6499,8 +6719,20 @@ borderColor: C.border
               user={user}
               onBack={() => setProfileOpen(false)}
               onSignOut={handleSignOut}
-              onOpenSettings={() => setSettingsOpen(true)}
-              onOpenReminders={() => setRemindersOpen(true)}
+              onOpenSettings={() => { setProfileOpen(false); setSettingsOpen(true); }}
+              onOpenReminders={() => { setProfileOpen(false); setRemindersOpen(true); }}
+              onOpenNotifications={() => { setProfileOpen(false); setNotifOpen(true); }}
+              onOpenPlanner={() => { setProfileOpen(false); setTab('Planner'); }}
+              onOpenAnalytics={() => { setProfileOpen(false); setTab('Analytics'); }}
+              onNavigateTab={(targetTab) => {
+                setProfileOpen(false);
+                setSettingsOpen(false);
+                setRemindersOpen(false);
+                setNotifOpen(false);
+                handleTabChange(targetTab);
+                refresh();
+              }}
+              unreadCount={unread.length}
               onProfileUpdated={async (updatedUser) => {
                 const data = await req('/me', 'PATCH', {
                   name: updatedUser.name,
@@ -6510,13 +6742,18 @@ borderColor: C.border
                   preferredSubjects: updatedUser.preferredSubjects,
                 });
                 setUser(data.user);
+                try {
+                  await AsyncStorage.setItem('@abhyas_user', JSON.stringify(data.user));
+                } catch {}
                 return data.user;
               }}
-              studyGoal={6}
-              studyStreak={Number(analytics.currentStreak) || 0}
+              studyGoal={dailyGoalHours || 6}
+              studyStreak={globalStreak}
+              totalMinutes={total}
               lang={lang}
               theme={C}
               isDarkMode={isDark}
+              onToggleTheme={toggleTheme}
             />
           </View>
         ) : (
@@ -6569,6 +6806,18 @@ borderColor: C.border
               />
             ) : tab === 'Syllabus' ? (
               <Syllabus />
+            ) : (tab === 'Pro' || tab === 'Premium') ? (
+              <ProSubscriptionScreen
+                user={user}
+                theme={C}
+                isDarkMode={isDark}
+                lang={lang}
+                t={t}
+                onSelectTab={(targetTab) => handleTabChange(targetTab)}
+                onUpdateUser={(updated) => {
+                  setUser((prev) => ({ ...prev, ...updated }));
+                }}
+              />
             ) : tab === 'Planner' ? (
               <Planner />
             ) : tab === 'Ticket Support' || tab === 'Support' ? (
@@ -6720,47 +6969,118 @@ borderColor: C.border
           </Modal>
         )}
 
-        {/* Bottom Navigation (Hidden in Focus Mode) */}
-        {!focusMode && (
-        <View
-          style={{
-            backgroundColor: C.cardBg,
-            borderTopWidth: 1,
-            borderColor: C.line,
-            flexDirection: 'row',
-            paddingTop: 8,
-            paddingBottom: Platform.OS === 'android' ? 36 : 12,
-            width: '100%'
-          }}
-        >
-          {tabs.map(([tName, ic]) => {
-            const tabKey = {
-              Dashboard: 'dashboard',
-              Timer: 'timer',
-              Syllabus: 'syllabus',
-              Planner: 'planner',
-              Analytics: 'analytics',
-              'Ticket Support': 'ticketSupport',
-              Support: 'ticketSupport'
-            }[tName] || tName.toLowerCase();
+        {/* Bottom Tab Bar: 4 tabs: Dashboard, Timer, Syllabus, Ticket Support */}
+        {!focusMode && !profileOpen && !settingsOpen && !remindersOpen && !notifOpen && (
+          <View
+            style={{
+              flexDirection: 'row',
+              backgroundColor: C.cardBg,
+              borderTopWidth: 1,
+              borderColor: C.line,
+              paddingVertical: 8,
+              paddingBottom: Platform.OS === 'ios' ? 24 : (Platform.OS === 'android' ? 14 : 10),
+              paddingHorizontal: 8,
+              justifyContent: 'space-around',
+              alignItems: 'center',
+              width: '100%',
+              elevation: 8,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: -2 },
+              shadowOpacity: 0.08,
+              shadowRadius: 4
+            }}
+          >
+            {[
+              ['Dashboard', 'home-outline'],
+              ['Timer', 'stopwatch-outline'],
+              ['Syllabus', 'book-outline'],
+              ['Premium', 'sparkles-outline'],
+              ['Ticket Support', 'headset-outline']
+            ].map(([tName, ic]) => {
+              const active = tab === tName || (tName === 'Premium' && tab === 'Pro');
+              const tabKey = {
+                Dashboard: 'dashboard',
+                Timer: 'timer',
+                Syllabus: 'syllabus',
+                Premium: 'premium',
+                Pro: 'premium',
+                'Ticket Support': 'ticketSupport'
+              }[tName] || tName.toLowerCase();
 
-            return (
-              <TouchableOpacity
-                key={tName}
-                style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 2 }}
-                onPress={() => {
-                  handleTabChange(tName);
-                  refresh();
-                }}
-              >
-                <Ionicons name={ic} size={20} color={tab === tName ? C.blue : (isDark ? '#94a3b8' : '#667080')} />
-                <Text numberOfLines={1} style={[txt(9.5, tab === tName, tab === tName ? C.blue : C.muted), { marginTop: 2 }]}>
-                  {t(tabKey, tName)}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+              return (
+                <TouchableOpacity
+                  key={tName}
+                  onPress={() => {
+                    setProfileOpen(false);
+                    setSettingsOpen(false);
+                    setRemindersOpen(false);
+                    setNotifOpen(false);
+                    handleTabChange(tName);
+                    refresh();
+                  }}
+                  activeOpacity={0.7}
+                  style={{
+                    flex: 1,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    paddingVertical: 4
+                  }}
+                >
+                  <View
+                    style={{
+                      paddingHorizontal: tName === 'Premium' ? 10 : 12,
+                      paddingVertical: 3,
+                      borderRadius: 16,
+                      backgroundColor: active
+                        ? (isDark ? '#1e3a5f' : '#dbeafe')
+                        : (tName === 'Premium' ? (isDark ? '#3b2f15' : '#fef3c7') : 'transparent'),
+                      marginBottom: 2,
+                      position: 'relative'
+                    }}
+                  >
+                    <Ionicons
+                      name={active ? ic.replace('-outline', '') : ic}
+                      size={20}
+                      color={
+                        active
+                          ? (tName === 'Premium' ? '#d97706' : C.blue)
+                          : (tName === 'Premium' ? '#d97706' : (isDark ? '#94a3b8' : '#64748b'))
+                      }
+                    />
+                    {tName === 'Premium' && (
+                      <View
+                        style={{
+                          position: 'absolute',
+                          top: -4,
+                          right: -5,
+                          backgroundColor: '#ef4444',
+                          borderRadius: 6,
+                          paddingHorizontal: 3,
+                          paddingVertical: 1
+                        }}
+                      >
+                        <Text style={{ color: '#ffffff', fontSize: 7, fontWeight: '800' }}>
+                          SALE
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text
+                    style={txt(
+                      10,
+                      active,
+                      active
+                        ? (tName === 'Premium' ? '#d97706' : C.blue)
+                        : (tName === 'Premium' ? '#d97706' : (isDark ? '#94a3b8' : '#64748b'))
+                    )}
+                    numberOfLines={1}
+                  >
+                    {t(tabKey, tName)}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         )}
 
         {/* Abhyas Mitra - Friendly UPSC & MPSC Study Companion Chatbot */}
@@ -6782,6 +7102,9 @@ borderColor: C.border
             }}
           />
         )}
+
+        
+        {/* (Navigation Drawer removed - all features consolidated into My Profile) */}
 
         {/* Reset confirmation dialog */}
         {resetConfirmOpen && (
