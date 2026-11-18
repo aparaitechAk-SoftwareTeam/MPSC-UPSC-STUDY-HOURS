@@ -28,6 +28,7 @@ import ReminderSettingsScreen from './ReminderSettingsScreen';
 import NotificationsScreen from './NotificationsScreen';
 import StudentProfileScreen from './StudentProfileScreen';
 import TicketSupportScreen from './TicketSupportScreen';
+import ProSubscriptionScreen from './ProSubscriptionScreen';
 import AnalyticsScreen from './AnalyticsScreen';
 import AbhyasMitra from './AbhyasMitra';
 import {
@@ -330,13 +331,13 @@ const getNext7Days = (lang = 'en') => {
   const curr = new Date();
   const weekdayMap = {
     en: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-    hi: ['à¤°à¤µà¤¿', 'à¤¸à¥‹à¤®', 'à¤®à¤‚à¤—à¤²', 'à¤¬à¥à¤§', 'à¤—à¥à¤°à¥', 'à¤¶à¥à¤•à¥à¤°', 'à¤¶à¤¨à¤¿'],
-    mr: ['à¤°à¤µà¤¿', 'à¤¸à¥‹à¤®', 'à¤®à¤‚à¤—à¤³', 'à¤¬à¥à¤§', 'à¤—à¥à¤°à¥', 'à¤¶à¥à¤•à¥à¤°', 'à¤¶à¤¨à¤¿']
+    hi: ['रवि', 'सोम', 'मंगल', 'बुध', 'गुरु', 'शुक्र', 'शनि'],
+    mr: ['रवि', 'सोम', 'मंगळ', 'बुध', 'गुरु', 'शुक्र', 'शनि']
   };
   const monthMap = {
     en: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-    hi: ['à¤œà¤¨', 'à¤«à¤¼à¤°', 'à¤®à¤¾à¤°à¥à¤š', 'à¤…à¤ªà¥à¤°à¥ˆ', 'à¤®à¤ˆ', 'à¤œà¥‚à¤¨', 'à¤œà¥à¤²à¤¾', 'à¤…à¤—', 'à¤¸à¤¿à¤¤à¤‚', 'à¤…à¤•à¥à¤Ÿà¥‚', 'à¤¨à¤µ', 'à¤¦à¤¿à¤¸'],
-    mr: ['à¤œà¤¾à¤¨à¥‡', 'à¤«à¥‡à¤¬à¥à¤°à¥', 'à¤®à¤¾à¤°à¥à¤š', 'à¤à¤ªà¥à¤°à¤¿', 'à¤®à¥‡', 'à¤œà¥‚à¤¨', 'à¤œà¥à¤²à¥ˆ', 'à¤‘à¤—', 'à¤¸à¤ªà¥à¤Ÿà¥‡à¤‚', 'à¤‘à¤•à¥à¤Ÿà¥‹', 'à¤¨à¥‹à¤µà¥à¤¹à¥‡à¤‚', 'à¤¡à¤¿à¤¸à¥‡à¤‚']
+    hi: ['जन', 'फ़र', 'मार्च', 'अप्रैल', 'मई', 'जून', 'जुलाई', 'अग', 'सित', 'अक्तू', 'नव', 'दिस'],
+    mr: ['जाने', 'फेब्रु', 'मार्च', 'एप्रिल', 'मे', 'जून', 'जुलै', 'ऑग', 'सप्टें', 'ऑक्टो', 'नोव्हें', 'डिसें']
   };
   const currentWMap = weekdayMap[lang] || weekdayMap.en;
   const currentMMap = monthMap[lang] || monthMap.en;
@@ -662,7 +663,9 @@ function Card({ children, style }) {
           padding: 16,
           marginBottom: 14,
           borderWidth: 1,
-          borderColor: theme.line
+          borderColor: theme.line,
+          maxWidth: '100%',
+          overflow: 'hidden'
         },
         style
       ]}
@@ -747,13 +750,13 @@ const UPSC_10H_SCHEDULE = [
     breakNote: '15 Min Break: 12:15 PM - 12:30 PM (Hydrate & eye rest)',
     title: {
       en: 'GS Core Theory & Heavy Concepts',
-      mr: 'à¤¸à¤¾à¤®à¤¾à¤¨à¥à¤¯ à¤…à¤§à¥à¤¯à¤¯à¤¨ à¤®à¥à¤–à¥à¤¯ à¤¸à¤¿à¤¦à¥à¤§à¤¾à¤‚à¤¤ à¤µ à¤¸à¤–à¥‹à¤² à¤…à¤­à¥à¤¯à¤¾à¤¸',
-      hi: 'à¤¸à¤¾à¤®à¤¾à¤¨à¥à¤¯ à¤…à¤§à¥à¤¯à¤¯à¤¨ à¤®à¥à¤–à¥à¤¯ à¤¸à¤¿à¤¦à¥à¤§à¤¾à¤‚à¤¤ à¤”à¤° à¤—à¤¹à¤¨ à¤…à¤§à¥à¤¯à¤¯à¤¨'
+      mr: 'सामान्य अध्ययन मुख्य सिद्धांत व सखोल अभ्यास',
+      hi: 'सामान्य अध्ययन मुख्य सिद्धांत और गहन अध्ययन'
     },
     subTitle: {
       en: 'Polity, Modern History or Geography (Reference books: Laxmikanth, Spectrum)',
-      mr: 'à¤°à¤¾à¤œà¥à¤¯à¤µà¥à¤¯à¤µà¤¸à¥à¤¥à¤¾, à¤†à¤§à¥à¤¨à¤¿à¤• à¤‡à¤¤à¤¿à¤¹à¤¾à¤¸ à¤•à¤¿à¤‚à¤µà¤¾ à¤­à¥‚à¤—à¥‹à¤² (à¤¸à¤‚à¤¦à¤°à¥à¤­ à¤ªà¥à¤¸à¥à¤¤à¤•à¥‡: à¤²à¤•à¥à¤·à¥à¤®à¥€à¤•à¤¾à¤‚à¤¤, à¤¸à¥à¤ªà¥‡à¤•à¥à¤Ÿà¥à¤°à¤®)',
-      hi: 'à¤°à¤¾à¤œà¤µà¥à¤¯à¤µà¤¸à¥à¤¥à¤¾, à¤†à¤§à¥à¤¨à¤¿à¤• à¤‡à¤¤à¤¿à¤¹à¤¾à¤¸ à¤¯à¤¾ à¤­à¥‚à¤—à¥‹à¤² (à¤®à¤¾à¤¨à¤• à¤ªà¥à¤¸à¥à¤¤à¤•à¥‡à¤‚: à¤²à¤•à¥à¤·à¥à¤®à¥€à¤•à¤¾à¤‚à¤¤, à¤¸à¥à¤ªà¥‡à¤•à¥à¤Ÿà¥à¤°à¤®)'
+      mr: 'राज्यव्यवस्था, आधुनिक इतिहास किंवा भूगोल (संदर्भ पुस्तके: लक्ष्मीकांत, स्पेक्ट्रम)',
+      hi: 'राजव्यवस्था, आधुनिक इतिहास या भूगोल (मानक पुस्तकें: लक्ष्मीकांत, स्पेक्ट्रम)'
     },
     defaultSubjectId: 'upsc-polity',
     color: '#3b82f6',
@@ -772,13 +775,13 @@ const UPSC_10H_SCHEDULE = [
     timeRange: '1:15 PM - 3:00 PM',
     title: {
       en: 'Nutritious Lunch & 20-min Power Nap',
-      mr: 'à¤ªà¥Œà¤·à¥à¤Ÿà¤¿à¤• à¤¦à¥à¤ªà¤¾à¤°à¤šà¥‡ à¤œà¥‡à¤µà¤£ à¤µ à¥¨à¥¦ à¤®à¤¿à¤¨à¤¿à¤Ÿà¤¾à¤‚à¤šà¥€ à¤µà¤¿à¤¶à¥à¤°à¤¾à¤‚à¤¤à¥€',
-      hi: 'à¤ªà¥Œà¤·à¥à¤Ÿà¤¿à¤• à¤­à¥‹à¤œà¤¨ à¤”à¤° à¥¨à¥¦ à¤®à¤¿à¤¨à¤Ÿ à¤•à¤¾ à¤µà¤¿à¤¶à¥à¤°à¤¾à¤®'
+      mr: 'पौष्टिक दुपारचे जेवण व २० मिनिटांची विश्रांती',
+      hi: 'पौष्टिक भोजन और २० मिनट का विश्राम'
     },
     subTitle: {
       en: 'Hydrate well, rest eyes & completely disconnect to recharge cognitive energy',
-      mr: 'à¤ªà¤¾à¤£à¥€ à¤ªà¥à¤¯à¤¾, à¤¡à¥‹à¤³à¥à¤¯à¤¾à¤‚à¤¨à¤¾ à¤µà¤¿à¤¶à¥à¤°à¤¾à¤‚à¤¤à¥€ à¤¦à¥à¤¯à¤¾ à¤†à¤£à¤¿ à¤®à¤¨à¤¾à¤²à¤¾ à¤¤à¤¾à¤œà¥‡à¤¤à¤µà¤¾à¤¨à¥‡ à¤•à¤°à¤¾',
-      hi: 'à¤ªà¤°à¥à¤¯à¤¾à¤ªà¥à¤¤ à¤ªà¤¾à¤¨à¥€ à¤ªà¤¿à¤à¤‚, à¤†à¤‚à¤–à¥‹à¤‚ à¤•à¥‹ à¤†à¤°à¤¾à¤® à¤¦à¥‡à¤‚ à¤”à¤° à¤Šà¤°à¥à¤œà¤¾ à¤ªà¥à¤¨à¤ƒ à¤ªà¥à¤°à¤¾à¤ªà¥à¤¤ à¤•à¤°à¥‡à¤‚'
+      mr: 'पाणी प्या, डोळ्यांना विश्रांती द्या आणि मनाला ताजेतवाने करा',
+      hi: 'पर्याप्त पानी पिएं, आंखों को आराम दें और ऊर्जा पुनः प्राप्त करें'
     },
     color: '#10b981',
     softColor: '#ecfdf5',
@@ -797,13 +800,13 @@ const UPSC_10H_SCHEDULE = [
     timeRange: '3:00 PM - 5:00 PM',
     title: {
       en: 'Secondary Subject / Optional Revision',
-      mr: 'à¤¦à¥à¤¸à¤°à¤¾ à¤µà¤¿à¤·à¤¯ à¤•à¤¿à¤‚à¤µà¤¾ à¤µà¥ˆà¤•à¤²à¥à¤ªà¤¿à¤• à¤µà¤¿à¤·à¤¯à¤¾à¤šà¥€ à¤‰à¤œà¤³à¤£à¥€',
-      hi: 'à¤¦à¥à¤µà¤¿à¤¤à¥€à¤¯ à¤µà¤¿à¤·à¤¯ à¤¯à¤¾ à¤µà¥ˆà¤•à¤²à¥à¤ªà¤¿à¤• à¤µà¤¿à¤·à¤¯ à¤ªà¥à¤¨à¤°à¤¾à¤µà¤²à¥‹à¤•à¤¨'
+      mr: 'दुसरा विषय किंवा वैकल्पिक विषयाची उजळणी',
+      hi: 'द्वितीय विषय या वैकल्पिक विषय पुनरावलोकन'
     },
     subTitle: {
       en: 'Economy, Environment or State Specific Curriculum & Notes synthesis',
-      mr: 'à¤…à¤°à¥à¤¥à¤µà¥à¤¯à¤µà¤¸à¥à¤¥à¤¾, à¤ªà¤°à¥à¤¯à¤¾à¤µà¤°à¤£ à¤•à¤¿à¤‚à¤µà¤¾ à¤®à¤¹à¤¾à¤°à¤¾à¤·à¥à¤Ÿà¥à¤° à¤µà¤¿à¤¶à¥‡à¤· à¤˜à¤Ÿà¤• à¤µ à¤Ÿà¤¿à¤ªà¥à¤ªà¤£à¥à¤¯à¤¾',
-      hi: 'à¤…à¤°à¥à¤¥à¤µà¥à¤¯à¤µà¤¸à¥à¤¥à¤¾, à¤ªà¤°à¥à¤¯à¤¾à¤µà¤°à¤£ à¤¯à¤¾ à¤°à¤¾à¤œà¥à¤¯ à¤µà¤¿à¤¶à¥‡à¤· à¤ªà¤¾à¤ à¥à¤¯à¤•à¥à¤°à¤®'
+      mr: 'अर्थव्यवस्था, पर्यावरण किंवा महाराष्ट्र विशेष घटक व टिप्पण्या',
+      hi: 'अर्थव्यवस्था, पर्यावरण या राज्य विशेष पाठ्यक्रम'
     },
     defaultSubjectId: 'upsc-history-culture',
     color: '#8b5cf6',
@@ -822,13 +825,13 @@ const UPSC_10H_SCHEDULE = [
     timeRange: '5:00 PM - 6:00 PM',
     title: {
       en: 'Evening Break Time & Fresh Air Walk',
-      mr: 'à¤¸à¤‚à¤§à¥à¤¯à¤¾à¤•à¤¾à¤³à¤šà¤¾ à¤šà¤¹à¤¾, à¤šà¤¾à¤²à¤£à¥‡ à¤µ à¤¤à¤¾à¤œà¥€ à¤¹à¤µà¤¾',
-      hi: 'à¤¶à¤¾à¤® à¤•à¤¾ à¤šà¤¾à¤¯ à¤•à¤¾à¤² à¤”à¤° à¤¤à¤¾à¤œà¥€ à¤¹à¤µà¤¾ à¤®à¥‡à¤‚ à¤Ÿà¤¹à¤²à¤¨à¤¾'
+      mr: 'संध्याकाळचा चहा, चालणे व ताजी हवा',
+      hi: 'शाम का चाय काल और ताजी हवा में टहलना'
     },
     subTitle: {
       en: 'Outdoor walking, tea/snack, light physical movement to beat afternoon slump',
-      mr: 'à¤¬à¤¾à¤¹à¥‡à¤° à¤«à¤¿à¤°à¤¾, à¤šà¤¹à¤¾/à¤…à¤²à¥à¤ªà¥‹à¤ªà¤¹à¤¾à¤° à¤˜à¥à¤¯à¤¾ à¤†à¤£à¤¿ à¤¶à¤¾à¤°à¥€à¤°à¤¿à¤• à¤¹à¤¾à¤²à¤šà¤¾à¤² à¤•à¤°à¤¾',
-      hi: 'à¤Ÿà¤¹à¤²à¥‡à¤‚, à¤šà¤¾à¤¯/à¤¹à¤²à¥à¤•à¤¾ à¤¨à¤¾à¤¶à¥à¤¤à¤¾ à¤²à¥‡à¤‚ à¤”à¤° à¤¤à¤¾à¤œà¤—à¥€ à¤®à¤¹à¤¸à¥‚à¤¸ à¤•à¤°à¥‡à¤‚'
+      mr: 'बाहेर फिरा, चहा/अल्पोपहार घ्या आणि शारीरिक हालचाल करा',
+      hi: 'टहलें, चाय/हल्का नाश्ता लें और ताजगी महसूस करें'
     },
     color: '#f59e0b',
     softColor: '#fffbeb',
@@ -847,13 +850,13 @@ const UPSC_10H_SCHEDULE = [
     timeRange: '6:00 PM - 8:00 PM',
     title: {
       en: 'Answer Writing & PYQs / MCQs Practice',
-      mr: 'à¤‰à¤¤à¥à¤¤à¤° à¤²à¥‡à¤–à¤¨ à¤¸à¤°à¤¾à¤µ à¤µ à¤®à¤¾à¤—à¥€à¤² à¤µà¤°à¥à¤·à¤¾à¤‚à¤šà¥‡ à¤ªà¥à¤°à¤¶à¥à¤¨',
-      hi: 'à¤‰à¤¤à¥à¤¤à¤° à¤²à¥‡à¤–à¤¨ à¤…à¤­à¥à¤¯à¤¾à¤¸ à¤”à¤° à¤ªà¥‚à¤°à¥à¤µ à¤µà¤°à¥à¤· à¤ªà¥à¤°à¤¶à¥à¤¨'
+      mr: 'उत्तर लेखन सराव व मागील वर्षांचे प्रश्न',
+      hi: 'उत्तर लेखन अभ्यास और पूर्व वर्ष प्रश्न'
     },
     subTitle: {
       en: 'Timed 50 MCQs or 2 Mains answers; evaluate mistakes and model answers',
-      mr: 'à¥«à¥¦ à¤µà¤¸à¥à¤¤à¥à¤¨à¤¿à¤·à¥à¤  à¤ªà¥à¤°à¤¶à¥à¤¨ à¤•à¤¿à¤‚à¤µà¤¾ à¥¨ à¤®à¥à¤–à¥à¤¯ à¤ªà¤°à¥€à¤•à¥à¤·à¥‡à¤šà¥€ à¤‰à¤¤à¥à¤¤à¤°à¥‡ à¤µà¥‡à¤³à¥‡à¤¤ à¤¸à¥‹à¤¡à¤µà¤¾',
-      hi: 'à¥«à¥¦ à¤à¤®à¤¸à¥€à¤•à¥à¤¯à¥‚ à¤¯à¤¾ à¥¨ à¤®à¥à¤–à¥à¤¯ à¤ªà¤°à¥€à¤•à¥à¤·à¤¾ à¤‰à¤¤à¥à¤¤à¤° à¤¹à¤² à¤•à¤°à¥‡à¤‚'
+      mr: '५० वस्तुनिष्ठ प्रश्न किंवा २ मुख्य परीक्षेची उत्तरे वेळेत सोडवा',
+      hi: '५० एमसीक्यू या २ मुख्य परीक्षा उत्तर हल करें'
     },
     defaultSubjectId: 'upsc-csat',
     color: '#ec4899',
@@ -872,13 +875,13 @@ const UPSC_10H_SCHEDULE = [
     timeRange: '8:00 PM - 10:00 PM',
     title: {
       en: 'Dinner Break & Decompression',
-      mr: 'à¤°à¤¾à¤¤à¥à¤°à¥€à¤šà¥‡ à¤œà¥‡à¤µà¤£ à¤µ à¤†à¤°à¤¾à¤®',
-      hi: 'à¤°à¤¾à¤¤à¥à¤°à¤¿à¤­à¥‹à¤œ à¤”à¤° à¤µà¤¿à¤¶à¥à¤°à¤¾à¤®'
+      mr: 'रात्रीचे जेवण व आराम',
+      hi: 'रात्रिभोज और विश्राम'
     },
     subTitle: {
       en: 'Family dinner, gentle conversation, relaxed mind before final night push',
-      mr: 'à¤¶à¤¾à¤‚à¤¤à¤ªà¤£à¥‡ à¤°à¤¾à¤¤à¥à¤°à¥€à¤šà¥‡ à¤œà¥‡à¤µà¤£ à¤˜à¥à¤¯à¤¾ à¤†à¤£à¤¿ à¤®à¤¨ à¤¶à¤¾à¤‚à¤¤ à¤ à¥‡à¤µà¤¾',
-      hi: 'à¤°à¤¾à¤¤à¥à¤°à¤¿à¤­à¥‹à¤œ à¤”à¤° à¤¶à¤¾à¤‚à¤¤ à¤®à¤¨ à¤¸à¥‡ à¤µà¤¿à¤¶à¥à¤°à¤¾à¤®'
+      mr: 'शांतपणे रात्रीचे जेवण घ्या आणि मन शांत ठेवा',
+      hi: 'रात्रिभोज और शांत मन से विश्राम'
     },
     color: '#06b6d4',
     softColor: '#ecfeff',
@@ -897,13 +900,13 @@ const UPSC_10H_SCHEDULE = [
     timeRange: '10:00 PM - 12:00 AM',
     title: {
       en: 'Current Affairs & Daily Consolidation',
-      mr: 'à¤šà¤¾à¤²à¥‚ à¤˜à¤¡à¤¾à¤®à¥‹à¤¡à¥€ à¤µ à¤¦à¤¿à¤µà¤¸à¤­à¤°à¤¾à¤šà¤¾ à¤†à¤¢à¤¾à¤µà¤¾',
-      hi: 'à¤¸à¤®à¤¸à¤¾à¤®à¤¯à¤¿à¤•à¥€ à¤”à¤° à¤¦à¥ˆà¤¨à¤¿à¤• à¤¸à¤®à¥€à¤•à¥à¤·à¤¾'
+      mr: 'चालू घडामोडी व दिवसभराचा आढावा',
+      hi: 'समसामयिकी और दैनिक समीक्षा'
     },
     subTitle: {
       en: 'The Hindu / Indian Express editorials, monthly compilation, consolidate day',
-      mr: 'à¤µà¤°à¥à¤¤à¤®à¤¾à¤¨à¤ªà¤¤à¥à¤°à¤¾à¤¤à¥€à¤² à¤®à¤¹à¤¤à¥à¤¤à¥à¤µà¤¾à¤šà¥‡ à¤²à¥‡à¤–, à¤šà¤¾à¤²à¥‚ à¤˜à¤¡à¤¾à¤®à¥‹à¤¡à¥€ à¤µ à¤¦à¤¿à¤µà¤¸à¤­à¤°à¤¾à¤šà¥à¤¯à¤¾ à¤…à¤­à¥à¤¯à¤¾à¤¸à¤¾à¤šà¥€ à¤¨à¥‹à¤‚à¤¦',
-      hi: 'à¤¦à¥ˆà¤¨à¤¿à¤• à¤¸à¤®à¤¾à¤šà¤¾à¤° à¤ªà¤¤à¥à¤° à¤¸à¤‚à¤ªà¤¾à¤¦à¤•à¥€à¤¯ à¤”à¤° à¤¸à¤®à¤¸à¤¾à¤®à¤¯à¤¿à¤•à¥€ à¤ªà¤¤à¥à¤°à¤¿à¤•à¤¾'
+      mr: 'वर्तमानपत्रातील महत्त्वाचे लेख, चालू घडामोडी व दिवसभराच्या अभ्यासाची नोंद',
+      hi: 'दैनिक समाचार पत्र संपादकीय और समसामयिकी पत्रिका'
     },
     defaultSubjectId: 'upsc-current-affairs',
     color: '#f97316',
@@ -916,7 +919,53 @@ const UPSC_10H_SCHEDULE = [
   }
 ];
 
+class RootErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.error("RootErrorBoundary caught an error:", error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, backgroundColor: '#F4F7FA' }}>
+          <Text style={{ fontSize: 20, fontWeight: '700', color: '#1f2937', marginBottom: 8 }}>Something went wrong</Text>
+          <Text style={{ fontSize: 14, color: '#ef4444', textAlign: 'center', marginBottom: 18, maxWidth: 400 }}>
+            {this.state.error?.message || 'An unexpected error occurred'}
+          </Text>
+          <TouchableOpacity
+            onPress={() => {
+              if (Platform.OS === 'web' && typeof window !== 'undefined') {
+                window.location.reload();
+              } else {
+                this.setState({ hasError: false, error: null });
+              }
+            }}
+            style={{ backgroundColor: '#247C78', paddingHorizontal: 20, paddingVertical: 11, borderRadius: 10 }}
+          >
+            <Text style={{ color: '#FFFFFF', fontWeight: 'bold' }}>Reload App</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function App() {
+  return (
+    <RootErrorBoundary>
+      <MainApp />
+    </RootErrorBoundary>
+  );
+}
+
+function MainApp() {
   const getInitialTab = () => {
     if (Platform.OS === 'web' && typeof window !== 'undefined' && window.location?.search) {
       const p = new URLSearchParams(window.location.search).get('tab');
@@ -987,6 +1036,7 @@ export default function App() {
 
   // Profile, Notification, and Analytics Range State
   const [profileOpen, setProfileOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [remindersOpen, setRemindersOpen] = useState(false);
   const [analyticsRange, setAnalyticsRange] = useState('7');
   const [analyticsSubTab, setAnalyticsSubTab] = useState('Overview');
@@ -1030,6 +1080,43 @@ export default function App() {
 
   const [notifOpen, setNotifOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [serverUrlInput, setServerUrlInput] = useState(getApiBase());
+  const [serverStatus, setServerStatus] = useState('online');
+  const [serverTesting, setServerTesting] = useState(false);
+  const [serverTestMsg, setServerTestMsg] = useState('');
+
+  const handleTestServerConnection = async (targetOverride) => {
+    setServerTesting(true);
+    setServerTestMsg('');
+    try {
+      const target = (typeof targetOverride === 'string' ? targetOverride : serverUrlInput).trim() || getApiBase();
+      const ok = await testApiConnection(target);
+      if (ok) {
+        setServerStatus('online');
+        setServerTestMsg(lang === 'mr' ? '✅ सर्व्हर यशस्वीरित्या जोडला गेला! (200 OK)' : '✅ Server connected successfully! (200 OK)');
+      } else {
+        setServerStatus('offline');
+        setServerTestMsg(lang === 'mr' ? '❌ सर्व्हरशी संपर्क होऊ शकला नाही. वाय-फाय/हॉटस्पॉट तपासा.' : '❌ Server unreachable. Verify Wi-Fi or Hotspot.');
+      }
+    } catch (e) {
+      setServerStatus('offline');
+      setServerTestMsg('❌ ' + e.message);
+    } finally {
+      setServerTesting(false);
+    }
+  };
+
+  const handleSaveServerUrl = async (presetUrl) => {
+    const target = (typeof presetUrl === 'string' ? presetUrl : serverUrlInput).trim();
+    if (!target) {
+      await setCustomApiBase(null);
+      setServerTestMsg(lang === 'mr' ? 'ऑटो-डिटेक्शन रीसेट केले.' : 'Auto-detection reset.');
+    } else {
+      await setCustomApiBase(target);
+      await handleTestServerConnection(target);
+    }
+    refresh();
+  };
   const [selectedTrackDate, setSelectedTrackDate] = useState(today());
   const [expandedSubjectId, setExpandedSubjectId] = useState(null);
 
@@ -1079,7 +1166,7 @@ export default function App() {
       }
       await refresh();
       showAppDialog({
-        title: '10-Hour Schedule Applied! â±ï¸',
+        title: '10-Hour Schedule Applied! ⏱️',
         message: `${isTargetTomorrow ? "Tomorrow's" : "Today's"} study planner now has all 4 disciplined study blocks scheduled (10 hours total).`,
         confirmText: t('done') || 'Great!',
         cancelText: null
@@ -2483,6 +2570,45 @@ export default function App() {
 
   const topNeglected = neglectedSubjects[0] || null;
 
+  // Dynamic streak calculation based on days with study sessions (UTC & Local resilient)
+  const globalStreak = useMemo(() => {
+    const sessionDays = new Set();
+    (sessions || []).forEach(s => {
+      if (s.startedAt && (Number(s.minutes) > 0 || s.minutes == null)) {
+        sessionDays.add(s.startedAt.slice(0, 10));
+        const d = new Date(s.startedAt);
+        if (!isNaN(d.getTime())) {
+          const y = d.getFullYear();
+          const m = String(d.getMonth() + 1).padStart(2, '0');
+          const day = String(d.getDate()).padStart(2, '0');
+          sessionDays.add(`${y}-${m}-${day}`);
+        }
+      }
+    });
+
+    let streakCount = 0;
+    const nowObj = new Date();
+    const streakCheckDate = new Date(nowObj.getFullYear(), nowObj.getMonth(), nowObj.getDate());
+    const todayLocal = `${streakCheckDate.getFullYear()}-${String(streakCheckDate.getMonth() + 1).padStart(2, '0')}-${String(streakCheckDate.getDate()).padStart(2, '0')}`;
+    const todayUtc = nowObj.toISOString().slice(0, 10);
+
+    if (!sessionDays.has(todayLocal) && !sessionDays.has(todayUtc)) {
+      streakCheckDate.setDate(streakCheckDate.getDate() - 1);
+    }
+
+    while (true) {
+      const curLocal = `${streakCheckDate.getFullYear()}-${String(streakCheckDate.getMonth() + 1).padStart(2, '0')}-${String(streakCheckDate.getDate()).padStart(2, '0')}`;
+      const curUtc = streakCheckDate.toISOString().slice(0, 10);
+      if (sessionDays.has(curLocal) || sessionDays.has(curUtc)) {
+        streakCount++;
+        streakCheckDate.setDate(streakCheckDate.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+    return Math.max(streakCount, Number(analytics?.currentStreak) || 0);
+  }, [sessions, analytics?.currentStreak]);
+
   if (loading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', backgroundColor: C.bg }}>
@@ -2511,6 +2637,8 @@ export default function App() {
   const total = forestStats.totalMinutes;
   const focus = analytics.averageFocus || 0;
   const unread = notes.filter(n => !(n.readBy || []).includes(user?.id));
+
+  // (globalStreak hook relocated above early returns to adhere to React Hook Rules)
 
   // ---------------- DASHBOARD TAB ----------------
   const Dashboard = () => {
@@ -2548,7 +2676,7 @@ export default function App() {
         break;
       }
     }
-    const currentStreak = Math.max(streakCount, Number(analytics?.currentStreak) || 0);
+    const currentStreak = Math.max(streakCount, Number(analytics?.currentStreak) || 0, globalStreak || 0);
     const currentYear = new Date().getFullYear();
     const dailyQuote = getDailyQuote(lang);
 
@@ -2677,7 +2805,7 @@ export default function App() {
           "{dailyQuote.quote}"
         </Text>
         <Text style={[txt(11, false, C.muted), { marginTop: 6 }]}>
-          â€” {dailyQuote.author}
+          — {dailyQuote.author}
         </Text>
       </Card>
 
@@ -2748,9 +2876,9 @@ export default function App() {
                     </Text>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 }}>
                       <Text style={txt(11, false, C.muted)}>
-                        {p.minutes} {t('mins')} â€¢ {t((p.priority || 'Medium').toLowerCase(), p.priority || 'Medium')}
+                        {p.minutes} {t('mins')} • {t((p.priority || 'Medium').toLowerCase(), p.priority || 'Medium')}
                       </Text>
-                      <Text style={{ fontSize: 10, fontWeight: '700', color: C.blue }}>â€¢ {t('viewTopic')}</Text>
+                      <Text style={{ fontSize: 10, fontWeight: '700', color: C.blue }}>• {t('viewTopic')}</Text>
                     </View>
                   </TouchableOpacity>
                   {!p.done && (
@@ -3075,19 +3203,21 @@ export default function App() {
 
       {/* 7. CURRICULUM PROGRESS */}
       <Card style={{ marginBottom: 14 }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Text style={txt(15, true)}>{t('curriculumProgress')}</Text>
-          <Text style={txt(13, true, C.blue)}>{syllabusStats.overallPct}% {t('overallCurriculum')}</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
+          <Text style={[txt(15, true), { flexShrink: 1 }]}>{t('curriculumProgress')}</Text>
+          <Text style={[txt(13, true, C.blue), { flexShrink: 1 }]}>
+            {Math.min(100, Math.max(0, Number(syllabusStats.overallPct) || 0))}% {t('overallCurriculum')}
+          </Text>
         </View>
 
         {/* Dual Progress: UPSC vs MPSC */}
         <View style={{ marginTop: 12, paddingBottom: 10, borderBottomWidth: 1, borderColor: C.line }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
             <Text style={txt(12, true, C.blue)}>{t('upscOnly')}</Text>
-            <Text style={txt(12, true, C.blue)}>{syllabusStats.upsc.pct}%</Text>
+            <Text style={txt(12, true, C.blue)}>{Math.min(100, Math.max(0, Number(syllabusStats?.upsc?.pct) || 0))}%</Text>
           </View>
           <View style={{ height: 6, backgroundColor: C.soft, borderRadius: 6, overflow: 'hidden' }}>
-            <View style={{ backgroundColor: C.blue, width: `${syllabusStats.upsc.pct}%`, height: 6, borderRadius: 6 }} />
+            <View style={{ backgroundColor: C.blue, width: `${Math.min(100, Math.max(0, Number(syllabusStats?.upsc?.pct) || 0))}%`, height: 6, borderRadius: 6 }} />
           </View>
           <Text style={[txt(10, false, C.muted), { marginTop: 3 }]}>
             {syllabusStats.upsc.completed} {t('remainingOf', 'of')} {syllabusStats.upsc.total} {t('topicsMastered')}
@@ -3097,10 +3227,10 @@ export default function App() {
         <View style={{ marginTop: 10, marginBottom: 8 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
             <Text style={txt(12, true, '#b45309')}>{t('mpscOnly')}</Text>
-            <Text style={txt(12, true, '#b45309')}>{syllabusStats.mpsc.pct}%</Text>
+            <Text style={txt(12, true, '#b45309')}>{Math.min(100, Math.max(0, Number(syllabusStats.mpsc.pct) || 0))}%</Text>
           </View>
           <View style={{ height: 6, backgroundColor: '#fef3c7', borderRadius: 6, overflow: 'hidden' }}>
-            <View style={{ backgroundColor: '#b45309', width: `${syllabusStats.mpsc.pct}%`, height: 6, borderRadius: 6 }} />
+            <View style={{ backgroundColor: '#b45309', width: `${Math.min(100, Math.max(0, Number(syllabusStats.mpsc.pct) || 0))}%`, height: 6, borderRadius: 6 }} />
           </View>
           <Text style={[txt(10, false, C.muted), { marginTop: 3 }]}>
             {syllabusStats.mpsc.completed} {t('remainingOf', 'of')} {syllabusStats.mpsc.total} {t('topicsMastered')}
@@ -3220,7 +3350,7 @@ export default function App() {
                   {navigatedTopicInfo.topicName || navigatedTopicInfo.taskTitle}
                 </Text>
                 <Text style={txt(11, false, C.muted)}>
-                  {navigatedTopicInfo.subjectName} â€¢ {navigatedTopicInfo.exam}
+                  {navigatedTopicInfo.subjectName} • {navigatedTopicInfo.exam}
                 </Text>
               </View>
               <TouchableOpacity
@@ -3364,7 +3494,7 @@ export default function App() {
                   alignItems: 'center'
                 }}
               >
-                <Text style={txt(11, true, '#ffffff')}>â–¶ {t('startLiveTimer', 'Start Live Timer')}</Text>
+                <Text style={txt(11, true, '#ffffff')}>▶ {t('startLiveTimer', 'Start Live Timer')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => {
@@ -3437,7 +3567,7 @@ export default function App() {
                   </View>
                 )}
 
-                <View style={{ flex: 1 }}>
+                <View style={{ flex: 1, minWidth: 0 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                     <Text
                       style={{
@@ -3469,11 +3599,11 @@ export default function App() {
                   </View>
                   <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4, flexWrap: 'wrap', gap: 4 }}>
                     <Text style={txt(12, false, C.muted)}>
-                      {sCompleted} / {topicsList.length} {t('topicsMastered')} â€¢ {sPct}%
+                      {sCompleted} / {topicsList.length} {t('topicsMastered')} • {sPct}%
                     </Text>
                     <View style={{ backgroundColor: isExpanded ? (isDark ? '#1e3a5f' : '#dbeafe') : C.soft, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6 }}>
                       <Text style={{ fontSize: 10, fontWeight: '700', color: isExpanded ? C.blue : C.muted }}>
-                        {topicsList.length} {t('subtopics', 'subtopics')} {isExpanded ? 'â–²' : 'â–¼'}
+                        {topicsList.length} {t('subtopics', 'subtopics')} {isExpanded ? '▲' : '▼'}
                       </Text>
                     </View>
                   </View>
@@ -3545,7 +3675,7 @@ export default function App() {
                         </View>
                       )}
                       <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-                        <View style={{ flex: 1, marginRight: 8 }}>
+                        <View style={{ flex: 1, minWidth: 0, marginRight: 8 }}>
                           <Text style={txt(10, false, C.muted)}>{getChapterName(topicItem.chapter, lang)}</Text>
                           <Text
                             style={[
@@ -3594,7 +3724,8 @@ export default function App() {
                             paddingHorizontal: 9,
                             paddingVertical: 6,
                             borderRadius: 14,
-                            gap: 4
+                            gap: 4,
+                            flexShrink: 0
                           }}
                         >
                           <Ionicons name={cfg.icon} size={14} color={cfg.fg} />
@@ -3623,7 +3754,7 @@ export default function App() {
                           style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}
                         >
                           <Ionicons name="play-circle" size={13} color={C.blue} />
-                          <Text style={txt(11, true, C.blue)}>â–¶ {t('focus')}</Text>
+                          <Text style={txt(11, true, C.blue)}>▶ {t('focus')}</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -3846,7 +3977,7 @@ export default function App() {
 
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4, flexWrap: 'wrap', gap: 6 }}>
                 <Text style={txt(11, false, C.muted)}>
-                  {p.minutes} {t('mins', 'mins')} â€¢ {p.done ? getStatusLabel('completed', lang) : getStatusLabel('pending', lang)}
+                  {p.minutes} {t('mins', 'mins')} • {p.done ? getStatusLabel('completed', lang) : getStatusLabel('pending', lang)}
                 </Text>
                 <View
                   style={{
@@ -3878,7 +4009,7 @@ export default function App() {
                     borderRadius: 8
                   }}
                 >
-                  <Text style={txt(11, true, C.white)}>â–¶ {t('focus')}</Text>
+                  <Text style={txt(11, true, C.white)}>▶ {t('focus')}</Text>
                 </TouchableOpacity>
               )}
               <TouchableOpacity onPress={() => deletePlan(p)} style={{ padding: 4 }}>
@@ -3951,9 +4082,13 @@ export default function App() {
         {plannerView === "Today's Plan" && (
           <>
             <Card>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={txt(15, true)}>{t('todaysStudyLoad')} vs. {dailyGoalHours}{t('hoursShort', 'h')} {t('studyTargetGoal')}</Text>
-                <Text style={txt(13, true, C.blue)}>{todayCapacityPct}% {t('capacity')}</Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 2 }}>
+                <Text style={[txt(14, true), { flex: 1, flexShrink: 1, paddingRight: 4 }]} numberOfLines={2}>
+                  {t('todaysStudyLoad')} vs. {dailyGoalHours}{t('hoursShort', 'h')} {t('studyTargetGoal')}
+                </Text>
+                <View style={{ backgroundColor: C.soft, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, flexShrink: 0 }}>
+                  <Text style={txt(12, true, C.blue)}>{todayCapacityPct}% {t('capacity')}</Text>
+                </View>
               </View>
               <View style={{ height: 8, backgroundColor: C.soft, borderRadius: 6, marginVertical: 10 }}>
                 <View
@@ -3966,7 +4101,7 @@ export default function App() {
                 />
               </View>
               <Text style={txt(12, false, C.muted)}>
-                {todayPlannedMinutes} {t('minPlanned')} ({Math.floor(todayPlannedMinutes / 60)}h {todayPlannedMinutes % 60}m) â€¢ {dailyGoalHours}h ({dailyGoalHours * 60}m)
+                {todayPlannedMinutes} {t('minPlanned')} ({Math.floor(todayPlannedMinutes / 60)}h {todayPlannedMinutes % 60}m) • {dailyGoalHours}h ({dailyGoalHours * 60}m)
               </Text>
             </Card>
 
@@ -3992,9 +4127,13 @@ export default function App() {
         {plannerView === "Tomorrow's Plan" && (
           <>
             <Card>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={txt(15, true)}>{t('tomorrowsWorkloadTarget')}</Text>
-                <Text style={txt(13, true, C.blue)}>{tomorrowCapacityPct}% {t('capacity')}</Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 2 }}>
+                <Text style={[txt(14, true), { flex: 1, flexShrink: 1, paddingRight: 4 }]} numberOfLines={2}>
+                  {t('tomorrowsWorkloadTarget')}
+                </Text>
+                <View style={{ backgroundColor: C.soft, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, flexShrink: 0 }}>
+                  <Text style={txt(12, true, C.blue)}>{tomorrowCapacityPct}% {t('capacity')}</Text>
+                </View>
               </View>
               <View style={{ height: 8, backgroundColor: C.soft, borderRadius: 6, marginVertical: 10 }}>
                 <View
@@ -4007,7 +4146,7 @@ export default function App() {
                 />
               </View>
               <Text style={txt(12, false, C.muted)}>
-                {tomorrowPlannedMinutes} {t('minPlanned')} ({Math.floor(tomorrowPlannedMinutes / 60)}h {tomorrowPlannedMinutes % 60}m) â€¢ {t('tomorrow')} ({formatDateDMY(tomorrow())})
+                {tomorrowPlannedMinutes} {t('minPlanned')} ({Math.floor(tomorrowPlannedMinutes / 60)}h {tomorrowPlannedMinutes % 60}m) • {t('tomorrow')} ({formatDateDMY(tomorrow())})
               </Text>
             </Card>
 
@@ -4109,7 +4248,7 @@ export default function App() {
                 />
               </View>
               <Text style={txt(12, false, C.muted)}>
-                {Math.floor(weeklyPlannedMinutes / 60)}h {weeklyPlannedMinutes % 60}m {t('minPlanned')} â€¢ {weeklyPlans.filter(p => p.done).length}/{weeklyPlans.length} {t('tasks')} {t('completed')}
+                {Math.floor(weeklyPlannedMinutes / 60)}h {weeklyPlannedMinutes % 60}m {t('minPlanned')} • {weeklyPlans.filter(p => p.done).length}/{weeklyPlans.length} {t('tasks')} {t('completed')}
               </Text>
             </Card>
 
@@ -4592,51 +4731,99 @@ export default function App() {
             ))}
           </View>
 
-          {/* Priority & Date Selector */}
-          <View style={{ flexDirection: 'row', gap: 12, marginTop: 4, flexWrap: 'wrap' }}>
-            <View style={{ flex: 1, minWidth: 150 }}>
-              <Text style={txt(11, true, C.muted)}>{t('priority')}</Text>
-              <View style={{ flexDirection: 'row', marginTop: 6 }}>
-                {[
-                  ['High', t('high')],
-                  ['Medium', t('medium')],
-                  ['Low', t('low')]
-                ].map(([pKey, pLabel]) => (
-                  <Chip
+          {/* Priority & Date Selector (Stacked & Full-Width to Prevent Text Squashing) */}
+          <View style={{ marginTop: 10 }}>
+            <Text style={txt(11, true, C.muted)}>{t('priority')}</Text>
+            <View style={{ flexDirection: 'row', marginTop: 6, gap: 8 }}>
+              {[
+                ['High', t('high')],
+                ['Medium', t('medium')],
+                ['Low', t('low')]
+              ].map(([pKey, pLabel]) => {
+                const isActive = planPriority === pKey;
+                return (
+                  <TouchableOpacity
                     key={pKey}
-                    label={pLabel}
-                    active={planPriority === pKey}
                     onPress={() => setPlanPriority(pKey)}
-                  />
-                ))}
-              </View>
-            </View>
-
-            <View style={{ flex: 1, minWidth: 150 }}>
-              <Text style={txt(11, true, C.muted)}>{t('day')}</Text>
-              <View style={{ flexDirection: 'row', marginTop: 6, flexWrap: 'wrap', gap: 6 }}>
-                <Chip
-                  label={t('today')}
-                  active={planDateType === 'today'}
-                  onPress={() => setPlanDateType('today')}
-                />
-                <Chip
-                  label={t('tomorrow')}
-                  active={planDateType === 'tomorrow'}
-                  onPress={() => setPlanDateType('tomorrow')}
-                />
-                {selectedWeekDate !== today() && selectedWeekDate !== tomorrow() && (
-                  <Chip
-                    label={`Selected (${selectedWeekDate})`}
-                    active={planDateType === 'selected'}
-                    onPress={() => setPlanDateType('selected')}
-                  />
-                )}
-              </View>
+                    activeOpacity={0.75}
+                    style={{
+                      flex: 1,
+                      backgroundColor: isActive ? C.blue : C.soft,
+                      paddingVertical: 9,
+                      paddingHorizontal: 4,
+                      borderRadius: 12,
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <Text
+                      numberOfLines={1}
+                      style={txt(12, true, isActive ? '#ffffff' : (isDark ? '#93c5fd' : C.blue))}
+                    >
+                      {pLabel}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </View>
 
-          <View style={{ marginTop: 8 }}>
+          <View style={{ marginTop: 12 }}>
+            <Text style={txt(11, true, C.muted)}>{t('day')}</Text>
+            <View style={{ flexDirection: 'row', marginTop: 6, gap: 8, flexWrap: 'wrap' }}>
+              {[
+                ['today', t('today')],
+                ['tomorrow', t('tomorrow')]
+              ].map(([dKey, dLabel]) => {
+                const isActive = planDateType === dKey;
+                return (
+                  <TouchableOpacity
+                    key={dKey}
+                    onPress={() => setPlanDateType(dKey)}
+                    activeOpacity={0.75}
+                    style={{
+                      backgroundColor: isActive ? C.blue : C.soft,
+                      paddingVertical: 9,
+                      paddingHorizontal: 14,
+                      borderRadius: 12,
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <Text
+                      numberOfLines={1}
+                      style={txt(12, true, isActive ? '#ffffff' : (isDark ? '#93c5fd' : C.blue))}
+                    >
+                      {dLabel}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+              {selectedWeekDate !== today() && selectedWeekDate !== tomorrow() && (
+                <TouchableOpacity
+                  onPress={() => setPlanDateType('selected')}
+                  activeOpacity={0.75}
+                  style={{
+                    backgroundColor: planDateType === 'selected' ? C.blue : C.soft,
+                    paddingVertical: 9,
+                    paddingHorizontal: 14,
+                    borderRadius: 12,
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <Text
+                    numberOfLines={1}
+                    style={txt(12, true, planDateType === 'selected' ? '#ffffff' : (isDark ? '#93c5fd' : C.blue))}
+                  >
+                    {`Selected (${selectedWeekDate})`}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+
+          <View style={{ marginTop: 12 }}>
             <Button
               label={t('scheduleStudyBlockBtn')}
               onPress={addPlan}
@@ -4687,8 +4874,8 @@ export default function App() {
               backgroundColor: C.cardBg,
               width: '100%',
               maxWidth: 460,
-              maxHeight: Platform.OS === 'web' ? '86vh' : '90%',
-              height: Platform.OS === 'web' ? '86vh' : undefined,
+              height: Platform.OS === 'web' ? '84vh' : '82%',
+              maxHeight: 660,
               borderRadius: 16,
               borderWidth: 1,
               borderColor: C.line,
@@ -4726,7 +4913,7 @@ export default function App() {
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text numberOfLines={1} style={txt(14, true)}>{t('settingsTitle')}</Text>
                   <Text numberOfLines={1} style={txt(10, false, C.muted)}>
-                    {user?.name || 'Aspirant'} â€¢ {user?.email || 'student@abhyas.local'}
+                    {user?.name || 'Aspirant'} • {user?.email || 'student@abhyas.local'}
                   </Text>
                 </View>
               </View>
@@ -4748,8 +4935,9 @@ export default function App() {
             {/* Scrollable Settings Content */}
             <ScrollView
               style={{ flex: 1, minHeight: 0, width: '100%' }}
-              contentContainerStyle={{ paddingHorizontal: 14, paddingVertical: 14 }}
+              contentContainerStyle={{ paddingHorizontal: 14, paddingVertical: 14, paddingBottom: 32 }}
               showsVerticalScrollIndicator={true}
+              keyboardShouldPersistTaps="handled"
             >
               {/* 1. Language Selector (Compact Size) */}
               <View style={{ marginBottom: 16 }}>
@@ -4989,6 +5177,208 @@ export default function App() {
                     </Text>
                   </TouchableOpacity>
                 </View>
+              </View>
+
+              {/* 5b. Server & Network Connection (Wi-Fi & Hotspot) */}
+              <View style={{ marginBottom: 16, paddingTop: 14, borderTopWidth: 1, borderColor: C.line }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Ionicons name="wifi-outline" size={16} color={C.blue} />
+                    <Text style={txt(12, true)}>{lang === 'mr' ? 'सर्व्हर व नेटवर्क कनेक्टिव्हिटी' : 'Server & Network Connectivity'}</Text>
+                  </View>
+                  <View style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: serverStatus === 'online' ? (isDark ? '#064e3b' : '#ecfdf5') : (isDark ? '#451a03' : '#fef3c7'),
+                    paddingHorizontal: 8,
+                    paddingVertical: 2,
+                    borderRadius: 10
+                  }}>
+                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: serverStatus === 'online' ? '#10b981' : '#f59e0b', marginRight: 4 }} />
+                    <Text style={{ fontSize: 9.5, fontWeight: '700', color: serverStatus === 'online' ? '#059669' : '#d97706' }}>
+                      {serverStatus === 'online' ? (lang === 'mr' ? 'सक्रिय' : 'Online') : (lang === 'mr' ? 'तपासा' : 'Check')}
+                    </Text>
+                  </View>
+                </View>
+                <Text style={[txt(10, false, C.muted), { marginBottom: 8 }]}>
+                  {lang === 'mr'
+                    ? 'वाय-फाय, हॉटस्पॉट किंवा क्लाउड सर्व्हर पत्ता कॉन्फिगर करा'
+                    : 'Works across all Wi-Fi networks & mobile hotspots. Set or test server IP.'}
+                </Text>
+
+                {/* Server Input */}
+                <View style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: isDark ? '#1e293b' : '#f8fafc',
+                  borderWidth: 1,
+                  borderColor: C.line,
+                  borderRadius: 10,
+                  paddingHorizontal: 10,
+                  marginBottom: 8
+                }}>
+                  <Ionicons name="link-outline" size={15} color={C.muted} style={{ marginRight: 6 }} />
+                  <TextInput
+                    value={serverUrlInput}
+                    onChangeText={(val) => {
+                      setServerUrlInput(val);
+                      setServerTestMsg('');
+                    }}
+                    placeholder="http://10.116.34.214:4000/api"
+                    placeholderTextColor={C.muted}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    style={{
+                      flex: 1,
+                      fontSize: 11.5,
+                      color: C.ink,
+                      paddingVertical: 8
+                    }}
+                  />
+                  {Boolean(serverUrlInput) && (
+                    <TouchableOpacity onPress={() => setServerUrlInput('')} style={{ padding: 4 }}>
+                      <Ionicons name="close-circle" size={15} color={C.muted} />
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                {/* Quick Presets */}
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setServerUrlInput('');
+                      handleSaveServerUrl('');
+                    }}
+                    style={{
+                      backgroundColor: isDark ? '#1e3850' : '#eff6ff',
+                      paddingHorizontal: 8,
+                      paddingVertical: 4,
+                      borderRadius: 8,
+                      borderWidth: 1,
+                      borderColor: '#93c5fd'
+                    }}
+                  >
+                    <Text style={{ fontSize: 10, fontWeight: '700', color: '#1d4ed8' }}>
+                      ⚡ Auto Detect (Any Wi-Fi)
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={() => {
+                      setServerUrlInput('http://localhost:4000/api');
+                      setServerTestMsg('');
+                    }}
+                    style={{
+                      backgroundColor: isDark ? '#1e3850' : '#f0f9ff',
+                      paddingHorizontal: 8,
+                      paddingVertical: 4,
+                      borderRadius: 8,
+                      borderWidth: 1,
+                      borderColor: '#93c5fd'
+                    }}
+                  >
+                    <Text style={{ fontSize: 10, fontWeight: '700', color: '#1d4ed8' }}>
+                      Localhost (4000)
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={() => {
+                      setServerUrlInput('http://192.168.137.1:4000/api');
+                      setServerTestMsg('');
+                    }}
+                    style={{
+                      backgroundColor: isDark ? '#1e3850' : '#f0fdf4',
+                      paddingHorizontal: 8,
+                      paddingVertical: 4,
+                      borderRadius: 8,
+                      borderWidth: 1,
+                      borderColor: '#86efac'
+                    }}
+                  >
+                    <Text style={{ fontSize: 10, fontWeight: '700', color: '#15803d' }}>
+                      Win Hotspot (192.168.137.1)
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={() => {
+                      setServerUrlInput('http://192.168.43.1:4000/api');
+                      setServerTestMsg('');
+                    }}
+                    style={{
+                      backgroundColor: isDark ? '#3b2f15' : '#fffbeb',
+                      paddingHorizontal: 8,
+                      paddingVertical: 4,
+                      borderRadius: 8,
+                      borderWidth: 1,
+                      borderColor: '#fde68a'
+                    }}
+                  >
+                    <Text style={{ fontSize: 10, fontWeight: '700', color: '#b45309' }}>
+                      Phone Hotspot (192.168.43.1)
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Test & Save buttons */}
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  <TouchableOpacity
+                    onPress={() => handleTestServerConnection(serverUrlInput)}
+                    disabled={serverTesting}
+                    style={{
+                      flex: 1,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: isDark ? '#1e293b' : '#f1f5f9',
+                      paddingVertical: 8,
+                      borderRadius: 8,
+                      borderWidth: 1,
+                      borderColor: C.line
+                    }}
+                  >
+                    {serverTesting ? (
+                      <ActivityIndicator size="small" color={C.blue} />
+                    ) : (
+                      <>
+                        <Ionicons name="pulse-outline" size={14} color={C.blue} style={{ marginRight: 4 }} />
+                        <Text style={{ fontSize: 11, fontWeight: '700', color: C.blue }}>
+                          {lang === 'mr' ? 'कनेक्शन तपासा' : 'Test Connection'}
+                        </Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={() => handleSaveServerUrl(serverUrlInput)}
+                    style={{
+                      flex: 1,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: C.blue,
+                      paddingVertical: 8,
+                      borderRadius: 8
+                    }}
+                  >
+                    <Ionicons name="checkmark-sharp" size={14} color="#ffffff" style={{ marginRight: 4 }} />
+                    <Text style={{ fontSize: 11, fontWeight: '800', color: '#ffffff' }}>
+                      {lang === 'mr' ? 'लागू करा' : 'Save & Connect'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {Boolean(serverTestMsg) && (
+                  <Text style={{
+                    fontSize: 10.5,
+                    fontWeight: '600',
+                    marginTop: 6,
+                    color: serverTestMsg.includes('✅') ? '#059669' : '#dc2626'
+                  }}>
+                    {serverTestMsg}
+                  </Text>
+                )}
               </View>
 
               {/* 6. Sign Out Button */}
@@ -5442,118 +5832,83 @@ export default function App() {
             backgroundColor: C.cardBg,
             flexDirection: 'row',
             alignItems: 'center',
+            justifyContent: 'space-between',
             borderBottomWidth: 1,
             borderColor: C.line,
             width: '100%'
           }}
         >
-          <View
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 10,
-              backgroundColor: C.soft,
-              justifyContent: 'center',
-              alignItems: 'center'
-            }}
-          >
-            <Ionicons name="book-outline" color={C.blue} size={20} />
-          </View>
-          <View style={{ flex: 1, marginLeft: 10, minWidth: 0 }}>
-            <Text numberOfLines={1} style={txt(15, true)}>{t('appName', 'Abhyas Tracker')}</Text>
-            <Text numberOfLines={1} style={txt(10, false, C.muted)}>
-              {t('examFocusTag', 'UPSC & MPSC')} â€¢ {tab === 'Dashboard' ? t('dashboard') : tab === 'Timer' ? t('timer') : tab === 'Syllabus' ? t('syllabus') : tab === 'Planner' ? t('planner') : tab === 'Analytics' ? t('analytics') : (tab === 'Ticket Support' || tab === 'Support') ? t('ticketSupport', 'Ticket Support') : tab}
-            </Text>
+          {/* Brand & Active Section (3-lines menu removed) */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, minWidth: 0, marginRight: 12 }}>
+            <View
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 10,
+                backgroundColor: C.soft,
+                justifyContent: 'center',
+                alignItems: 'center',
+                marginRight: 10,
+                borderWidth: 1,
+                borderColor: isDark ? '#334155' : '#dbeafe'
+              }}
+            >
+              <Ionicons name="book" color={C.blue} size={20} />
+            </View>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text numberOfLines={1} style={txt(15, true)}>{t('appName', 'Abhyas Tracker')}</Text>
+              <Text numberOfLines={1} style={txt(10, false, C.muted)}>
+                {t('examFocusTag', 'UPSC & MPSC')} • {tab === 'Dashboard' ? t('dashboard') : tab === 'Timer' ? t('timer') : tab === 'Syllabus' ? t('syllabus') : (tab === 'Pro' || tab === 'Premium') ? t('premium', 'Premium') : tab === 'Planner' ? t('planner') : tab === 'Analytics' ? t('analytics') : (tab === 'Ticket Support' || tab === 'Support') ? t('ticketSupport', 'Ticket Support') : tab}
+              </Text>
+            </View>
           </View>
 
-          {/* Header Action Buttons */}
-          <TouchableOpacity
-            onPress={() => {
-              setProfileOpen(false);
-              setNotifOpen(!notifOpen);
-            }}
-            accessibilityLabel="Notifications"
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 12,
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: isDark ? '#1e2942' : '#f0f4fd',
-              borderWidth: 1,
-              borderColor: isDark ? '#334155' : '#dbeafe',
-              position: 'relative',
-              marginRight: 6
-            }}
-          >
-            <Ionicons
-              name={notifOpen ? "notifications" : "notifications-outline"}
-              size={18}
-              color={C.blue}
-            />
-            {unread.length > 0 && (
-              <View
-                style={{
-                  position: 'absolute',
-                  top: 6,
-                  right: 6,
-                  width: 8,
-                  height: 8,
-                  borderRadius: 4,
-                  backgroundColor: '#e44242'
-                }}
-              />
-            )}
-          </TouchableOpacity>
-
+          {/* Header Action: Dignified & Professional Student Profile Avatar Button */}
           <TouchableOpacity
             onPress={() => {
               setNotifOpen(false);
               setSettingsOpen(false);
               setRemindersOpen(false);
-              setProfileOpen(!profileOpen);
+              setProfileOpen(true);
             }}
             accessibilityLabel="Student Profile"
+            activeOpacity={0.8}
             style={{
-              width: 36,
-              height: 36,
-              borderRadius: 12,
+              width: 38,
+              height: 38,
+              borderRadius: 19,
+              backgroundColor: isDark ? '#1e3a5f' : '#e0f2fe',
+              borderWidth: 1.5,
+              borderColor: profileOpen ? C.blue : (isDark ? '#334155' : '#bae6fd'),
               alignItems: 'center',
               justifyContent: 'center',
-              backgroundColor: isDark ? '#1e2942' : '#f0f4fd',
-              borderWidth: 1,
-              borderColor: isDark ? '#334155' : '#dbeafe',
-              marginRight: 6
+              position: 'relative'
             }}
           >
-            <Ionicons
-              name={profileOpen ? "person-circle" : "person-circle-outline"}
-              size={20}
-              color={C.blue}
-            />
+            {user?.name ? (
+              <Text style={{ fontSize: 15, fontWeight: '800', color: C.blue }}>
+                {user.name.trim().charAt(0).toUpperCase()}
+              </Text>
+            ) : (
+              <Ionicons name="person" size={18} color={C.blue} />
+            )}
+            {unread.length > 0 && (
+              <View
+                style={{
+                  position: 'absolute',
+                  top: -1,
+                  right: -1,
+                  width: 9,
+                  height: 9,
+                  borderRadius: 4.5,
+                  backgroundColor: '#ef4444',
+                  borderWidth: 1.5,
+                  borderColor: C.cardBg
+                }}
+              />
+            )}
           </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={() => {
-              setNotifOpen(false);
-              setProfileOpen(false);
-              setRemindersOpen(false);
-              setSettingsOpen(!settingsOpen);
-            }}
-            accessibilityLabel="Settings"
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 12,
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: isDark ? '#1e2942' : '#f0f4fd',
-              borderWidth: 1,
-              borderColor: isDark ? '#334155' : '#dbeafe'
-            }}
-          >
-            <Ionicons name={settingsOpen ? "settings" : "settings-outline"} size={18} color={C.blue} />
-          </TouchableOpacity>
         </View>
         )}
 
@@ -5597,6 +5952,27 @@ export default function App() {
                 setProfileOpen(false);
                 setRemindersOpen(true);
               }}
+              onOpenNotifications={() => {
+                setProfileOpen(false);
+                setNotifOpen(true);
+              }}
+              onOpenPlanner={() => {
+                setProfileOpen(false);
+                handleTabChange('Planner');
+              }}
+              onOpenAnalytics={() => {
+                setProfileOpen(false);
+                handleTabChange('Analytics');
+              }}
+              onNavigateTab={(targetTab) => {
+                setProfileOpen(false);
+                setSettingsOpen(false);
+                setRemindersOpen(false);
+                setNotifOpen(false);
+                handleTabChange(targetTab);
+                refresh();
+              }}
+              unreadCount={unread.length}
               theme={C}
               isDarkMode={isDark}
               onProfileUpdated={async (updatedUser) => {
@@ -5608,20 +5984,27 @@ export default function App() {
                   preferredSubjects: updatedUser.preferredSubjects,
                 });
                 setUser(data.user);
+                try {
+                  await AsyncStorage.setItem('@abhyas_user', JSON.stringify(data.user));
+                } catch {}
                 return data.user;
               }}
-              studyGoal={6}
-              studyStreak={Number(analytics.currentStreak) || 0}
+              studyGoal={dailyGoalHours || 6}
+              studyStreak={globalStreak}
+              totalMinutes={total}
               lang={lang}
               theme={C}
               isDarkMode={isDark}
+              onToggleTheme={toggleTheme}
             />
           </View>
         ) : (
           <ScrollView
             ref={mainScrollRef}
             style={{ flex: 1, width: '100%' }}
-            contentContainerStyle={{ padding: 12, paddingBottom: 30, width: '100%' }}
+            contentContainerStyle={{ padding: 12, paddingBottom: 160, width: '100%' }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
           >
             {notifOpen ? (
               <NotificationsScreen
@@ -5665,6 +6048,18 @@ export default function App() {
               />
             ) : tab === 'Syllabus' ? (
               <Syllabus />
+            ) : (tab === 'Pro' || tab === 'Premium') ? (
+              <ProSubscriptionScreen
+                user={user}
+                theme={C}
+                isDarkMode={isDark}
+                lang={lang}
+                t={t}
+                onSelectTab={(targetTab) => handleTabChange(targetTab)}
+                onUpdateUser={(updated) => {
+                  setUser((prev) => ({ ...prev, ...updated }));
+                }}
+              />
             ) : tab === 'Planner' ? (
               <Planner />
             ) : tab === 'Ticket Support' || tab === 'Support' ? (
@@ -5816,44 +6211,119 @@ export default function App() {
           </Modal>
         )}
 
-        {/* Bottom Navigation (Hidden in Focus Mode) */}
-        {!focusMode && (
-        <View
-          style={{
-            backgroundColor: C.cardBg,
-            borderTopWidth: 1,
-            borderColor: C.line,
-            flexDirection: 'row',
-            paddingVertical: 10,
-            width: '100%'
-          }}
-        >
-          {tabs.map(([tName, ic]) => {
-            const tabKey = {
-              Dashboard: 'dashboard',
-              Timer: 'timer',
-              Syllabus: 'syllabus',
-              Planner: 'planner',
-              Analytics: 'analytics',
-              'Ticket Support': 'ticketSupport',
-              Support: 'ticketSupport'
-            }[tName] || tName.toLowerCase();
+        {/* Bottom Tab Bar: 4 tabs: Dashboard, Timer, Syllabus, Ticket Support */}
+        {!focusMode && !profileOpen && !settingsOpen && !remindersOpen && !notifOpen && (
+          <View
+            style={{
+              flexDirection: 'row',
+              backgroundColor: C.cardBg,
+              borderTopWidth: 1,
+              borderColor: C.line,
+              paddingVertical: 8,
+              paddingBottom: Platform.OS === 'ios' ? 24 : (Platform.OS === 'android' ? 14 : 10),
+              paddingHorizontal: 8,
+              justifyContent: 'space-around',
+              alignItems: 'center',
+              width: '100%',
+              elevation: 8,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: -2 },
+              shadowOpacity: 0.08,
+              shadowRadius: 4
+            }}
+          >
+            {[
+              ['Dashboard', 'home-outline'],
+              ['Timer', 'stopwatch-outline'],
+              ['Syllabus', 'book-outline'],
+              ['Premium', 'sparkles-outline'],
+              ['Ticket Support', 'headset-outline']
+            ].map(([tName, ic]) => {
+              const active = tab === tName || (tName === 'Premium' && tab === 'Pro');
+              const tabKey = {
+                Dashboard: 'dashboard',
+                Timer: 'timer',
+                Syllabus: 'syllabus',
+                Premium: 'premium',
+                Pro: 'premium',
+                'Ticket Support': 'ticketSupport'
+              }[tName] || tName.toLowerCase();
 
-            return (
-              <TouchableOpacity
-                key={tName}
-                style={{ flex: 1, alignItems: 'center' }}
-                onPress={() => {
-                  handleTabChange(tName);
-                  refresh();
-                }}
-              >
-                <Ionicons name={ic} size={22} color={tab === tName ? C.blue : (isDark ? '#86a394' : '#667080')} />
-                <Text style={txt(10, tab === tName, tab === tName ? C.blue : C.muted)}>{t(tabKey, tName)}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+              return (
+                <TouchableOpacity
+                  key={tName}
+                  onPress={() => {
+                    setProfileOpen(false);
+                    setSettingsOpen(false);
+                    setRemindersOpen(false);
+                    setNotifOpen(false);
+                    handleTabChange(tName);
+                    refresh();
+                  }}
+                  activeOpacity={0.7}
+                  style={{
+                    flex: 1,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    paddingVertical: 4
+                  }}
+                >
+                  <View
+                    style={{
+                      paddingHorizontal: tName === 'Premium' ? 10 : 12,
+                      paddingVertical: 3,
+                      borderRadius: 16,
+                      backgroundColor: active
+                        ? (isDark ? '#1e3a5f' : '#dbeafe')
+                        : (tName === 'Premium' ? (isDark ? '#3b2f15' : '#fef3c7') : 'transparent'),
+                      marginBottom: 2,
+                      position: 'relative'
+                    }}
+                  >
+                    <Ionicons
+                      name={active ? ic.replace('-outline', '') : ic}
+                      size={20}
+                      color={
+                        active
+                          ? (tName === 'Premium' ? '#d97706' : C.blue)
+                          : (tName === 'Premium' ? '#d97706' : (isDark ? '#94a3b8' : '#64748b'))
+                      }
+                    />
+                    {tName === 'Premium' && (
+                      <View
+                        style={{
+                          position: 'absolute',
+                          top: -4,
+                          right: -5,
+                          backgroundColor: '#ef4444',
+                          borderRadius: 6,
+                          paddingHorizontal: 3,
+                          paddingVertical: 1
+                        }}
+                      >
+                        <Text style={{ color: '#ffffff', fontSize: 7, fontWeight: '800' }}>
+                          SALE
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text
+                    style={txt(
+                      10,
+                      active,
+                      active
+                        ? (tName === 'Premium' ? '#d97706' : C.blue)
+                        : (tName === 'Premium' ? '#d97706' : (isDark ? '#94a3b8' : '#64748b'))
+                    )}
+                    numberOfLines={1}
+                  >
+                    {t(tabKey, tName)}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
         )}
 
         {/* Abhyas Mitra - Friendly UPSC & MPSC Study Companion Chatbot */}
@@ -5875,6 +6345,9 @@ export default function App() {
             }}
           />
         )}
+
+        
+        {/* (Navigation Drawer removed - all features consolidated into My Profile) */}
 
         {/* Reset confirmation dialog */}
         {resetConfirmOpen && (

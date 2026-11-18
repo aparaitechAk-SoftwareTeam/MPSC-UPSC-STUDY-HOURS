@@ -1,0 +1,58 @@
+services:
+  # 1. Backend Web Service
+  - type: web
+    name: abhyas-api
+    runtime: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        value: mongodb+srv://bhumikajadhavaparaitech_db_user:jBXz2R9zyqxRhWEe@cluster0.rcroalz.mongodb.net/mpsc_upsc_tracker
+      - key: JWT_SECRET
+        value: 4c9a4f5b673b246913d797586a022bf2fafe625dc2494ca2bbdccab1c6ad6a4dc85020fa3b1cf4e8045b0bf26a986295e37d1f320a963468fd797afb77972931
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: "465"
+      - key: SMTP_SECURE
+        value: "true"
+      - key: SMTP_USER
+        value: bhumikajadhav.aparaitech@gmail.com
+      - key: SMTP_PASS
+        value: uzommgvkycabanjz
+      - key: SMTP_FROM
+        value: '"Abhyas Study Hours" <bhumikajadhav.aparaitech@gmail.com>'
+
+  # 2. Admin Portal (Static Site)
+  - type: web
+    name: abhyas-admin
+    runtime: static
+    rootDir: admin
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: abhyas-api
+          envVarKey: RENDER_EXTERNAL_URL
+          property: url
+
+  # 3. Student Web App (Static Site)
+  - type: web
+    name: abhyas-student
+    runtime: static
+    rootDir: mobile
+    buildCommand: npm install && npx expo export -p web
+    staticPublishPath: dist
+    envVars:
+      - key: EXPO_PUBLIC_API_URL
+        fromService:
+          type: web
+          name: abhyas-api
+          envVarKey: RENDER_EXTERNAL_URL
+          property: url

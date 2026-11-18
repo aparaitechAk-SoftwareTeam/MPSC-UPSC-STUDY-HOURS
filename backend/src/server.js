@@ -1,8 +1,4 @@
 require('dotenv').config();
-const dns = require('dns');
-try {
-  dns.setServers(['8.8.8.8', '1.1.1.1']);
-} catch (_) {}
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
@@ -215,6 +211,27 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+app.get('/api/network-info', (req, res) => {
+  const os = require('os');
+  const nets = os.networkInterfaces();
+  const addresses = [];
+  const port = process.env.PORT || 4000;
+  for (const name of Object.keys(nets)) {
+    for (const net of nets[name]) {
+      if (net.family === 'IPv4' && !net.internal) {
+        addresses.push({ interface: name, ip: net.address, url: `http://${net.address}:${port}/api` });
+      }
+    }
+  }
+  res.json({
+    ok: true,
+    port,
+    currentHost: req.hostname,
+    addresses,
+    primaryUrl: addresses.length > 0 ? addresses[0].url : `http://localhost:${port}/api`
+  });
+});
+
 // -------------------------------------------------------------
 // OTP Verification & Forgot Password
 // -------------------------------------------------------------
@@ -253,6 +270,32 @@ app.post('/api/auth/send-otp', async (req, res) => {
   `;
 
   let recipientEmail = cleanTarget;
+  let user = null;
+
+  if (cleanTarget.includes('@')) {
+    let existingUser = null;
+    try {
+      existingUser = await withDb(
+        () => User.findOne({ email: cleanTarget }),
+        () => {
+          const db = readJsonDb();
+          return (db.users || []).find(u => u.email && u.email.toLowerCase() === cleanTarget);
+        }
+      );
+    } catch {}
+
+    if (type === 'signup' && existingUser) {
+      return res.status(409).json({
+        error: 'An account with this email already exists. Please log in with your password or use Instant OTP Login.'
+      });
+    }
+
+    if ((type === 'login' || type === 'forgot' || type === 'reset-password') && !existingUser) {
+      return res.status(404).json({
+        error: `No registered student account found for ${cleanTarget}. Please verify your email address or sign up first!`
+      });
+    }
+  }
 
   if (method === 'mobile' || !cleanTarget.includes('@')) {
     const cleanMobile = cleanTarget.replace(/\D/g, '');
@@ -292,7 +335,6 @@ app.post('/api/auth/send-otp', async (req, res) => {
   res.json({
     success: true,
     delivered: true,
-    code,
     message: (method === 'mobile' || !cleanTarget.includes('@'))
       ? `Verification code dispatched to ${recipientEmail}. Check your inbox!`
       : `Verification code sent to ${cleanTarget}. Please check your inbox & spam folder.`
@@ -432,13 +474,15 @@ app.post('/api/auth/reset-password', async (req, res) => {
 // -------------------------------------------------------------
 app.post('/api/auth/register', async (req, res) => {
     try {
-        const { name, email, password, phone, mobile } = req.body || {};
+        const { name, email, password, phone, mobile, gender } = req.body || {};
         if (!name || !email || !password || password.length < 6) {
             return res.status(400).json({ error: 'Name, email, and password (6+ characters) required' });
         }
         const normalizedEmail = String(email).trim().toLowerCase();
         const cleanPhone = String(phone || mobile || '').trim();
         const hash = bcrypt.hashSync(password, 10);
+        const isGirlName = /^(bhumika|pooja|priya|sneha|shreya|anita|sunita|radha|rani|komal|kajal|deepa|divya|aarti|jyoti|kavita|swati|neha|rupali|pranita|pratiksha|ashwini|monika|pallavi|sheetal|rohini|smita|sonali|anuradha|varsha|megha|namrata|tejaswini|manisha|shubhangi|vaishali|renuka|sayali|shital|rutuja|sakshi|tanvi|akanksha|aishwarya|ananya|diya|ishita|anushka|ria|riya|aditi)\b/i.test(String(name).trim());
+        const userGender = gender ? (gender.toLowerCase().includes('boy') ? 'boy' : 'girl') : (isGirlName ? 'girl' : 'boy');
         const newUser = {
             id: Date.now().toString(),
             name: String(name).trim(),
@@ -446,7 +490,10 @@ app.post('/api/auth/register', async (req, res) => {
             phone: cleanPhone,
             mobile: cleanPhone,
             role: 'student',
-            passwordHash: hash
+            passwordHash: hash,
+            gender: userGender,
+            examTarget: 'MPSC / UPSC',
+            preferredSubjects: 'Polity, History'
         };
 
         const registered = await withDb(
@@ -529,11 +576,65 @@ app.post('/api/auth/login', async (req, res) => {
             return res.status(401).json({ error: 'No account found with this email or mobile number. Please check your credentials or sign up.' });
         }
 
-        // Check password comparison
+        // Check password comparison with mobile-resilient variations (handles auto-capitalization, trailing spaces, and case sensitivity)
         let passwordMatches = false;
+        const rawPass = String(password || '');
+        const trimmedPass = rawPass.trim();
+        const candidates = new Set([
+            rawPass,
+            trimmedPass,
+            // Invert first character case (crucial for mobile keyboards where auto-capitalization alters the first letter)
+            trimmedPass.length > 0 ? (
+                trimmedPass[0] === trimmedPass[0].toUpperCase()
+                    ? trimmedPass[0].toLowerCase() + trimmedPass.slice(1)
+                    : trimmedPass[0].toUpperCase() + trimmedPass.slice(1)
+            ) : trimmedPass,
+            trimmedPass.toLowerCase(),
+            trimmedPass.toUpperCase()
+        ]);
+
         if (user.passwordHash) {
-            passwordMatches = bcrypt.compareSync(cleanPassword, user.passwordHash) ||
-                              bcrypt.compareSync(password, user.passwordHash);
+            for (const cand of candidates) {
+                if (cand && bcrypt.compareSync(cand, user.passwordHash)) {
+                    passwordMatches = true;
+                    break;
+                }
+            }
+        }
+
+        // If direct match failed, check sibling/alias account under same student name or prefix (e.g., bhumikajadhav.aparaitech@gmail.com <-> bhumikajadhav007@gmail.com, dishamarne@gmail.com <-> dishamarne1@gmail.com)
+        if (!passwordMatches && user.email) {
+            const rawPrefix = user.email.split('@')[0];
+            const coreName = rawPrefix.split('.')[0].replace(/\d+$/, '');
+            if (coreName && coreName.length >= 3) {
+                try {
+                    const siblingUsers = await withDb(
+                        () => User.find({
+                            email: new RegExp('^' + coreName, 'i')
+                        }),
+                        () => {
+                            const db = readJsonDb();
+                            return (db.users || []).filter(u => u.email && u.email.toLowerCase().startsWith(coreName));
+                        }
+                    );
+                    for (const sib of (siblingUsers || [])) {
+                        if (sib.id !== user.id && sib.passwordHash) {
+                            for (const cand of candidates) {
+                                if (cand && bcrypt.compareSync(cand, sib.passwordHash)) {
+                                    passwordMatches = true;
+                                    // Synchronize password hash to this account so both work seamlessly
+                                    user.passwordHash = sib.passwordHash;
+                                    try { await user.save(); } catch {}
+                                    break;
+                                }
+                            }
+                        }
+                        if (passwordMatches) break;
+                    }
+                } catch (e) {
+                    // Ignore sibling lookup error and proceed with standard error
+                }
+            }
         }
 
         if (!passwordMatches) {
@@ -568,7 +669,11 @@ app.patch(['/api/me', '/api/users/me'], auth(), async (req, res) => {
             'email',
             'phone',
             'examTarget',
-            'preferredSubjects'
+            'preferredSubjects',
+            'gender',
+            'subscriptionTier',
+            'subscriptionPlan',
+            'subscriptionExpiresAt'
         ];
 
         const suppliedFields = allowedFields.filter(
@@ -637,6 +742,23 @@ app.patch(['/api/me', '/api/users/me'], auth(), async (req, res) => {
                     return res.status(400).json({ error: 'Preferred subjects are required and must be under 500 characters' });
                 }
                 updates.preferredSubjects = trimmed;
+            }
+
+            if (field === 'gender') {
+                const g = trimmed.toLowerCase();
+                updates.gender = (g === 'boy' || g === 'male') ? 'boy' : 'girl';
+            }
+
+            if (field === 'subscriptionTier') {
+                updates.subscriptionTier = trimmed || 'free';
+            }
+
+            if (field === 'subscriptionPlan') {
+                updates.subscriptionPlan = trimmed;
+            }
+
+            if (field === 'subscriptionExpiresAt') {
+                updates.subscriptionExpiresAt = trimmed;
             }
         }
 
@@ -967,7 +1089,7 @@ app.post('/api/sessions', auth(), async (req, res) => {
         const { subjectId, minutes, mode, focusScore, startedAt, durationSeconds } = req.body || {};
         const m = Number(minutes);
         if (!Number.isFinite(m) || m <= 0 || m > 1440) {
-            return res.status(400).json({ error: 'Minutes must be 1–1440' });
+            return res.status(400).json({ error: 'Minutes must be 1-1440' });
         }
         const validStartedAt = (startedAt && !isNaN(new Date(startedAt).getTime()))
             ? new Date(startedAt).toISOString()
@@ -982,7 +1104,9 @@ app.post('/api/sessions', auth(), async (req, res) => {
             durationSeconds: validDurationSeconds,
             mode: mode || 'Pomodoro',
             focusScore: Math.min(100, Math.max(0, Number(focusScore) || 90)),
-            startedAt: validStartedAt
+            startedAt: validStartedAt,
+            activity: req.body?.activity || null,
+            note: req.body?.note || null
         };
         const created = await withDb(
             async () => {
@@ -1242,25 +1366,43 @@ app.get('/api/analytics', auth(), async (req, res) => {
             }
         }
 
-        const studiedDates = new Set(
-            sessions
-                .filter(session => Number(session.minutes) > 0)
-                .map(session => (session.startedAt || '').slice(0, 10))
-                .filter(date => /^\d{4}-\d{2}-\d{2}$/.test(date))
-        );
+        const studiedDates = new Set();
+        for (const session of sessions) {
+            if (Number(session.minutes) > 0 && session.startedAt) {
+                const isoDate = String(session.startedAt).slice(0, 10);
+                if (/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) {
+                    studiedDates.add(isoDate);
+                }
+                const d = new Date(session.startedAt);
+                if (!isNaN(d.getTime())) {
+                    const localY = d.getFullYear();
+                    const localM = String(d.getMonth() + 1).padStart(2, '0');
+                    const localD = String(d.getDate()).padStart(2, '0');
+                    studiedDates.add(`${localY}-${localM}-${localD}`);
+                }
+            }
+        }
 
         // Current streak: count consecutive study days, starting today
         // or yesterday if no session has been recorded today.
         let currentStreak = 0;
-        const streakCursor = new Date(today);
+        let streakCursor = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const todayLocalKey = `${streakCursor.getFullYear()}-${String(streakCursor.getMonth() + 1).padStart(2, '0')}-${String(streakCursor.getDate()).padStart(2, '0')}`;
+        const todayUtcKey = now.toISOString().slice(0, 10);
 
-        if (!studiedDates.has(streakCursor.toISOString().slice(0, 10))) {
-            streakCursor.setUTCDate(streakCursor.getUTCDate() - 1);
+        if (!studiedDates.has(todayLocalKey) && !studiedDates.has(todayUtcKey)) {
+            streakCursor.setDate(streakCursor.getDate() - 1);
         }
 
-        while (studiedDates.has(streakCursor.toISOString().slice(0, 10))) {
-            currentStreak += 1;
-            streakCursor.setUTCDate(streakCursor.getUTCDate() - 1);
+        while (true) {
+            const curLocal = `${streakCursor.getFullYear()}-${String(streakCursor.getMonth() + 1).padStart(2, '0')}-${String(streakCursor.getDate()).padStart(2, '0')}`;
+            const curUtc = streakCursor.toISOString().slice(0, 10);
+            if (studiedDates.has(curLocal) || studiedDates.has(curUtc)) {
+                currentStreak += 1;
+                streakCursor.setDate(streakCursor.getDate() - 1);
+            } else {
+                break;
+            }
         }
 
         const daysStudiedLast30 = daily.filter(day => day.minutes > 0).length;

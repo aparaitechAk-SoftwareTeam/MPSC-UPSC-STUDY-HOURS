@@ -1,13 +1,8 @@
 const dns = require('dns');
 const mongoose = require('mongoose');
 
-// Configure resilient public DNS resolvers (Google & Cloudflare)
-// to guarantee MongoDB Atlas SRV records resolve seamlessly on any Wi-Fi network, mobile hotspot, or ISP
-try {
-  dns.setServers(['8.8.8.8', '1.1.1.1', '8.8.4.4']);
-} catch (dnsErr) {
-  console.warn('[Database] Custom DNS config notice:', dnsErr.message);
-}
+// Preserve system default DNS servers provided by active Wi-Fi DHCP
+const defaultDnsServers = typeof dns.getServers === 'function' ? dns.getServers() : [];
 
 async function connectDB() {
   const uri = process.env.MONGODB_URI;
@@ -28,16 +23,29 @@ async function connectDB() {
     socketTimeoutMS: 10000,
   };
 
+  // Attempt 1: Try using active Wi-Fi network's default DNS
   try {
     const conn = await mongoose.connect(uri, opts);
-    console.log(`[Database] MongoDB connected successfully to host: ${conn.connection.host}, database: ${conn.connection.name}`);
+    console.log(`[Database] MongoDB connected successfully via Wi-Fi network: ${conn.connection.host}, database: ${conn.connection.name}`);
     return conn;
-  } catch (err) {
-    // Halt internal mongoose retries so DNS is not flooded
+  } catch (wifiDnsErr) {
+    // Attempt 2: If Wi-Fi DNS failed to resolve SRV record, try Google & Cloudflare public DNS
     try {
-      await mongoose.disconnect();
-    } catch {}
-    throw err;
+      dns.setServers(['8.8.8.8', '1.1.1.1', '8.8.4.4']);
+      await mongoose.disconnect().catch(() => {});
+      const conn = await mongoose.connect(uri, opts);
+      console.log(`[Database] MongoDB connected successfully via public DNS fallback: ${conn.connection.host}`);
+      return conn;
+    } catch (fallbackErr) {
+      // Restore system DNS servers so local queries continue working
+      if (defaultDnsServers.length > 0) {
+        try { dns.setServers(defaultDnsServers); } catch (_) {}
+      }
+      try {
+        await mongoose.disconnect();
+      } catch {}
+      throw fallbackErr;
+    }
   }
 }
 
