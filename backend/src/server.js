@@ -215,6 +215,44 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Build robust, injection-safe user lookup queries for both MongoDB and JSON DB fallback
+function buildUserLookupQueries(rawTarget) {
+  const target = String(rawTarget || '').trim().toLowerCase();
+  const digits = target.replace(/\D/g, '');
+  const mongoQueries = [];
+
+  if (target.includes('@')) {
+    mongoQueries.push({ email: target });
+    const escaped = target.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    mongoQueries.push({ email: new RegExp('^' + escaped + '$', 'i') });
+  } else if (target) {
+    mongoQueries.push({ email: target });
+  }
+
+  // Only query phone/mobile if digits is at least 10 numbers long! Never query empty string!
+  if (digits.length >= 10) {
+    const last10 = digits.slice(-10);
+    mongoQueries.push({ phone: digits });
+    mongoQueries.push({ mobile: digits });
+    mongoQueries.push({ phone: last10 });
+    mongoQueries.push({ mobile: last10 });
+  }
+
+  const jsonMatcher = (u) => {
+    if (!u) return false;
+    const uEmail = (u.email || '').toLowerCase();
+    if (target && uEmail === target) return true;
+    if (digits.length >= 10) {
+      const last10 = digits.slice(-10);
+      if (u.mobile && (u.mobile === digits || u.mobile === last10)) return true;
+      if (u.phone && (u.phone === digits || u.phone === last10)) return true;
+    }
+    return false;
+  };
+
+  return { target, digits, mongoQueries, jsonMatcher };
+}
+
 // -------------------------------------------------------------
 // OTP Verification & Forgot Password
 // -------------------------------------------------------------
@@ -253,18 +291,21 @@ app.post('/api/auth/send-otp', async (req, res) => {
   `;
 
   let recipientEmail = cleanTarget;
+  let user = null;
 
   if (method === 'mobile' || !cleanTarget.includes('@')) {
-    const cleanMobile = cleanTarget.replace(/\D/g, '');
-    try {
-      user = await withDb(
-        () => User.findOne({ $or: [{ phone: cleanMobile }, { mobile: cleanMobile }] }),
-        () => {
-          const db = readJsonDb();
-          return (db.users || []).find(u => (u.mobile && u.mobile === cleanMobile) || (u.phone && u.phone === cleanMobile));
-        }
-      );
-    } catch {}
+    const lookup = buildUserLookupQueries(cleanTarget);
+    const cleanMobile = lookup.digits;
+    if (cleanMobile.length >= 10) {
+      try {
+        user = await withDb(
+          () => User.findOne({ $or: lookup.mongoQueries }),
+          () => (readJsonDb().users || []).find(lookup.jsonMatcher)
+        );
+      } catch (err) {
+        console.warn('[OTP Lookup Warning]', err.message);
+      }
+    }
 
     if (user && user.email) {
       recipientEmail = user.email;
@@ -305,7 +346,14 @@ app.post('/api/auth/verify-otp', (req, res) => {
   const cleanTarget = String(target || '').trim().toLowerCase();
   const cleanCode = String(code || '').trim();
 
-  const record = otpStore.get(cleanTarget);
+  let record = otpStore.get(cleanTarget);
+  if (!record) {
+    const cleanDigits = cleanTarget.replace(/\D/g, '');
+    if (cleanDigits.length >= 10) {
+      record = otpStore.get(cleanDigits);
+    }
+  }
+
   if (!record) {
     return res.status(400).json({ error: 'No active code found for this account. Please request a new code.' });
   }
@@ -328,7 +376,14 @@ app.post('/api/auth/login-otp', async (req, res) => {
   const cleanTarget = String(target || '').trim().toLowerCase();
   const cleanCode = String(code || '').trim();
 
-  const record = otpStore.get(cleanTarget);
+  let record = otpStore.get(cleanTarget);
+  if (!record) {
+    const cleanDigits = cleanTarget.replace(/\D/g, '');
+    if (cleanDigits.length >= 10) {
+      record = otpStore.get(cleanDigits);
+    }
+  }
+
   if (!record || Date.now() > record.expiresAt || record.code !== cleanCode) {
     return res.status(401).json({ error: 'Invalid or expired OTP code.' });
   }
@@ -336,19 +391,13 @@ app.post('/api/auth/login-otp', async (req, res) => {
   otpStore.delete(cleanTarget);
 
   try {
-    const cleanDigits = cleanTarget.replace(/\D/g, '');
+    const lookup = buildUserLookupQueries(cleanTarget);
+    if (!lookup.mongoQueries.length) {
+      return res.status(400).json({ error: 'Please enter a valid email or mobile number.' });
+    }
     const user = await withDb(
-      () => User.findOne({
-        $or: [{ email: cleanTarget }, { phone: cleanDigits }, { mobile: cleanDigits }]
-      }),
-      () => {
-        const db = readJsonDb();
-        return (db.users || []).find(u =>
-          (u.email && u.email.toLowerCase() === cleanTarget) ||
-          (cleanDigits && u.mobile && u.mobile === cleanDigits) ||
-          (cleanDigits && u.phone && u.phone === cleanDigits)
-        );
-      }
+      () => User.findOne({ $or: lookup.mongoQueries }),
+      () => (readJsonDb().users || []).find(lookup.jsonMatcher)
     );
 
     if (!user) {
@@ -373,7 +422,14 @@ app.post('/api/auth/reset-password', async (req, res) => {
     return res.status(400).json({ error: 'Password must be at least 6 characters long.' });
   }
 
-  const record = otpStore.get(cleanTarget);
+  let record = otpStore.get(cleanTarget);
+  if (!record) {
+    const cleanDigits = cleanTarget.replace(/\D/g, '');
+    if (cleanDigits.length >= 10) {
+      record = otpStore.get(cleanDigits);
+    }
+  }
+
   if (!record || Date.now() > record.expiresAt || record.code !== cleanCode) {
     return res.status(400).json({ error: 'Invalid or expired verification session. Please verify your OTP again.' });
   }
@@ -381,24 +437,21 @@ app.post('/api/auth/reset-password', async (req, res) => {
   otpStore.delete(cleanTarget);
 
   try {
-    const cleanDigits = cleanTarget.replace(/\D/g, '');
+    const lookup = buildUserLookupQueries(cleanTarget);
+    if (!lookup.mongoQueries.length) {
+      return res.status(400).json({ error: 'Valid email or mobile number required.' });
+    }
     const newHash = bcrypt.hashSync(cleanPass, 10);
 
     const updated = await withDb(
       async () => {
-        const user = await User.findOne({
-          $or: [{ email: cleanTarget }, { phone: cleanDigits }, { mobile: cleanDigits }]
-        });
+        const user = await User.findOne({ $or: lookup.mongoQueries });
         if (!user) return false;
         user.passwordHash = newHash;
         await user.save();
         // Also mirror to local db.json
         const db = readJsonDb();
-        const uInDb = (db.users || []).find(u =>
-          (u.email && u.email.toLowerCase() === cleanTarget) ||
-          (cleanDigits && u.mobile && u.mobile === cleanDigits) ||
-          (cleanDigits && u.phone && u.phone === cleanDigits)
-        );
+        const uInDb = (db.users || []).find(lookup.jsonMatcher);
         if (uInDb) {
           uInDb.passwordHash = newHash;
           writeJsonDb(db);
@@ -407,11 +460,7 @@ app.post('/api/auth/reset-password', async (req, res) => {
       },
       () => {
         const db = readJsonDb();
-        const user = (db.users || []).find(u =>
-          (u.email && u.email.toLowerCase() === cleanTarget) ||
-          (cleanDigits && u.mobile && u.mobile === cleanDigits) ||
-          (cleanDigits && u.phone && u.phone === cleanDigits)
-        );
+        const user = (db.users || []).find(lookup.jsonMatcher);
         if (!user) return false;
         user.passwordHash = newHash;
         writeJsonDb(db);
@@ -421,6 +470,7 @@ app.post('/api/auth/reset-password', async (req, res) => {
 
     if (!updated) return res.status(404).json({ error: 'Account not found.' });
 
+    console.log(`[AUTH PASSWORD RESET] Successfully reset password for target: ${cleanTarget}`);
     res.json({ success: true, message: 'Password updated successfully! You can now sign in with your new password.' });
   } catch (err) {
     res.status(500).json({ error: 'Password update failed: ' + err.message });
@@ -433,12 +483,13 @@ app.post('/api/auth/reset-password', async (req, res) => {
 app.post('/api/auth/register', async (req, res) => {
     try {
         const { name, email, password, phone, mobile } = req.body || {};
-        if (!name || !email || !password || password.length < 6) {
+        const cleanPassword = String(password || '').trim();
+        if (!name || !email || !cleanPassword || cleanPassword.length < 6) {
             return res.status(400).json({ error: 'Name, email, and password (6+ characters) required' });
         }
         const normalizedEmail = String(email).trim().toLowerCase();
         const cleanPhone = String(phone || mobile || '').trim();
-        const hash = bcrypt.hashSync(password, 10);
+        const hash = bcrypt.hashSync(cleanPassword, 10);
         const newUser = {
             id: Date.now().toString(),
             name: String(name).trim(),
@@ -480,6 +531,7 @@ app.post('/api/auth/register', async (req, res) => {
         }
         const createdUser = registered.user;
         const token = jwt.sign({ id: createdUser.id, role: createdUser.role }, secret, { expiresIn: '7d' });
+        console.log(`[AUTH REGISTER SUCCESS] Registered new student: ${normalizedEmail}`);
         return res.status(201).json({ token, user: publicUser(createdUser) });
     } catch (err) {
         res.status(500).json({ error: 'Registration failed: ' + err.message });
@@ -490,42 +542,23 @@ app.post('/api/auth/login', async (req, res) => {
     try {
         const { email, password } = req.body || {};
         const rawTarget = String(email || '').trim().toLowerCase();
-        const cleanDigits = rawTarget.replace(/\D/g, '');
         const cleanPassword = String(password || '').trim();
         if (!rawTarget || !cleanPassword) {
             return res.status(400).json({ error: 'Please enter both your email/phone and password.' });
         }
 
+        const lookup = buildUserLookupQueries(rawTarget);
+        if (!lookup.mongoQueries.length) {
+            return res.status(400).json({ error: 'Please enter a valid email or 10-digit mobile number.' });
+        }
+
         const user = await withDb(
-            async () => {
-                const queries = [{ email: rawTarget }];
-                if (rawTarget.includes('@')) {
-                    const escaped = rawTarget.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                    queries.push({ email: new RegExp('^' + escaped + '$', 'i') });
-                }
-                if (cleanDigits.length >= 10) {
-                    const last10 = cleanDigits.slice(-10);
-                    queries.push({ phone: cleanDigits });
-                    queries.push({ mobile: cleanDigits });
-                    queries.push({ phone: last10 });
-                    queries.push({ mobile: last10 });
-                }
-                return await User.findOne({ $or: queries });
-            },
-            () => {
-                const db = readJsonDb();
-                const last10 = cleanDigits.length >= 10 ? cleanDigits.slice(-10) : '';
-                return (db.users || []).find(u =>
-                    (u.email && u.email.toLowerCase() === rawTarget) ||
-                    (cleanDigits.length >= 10 && (
-                        (u.mobile && (u.mobile === cleanDigits || u.mobile === last10)) ||
-                        (u.phone && (u.phone === cleanDigits || u.phone === last10))
-                    ))
-                );
-            }
+            () => User.findOne({ $or: lookup.mongoQueries }),
+            () => (readJsonDb().users || []).find(lookup.jsonMatcher)
         );
 
         if (!user) {
+            console.warn(`[AUTH LOGIN FAILED] Target "${rawTarget.slice(0, 3)}***" - No account found.`);
             return res.status(401).json({ error: 'No account found with this email or mobile number. Please check your credentials or sign up.' });
         }
 
@@ -536,15 +569,33 @@ app.post('/api/auth/login', async (req, res) => {
                               bcrypt.compareSync(password, user.passwordHash);
         }
 
-        if (!passwordMatches) {
-            return res.status(401).json({ error: 'Incorrect password for this student account. Please verify your password or use Forgot Password to reset it.' });
+        // Support ADMIN_PASSWORD environment variable fallback for admin account
+        if (!passwordMatches && user.role === 'admin') {
+            const configuredAdminPass = process.env.ADMIN_PASSWORD;
+            if (configuredAdminPass && (cleanPassword === configuredAdminPass || password === configuredAdminPass)) {
+                passwordMatches = true;
+            }
         }
+
+        if (!passwordMatches) {
+            const roleLabel = user.role === 'admin' ? 'administrator' : 'student';
+            const hint = user.role === 'admin'
+                ? 'Please verify your administrator password.'
+                : 'Please verify your password or use Forgot Password to reset it.';
+            console.warn(`[AUTH LOGIN FAILED] User ID: ${user.id} | Role: ${user.role} | Password match: false`);
+            return res.status(401).json({
+                error: `Incorrect password for this ${roleLabel} account. ${hint}`
+            });
+        }
+
+        console.log(`[AUTH LOGIN SUCCESS] User ID: ${user.id} | Role: ${user.role} | Storage: ${isDbMongo() ? 'mongodb' : 'local-json'}`);
 
         res.json({
             token: jwt.sign({ id: user.id, role: user.role }, secret, { expiresIn: '7d' }),
             user: publicUser(user)
         });
     } catch (err) {
+        console.error('[AUTH LOGIN ERROR]', err.message);
         res.status(500).json({ error: 'Login failed: ' + err.message });
     }
 });
