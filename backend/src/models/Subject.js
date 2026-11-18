@@ -13,6 +13,11 @@ const subjectSchema = new mongoose.Schema(
       required: true,
       trim: true
     },
+    exam: {
+      type: String,
+      default: 'UPSC',
+      trim: true
+    },
     paper: {
       type: String,
       default: 'GS Paper II',

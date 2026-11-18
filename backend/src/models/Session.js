@@ -23,6 +23,10 @@ const sessionSchema = new mongoose.Schema(
       min: 1,
       max: 1440
     },
+    durationSeconds: {
+      type: Number,
+      default: null
+    },
     mode: {
       type: String,
       default: 'Pomodoro'
