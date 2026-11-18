@@ -16,7 +16,12 @@ import { getTranslation } from './translations';
 const STORAGE_KEY = 'abhyas_study_reminder_preferences';
 const TIMES = ['06:00 AM', '07:00 AM', '08:00 AM', '06:00 PM', '07:00 PM', '08:00 PM'];
 
-export default function ReminderSettingsScreen({ onBack, lang = 'en', theme, isDarkMode = false }) {
+export default function ReminderSettingsScreen({
+  onBack,
+  lang = 'en',
+  theme,
+  isDarkMode = false,
+}) {
   const t = (k, fb = '') => getTranslation(lang, k, fb);
   const [enabled, setEnabled] = useState(false);
   const [selectedTime, setSelectedTime] = useState('07:00 AM');
@@ -59,46 +64,55 @@ export default function ReminderSettingsScreen({ onBack, lang = 'en', theme, isD
     }
   };
 
-  const C = {
-    background: theme?.bg || (isDarkMode ? '#111A22' : '#F4F7FA'),
-    card: theme?.cardBg || (isDarkMode ? '#1D2A35' : '#FFFFFF'),
-    text: theme?.ink || (isDarkMode ? '#E8F0F3' : '#243746'),
-    muted: theme?.muted || (isDarkMode ? '#A2B2BC' : '#718391'),
-    blue: theme?.blue || (isDarkMode ? '#55B8A8' : '#247C78'),
-    border: theme?.border || theme?.line || (isDarkMode ? '#354956' : '#E1E9ED'),
-    blueLight: theme?.blueLight || (isDarkMode ? '#293F48' : '#E3EDF0'),
+  // Emerald / Green theme tokens aligned with application branding
+  const C = theme || {
+    bg: isDarkMode ? '#0A1612' : '#F6F9F6',
+    cardBg: isDarkMode ? '#11221B' : '#FFFFFF',
+    ink: isDarkMode ? '#F0FDF4' : '#0F291E',
+    muted: isDarkMode ? '#86A394' : '#4B6357',
+    blue: isDarkMode ? '#10B981' : '#059669', // Emerald primary
+    soft: isDarkMode ? '#0F291E' : '#ECFDF5', // Soft green tint
+    line: isDarkMode ? '#17382A' : '#D1FAE5', // Border line
   };
 
+  const primaryColor = C.primary || C.blue || (isDarkMode ? '#10B981' : '#059669');
+  const primaryLightColor = C.primaryLight || C.soft || (isDarkMode ? '#0F291E' : '#ECFDF5');
+  const borderColor = C.border || C.line || (isDarkMode ? '#17382A' : '#D1FAE5');
+  const cardColor = C.card || C.cardBg || (isDarkMode ? '#11221B' : '#FFFFFF');
+  const textColor = C.text || C.ink || (isDarkMode ? '#F0FDF4' : '#0F291E');
+  const mutedColor = C.muted || (isDarkMode ? '#86A394' : '#4B6357');
+  const bgColor = C.background || C.bg || (isDarkMode ? '#0A1612' : '#F6F9F6');
+
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: C.background }]}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: bgColor }]}>
       <View style={styles.header}>
         <TouchableOpacity
           onPress={onBack}
-          style={[styles.backButton, { backgroundColor: C.card, borderColor: C.border, borderWidth: 1 }]}
+          style={[styles.backButton, { backgroundColor: cardColor, borderColor, borderWidth: 1 }]}
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <Ionicons name="arrow-back" size={22} color={C.text} />
+          <Ionicons name="arrow-back" size={22} color={textColor} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: C.text }]}>{t('studyReminders', 'Study Reminders')}</Text>
+        <Text style={[styles.headerTitle, { color: textColor }]}>{t('studyReminders', 'Study Reminders')}</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={[styles.hero, { backgroundColor: C.card, borderColor: C.border }]}>
-          <View style={[styles.heroIcon, { backgroundColor: C.blueLight }]}>
-            <Ionicons name="notifications-outline" size={30} color={C.blue} />
+        <View style={[styles.hero, { backgroundColor: cardColor, borderColor }]}>
+          <View style={[styles.heroIcon, { backgroundColor: primaryLightColor }]}>
+            <Ionicons name="notifications-outline" size={30} color={primaryColor} />
           </View>
-          <Text style={[styles.title, { color: C.text }]}>{t('buildConsistentRoutine', 'Build a consistent routine')}</Text>
-          <Text style={[styles.description, { color: C.muted }]}>
+          <Text style={[styles.title, { color: textColor }]}>{t('buildConsistentRoutine', 'Build a consistent routine')}</Text>
+          <Text style={[styles.description, { color: mutedColor }]}>
             {t('reminderHeroDesc', 'Choose a daily reminder time to help you stay on track with your study goals.')}
           </Text>
         </View>
 
-        <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+        <View style={[styles.card, { backgroundColor: cardColor, borderColor }]}>
           <View style={styles.row}>
             <View style={styles.flex}>
-              <Text style={[styles.label, { color: C.text }]}>{t('dailyStudyReminder', 'Daily study reminder')}</Text>
-              <Text style={[styles.hint, { color: C.muted }]}>
+              <Text style={[styles.label, { color: textColor }]}>{t('dailyStudyReminder', 'Daily study reminder')}</Text>
+              <Text style={[styles.hint, { color: mutedColor }]}>
                 {enabled ? t('reminderEnabled', 'Reminder preference is enabled') : t('reminderDisabled', 'Reminder preference is disabled')}
               </Text>
             </View>
@@ -106,14 +120,14 @@ export default function ReminderSettingsScreen({ onBack, lang = 'en', theme, isD
               value={enabled}
               disabled={!loaded}
               onValueChange={(value) => savePreferences(value, selectedTime)}
-              trackColor={{ false: '#CBD5E1', true: '#93B7FF' }}
-              thumbColor={enabled ? C.blue : '#F8FAFC'}
+              trackColor={{ false: isDarkMode ? '#2D4A3E' : '#CBD5E1', true: isDarkMode ? '#065F46' : '#A7F3D0' }}
+              thumbColor={enabled ? primaryColor : (isDarkMode ? '#86A394' : '#F8FAFC')}
             />
           </View>
         </View>
 
-        <Text style={[styles.sectionTitle, { color: C.text }]}>{t('reminderTime', 'Reminder time')}</Text>
-        <Text style={[styles.sectionHint, { color: C.muted }]}>
+        <Text style={[styles.sectionTitle, { color: textColor }]}>{t('reminderTime', 'Reminder time')}</Text>
+        <Text style={[styles.sectionHint, { color: mutedColor }]}>
           {t('selectPreferredTime', 'Select your preferred time.')}
         </Text>
 
@@ -129,23 +143,33 @@ export default function ReminderSettingsScreen({ onBack, lang = 'en', theme, isD
                 style={[
                   styles.timeOption,
                   {
-                    backgroundColor: selected ? C.blueLight : C.card,
-                    borderColor: selected ? C.blue : C.border,
+                    backgroundColor: selected ? primaryLightColor : cardColor,
+                    borderColor: selected ? primaryColor : borderColor,
                   },
                 ]}
               >
                 <Ionicons
                   name={selected ? 'radio-button-on' : 'radio-button-off'}
                   size={19}
-                  color={selected ? C.blue : C.muted}
+                  color={selected ? primaryColor : mutedColor}
                 />
-                <Text style={[styles.timeText, { color: C.text }]}>{time}</Text>
+                <Text
+                  style={[
+                    styles.timeText,
+                    {
+                      color: selected ? primaryColor : textColor,
+                      fontWeight: selected ? '700' : '500',
+                    },
+                  ]}
+                >
+                  {time}
+                </Text>
               </TouchableOpacity>
             );
           })}
         </View>
 
-        <Text style={[styles.note, { color: C.muted }]}>
+        <Text style={[styles.note, { color: mutedColor }]}>
           {t('reminderDeviceNote', 'These preferences are saved on this device. Scheduled notifications and notification permissions must be configured separately before reminders can alert you.')}
         </Text>
       </ScrollView>
@@ -168,7 +192,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
   },
   headerTitle: { fontSize: 20, fontWeight: '700' },
   content: { padding: 18, paddingBottom: 36 },
@@ -183,7 +206,6 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 18,
-    backgroundColor: '#EAF1FF',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 14,
@@ -208,6 +230,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  timeText: { fontSize: 14, fontWeight: '500' },
+  timeText: { fontSize: 14 },
   note: { fontSize: 12, lineHeight: 18, marginTop: 22 },
 });

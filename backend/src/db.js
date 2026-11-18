@@ -18,9 +18,9 @@ async function connectDB() {
 
   const opts = {
     dbName,
-    serverSelectionTimeoutMS: 3000,
-    connectTimeoutMS: 3000,
-    socketTimeoutMS: 5000,
+    serverSelectionTimeoutMS: 8000,
+    connectTimeoutMS: 8000,
+    socketTimeoutMS: 10000,
   };
 
   // Attempt 1: Try using active Wi-Fi network's default DNS
