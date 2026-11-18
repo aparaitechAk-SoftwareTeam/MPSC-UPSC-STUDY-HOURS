@@ -901,7 +901,53 @@ const UPSC_10H_SCHEDULE = [
   }
 ];
 
+class RootErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.error("RootErrorBoundary caught an error:", error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, backgroundColor: '#F4F7FA' }}>
+          <Text style={{ fontSize: 20, fontWeight: '700', color: '#1f2937', marginBottom: 8 }}>Something went wrong</Text>
+          <Text style={{ fontSize: 14, color: '#ef4444', textAlign: 'center', marginBottom: 18, maxWidth: 400 }}>
+            {this.state.error?.message || 'An unexpected error occurred'}
+          </Text>
+          <TouchableOpacity
+            onPress={() => {
+              if (Platform.OS === 'web' && typeof window !== 'undefined') {
+                window.location.reload();
+              } else {
+                this.setState({ hasError: false, error: null });
+              }
+            }}
+            style={{ backgroundColor: '#247C78', paddingHorizontal: 20, paddingVertical: 11, borderRadius: 10 }}
+          >
+            <Text style={{ color: '#FFFFFF', fontWeight: 'bold' }}>Reload App</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function App() {
+  return (
+    <RootErrorBoundary>
+      <MainApp />
+    </RootErrorBoundary>
+  );
+}
+
+function MainApp() {
   const getInitialTab = () => {
     if (Platform.OS === 'web' && typeof window !== 'undefined' && window.location?.search) {
       const p = new URLSearchParams(window.location.search).get('tab');
@@ -6062,7 +6108,26 @@ borderColor: C.border
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
                   <TouchableOpacity
                     onPress={() => {
-                      setServerUrlInput('http://10.116.34.214:4000/api');
+                      setServerUrlInput('');
+                      handleSaveServerUrl('');
+                    }}
+                    style={{
+                      backgroundColor: isDark ? '#1e3850' : '#eff6ff',
+                      paddingHorizontal: 8,
+                      paddingVertical: 4,
+                      borderRadius: 8,
+                      borderWidth: 1,
+                      borderColor: '#93c5fd'
+                    }}
+                  >
+                    <Text style={{ fontSize: 10, fontWeight: '700', color: '#1d4ed8' }}>
+                      ⚡ Auto Detect (Any Wi-Fi)
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={() => {
+                      setServerUrlInput('http://localhost:4000/api');
                       setServerTestMsg('');
                     }}
                     style={{
@@ -6075,7 +6140,7 @@ borderColor: C.border
                     }}
                   >
                     <Text style={{ fontSize: 10, fontWeight: '700', color: '#1d4ed8' }}>
-                      Wi-Fi (10.116.34.214)
+                      Localhost (4000)
                     </Text>
                   </TouchableOpacity>
 

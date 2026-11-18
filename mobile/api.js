@@ -21,6 +21,7 @@ export const setCustomApiBase = async (url) => {
     } catch {}
   } else {
     customApiBase = null;
+    cachedApiBase = null;
     try {
       await AsyncStorage.removeItem('@abhyas_custom_api_base');
     } catch {}
@@ -46,17 +47,18 @@ if (typeof window !== 'undefined' && window.addEventListener) {
 export const getCandidateApiUrls = () => {
   const candidates = [];
 
-  // 1. User-defined custom server override (if configured, highest priority)
-  if (customApiBase) {
-    candidates.push(customApiBase);
-  }
-
-  // 2. Web browser: prioritize current origin host and local loopbacks
+  // 1. Web browser: prioritize current origin host and local loopbacks
+  // On web, window.location.hostname is ALWAYS the actual host you navigated to (e.g. localhost, 127.0.0.1)
   if (Platform.OS === 'web' && typeof window !== 'undefined' && window.location?.hostname) {
     const host = window.location.hostname;
     candidates.push(`http://${host}:4000/api`);
     if (host !== 'localhost') candidates.push('http://localhost:4000/api');
     if (host !== '127.0.0.1') candidates.push('http://127.0.0.1:4000/api');
+  }
+
+  // 2. User-defined custom server override (if configured)
+  if (customApiBase) {
+    candidates.push(customApiBase);
   }
 
   // 3. Environment variable override for deployed remote backend or APK builds
@@ -65,6 +67,7 @@ export const getCandidateApiUrls = () => {
   }
 
   // 4. Metro Bundler dynamic host (Expo Go on physical mobile devices / emulators)
+  // In Expo Go, scriptURL contains the EXACT current IP of the development PC on WHATEVER Wi-Fi it is currently on!
   const scriptURL = NativeModules?.SourceCode?.scriptURL;
   if (scriptURL) {
     const metroHost = scriptURL.split('://')[1]?.split('/')[0]?.split(':')[0];
@@ -73,23 +76,17 @@ export const getCandidateApiUrls = () => {
     }
   }
 
-  // 4b. Local Development Machine IPs (Current active Wi-Fi IP and common local subnets)
-  candidates.push('http://10.116.34.214:4000/api');
-  candidates.push('http://10.185.72.214:4000/api');
-
-  // 4c. Mobile Hotspot Gateways (Windows Mobile Hotspot, Android Hotspot, iOS Hotspot)
+  // 5. Common Mobile Hotspot Gateways (Windows Mobile Hotspot, Android Hotspot, iOS Hotspot)
   candidates.push('http://192.168.137.1:4000/api'); // Windows Mobile Hotspot default host gateway
   candidates.push('http://192.168.43.1:4000/api');  // Android Hotspot default gateway
   candidates.push('http://172.20.10.1:4000/api');   // iOS Personal Hotspot default gateway
-  candidates.push('http://192.168.1.100:4000/api'); // Common Home Wi-Fi
-  candidates.push('http://192.168.0.100:4000/api'); // Common Office Wi-Fi
 
-  // 5. Android emulator loopback alias
+  // 6. Android emulator loopback alias
   if (Platform.OS === 'android') {
     candidates.push('http://10.0.2.2:4000/api');
   }
 
-  // 6. Standard local loopback endpoints
+  // 7. Standard local loopback endpoints
   candidates.push('http://localhost:4000/api');
   candidates.push('http://127.0.0.1:4000/api');
 
@@ -101,15 +98,22 @@ export const getCandidateApiUrls = () => {
  * Returns the currently active working API base URL.
  */
 export const getApiBase = () => {
-  if (customApiBase) return customApiBase;
+  // Web browser always connects to the active host or localhost
   if (Platform.OS === 'web' && typeof window !== 'undefined' && window.location?.hostname) {
     const currentHost = window.location.hostname;
+    // On web, if accessing via localhost or 127.0.0.1, ALWAYS use localhost:4000/api!
+    // Never let an obsolete mobile Wi-Fi IP override web localhost!
+    if (currentHost === 'localhost' || currentHost === '127.0.0.1') {
+      return `http://${currentHost}:4000/api`;
+    }
+    if (customApiBase) return customApiBase;
     return `http://${currentHost}:4000/api`;
   }
+  if (customApiBase) return customApiBase;
+  if (cachedApiBase) return cachedApiBase;
   if (process.env.EXPO_PUBLIC_API_URL && typeof process.env.EXPO_PUBLIC_API_URL === 'string' && process.env.EXPO_PUBLIC_API_URL.trim()) {
     return process.env.EXPO_PUBLIC_API_URL.trim().replace(/\/+$/, '');
   }
-  if (cachedApiBase) return cachedApiBase;
   return getCandidateApiUrls()[0] || 'http://localhost:4000/api';
 };
 
@@ -126,7 +130,7 @@ export async function testApiConnection(baseUrl) {
     const res = await fetch(`${clean}/health`, {
       method: 'GET',
       headers: { 'Accept': 'application/json' },
-      signal: AbortSignal.timeout ? AbortSignal.timeout(2500) : undefined
+      signal: AbortSignal.timeout ? AbortSignal.timeout(2000) : undefined
     });
     return res.ok;
   } catch (err) {
@@ -136,7 +140,7 @@ export async function testApiConnection(baseUrl) {
 
 /**
  * Smart, resilient API fetch that automatically fails over between candidates.
- * Uses fast adaptive timeout (2s) when probing failover candidates so Wi-Fi switching
+ * Uses fast adaptive timeout (1.5s) when probing failover candidates so Wi-Fi switching
  * is immediate and never freezes the user interface.
  */
 export async function smartApiFetch(route, options = {}) {
@@ -154,9 +158,9 @@ export async function smartApiFetch(route, options = {}) {
     const base = candidates[i];
     const fullUrl = base + path;
 
-    // Fast adaptive timeout: 2s for probing candidates, max 3s on web or 4s on mobile
-    const maxTimeout = Platform.OS === 'web' ? 3000 : 4500;
-    const timeoutMs = options.timeout || (candidates.length > 1 && i < candidates.length - 1 ? 2000 : maxTimeout);
+    // Fast adaptive timeout: 1.5s for probing candidates so Wi-Fi switching is instantaneous
+    const maxTimeout = Platform.OS === 'web' ? 2500 : 3500;
+    const timeoutMs = options.timeout || (candidates.length > 1 && i < candidates.length - 1 ? 1500 : maxTimeout);
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -176,16 +180,21 @@ export async function smartApiFetch(route, options = {}) {
     } catch (err) {
       clearTimeout(timeoutId);
       lastError = err;
-      // Invalidate cached base if initial candidate failed
+      // Invalidate cached base if candidate failed
       if (base === cachedApiBase) {
         cachedApiBase = null;
+      }
+      // If customApiBase was unreachable on this Wi-Fi, remove it so future requests don't hang!
+      if (base === customApiBase) {
+        console.warn('[smartApiFetch] Custom API base unreachable on this Wi-Fi, falling back to auto-detect:', customApiBase);
+        customApiBase = null;
       }
       continue;
     }
   }
 
   if (lastError && (lastError.name === 'AbortError' || String(lastError.message).toLowerCase().includes('abort'))) {
-    throw new Error('Connection timed out. Please verify your Wi-Fi, hotspot, or server address.');
+    throw new Error('Connection timed out. Please verify your Wi-Fi or server status.');
   }
 
   throw lastError || new Error(`Cannot connect to server across network. Tried: ${candidates.join(', ')}`);
