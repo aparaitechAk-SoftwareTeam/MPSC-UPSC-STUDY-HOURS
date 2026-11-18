@@ -23,9 +23,9 @@ async function connectDB() {
 
   const opts = {
     dbName,
-    serverSelectionTimeoutMS: 2500,
-    connectTimeoutMS: 2500,
-    socketTimeoutMS: 5000,
+    serverSelectionTimeoutMS: 8000,
+    connectTimeoutMS: 8000,
+    socketTimeoutMS: 10000,
   };
 
   try {

@@ -7,21 +7,32 @@ import {
   Alert,
   TextInput,
 } from 'react-native';
+import Svg, {
+  Circle,
+  Path,
+  G,
+  Defs,
+  LinearGradient,
+  Stop,
+  Ellipse,
+} from 'react-native-svg';
 import {
   getTranslation,
   getSubjectName,
-  DEFAULT_SYLLABUS_SUBJECTS
+  DEFAULT_SYLLABUS_SUBJECTS,
 } from './translations';
 
 const COLORS = {
-  bg: '#F7F9FE',
+  bg: '#F6F9F6',
   white: '#FFFFFF',
-  ink: '#142841',
-  muted: '#72849F',
-  blue: '#37689F',
-  soft: '#E9F0FC',
-  line: '#E8EEF8',
+  ink: '#0F291E',
+  muted: '#4B6357',
+  blue: '#059669',
+  soft: '#ECFDF5',
+  line: '#D1FAE5',
 };
+
+import BotanicalTree from './BotanicalTree';
 
 export default function Timer({
   elapsed = 0,
@@ -49,10 +60,10 @@ export default function Timer({
   theme,
   isDarkMode = false,
   lang = 'en',
-  t = (k, fb) => getTranslation(lang, k, fb)
+  t = (k, fb) => getTranslation(lang, k, fb),
 }) {
   const C = theme || COLORS;
-  const [timerExamFilter, setTimerExamFilter] = useState('ALL'); // 'ALL' | 'UPSC' | 'MPSC'
+  const [timerExamFilter, setTimerExamFilter] = useState('ALL');
 
   // Standardize subjects matching syllabus exactly
   const sourceSubjects = (Array.isArray(subjects) && subjects.length > 0)
@@ -71,16 +82,145 @@ export default function Timer({
     return sExam === timerExamFilter;
   });
 
-  // Lock controls only after a Deep Zen session has started.
-  const deepZenSessionLocked =
-    deepZenLocked && (running || elapsed > 0 || saving);
+  // Lock controls only after a Deep Zen session has started
+  const deepZenSessionLocked = deepZenLocked && (running || elapsed > 0 || saving);
 
+  // Helper: Format seconds to MM:SS or HH:MM:SS
   const formatTime = (totalSeconds) => {
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
+    const s = Math.max(0, Math.floor(totalSeconds));
+    const hours = Math.floor(s / 3600);
+    const minutes = Math.floor((s % 3600) / 60);
+    const seconds = s % 60;
 
+    if (hours > 0) {
+      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
     return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   };
+  
+
+  // Forest growth follows the selected countdown duration.
+  // Stopwatch retains its original elapsed-time milestones.
+  const treeStages = [
+    { icon: '\uD83C\uDF31', title: 'Seed', titleKey: 'forestSeed', description: 'Your focus journey begins.', descriptionKey: 'forestSeedDesc' },
+    { icon: '\uD83C\uDF3F', title: 'Sprout', titleKey: 'forestSprout', description: 'You are building consistency.', descriptionKey: 'forestSproutDesc' },
+    { icon: '\uD83E\uDEB4', title: 'Sapling', titleKey: 'forestSapling', description: 'Your dedication is growing.', descriptionKey: 'forestSaplingDesc' },
+    { icon: '\uD83C\uDF33', title: 'Growing Tree', titleKey: 'forestGrowingTree', description: 'Strong focus creates strong roots.', descriptionKey: 'forestGrowingDesc' },
+    { icon: '\uD83C\uDF32', title: 'Mature Tree', titleKey: 'forestMatureTree', description: 'A beautiful session of dedication.', descriptionKey: 'forestMatureDesc' },
+  ];
+
+  const countdownDurationSeconds =
+    mode === 'Pomodoro' ? 25 * 60 :
+    mode === 'Custom' ? Number(customMinutes) * 60 : null;
+
+  const hasCountdownDuration =
+    countdownDurationSeconds !== null &&
+    Number.isFinite(countdownDurationSeconds) &&
+    countdownDurationSeconds > 0;
+
+  const treeThresholds = hasCountdownDuration
+    ? Array.from({ length: 6 }, (_, index) =>
+        Math.round((countdownDurationSeconds * index) / 5)
+      )
+    : [0, 300, 900, 1500, 2700, 3600];
+
+  const nextStageIndex = treeThresholds.slice(1).findIndex(
+    (threshold) => elapsed < threshold
+  );
+
+  const treeStageIndex = nextStageIndex === -1 ? 4 : nextStageIndex;
+  const treeStage = treeStages[treeStageIndex];
+
+  const treeStageProgress =
+    !hasCountdownDuration && treeStageIndex === 4
+      ? 100
+      : Math.min(100, Math.max(0,
+          ((elapsed - treeThresholds[treeStageIndex]) /
+            (treeThresholds[treeStageIndex + 1] - treeThresholds[treeStageIndex])) * 100
+        ));
+
+  const nextTreeMilestone =
+    hasCountdownDuration
+      ? elapsed >= countdownDurationSeconds
+        ? null
+        : treeThresholds[treeStageIndex + 1] / 60
+      : treeStageIndex === 4
+        ? null
+        : treeThresholds[treeStageIndex + 1] / 60;
+
+  // Selected session duration in seconds (dynamic source of truth)
+  const selectedDuration =
+    mode === 'Pomodoro'
+      ? 25 * 60
+      : mode === 'Custom'
+        ? Math.max(1, (Number(customMinutes) || 30)) * 60
+        : 3600; // Stopwatch: 60-minute milestone cycle
+
+  // Remaining duration for countdown display
+  const remainingSeconds =
+    mode === 'Stopwatch'
+      ? elapsed
+      : Math.max(0, selectedDuration - elapsed);
+
+  // Growth progress: 0 to 1 based on actual timer elapsed / selectedDuration
+  const rawProgress = selectedDuration > 0 ? elapsed / selectedDuration : 0;
+  const growthProgress = Math.max(0, Math.min(1, rawProgress));
+  const growthPercentage = Math.round(growthProgress * 100);
+  const isSessionComplete = growthProgress >= 1;
+
+  // 7 Stages Data Mapping
+  const getStageInfo = (p) => {
+    const pct = Math.round(p * 100);
+    if (pct >= 100) {
+      return {
+        title: t('forestMatureTree', 'Mature Tree'),
+        emoji: '🌲',
+        desc: t('forestMatureDesc', 'Session complete! Full growth achieved'),
+      };
+    }
+    if (pct >= 80) {
+      return {
+        title: t('forestNearlyMature', 'Nearly Mature'),
+        emoji: '🌳',
+        desc: t('forestNearlyDesc', 'Deep roots, rich crown'),
+      };
+    }
+    if (pct >= 60) {
+      return {
+        title: t('forestThrivingTree', 'Thriving Tree'),
+        emoji: '🌳',
+        desc: t('forestGrowingDesc', 'Strong canopy developing'),
+      };
+    }
+    if (pct >= 40) {
+      return {
+        title: t('forestGrowingSapling', 'Growing Sapling'),
+        emoji: '🌿',
+        desc: t('forestSaplingDesc', 'Branches & foliage expanding'),
+      };
+    }
+    if (pct >= 20) {
+      return {
+        title: t('forestYoungSprout', 'Young Sprout'),
+        emoji: '🪴',
+        desc: t('forestSproutDesc', 'Stem & leaves taking shape'),
+      };
+    }
+    if (pct >= 1) {
+      return {
+        title: t('forestSeedling', 'Seedling'),
+        emoji: '🌿',
+        desc: t('forestSeedlingDesc', 'First green shoot emerging'),
+      };
+    }
+    return {
+      title: t('forestSeed', 'Seed'),
+      emoji: '🌱',
+      desc: t('forestSeedDesc', 'Your focus journey begins'),
+    };
+  };
+
+  const currentStage = getStageInfo(growthProgress);
 
   const changeMode = (nextMode) => {
     if (running || elapsed > 0 || saving) {
@@ -93,17 +233,28 @@ export default function Timer({
     if (nextMode === 'Stopwatch' && zenMode === 'Deep Zen') {
       setZenMode?.('Light Zen');
     }
-
     setMode?.(nextMode);
   };
 
+  // Circular ring geometry (280x280)
+  const circleSize = 280;
+  const strokeWidth = 10;
+  const radius = (circleSize - strokeWidth) / 2 - 6; // 129
+  const center = circleSize / 2; // 140
+  const circumference = 2 * Math.PI * radius; // ~810.53
+  const strokeDashoffset = circumference * (1 - growthProgress);
+
+  const trackColor = isDarkMode ? '#132A20' : '#E6F4EA';
+  const progressRingColor = isDarkMode ? '#10B981' : '#059669';
+
   return (
     <View style={[styles.container, { backgroundColor: C.bg }]}>
+      {/* Top Focus Mode Bar */}
       {focusMode ? (
         <TouchableOpacity
           style={[
             styles.focusButton,
-            isDarkMode && { backgroundColor: '#1e3a8a' },
+            { backgroundColor: isDarkMode ? '#064e3b' : (C.soft || '#ECFDF5') },
           ]}
           onPress={() => {
             if (deepZenSessionLocked) {
@@ -113,14 +264,13 @@ export default function Timer({
               );
               return;
             }
-
             requestExitFocus?.();
           }}
         >
           <Text
             style={[
               styles.focusButtonText,
-              isDarkMode && { color: '#93c5fd' },
+              { color: isDarkMode ? '#6ee7b7' : (C.blue || '#059669') },
             ]}
           >
             {t('exitFocusMode', 'Exit Focus Mode')}
@@ -130,14 +280,14 @@ export default function Timer({
         <TouchableOpacity
           style={[
             styles.focusButton,
-            isDarkMode && { backgroundColor: '#1e3a8a' },
+            { backgroundColor: isDarkMode ? '#064e3b' : (C.soft || '#ECFDF5') },
           ]}
           onPress={() => setFocusMode?.(true)}
         >
           <Text
             style={[
               styles.focusButtonText,
-              isDarkMode && { color: '#93c5fd' },
+              { color: isDarkMode ? '#6ee7b7' : (C.blue || '#059669') },
             ]}
           >
             {t('enterFocusMode', 'Enter Focus Mode')}
@@ -145,6 +295,7 @@ export default function Timer({
         </TouchableOpacity>
       )}
 
+      {/* Screen Title */}
       <Text style={[styles.heading, { color: C.ink }]}>
         {t('studyTimer', 'Study Timer')}
       </Text>
@@ -152,92 +303,150 @@ export default function Timer({
         {t('trackStudySessions', 'Track your study sessions and stay consistent.')}
       </Text>
 
-      {/* Focus Style */}
-      <Text style={[styles.label, { color: C.muted, marginTop: 18 }]}>
-        {t('focusStyle', 'FOCUS STYLE')}
-      </Text>
-
-      <View style={styles.modeRow}>
-        {['Light Zen', 'Deep Zen'].map((item) => {
-          const unavailable = mode === 'Stopwatch' && item === 'Deep Zen';
-          const label = item === 'Light Zen' ? t('lightZen', 'Light Zen') : t('deepZen', 'Deep Zen');
-
-          return (
+      {/* Mode & Zen Selector Chips */}
+      <View style={styles.topControlRow}>
+        {/* Mode Selector */}
+        <View style={styles.segmentGroup}>
+          {[
+            { key: 'Pomodoro', label: t('pomodoro', 'Pomodoro') },
+            { key: 'Custom', label: t('custom', 'Custom') },
+            { key: 'Stopwatch', label: t('stopwatch', 'Stopwatch') },
+          ].map((item) => (
             <TouchableOpacity
-              key={item}
+              key={item.key}
               style={[
-                styles.modeButton,
+                styles.segmentButton,
                 { backgroundColor: C.white, borderColor: C.line },
-                zenMode === item && { backgroundColor: C.blue, borderColor: C.blue },
-                unavailable && { opacity: 0.4 },
+                mode === item.key && { backgroundColor: C.blue, borderColor: C.blue },
               ]}
-              disabled={unavailable || running || elapsed > 0 || saving}
-              onPress={() => {
-                setDeepZenUnlocked?.(false);
-                setZenMode?.(item);
-              }}
+              onPress={() => changeMode(item.key)}
             >
               <Text
                 style={[
-                  styles.modeText,
+                  styles.segmentText,
                   { color: C.muted },
-                  zenMode === item && { color: '#ffffff', fontWeight: '700' },
+                  mode === item.key && { color: '#ffffff', fontWeight: '700' },
                 ]}
               >
-                {label}
+                {item.label}
               </Text>
             </TouchableOpacity>
-          );
-        })}
+          ))}
+        </View>
+
+        {/* Zen Style Selector */}
+        <View style={styles.segmentGroup}>
+          {['Light Zen', 'Deep Zen'].map((item) => {
+            const unavailable = mode === 'Stopwatch' && item === 'Deep Zen';
+            const label = item === 'Light Zen' ? t('lightZen', 'Light') : t('deepZen', 'Deep');
+
+            return (
+              <TouchableOpacity
+                key={item}
+                style={[
+                  styles.segmentButton,
+                  { backgroundColor: C.white, borderColor: C.line },
+                  zenMode === item && { backgroundColor: C.blue, borderColor: C.blue },
+                  unavailable && { opacity: 0.35 },
+                ]}
+                disabled={unavailable || running || elapsed > 0 || saving}
+                onPress={() => {
+                  setDeepZenUnlocked?.(false);
+                  setZenMode?.(item);
+                }}
+              >
+                <Text
+                  style={[
+                    styles.segmentText,
+                    { color: C.muted },
+                    zenMode === item && { color: '#ffffff', fontWeight: '700' },
+                  ]}
+                >
+                  {label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
       </View>
 
-      <Text style={[styles.subtitle, { color: C.muted, marginTop: -6, marginBottom: 14 }]}>
-        {mode === 'Stopwatch'
-          ? t('stopwatchLightZenOnly', 'Stopwatch supports Light Zen only.')
-          : zenMode === 'Deep Zen'
-          ? t('deepZenDesc', 'Deep Zen locks pause, reset, finish, and exit during an active countdown. It unlocks when the countdown finishes.')
-          : t('lightZenDesc', 'Light Zen lets you leave Focus Mode whenever you need.')}
-      </Text>
+      {/* ========================================================= */}
+      {/* 1. CUSTOM DURATION & 2. OR ENTER YOUR OWN TIME (MINUTES)  */}
+      {/* 3. Custom duration input / minute selection controls      */}
+      {/* (SHOWN ONLY WHEN mode === 'Custom')                       */}
+      {/* ========================================================= */}
+      {mode === 'Custom' && (
+        <View style={[styles.card, { backgroundColor: C.white, borderColor: C.line, marginTop: 12 }]}>
+          <Text style={[styles.label, { color: C.muted }]}>
+            {t('customDuration', 'CUSTOM DURATION')}
+          </Text>
 
-      {/* Timer Modes */}
-      <View style={styles.modeRow}>
-        {[
-          { key: 'Pomodoro', label: t('pomodoro', 'Pomodoro') },
-          { key: 'Stopwatch', label: t('stopwatch', 'Stopwatch') },
-          { key: 'Custom', label: t('custom', 'Custom') }
-        ].map((item) => (
-          <TouchableOpacity
-            key={item.key}
+          {/* Quick Minute Selection Controls */}
+          <View style={styles.presetRow}>
+            {[5, 10, 15, 20, 25, 30, 45, 60].map((minutes) => {
+              const isSelected = customMinutes === minutes;
+              return (
+                <TouchableOpacity
+                  key={minutes}
+                  style={[
+                    styles.presetChip,
+                    { borderColor: C.line, backgroundColor: C.white },
+                    isSelected && { borderColor: C.blue, backgroundColor: C.soft },
+                  ]}
+                  disabled={running || elapsed > 0 || saving}
+                  onPress={() => setCustomMinutes?.(minutes)}
+                >
+                  <Text
+                    style={[
+                      styles.presetChipText,
+                      {
+                        color: isSelected ? C.blue : C.ink,
+                        fontWeight: isSelected ? '700' : '500',
+                      },
+                    ]}
+                  >
+                    {minutes}m
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          <Text style={[styles.label, { color: C.muted, marginTop: 10 }]}>
+            {t('enterOwnTime', 'OR ENTER YOUR OWN TIME (MINUTES)')}
+          </Text>
+
+          <TextInput
             style={[
-              styles.modeButton,
-              { backgroundColor: C.white, borderColor: C.line },
-              mode === item.key && { backgroundColor: C.blue, borderColor: C.blue },
+              styles.durationInput,
+              { backgroundColor: isDarkMode ? '#0A1612' : '#FFFFFF', borderColor: C.line, color: C.ink },
             ]}
-            onPress={() => changeMode(item.key)}
-          >
-            <Text
-              style={[
-                styles.modeText,
-                { color: C.muted },
-                mode === item.key && { color: '#ffffff', fontWeight: '700' },
-              ]}
-            >
-              {item.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+            value={String(customMinutes ?? '')}
+            onChangeText={(text) => {
+              if (/^\d*$/.test(text)) {
+                setCustomMinutes?.(text === '' ? '' : Number(text));
+              }
+            }}
+            keyboardType="number-pad"
+            placeholder={t('enterMinutesPlaceholder', 'Enter minutes (1 - 720)')}
+            placeholderTextColor={C.muted}
+            editable={!running && elapsed === 0 && !saving}
+          />
+        </View>
+      )}
 
-      {/* Study Subject Card */}
-      <View style={[styles.card, { backgroundColor: C.white, borderColor: C.line }]}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+      {/* ========================================================= */}
+      {/* 4. & 5. STUDY SUBJECT CARD (BELOW CUSTOM DURATION)        */}
+      {/* ========================================================= */}
+      <View style={[styles.card, { backgroundColor: C.white, borderColor: C.line, marginTop: 10 }]}>
+        <View style={styles.subjectCardHeader}>
           <Text style={[styles.label, { color: C.muted, marginBottom: 0 }]}>
             {t('studySubject', 'STUDY SUBJECT')}
           </Text>
 
-          {/* Exam Switcher (Matches Syllabus Section) */}
+          {/* Exam Filter Chips */}
           <View style={{ flexDirection: 'row', gap: 6 }}>
-            {['ALL', 'UPSC', 'MPSC'].map(ef => (
+            {['ALL', 'UPSC', 'MPSC'].map((ef) => (
               <TouchableOpacity
                 key={ef}
                 onPress={() => setTimerExamFilter(ef)}
@@ -247,14 +456,14 @@ export default function Timer({
                   borderRadius: 8,
                   backgroundColor: timerExamFilter === ef ? C.blue : C.soft,
                   borderWidth: 1,
-                  borderColor: timerExamFilter === ef ? C.blue : C.line
+                  borderColor: timerExamFilter === ef ? C.blue : C.line,
                 }}
               >
                 <Text
                   style={{
                     fontSize: 10,
                     fontWeight: '700',
-                    color: timerExamFilter === ef ? '#ffffff' : C.blue
+                    color: timerExamFilter === ef ? '#ffffff' : C.blue,
                   }}
                 >
                   {ef === 'ALL' ? t('all', 'ALL') : ef === 'UPSC' ? t('upsc', 'UPSC') : t('mpsc', 'MPSC')}
@@ -288,11 +497,11 @@ export default function Timer({
                       style={{
                         fontSize: 9,
                         fontWeight: '700',
-                        color: isMpsc ? '#b45309' : '#1e40af',
-                        backgroundColor: isMpsc ? '#fef3c7' : '#dbeafe',
+                        color: isMpsc ? C.amber : C.blue,
+                        backgroundColor: isMpsc ? C.amberSoft : C.blueLight,
                         paddingHorizontal: 5,
                         paddingVertical: 1,
-                        borderRadius: 4
+                        borderRadius: 4,
                       }}
                     >
                       {isMpsc ? t('mpsc', 'MPSC') : t('upsc', 'UPSC')}
@@ -302,8 +511,8 @@ export default function Timer({
                         styles.subjectText,
                         {
                           color: isSelected ? C.blue : C.ink,
-                          fontWeight: isSelected ? '700' : '400'
-                        }
+                          fontWeight: isSelected ? '700' : '400',
+                        },
                       ]}
                     >
                       {subName}
@@ -318,90 +527,101 @@ export default function Timer({
             {t('noAnalyticsData', 'Your subjects will appear here when loaded.')}
           </Text>
         )}
+      </View>
 
-        {/* Custom Duration Selector */}
-        {mode === 'Custom' && (
-          <View style={{ marginTop: 18 }}>
-            <Text style={[styles.label, { color: C.muted }]}>
-              {t('customDuration', 'CUSTOM DURATION')}
+      {/* ========================================================= */}
+      {/* 6. CIRCULAR TIMER COMPONENT WITH DYNAMIC TREE GROWTH      */}
+      {/* ========================================================= */}
+      <View style={styles.circleContainer}>
+        {/* Outer Circular SVG Track and Animated Progress Ring */}
+        <Svg width={circleSize} height={circleSize} style={styles.svgAbsolute}>
+          {/* Subtle Outer Glow Aura when running */}
+          {running && (
+            <Circle
+              cx={center}
+              cy={center}
+              r={radius + 4}
+              stroke={progressRingColor}
+              strokeWidth={2}
+              opacity={0.3}
+              fill="none"
+            />
+          )}
+
+          {/* Background Track */}
+          <Circle
+            cx={center}
+            cy={center}
+            r={radius}
+            stroke={trackColor}
+            strokeWidth={strokeWidth}
+            fill={isDarkMode ? '#0E1F18' : '#FAFDFB'}
+          />
+
+          {/* Foreground Dynamic Progress Ring */}
+          <Circle
+            cx={center}
+            cy={center}
+            r={radius}
+            stroke={progressRingColor}
+            strokeWidth={strokeWidth}
+            strokeDasharray={circumference}
+            strokeDashoffset={strokeDashoffset}
+            strokeLinecap="round"
+            fill="none"
+            transform={`rotate(-90 ${center} ${center})`}
+          />
+        </Svg>
+
+        {/* Integrated Center Content */}
+        <View style={styles.circleContent}>
+          {/* Top Session Mode Tag */}
+          <View style={[styles.timerModePill, { backgroundColor: C.soft, borderColor: C.line }]}>
+            <Text style={[styles.timerModePillText, { color: C.blue }]}>
+              {mode === 'Pomodoro'
+                ? `25 MIN • ${t('pomodoro', 'POMODORO')}`
+                : mode === 'Custom'
+                  ? `${customMinutes || 30} MIN • ${t('custom', 'CUSTOM')}`
+                  : t('stopwatch', 'STOPWATCH')}
             </Text>
+          </View>
 
-            <View style={styles.subjectList}>
-              {[10, 15, 20, 30, 45, 60].map((minutes) => (
-                <TouchableOpacity
-                  key={minutes}
-                  style={[
-                    styles.subjectButton,
-                    { borderColor: C.line, backgroundColor: C.white },
-                    customMinutes === minutes && { borderColor: C.blue, backgroundColor: C.soft },
-                  ]}
-                  disabled={running || elapsed > 0 || saving}
-                  onPress={() => setCustomMinutes?.(minutes)}
-                >
-                  <Text
-                    style={[
-                      styles.subjectText,
-                      {
-                        color: customMinutes === minutes ? C.blue : C.ink,
-                        fontWeight: customMinutes === minutes ? '700' : '400'
-                      }
-                    ]}
-                  >
-                    {minutes} {t('mins', 'min')}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <Text style={[styles.label, { color: C.muted, marginTop: 14 }]}>
-              {t('enterOwnTime', 'OR ENTER YOUR OWN TIME (MINUTES)')}
-            </Text>
-
-            <TextInput
-              style={[
-                styles.durationInput,
-                { backgroundColor: C.white, borderColor: C.line, color: C.ink }
-              ]}
-              value={String(customMinutes ?? '')}
-              onChangeText={(text) => {
-                if (/^\d*$/.test(text)) {
-                  setCustomMinutes?.(text === '' ? '' : Number(text));
-                }
-              }}
-              keyboardType="number-pad"
-              placeholder={t('enterMinutesPlaceholder', 'Enter minutes')}
-              placeholderTextColor={C.muted}
-              editable={!running && elapsed === 0 && !saving}
+          {/* Central Living Botanical Tree */}
+          <View style={styles.treeWrapper}>
+            <BotanicalTree
+              progress={growthProgress}
+              isDark={isDarkMode}
+              running={running}
+              isComplete={isSessionComplete}
             />
           </View>
-        )}
+          {/* Crisp Digital Countdown Display */}
+          <Text style={[styles.timeDisplay, { color: C.ink }]}>
+            {formatTime(remainingSeconds)}
+          </Text>
 
-        {/* Timer Circle */}
-        <View style={[styles.timerCircle, { borderColor: C.soft }]}>
-          <Text style={[styles.timerLabel, { color: C.muted }]}>
-            {t('studyTime', 'STUDY TIME')}
-          </Text>
-          <Text style={[styles.time, { color: C.ink }]}>
-            {formatTime(
-              mode === 'Pomodoro'
-                ? Math.max(0, 25 * 60 - elapsed)
-                : mode === 'Custom'
-                  ? Math.max(0, (customMinutes || 30) * 60 - elapsed)
-                  : elapsed
-            )}
-          </Text>
-          <Text style={[styles.status, { color: C.muted }]}>
-            {saving
-              ? t('saving', 'Saving session...')
-              : running
-                ? t('runningFocus', 'Session in progress')
-                : elapsed > 0
-                  ? t('pausedFocus', 'Session paused')
-                  : t('readyToFocus', 'Ready to focus')}
-          </Text>
+          {/* Growth Stage and Session Status Label */}
+          <View style={styles.statusRow}>
+            <Text style={[styles.statusText, { color: isSessionComplete ? '#059669' : C.muted }]}>
+              {saving
+                ? t('saving', 'Saving session...')
+                : isSessionComplete
+                  ? `🎉 ${t('forestFullyGrown', 'Tree fully grown! Session complete!')}`
+                  : running
+                    ? `${currentStage.emoji} ${currentStage.title} • ${growthPercentage}%`
+                    : elapsed > 0
+                      ? `⏸ ${t('pausedFocus', 'Paused')} • ${growthPercentage}%`
+                      : `${currentStage.emoji} ${currentStage.title} • ${t('readyToFocus', 'Ready')}`}
+            </Text>
+          </View>
         </View>
+      </View>
 
-        {/* Primary Action Button */}
+      {/* ========================================================= */}
+      {/* 7. EXISTING START, PAUSE, RESUME AND RESET CONTROLS       */}
+      {/* ========================================================= */}
+      <View style={styles.controlsCard}>
+        {/* Main Action Button */}
         <TouchableOpacity
           style={[
             styles.primaryButton,
@@ -418,120 +638,249 @@ export default function Timer({
                 ? t('pauseTimer', 'Pause Session')
                 : elapsed > 0
                   ? t('resumeTimer', 'Resume Session')
-                  : t('startTimer', 'Start Session')}
+                  : t('startTimer', 'Start Focus Session')}
           </Text>
         </TouchableOpacity>
 
-        {/* Finish & Save Button */}
-        <TouchableOpacity
-          style={[
-            styles.secondaryButton,
-            { backgroundColor: C.soft },
-            (saving || deepZenSessionLocked) && styles.disabledButton,
-          ]}
-          disabled={saving || deepZenSessionLocked}
-          onPress={finish}
-        >
-          <Text style={[styles.secondaryText, { color: C.blue }]}>
-            {t('saveSession', 'Finish & Save Session')}
-          </Text>
-        </TouchableOpacity>
+        {/* Action Row: Finish & Reset */}
+        <View style={styles.secondaryActionsRow}>
+          {/* Finish & Save Session */}
+          <TouchableOpacity
+            style={[
+              styles.secondaryButton,
+              { backgroundColor: C.soft, borderColor: C.line },
+              (saving || deepZenSessionLocked) && styles.disabledButton,
+            ]}
+            disabled={saving || deepZenSessionLocked}
+            onPress={finish}
+          >
+            <Text style={[styles.secondaryText, { color: C.blue }]}>
+              {t('saveSession', 'Finish & Save')}
+            </Text>
+          </TouchableOpacity>
 
-        {/* Reset Button */}
-        <TouchableOpacity
-          style={[
-            styles.resetButton,
-            deepZenSessionLocked && styles.disabledButton,
-          ]}
-          disabled={saving || deepZenSessionLocked}
-          onPress={resetSession}
-        >
-          <Text style={[styles.resetText, { color: C.muted }]}>
-            {t('reset', 'Reset Timer')}
-          </Text>
-        </TouchableOpacity>
+          {/* Reset Session */}
+          <TouchableOpacity
+            style={[
+              styles.resetButton,
+              { backgroundColor: isDarkMode ? '#172E24' : '#F1F5F9', borderColor: C.line },
+              (saving || deepZenSessionLocked) && styles.disabledButton,
+            ]}
+            disabled={saving || deepZenSessionLocked}
+            onPress={resetSession}
+          >
+            <Text style={[styles.resetText, { color: C.muted }]}>
+              {t('reset', 'Reset')}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  focusButton: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#E0EFFF',
-    paddingVertical: 7,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    marginBottom: 8,
-  },
-  focusButtonText: {
-    color: '#1D4ED8',
-    fontWeight: '700',
-  },
   container: {
     flex: 1,
-    backgroundColor: COLORS.bg,
-    padding: 16,
+    paddingHorizontal: 4,
+    paddingBottom: 24,
   },
   heading: {
-    fontSize: 25,
-    fontWeight: '700',
-    color: COLORS.ink,
+    fontSize: 24,
+    fontWeight: '800',
+    letterSpacing: -0.3,
   },
   subtitle: {
     fontSize: 13,
-    color: COLORS.muted,
-    marginTop: 6,
-    lineHeight: 20,
+    marginTop: 4,
+    lineHeight: 18,
   },
-  durationInput: {
-    borderWidth: 1,
-    borderColor: '#CBD5E1',
-    borderRadius: 10,
-    padding: 12,
-    marginTop: 8,
-    color: '#0F172A',
-    backgroundColor: '#FFFFFF',
-    textAlign: 'center',
-    fontSize: 18,
+  focusButton: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#ECFDF5',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 9,
+    marginBottom: 8,
   },
-  modeRow: {
+  focusButtonText: {
+    color: '#047857',
+    fontWeight: '700',
+    fontSize: 12,
+  },
+  topControlRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginVertical: 14,
     flexWrap: 'wrap',
     gap: 8,
-    marginVertical: 18,
   },
-  modeButton: {
+  segmentGroup: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  segmentButton: {
     borderWidth: 1,
-    borderColor: COLORS.line,
-    backgroundColor: COLORS.white,
-    borderRadius: 22,
-    paddingVertical: 10,
-    paddingHorizontal: 15,
+    borderRadius: 18,
+    paddingVertical: 7,
+    paddingHorizontal: 13,
   },
-  activeMode: {
-    backgroundColor: COLORS.blue,
-    borderColor: COLORS.blue,
-  },
-  modeText: {
-    color: COLORS.muted,
+  segmentText: {
+    fontSize: 12,
     fontWeight: '600',
   },
-  activeModeText: {
-    color: COLORS.white,
+  // Circular Central Timer
+  circleContainer: {
+    width: 280,
+    height: 280,
+    alignSelf: 'center',
+    marginVertical: 16,
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  card: {
-    backgroundColor: COLORS.white,
-    borderRadius: 22,
-    padding: 20,
+  svgAbsolute: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+  },
+  circleContent: {
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+  },
+  timerModePill: {
     borderWidth: 1,
-    borderColor: COLORS.line,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    marginBottom: 2,
+  },
+  timerModePillText: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+  },
+  treeWrapper: {
+    width: 140,
+    height: 100,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: -2,
+  },
+  timeDisplay: {
+    fontSize: 34,
+    fontWeight: '800',
+    letterSpacing: 1.2,
+    marginTop: 2,
+    fontVariant: ['tabular-nums'],
+  },
+  statusRow: {
+    marginTop: 3,
+    alignItems: 'center',
+  },
+  statusText: {
+    fontSize: 11,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  // Controls
+  controlsCard: {
+    marginTop: 8,
+    paddingHorizontal: 4,
+  },
+  primaryButton: {
+    borderRadius: 14,
+    paddingVertical: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+    elevation: 2,
+    shadowColor: '#059669',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 5,
+  },
+  primaryText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+  },
+  secondaryActionsRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  secondaryButton: {
+    flex: 2,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  secondaryText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  resetButton: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  resetText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  disabledButton: {
+    opacity: 0.5,
+  },
+  // Subject & Presets
+  card: {
+    borderRadius: 18,
+    padding: 16,
+    borderWidth: 1,
   },
   label: {
     fontSize: 11,
-    letterSpacing: 1.2,
-    color: COLORS.muted,
+    letterSpacing: 1,
     fontWeight: '700',
+    marginBottom: 8,
+  },
+  presetRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 4,
+  },
+  presetChip: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingVertical: 7,
+    paddingHorizontal: 11,
+  },
+  presetChipText: {
+    fontSize: 12,
+  },
+  durationInput: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 10,
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  subjectCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 10,
   },
   subjectList: {
@@ -541,78 +890,14 @@ const styles = StyleSheet.create({
   },
   subjectButton: {
     borderWidth: 1,
-    borderColor: COLORS.line,
-    borderRadius: 12,
-    paddingVertical: 9,
-    paddingHorizontal: 12,
-  },
-  selectedSubject: {
-    borderColor: COLORS.blue,
-    backgroundColor: COLORS.soft,
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
   },
   subjectText: {
-    color: COLORS.ink,
     fontSize: 12,
-  },
-  timerCircle: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 8,
-    borderColor: COLORS.soft,
-    borderRadius: 120,
-    width: 220,
-    height: 220,
-    alignSelf: 'center',
-    marginVertical: 28,
-  },
-  timerLabel: {
-    fontSize: 11,
-    letterSpacing: 1.5,
-    color: COLORS.muted,
-    fontWeight: '700',
-  },
-  time: {
-    color: COLORS.ink,
-    fontSize: 42,
-    fontWeight: '700',
-    marginVertical: 8,
-    fontVariant: ['tabular-nums'],
-  },
-  status: {
-    color: COLORS.muted,
-    fontSize: 12,
-  },
-  primaryButton: {
-    backgroundColor: COLORS.blue,
-    borderRadius: 14,
-    padding: 15,
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  disabledButton: {
-    opacity: 0.55,
-  },
-  primaryText: {
-    color: COLORS.white,
-    fontWeight: '700',
-  },
-  secondaryButton: {
-    backgroundColor: COLORS.soft,
-    borderRadius: 14,
-    padding: 14,
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  secondaryText: {
-    color: COLORS.blue,
-    fontWeight: '700',
-  },
-  resetButton: {
-    padding: 12,
-    alignItems: 'center',
-  },
-  resetText: {
-    color: COLORS.muted,
-    fontWeight: '600',
   },
 });
+
+
+

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { smartApiFetch, getApiBase } from "./api";
+import { smartApiFetch, getApiBase, setCustomApiBase, getCustomApiBase, testApiConnection } from "./api";
 import {
   View,
   Text,
@@ -12,70 +12,73 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Modal,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 
-const BLUE = "#2457C5";
-const BLUE_LIGHT = "#EAF1FF";
+const GREEN = "#059669";
+const GREEN_LIGHT = "#ECFDF5";
+const BLUE = GREEN;
+const BLUE_LIGHT = GREEN_LIGHT;
 
 export const getAuthTheme = (isDark) => ({
   isDark,
-  bg: isDark ? "#0A0F1D" : "#F3F7FF",
-  cardBg: isDark ? "#131B2E" : "#FFFFFF",
-  cardBorder: isDark ? "#1E2D4D" : "#E2EAF8",
-  heading: isDark ? "#F8FAFC" : "#172F5D",
-  subHeading: isDark ? "#CBD5E1" : "#334155",
-  subtitle: isDark ? "#94A3B8" : "#64748B",
-  label: isDark ? "#E2E8F0" : "#334155",
-  hint: isDark ? "#94A3B8" : "#94A3B8",
-  inputBg: isDark ? "#0F172A" : "#FFFFFF",
-  inputBorder: isDark ? "#334155" : "#D8E2F1",
-  inputText: isDark ? "#F8FAFC" : "#172F5D",
-  placeholder: isDark ? "#64748B" : "#94A3B8",
-  tabRowBg: isDark ? "#1E293B" : "#F1F5F9",
-  tabActiveBg: isDark ? "#0F172A" : "#FFFFFF",
-  tabText: isDark ? "#94A3B8" : "#64748B",
-  tabActiveText: isDark ? "#60A5FA" : BLUE,
-  primaryBtn: isDark ? "#2563EB" : BLUE,
-  studentBtnBg: isDark ? "#1E293B" : "#EBF2FD",
-  studentBtnBorder: isDark ? "#3B82F6" : "#BFDBFE",
-  studentBtnText: isDark ? "#60A5FA" : BLUE,
-  adminBtnBg: isDark ? "#1E2538" : "#F1F5F9",
-  adminBtnBorder: isDark ? "#475569" : "#CBD5E1",
+  bg: isDark ? "#0A1612" : "#F6F9F6",
+  cardBg: isDark ? "#11221B" : "#FFFFFF",
+  cardBorder: isDark ? "#17382A" : "#D1FAE5",
+  heading: isDark ? "#F0FDF4" : "#0F291E",
+  subHeading: isDark ? "#86A394" : "#2D4A3E",
+  subtitle: isDark ? "#86A394" : "#4B6357",
+  label: isDark ? "#E2E8F0" : "#2D4A3E",
+  hint: isDark ? "#86A394" : "#86A394",
+  inputBg: isDark ? "#0A1612" : "#FFFFFF",
+  inputBorder: isDark ? "#1E382B" : "#D1FAE5",
+  inputText: isDark ? "#F0FDF4" : "#0F291E",
+  placeholder: isDark ? "#4B6357" : "#86A394",
+  tabRowBg: isDark ? "#0F291E" : "#ECFDF5",
+  tabActiveBg: isDark ? "#11221B" : "#FFFFFF",
+  tabText: isDark ? "#86A394" : "#4B6357",
+  tabActiveText: isDark ? "#34D399" : GREEN,
+  primaryBtn: isDark ? "#10B981" : GREEN,
+  studentBtnBg: isDark ? "#064E3B" : "#ECFDF5",
+  studentBtnBorder: isDark ? "#10B981" : "#A7F3D0",
+  studentBtnText: isDark ? "#34D399" : GREEN,
+  adminBtnBg: isDark ? "#172E24" : "#F1F5F9",
+  adminBtnBorder: isDark ? "#2D4A3E" : "#CBD5E1",
   adminBtnText: isDark ? "#E2E8F0" : "#334155",
-  demoBtnBg: isDark ? "#1E293B" : "#EBF2FD",
-  demoBtnBorder: isDark ? "#334155" : "#C5D8F6",
-  demoBtnText: isDark ? "#60A5FA" : BLUE,
-  link: isDark ? "#60A5FA" : BLUE,
-  forgot: isDark ? "#60A5FA" : BLUE,
-  footer: isDark ? "#64748B" : "#94A3B8",
-  logoBg: isDark ? "#2563EB" : BLUE,
-  appName: isDark ? "#FFFFFF" : "#18356B",
-  tagline: isDark ? "#E2E8F0" : "#64748B",
-  methodBtnBg: isDark ? "#0F172A" : "#FFFFFF",
-  methodBtnBorder: isDark ? "#334155" : "#D8E2F1",
-  methodBtnText: isDark ? "#94A3B8" : "#64748B",
-  methodSelectedBg: isDark ? "#1E3A5F" : BLUE_LIGHT,
-  methodSelectedBorder: isDark ? "#3B82F6" : BLUE,
-  methodSelectedText: isDark ? "#93C5FD" : BLUE,
-  choicePillBg: isDark ? "#1E293B" : "#F8FAFC",
-  choicePillBorder: isDark ? "#334155" : "#E2E8F0",
-  choicePillText: isDark ? "#94A3B8" : "#64748B",
-  choicePillActiveBg: isDark ? "#1E3A5F" : BLUE_LIGHT,
-  choicePillActiveBorder: isDark ? "#3B82F6" : BLUE,
-  choicePillActiveText: isDark ? "#93C5FD" : BLUE,
-  otpBoxBg: isDark ? "#0F172A" : "#FFFFFF",
-  otpBoxBorder: isDark ? "#334155" : "#D8E2F1",
-  otpBoxFilledBorder: isDark ? "#3B82F6" : BLUE,
-  otpBoxFilledBg: isDark ? "#1E293B" : "#F8FAFF",
-  otpBoxText: isDark ? "#F8FAFC" : "#172F5D",
-  toggleBg: isDark ? "#1E293B" : "#FFFFFF",
-  toggleBorder: isDark ? "#334155" : "#DBEAFE",
-  toggleColor: isDark ? "#FBBF24" : "#4F46E5",
-  resendText: isDark ? "#64748B" : "#94A3B8",
-  resendLink: isDark ? "#60A5FA" : BLUE,
-  highlightText: isDark ? "#F8FAFC" : "#1E293B",
+  demoBtnBg: isDark ? "#064E3B" : "#ECFDF5",
+  demoBtnBorder: isDark ? "#10B981" : "#A7F3D0",
+  demoBtnText: isDark ? "#34D399" : GREEN,
+  link: isDark ? "#34D399" : GREEN,
+  forgot: isDark ? "#34D399" : GREEN,
+  footer: isDark ? "#86A394" : "#4B6357",
+  logoBg: isDark ? "#10B981" : GREEN,
+  appName: isDark ? "#FFFFFF" : "#0F291E",
+  tagline: isDark ? "#A7F3D0" : "#4B6357",
+  methodBtnBg: isDark ? "#0A1612" : "#FFFFFF",
+  methodBtnBorder: isDark ? "#1E382B" : "#D1FAE5",
+  methodBtnText: isDark ? "#86A394" : "#4B6357",
+  methodSelectedBg: isDark ? "#064E3B" : GREEN_LIGHT,
+  methodSelectedBorder: isDark ? "#10B981" : GREEN,
+  methodSelectedText: isDark ? "#6EE7B7" : GREEN,
+  choicePillBg: isDark ? "#0F291E" : "#F6F9F6",
+  choicePillBorder: isDark ? "#1E382B" : "#D1FAE5",
+  choicePillText: isDark ? "#86A394" : "#4B6357",
+  choicePillActiveBg: isDark ? "#064E3B" : GREEN_LIGHT,
+  choicePillActiveBorder: isDark ? "#10B981" : GREEN,
+  choicePillActiveText: isDark ? "#6EE7B7" : GREEN,
+  otpBoxBg: isDark ? "#0A1612" : "#FFFFFF",
+  otpBoxBorder: isDark ? "#1E382B" : "#D1FAE5",
+  otpBoxFilledBorder: isDark ? "#10B981" : GREEN,
+  otpBoxFilledBg: isDark ? "#064E3B" : "#F0FDF4",
+  otpBoxText: isDark ? "#F0FDF4" : "#0F291E",
+  toggleBg: isDark ? "#11221B" : "#FFFFFF",
+  toggleBorder: isDark ? "#1E382B" : "#D1FAE5",
+  toggleColor: isDark ? "#FBBF24" : GREEN,
+  resendText: isDark ? "#86A394" : "#4B6357",
+  resendLink: isDark ? "#34D399" : GREEN,
+  highlightText: isDark ? "#F0FDF4" : "#0F291E",
 });
 
 const AuthThemeContext = React.createContext(getAuthTheme(false));
@@ -314,6 +317,46 @@ export default function AuthScreens({
 
   // Resolve API Base URL
   const resolvedApi = apiUrl || getApiBase();
+
+  // Server settings & diagnostics state
+  const [showServerModal, setShowServerModal] = useState(false);
+  const [serverInput, setServerInput] = useState("");
+  const [serverStatusMsg, setServerStatusMsg] = useState("");
+  const [isPingingServer, setIsPingingServer] = useState(false);
+
+  async function handleTestServer(urlToTest) {
+    const target = (urlToTest !== undefined ? urlToTest : serverInput || getApiBase()).trim();
+    if (!target) {
+      setServerStatusMsg("Please enter a valid server URL.");
+      return;
+    }
+    setIsPingingServer(true);
+    setServerStatusMsg("Pinging " + target + "...");
+    try {
+      const ok = await testApiConnection(target, 3000);
+      if (ok) {
+        setServerStatusMsg("Connected! Server is active & healthy.");
+        setCustomApiBase(target);
+      } else {
+        setServerStatusMsg("Could not reach " + target + ". Check IP and port 4000.");
+      }
+    } catch (e) {
+      setServerStatusMsg("Connection error: " + (e.message || "Failed"));
+    } finally {
+      setIsPingingServer(false);
+    }
+  }
+
+  function handleApplyPreset(url) {
+    setServerInput(url);
+    if (url) {
+      setCustomApiBase(url);
+      handleTestServer(url);
+    } else {
+      setCustomApiBase(null);
+      setServerStatusMsg("Reset to automatic multi-candidate detection.");
+    }
+  }
 
   // Timer countdown hook
   useEffect(() => {
@@ -779,6 +822,51 @@ export default function AuthScreens({
   return (
     <AuthThemeContext.Provider value={theme}>
       <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]}>
+        {/* Top-Left Corner Server Configuration Button */}
+        <View
+          style={{
+            position: "absolute",
+            top: Platform.OS === "web" ? 20 : 12,
+            left: 20,
+            zIndex: 999,
+          }}
+        >
+          <TouchableOpacity
+            onPress={() => {
+              setServerInput(getCustomApiBase() || getApiBase());
+              setServerStatusMsg("");
+              setShowServerModal(true);
+            }}
+            activeOpacity={0.8}
+            accessibilityLabel="Configure Server Address"
+            style={{
+              height: 38,
+              borderRadius: 19,
+              paddingHorizontal: 12,
+              flexDirection: "row",
+              justifyContent: "center",
+              alignItems: "center",
+              backgroundColor: theme.toggleBg,
+              borderWidth: 1,
+              borderColor: theme.toggleBorder,
+              shadowColor: "#000",
+              shadowOpacity: isDark ? 0.35 : 0.08,
+              shadowRadius: 6,
+              elevation: 4,
+              gap: 6
+            }}
+          >
+            <Ionicons
+              name="server-outline"
+              size={16}
+              color={theme.toggleColor}
+            />
+            <Text style={{ fontSize: 12, fontWeight: "600", color: theme.toggleColor }}>
+              Server
+            </Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Top-Right Corner Day / Night Mode Toggle */}
         <View
           style={{
@@ -1635,6 +1723,113 @@ export default function AuthScreens({
             </Text>
           </ScrollView>
         </KeyboardAvoidingView>
+
+        {/* Server Connection Configuration Modal */}
+        <Modal
+          visible={showServerModal}
+          animationType="fade"
+          transparent
+          onRequestClose={() => setShowServerModal(false)}
+        >
+          <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "center", alignItems: "center", padding: 20 }}>
+            <View style={{ backgroundColor: theme.cardBg, borderColor: theme.cardBorder, borderWidth: 1, borderRadius: 20, padding: 22, width: "100%", maxWidth: 440 }}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                  <Ionicons name="server" size={20} color={GREEN} />
+                  <Text style={[styles.heading, { color: theme.heading, marginBottom: 0, fontSize: 18 }]}>Backend Server</Text>
+                </View>
+                <TouchableOpacity onPress={() => setShowServerModal(false)} style={{ padding: 4 }}>
+                  <Ionicons name="close" size={22} color={theme.heading} />
+                </TouchableOpacity>
+              </View>
+
+              <Text style={{ fontSize: 13, color: theme.subtitle, marginBottom: 10 }}>
+                Active Endpoint: <Text style={{ fontWeight: "700", color: theme.heading }}>{getApiBase()}</Text>
+              </Text>
+
+              <Text style={{ fontSize: 12, fontWeight: "600", color: theme.label, marginBottom: 4 }}>Server Base URL (with /api):</Text>
+              <TextInput
+                value={serverInput}
+                onChangeText={setServerInput}
+                placeholder="http://10.154.240.98:4000/api"
+                placeholderTextColor={theme.placeholder}
+                autoCapitalize="none"
+                autoCorrect={false}
+                style={{
+                  backgroundColor: theme.inputBg,
+                  borderColor: theme.inputBorder,
+                  borderWidth: 1,
+                  borderRadius: 10,
+                  paddingHorizontal: 12,
+                  paddingVertical: 10,
+                  color: theme.inputText,
+                  fontSize: 13,
+                  marginBottom: 10
+                }}
+              />
+
+              {Boolean(serverStatusMsg) && (
+                <View style={{ backgroundColor: serverStatusMsg.includes("Connected") ? "#ECFDF5" : "#FEF2F2", borderColor: serverStatusMsg.includes("Connected") ? "#A7F3D0" : "#FECACA", borderWidth: 1, borderRadius: 8, padding: 8, marginBottom: 10 }}>
+                  <Text style={{ fontSize: 12, color: serverStatusMsg.includes("Connected") ? "#065F46" : "#991B1B" }}>{serverStatusMsg}</Text>
+                </View>
+              )}
+
+              <Text style={{ fontSize: 12, fontWeight: "600", color: theme.label, marginBottom: 6 }}>Quick Presets:</Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
+                <TouchableOpacity
+                  onPress={() => handleApplyPreset("http://192.168.1.23:4000/api")}
+                  style={{ backgroundColor: theme.toggleBg, borderWidth: 1, borderColor: theme.toggleBorder, borderRadius: 8, paddingVertical: 6, paddingHorizontal: 10 }}
+                >
+                  <Text style={{ fontSize: 11, fontWeight: "600", color: theme.toggleColor }}>Current LAN (192.168.1.23)</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => handleApplyPreset("http://10.154.240.98:4000/api")}
+                  style={{ backgroundColor: theme.toggleBg, borderWidth: 1, borderColor: theme.toggleBorder, borderRadius: 8, paddingVertical: 6, paddingHorizontal: 10 }}
+                >
+                  <Text style={{ fontSize: 11, fontWeight: "600", color: theme.toggleColor }}>Developer LAN (10.154.240.98)</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => handleApplyPreset("http://10.0.2.2:4000/api")}
+                  style={{ backgroundColor: theme.toggleBg, borderWidth: 1, borderColor: theme.toggleBorder, borderRadius: 8, paddingVertical: 6, paddingHorizontal: 10 }}
+                >
+                  <Text style={{ fontSize: 11, fontWeight: "600", color: theme.toggleColor }}>Emulator (10.0.2.2)</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => handleApplyPreset("https://mpsc-upsc-study-hours.onrender.com/api")}
+                  style={{ backgroundColor: theme.toggleBg, borderWidth: 1, borderColor: theme.toggleBorder, borderRadius: 8, paddingVertical: 6, paddingHorizontal: 10 }}
+                >
+                  <Text style={{ fontSize: 11, fontWeight: "600", color: theme.toggleColor }}>Cloud (Render)</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => handleApplyPreset("")}
+                  style={{ backgroundColor: theme.toggleBg, borderWidth: 1, borderColor: theme.toggleBorder, borderRadius: 8, paddingVertical: 6, paddingHorizontal: 10 }}
+                >
+                  <Text style={{ fontSize: 11, fontWeight: "600", color: theme.toggleColor }}>Auto-Detect</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={{ flexDirection: "row", gap: 10 }}>
+                <TouchableOpacity
+                  onPress={() => handleTestServer()}
+                  disabled={isPingingServer}
+                  style={{ flex: 1, backgroundColor: GREEN, borderRadius: 10, paddingVertical: 11, alignItems: "center" }}
+                >
+                  {isPingingServer ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Text style={{ color: "#fff", fontWeight: "700", fontSize: 13 }}>Test & Connect</Text>
+                  )}
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setShowServerModal(false)}
+                  style={{ flex: 1, backgroundColor: theme.toggleBg, borderWidth: 1, borderColor: theme.toggleBorder, borderRadius: 10, paddingVertical: 11, alignItems: "center" }}
+                >
+                  <Text style={{ color: theme.heading, fontWeight: "600", fontSize: 13 }}>Done</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </SafeAreaView>
     </AuthThemeContext.Provider>
   );
@@ -1657,12 +1852,12 @@ const styles = StyleSheet.create({
     width: 58,
     height: 58,
     borderRadius: 18,
-    backgroundColor: BLUE,
+    backgroundColor: GREEN,
     alignSelf: "center",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 10,
-    shadowColor: BLUE,
+    shadowColor: GREEN,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -1779,7 +1974,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   tabPillTextActive: {
-    color: BLUE,
+    color: GREEN,
   },
   field: {
     marginBottom: 14,
@@ -1821,12 +2016,12 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   forgot: {
-    color: BLUE,
+    color: GREEN,
     fontWeight: "700",
     fontSize: 13,
   },
   primaryButton: {
-    backgroundColor: BLUE,
+    backgroundColor: GREEN,
     minHeight: 48,
     borderRadius: 12,
     alignItems: "center",
@@ -1881,7 +2076,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   link: {
-    color: BLUE,
+    color: GREEN,
     fontSize: 13,
     fontWeight: "800",
   },
@@ -1900,8 +2095,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   methodSelected: {
-    borderColor: BLUE,
-    backgroundColor: BLUE_LIGHT,
+    borderColor: GREEN,
+    backgroundColor: GREEN_LIGHT,
   },
   methodText: {
     color: "#64748B",
@@ -1909,7 +2104,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   methodTextSelected: {
-    color: BLUE,
+    color: GREEN,
   },
   methodChoiceRow: {
     flexDirection: "row",
@@ -1931,8 +2126,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#F8FAFC",
   },
   smallChoicePillActive: {
-    borderColor: BLUE,
-    backgroundColor: BLUE_LIGHT,
+    borderColor: GREEN,
+    backgroundColor: GREEN_LIGHT,
   },
   smallChoiceText: {
     fontSize: 11,
@@ -1940,7 +2135,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   smallChoiceTextActive: {
-    color: BLUE,
+    color: GREEN,
     fontWeight: "700",
   },
   roleTabRow: {
@@ -1993,7 +2188,7 @@ const styles = StyleSheet.create({
     ...(Platform.OS === "web" ? { outlineStyle: "none" } : {}),
   },
   otpBoxFilled: {
-    borderColor: BLUE,
+    borderColor: GREEN,
     backgroundColor: "#F8FAFF",
   },
   quickFillBadge: {
@@ -2022,7 +2217,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   resendLink: {
-    color: BLUE,
+    color: GREEN,
     fontSize: 13,
     fontWeight: "700",
   },

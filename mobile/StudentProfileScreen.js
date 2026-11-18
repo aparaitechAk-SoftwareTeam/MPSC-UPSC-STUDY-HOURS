@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -14,12 +13,11 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { getTranslation } from './translations';
 
-
-const BLUE = '#3478F6';
-const BG = '#F3F7FF';
-const INK = '#172B4D';
-const MUTED = '#738199';
-const BORDER = '#E5EAF3';
+const GREEN = '#059669';
+const GREEN_LIGHT = '#ECFDF5';
+const INK_LIGHT = '#0F291E';
+const MUTED_LIGHT = '#4B6357';
+const BORDER_LIGHT = '#D1FAE5';
 
 const ProfileField = ({
   label,
@@ -29,34 +27,39 @@ const ProfileField = ({
   keyboardType,
   editing,
   error,
-}) => (
-  <View style={styles.field}>
-    <View style={styles.fieldIcon}>
-      <Ionicons name={icon} size={20} color={error ? '#DC2626' : BLUE} />
-    </View>
+  C,
+  styles: propStyles,
+}) => {
+  const s = propStyles || {};
+  return (
+    <View style={s.field || { flexDirection: 'row', alignItems: 'center', paddingVertical: 13, gap: 12 }}>
+      <View style={s.fieldIcon || { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}>
+        <Ionicons name={icon} size={20} color={error ? '#DC2626' : (C?.blue || GREEN)} />
+      </View>
 
-    <View style={styles.fieldContent}>
-      <Text style={styles.fieldLabel}>{label}</Text>
-      {editing ? (
-        <>
-          <TextInput
-            value={value}
-            onChangeText={onChangeText}
-            keyboardType={keyboardType || 'default'}
-            style={[styles.input, error ? styles.inputError : null]}
-            placeholder={`Enter ${label.toLowerCase()}`}
-            placeholderTextColor="#A0AABC"
-          />
-          {error ? <Text style={styles.errorText}>{error}</Text> : null}
-        </>
-      ) : (
-        <Text style={styles.fieldValue}>
-          {value || 'Not provided'}
-        </Text>
-      )}
+      <View style={s.fieldContent || { flex: 1 }}>
+        <Text style={s.fieldLabel || { fontSize: 11, marginBottom: 4, color: C?.muted || MUTED_LIGHT }}>{label}</Text>
+        {editing ? (
+          <>
+            <TextInput
+              value={value}
+              onChangeText={onChangeText}
+              keyboardType={keyboardType || 'default'}
+              style={[s.input || { fontSize: 13, paddingVertical: 2, color: C?.ink || INK_LIGHT }, error ? (s.inputError || { borderColor: '#DC2626' }) : null]}
+              placeholder={`Enter ${(label || '').toLowerCase()}`}
+              placeholderTextColor={C?.muted || MUTED_LIGHT}
+            />
+            {error ? <Text style={s.errorText || { color: '#DC2626', fontSize: 12, marginTop: 4 }}>{error}</Text> : null}
+          </>
+        ) : (
+          <Text style={s.fieldValue || { fontSize: 13, fontWeight: '700', color: C?.ink || INK_LIGHT }}>
+            {value || 'Not provided'}
+          </Text>
+        )}
+      </View>
     </View>
-  </View>
-);
+  );
+};
 export default function StudentProfileScreen({
   user,
   onBack,
@@ -64,9 +67,33 @@ export default function StudentProfileScreen({
   onOpenSettings, onOpenReminders, onProfileUpdated,
   studyGoal = 6,
   studyStreak = 0,
-  lang = 'en'
+  lang = 'en',
+  theme,
+  isDarkMode = false,
 }) {
   const t = (k, fb = '') => getTranslation(lang, k, fb);
+  const C = {
+    bg: theme?.bg || (isDarkMode ? '#0A1612' : '#F6F9F6'),
+    card: theme?.card || theme?.cardBg || (isDarkMode ? '#11221B' : '#FFFFFF'),
+    cardBg: theme?.cardBg || theme?.card || (isDarkMode ? '#11221B' : '#FFFFFF'),
+    ink: theme?.ink || (isDarkMode ? '#F0FDF4' : '#0F291E'),
+    muted: theme?.muted || (isDarkMode ? '#86A394' : '#4B6357'),
+    blue: theme?.blue || (isDarkMode ? '#10B981' : '#059669'),
+    soft: theme?.soft || theme?.blueLight || (isDarkMode ? '#0F291E' : '#ECFDF5'),
+    blueLight: theme?.blueLight || theme?.soft || (isDarkMode ? '#0F291E' : '#ECFDF5'),
+    line: theme?.line || theme?.border || (isDarkMode ? '#17382A' : '#D1FAE5'),
+    border: theme?.border || theme?.line || (isDarkMode ? '#17382A' : '#D1FAE5'),
+    green: theme?.green || '#10B981',
+    amber: theme?.amber || '#D99536',
+    amberSoft: theme?.amberSoft || '#FFF3DF',
+    red: theme?.red || '#DC2626',
+  };
+  const INK = C.ink;
+  const BLUE = C.blue;
+  const MUTED = C.muted;
+  const BG = C.bg;
+  const BORDER = C.line;
+  const styles = React.useMemo(() => getStyles(C, isDarkMode), [C, isDarkMode]);
   const [editing, setEditing] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [name, setName] = useState(user?.name || '');
@@ -80,6 +107,17 @@ export default function StudentProfileScreen({
   );
   const [showValidation, setShowValidation] = useState(false);
   const [signOutConfirmOpen, setSignOutConfirmOpen] = useState(false);
+
+  // Synchronize state when user prop updates
+  useEffect(() => {
+    if (user && !editing) {
+      setName(user.name || '');
+      setEmail(user.email || '');
+      setMobile(user.mobile || user.phone || '');
+      setExam(user.examTarget || 'MPSC / UPSC');
+      setSubjects(user.preferredSubjects || 'Polity, History');
+    }
+  }, [user, editing]);
 
   const validateProfile = () => {
     const errors = {};
@@ -232,19 +270,19 @@ export default function StudentProfileScreen({
             onPress={onBack}
             accessibilityLabel="Go back"
           >
-            <Ionicons name="arrow-back" size={23} color={INK} />
+            <Ionicons name="arrow-back" size={23} color={C.ink} />
           </TouchableOpacity>
 
           <Text style={styles.headerTitle}>{t('myProfile', 'My Profile')}</Text>
 
           <View style={styles.headerButton}>
-            <Ionicons name="person-circle-outline" size={25} color={BLUE} />
+            <Ionicons name="person-circle-outline" size={25} color={C.blue} />
           </View>
         </View>
 
         <View style={styles.profileCard}>
           <View style={styles.avatar}>
-            <Ionicons name="person" size={39} color={BLUE} />
+            <Ionicons name="person" size={39} color={C.blue} />
           </View>
 
           <Text style={styles.name}>{name || t('aspirant', 'Student Name')}</Text>
@@ -261,14 +299,14 @@ export default function StudentProfileScreen({
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
             <View style={styles.statIcon}>
-              <Ionicons name="flag-outline" size={22} color={BLUE} />
+              <Ionicons name="flag-outline" size={22} color={C.blue} />
             </View>
             <Text style={styles.statValue}>{studyGoal} {t('hours', 'hrs')}</Text>
             <Text style={styles.statLabel}>{t('dailyStudyGoal', 'Daily Study Goal')}</Text>
           </View>
 
           <View style={styles.statCard}>
-            <View style={[styles.statIcon, { backgroundColor: '#FFF0E2' }]}>
+            <View style={[styles.statIcon, { backgroundColor: C.amberSoft }]}>
               <Ionicons name="flame-outline" size={22} color="#E58A38" />
             </View>
             <Text style={styles.statValue}>{studyStreak} {t('days', 'days')}</Text>
@@ -280,56 +318,76 @@ export default function StudentProfileScreen({
 
         <View style={styles.detailsCard}>
           <ProfileField
+            C={C}
+            styles={styles}
             label={t('fullName', 'Full Name')}
             value={name}
             onChangeText={(value) => { setName(value); if (!showValidation) setShowValidation(true); }}
             icon="person-outline"
            editing={editing}
-            error={profileErrors.name} />
+            error={profileErrors.name}
+              styles={styles}
+              C={C} />
           <View style={styles.separator} />
 
           <ProfileField
+            C={C}
+            styles={styles}
             label={t('emailAddress', 'Email Address')}
             value={email}
             onChangeText={(value) => { setEmail(value); if (!showValidation) setShowValidation(true); }}
             icon="mail-outline"
             keyboardType="email-address"
            editing={editing}
-            error={profileErrors.email} />
+            error={profileErrors.email}
+              styles={styles}
+              C={C} />
           <View style={styles.separator} />
 
           <ProfileField
+            C={C}
+            styles={styles}
             label={t('mobileNumber', 'Mobile Number')}
             value={mobile}
             onChangeText={(value) => { setMobile(value); if (!showValidation) setShowValidation(true); }}
             icon="call-outline"
             keyboardType="phone-pad"
            editing={editing}
-            error={profileErrors.mobile} />
+            error={profileErrors.mobile}
+              styles={styles}
+              C={C} />
           <View style={styles.separator} />
 
           <ProfileField
+            C={C}
+            styles={styles}
             label={t('examTarget', 'Exam Target')}
             value={exam}
             onChangeText={(value) => { setExam(value); if (!showValidation) setShowValidation(true); }}
             icon="school-outline"
            editing={editing}
-            error={profileErrors.exam} />
+            error={profileErrors.exam}
+              styles={styles}
+              C={C} />
           <View style={styles.separator} />
 
           <ProfileField
+            C={C}
+            styles={styles}
             label={t('preferredSubjects', 'Preferred Subjects')}
             value={subjects}
             onChangeText={(value) => { setSubjects(value); if (!showValidation) setShowValidation(true); }}
             icon="book-outline"
            editing={editing}
-            error={profileErrors.subjects} />
+            error={profileErrors.subjects}
+              styles={styles}
+              C={C} />
         </View>
 
         <Text style={styles.sectionTitle}>{t('preferences', 'Preferences')}</Text>
 
         <View style={styles.detailsCard}>
-          <TouchableOpacity style={styles.preferenceRow} activeOpacity={0.75} onPress={onOpenReminders} accessibilityRole="button" accessibilityLabel="Study Reminders"><View style={styles.fieldIcon}><Ionicons name="notifications-outline" size={21} color={BLUE} />
+          <TouchableOpacity style={styles.preferenceRow} activeOpacity={0.75} onPress={onOpenReminders} accessibilityRole="button" accessibilityLabel="Study Reminders"><View style={styles.fieldIcon}><Ionicons name="notifications-outline" size={21} color={C.blue} />
             </View>
             <View style={styles.fieldContent}>
               <Text style={styles.fieldValue}>{t('studyReminders', 'Study Reminders')}</Text>
@@ -337,12 +395,12 @@ export default function StudentProfileScreen({
                 {t('setDailyReminderDesc', 'Set your daily study reminder')}
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color={MUTED} />
+            <Ionicons name="chevron-forward" size={20} color={C.muted} />
           </TouchableOpacity>
 
           <View style={styles.separator} />
 
-          <TouchableOpacity style={styles.preferenceRow} activeOpacity={0.75} onPress={onOpenSettings} accessibilityRole="button" accessibilityLabel="Privacy and Account"><View style={styles.fieldIcon}><Ionicons name="shield-checkmark-outline" size={21} color={BLUE} />
+          <TouchableOpacity style={styles.preferenceRow} activeOpacity={0.75} onPress={onOpenSettings} accessibilityRole="button" accessibilityLabel="Privacy and Account"><View style={styles.fieldIcon}><Ionicons name="shield-checkmark-outline" size={21} color={C.blue} />
             </View>
             <View style={styles.fieldContent}>
               <Text style={styles.fieldValue}>{t('privacyAndAccount', 'Privacy & Account')}</Text>
@@ -350,7 +408,7 @@ export default function StudentProfileScreen({
                 {t('manageAccountSettings', 'Manage your account settings')}
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color={MUTED} />
+            <Ionicons name="chevron-forward" size={20} color={C.muted} />
           </TouchableOpacity>
         </View>
 
@@ -419,7 +477,7 @@ export default function StudentProfileScreen({
           onPress={() => setSignOutConfirmOpen(false)}
           style={styles.cancelSignOutButton}
         >
-          <Text>{t('stayFocused', 'Stay Focused')}</Text>
+          <Text style={{ color: C.ink, fontWeight: '700' }}>{t('stayFocused', 'Stay Focused')}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -439,10 +497,10 @@ export default function StudentProfileScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (C, isDarkMode) => StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: BG,
+    backgroundColor: C.bg,
   },
   container: {
     padding: 16,
@@ -458,46 +516,50 @@ const styles = StyleSheet.create({
     width: 43,
     height: 43,
     borderRadius: 14,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: C.cardBg,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: C.line,
   },
   headerTitle: {
-    color: INK,
+    color: C.ink,
     fontSize: 20,
     fontWeight: '800',
   },
   profileCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: C.cardBg,
     borderRadius: 23,
     padding: 23,
     alignItems: 'center',
     marginBottom: 24,
+    borderWidth: 1,
+    borderColor: C.line,
   },
   avatar: {
     width: 82,
     height: 82,
     borderRadius: 41,
-    backgroundColor: '#DCEAFF',
+    backgroundColor: C.soft,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
   },
   name: {
-    color: INK,
+    color: C.ink,
     fontSize: 21,
     fontWeight: '800',
     textAlign: 'center',
   },
   subtitle: {
-    color: MUTED,
+    color: C.muted,
     fontSize: 13,
     marginTop: 5,
   },
   accountBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#EAF3FF',
+    backgroundColor: C.soft,
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 7,
@@ -507,16 +569,16 @@ const styles = StyleSheet.create({
     width: 7,
     height: 7,
     borderRadius: 4,
-    backgroundColor: '#20A56B',
+    backgroundColor: '#10B981',
     marginRight: 7,
   },
   accountBadgeText: {
-    color: BLUE,
+    color: C.blue,
     fontSize: 11,
     fontWeight: '700',
   },
   sectionTitle: {
-    color: INK,
+    color: C.ink,
     fontSize: 16,
     fontWeight: '800',
     marginBottom: 12,
@@ -528,34 +590,38 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: C.cardBg,
     borderRadius: 18,
     padding: 15,
+    borderWidth: 1,
+    borderColor: C.line,
   },
   statIcon: {
     width: 40,
     height: 40,
     borderRadius: 13,
-    backgroundColor: '#E8F1FF',
+    backgroundColor: C.soft,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
   },
   statValue: {
-    color: INK,
+    color: C.ink,
     fontSize: 20,
     fontWeight: '800',
   },
   statLabel: {
-    color: MUTED,
+    color: C.muted,
     fontSize: 11,
     marginTop: 5,
   },
   detailsCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: C.cardBg,
     borderRadius: 18,
     paddingHorizontal: 14,
     marginBottom: 24,
+    borderWidth: 1,
+    borderColor: C.line,
   },
   field: {
     flexDirection: 'row',
@@ -567,7 +633,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: '#EEF4FF',
+    backgroundColor: C.soft,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -575,26 +641,26 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   fieldLabel: {
-    color: MUTED,
+    color: C.muted,
     fontSize: 11,
     marginBottom: 4,
   },
   fieldValue: {
-    color: INK,
+    color: C.ink,
     fontSize: 13,
     fontWeight: '700',
   },
   input: {
-    color: INK,
+    color: C.ink,
     fontSize: 13,
     fontWeight: '600',
     paddingVertical: 2,
     borderBottomWidth: 1,
-    borderBottomColor: BORDER,
+    borderBottomColor: C.line,
   },
   separator: {
     height: 1,
-    backgroundColor: '#EDF1F7',
+    backgroundColor: C.line,
   },
   preferenceRow: {
     flexDirection: 'row',
@@ -603,7 +669,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   preferenceHint: {
-    color: MUTED,
+    color: C.muted,
     fontSize: 11,
     marginTop: 4,
   },
@@ -617,20 +683,20 @@ const styles = StyleSheet.create({
     minHeight: 49,
     borderRadius: 15,
     borderWidth: 1,
-    borderColor: BORDER,
-    backgroundColor: '#FFFFFF',
+    borderColor: C.line,
+    backgroundColor: C.cardBg,
     alignItems: 'center',
     justifyContent: 'center',
   },
   cancelText: {
-    color: INK,
+    color: C.ink,
     fontWeight: '700',
   },
   saveButton: {
     flex: 2,
     minHeight: 49,
     borderRadius: 15,
-    backgroundColor: BLUE,
+    backgroundColor: C.blue,
     flexDirection: 'row',
     gap: 7,
     alignItems: 'center',
@@ -643,7 +709,7 @@ const styles = StyleSheet.create({
   editButton: {
     minHeight: 50,
     borderRadius: 15,
-    backgroundColor: BLUE,
+    backgroundColor: C.blue,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -658,9 +724,9 @@ const styles = StyleSheet.create({
   signOutButton: {
     minHeight: 50,
     borderRadius: 15,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: isDarkMode ? '#1f1315' : '#fff5f5',
     borderWidth: 1,
-    borderColor: '#F2CACA',
+    borderColor: isDarkMode ? '#4c1d24' : '#F2CACA',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -673,7 +739,7 @@ const styles = StyleSheet.create({
   },
   footerText: {
     textAlign: 'center',
-    color: MUTED,
+    color: C.muted,
     fontSize: 11,
     marginTop: 18,
   },
@@ -687,64 +753,63 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   signOutOverlay: {
-  position: 'absolute',
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-  backgroundColor: 'rgba(15, 23, 42, 0.55)',
-  justifyContent: 'center',
-  alignItems: 'center',
-  padding: 24,
-  zIndex: 1000,
-  elevation: 20,
-},
-
-signOutDialog: {
-  width: '100%',
-  maxWidth: 380,
-  backgroundColor: '#FFFFFF',
-  borderRadius: 18,
-  padding: 24,
-},
-
-signOutTitle: {
-  fontSize: 20,
-  fontWeight: '700',
-  color: '#172033',
-},
-
-signOutMessage: {
-  marginTop: 10,
-  marginBottom: 24,
-  fontSize: 14,
-  lineHeight: 21,
-  color: '#64748B',
-},
-
-signOutActions: {
-  flexDirection: 'row',
-  gap: 12,
-},
-
-cancelSignOutButton: {
-  flex: 1,
-  padding: 13,
-  borderRadius: 10,
-  backgroundColor: '#E9F0FC',
-  alignItems: 'center',
-  justifyContent: 'center',
-},
-
-confirmSignOutButton: {
-  flex: 1,
-  padding: 13,
-  borderRadius: 10,
-  backgroundColor: '#2563EB',
-  alignItems: 'center',
-  justifyContent: 'center',
-},
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+    zIndex: 1000,
+    elevation: 20,
+  },
+  signOutDialog: {
+    width: '100%',
+    maxWidth: 380,
+    backgroundColor: C.cardBg,
+    borderRadius: 18,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: C.line,
+  },
+  signOutTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: C.ink,
+  },
+  signOutMessage: {
+    marginTop: 10,
+    marginBottom: 24,
+    fontSize: 14,
+    lineHeight: 21,
+    color: C.muted,
+  },
+  signOutActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  cancelSignOutButton: {
+    flex: 1,
+    padding: 13,
+    borderRadius: 10,
+    backgroundColor: C.soft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  confirmSignOutButton: {
+    flex: 1,
+    padding: 13,
+    borderRadius: 10,
+    backgroundColor: '#DC2626',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });
+
+
+
 
 
 

@@ -26,21 +26,25 @@ export default function SettingsScreen({
   theme,
   onBack,
   onSignOut,
-  req
+  onOpenReminders,
+  onOpenNotifications,
+  req,
+  lang = 'en'
 }) {
   const [privacyModalVisible, setPrivacyModalVisible] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  // Emerald green application theme tokens
   const C = theme || {
-    bg: isDarkMode ? '#0f172a' : '#f7f9fe',
-    white: isDarkMode ? '#1e293b' : '#ffffff',
-    card: isDarkMode ? '#1e293b' : '#ffffff',
-    ink: isDarkMode ? '#f8fafc' : '#142841',
-    muted: isDarkMode ? '#94a3b8' : '#72849f',
-    blue: isDarkMode ? '#60a5fa' : '#37689f',
-    soft: isDarkMode ? '#334155' : '#e9f0fc',
-    line: isDarkMode ? '#334155' : '#e8eef8',
+    bg: isDarkMode ? '#051811' : '#F4FBF7',
+    white: isDarkMode ? '#0F291E' : '#FFFFFF',
+    card: isDarkMode ? '#0F291E' : '#FFFFFF',
+    ink: isDarkMode ? '#F2FDF7' : '#0B291B',
+    muted: isDarkMode ? '#75A991' : '#4D7865',
+    blue: isDarkMode ? '#10B981' : '#059669', // Primary Emerald Green
+    soft: isDarkMode ? '#143829' : '#ECFDF5',
+    line: isDarkMode ? '#17382A' : '#D1FAE5',
     danger: '#ef4444',
     dangerSoft: isDarkMode ? '#450a0a' : '#fef2f2'
   };
@@ -149,7 +153,11 @@ export default function SettingsScreen({
   };
 
   return (
-    <View style={{ flex: 1 }}>
+    <ScrollView
+      style={{ flex: 1, backgroundColor: C.bg }}
+      contentContainerStyle={{ padding: 16, paddingBottom: 60 }}
+      showsVerticalScrollIndicator={false}
+    >
       {/* Back to Dashboard Navigation */}
       {onBack && (
         <TouchableOpacity
@@ -157,23 +165,24 @@ export default function SettingsScreen({
           style={{
             flexDirection: 'row',
             alignItems: 'center',
-            marginBottom: 14,
-            paddingVertical: 4
+            marginBottom: 16,
+            paddingVertical: 6,
+            alignSelf: 'flex-start'
           }}
           accessibilityLabel="Back to Dashboard"
         >
-          <Ionicons name="arrow-back" size={18} color={C.blue} />
-          <Text style={[txt(13, true, C.blue), { marginLeft: 6 }]}>
+          <Ionicons name="arrow-back" size={20} color={C.blue} />
+          <Text style={[txt(14, true, C.blue), { marginLeft: 6 }]}>
             Back to Dashboard
           </Text>
         </TouchableOpacity>
       )}
 
       {/* Screen Header */}
-      <View style={{ marginBottom: 18 }}>
-        <Text style={txt(24, true)}>Settings</Text>
+      <View style={{ marginBottom: 20 }}>
+        <Text style={txt(26, true, C.ink)}>Settings</Text>
         <Text style={[txt(13, false, C.muted), { marginTop: 4 }]}>
-          Preferences, theme, support, and account management
+          Preferences, theme, reminders, support, and account management
         </Text>
       </View>
 
@@ -183,7 +192,7 @@ export default function SettingsScreen({
           backgroundColor: C.white,
           borderRadius: 20,
           padding: 18,
-          marginBottom: 16,
+          marginBottom: 18,
           borderWidth: 1,
           borderColor: C.line,
           flexDirection: 'row',
@@ -201,13 +210,13 @@ export default function SettingsScreen({
             marginRight: 14
           }}
         >
-          <Text style={txt(20, true, C.blue)}>
+          <Text style={txt(22, true, C.blue)}>
             {user?.name?.charAt(0)?.toUpperCase() || 'S'}
           </Text>
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={txt(16, true)}>{user?.name || 'Aspirant'}</Text>
-          <Text style={[txt(12, false, C.muted), { marginTop: 2 }]}>
+          <Text style={txt(16, true, C.ink)} numberOfLines={1}>{user?.name || 'Aspirant'}</Text>
+          <Text style={[txt(12, false, C.muted), { marginTop: 2 }]} numberOfLines={1}>
             {user?.email || 'student@abhyas.local'}
           </Text>
           <View
@@ -220,7 +229,7 @@ export default function SettingsScreen({
               marginTop: 6
             }}
           >
-            <Text style={txt(10, true, C.blue)}>MPSC · UPSC Aspirant</Text>
+            <Text style={txt(11, true, C.blue)}>MPSC · UPSC Aspirant</Text>
           </View>
         </View>
       </View>
@@ -272,7 +281,7 @@ export default function SettingsScreen({
               />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={txt(14, true)}>Dark Mode</Text>
+              <Text style={txt(14, true, C.ink)}>Dark Mode</Text>
               <Text style={[txt(12, false, C.muted), { marginTop: 2 }]}>
                 {isDarkMode ? 'Dark theme enabled' : 'Light theme enabled'}
               </Text>
@@ -282,13 +291,100 @@ export default function SettingsScreen({
           <Switch
             value={isDarkMode}
             onValueChange={toggleTheme}
-            trackColor={{ false: '#d0daf0', true: C.blue }}
-            thumbColor={isDarkMode ? '#ffffff' : '#f8fafc'}
+            trackColor={{ false: isDarkMode ? '#1E3A2E' : '#D1FAE5', true: C.blue }}
+            thumbColor={isDarkMode ? '#10B981' : '#FFFFFF'}
           />
         </View>
       </View>
 
-      {/* SECTION B: Share and Support */}
+      {/* SECTION B: Study Reminders & Notifications */}
+      <Text
+        style={[
+          txt(11, true, C.muted),
+          { textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8, marginLeft: 4 }
+        ]}
+      >
+        Reminders & Notifications
+      </Text>
+
+      <View
+        style={{
+          backgroundColor: C.white,
+          borderRadius: 18,
+          borderWidth: 1,
+          borderColor: C.line,
+          marginBottom: 20,
+          overflow: 'hidden'
+        }}
+      >
+        {/* Study Reminder Preferences */}
+        <TouchableOpacity
+          onPress={onOpenReminders}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            padding: 16,
+            borderBottomWidth: 1,
+            borderBottomColor: C.line
+          }}
+          accessibilityLabel="Study Reminder Preferences"
+        >
+          <View
+            style={{
+              width: 38,
+              height: 38,
+              borderRadius: 10,
+              backgroundColor: C.soft,
+              justifyContent: 'center',
+              alignItems: 'center',
+              marginRight: 12
+            }}
+          >
+            <Ionicons name="alarm-outline" size={20} color={C.blue} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={txt(14, true, C.ink)}>Study Reminders</Text>
+            <Text style={[txt(12, false, C.muted), { marginTop: 2 }]}>
+              Customize study alarm schedules and active days
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={C.muted} />
+        </TouchableOpacity>
+
+        {/* In-App Notifications */}
+        <TouchableOpacity
+          onPress={onOpenNotifications}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            padding: 16
+          }}
+          accessibilityLabel="Notification Preferences"
+        >
+          <View
+            style={{
+              width: 38,
+              height: 38,
+              borderRadius: 10,
+              backgroundColor: C.soft,
+              justifyContent: 'center',
+              alignItems: 'center',
+              marginRight: 12
+            }}
+          >
+            <Ionicons name="notifications-outline" size={20} color={C.blue} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={txt(14, true, C.ink)}>Notification Center</Text>
+            <Text style={[txt(12, false, C.muted), { marginTop: 2 }]}>
+              Review study milestones and system alerts
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={C.muted} />
+        </TouchableOpacity>
+      </View>
+
+      {/* SECTION C: Community & Help */}
       <Text
         style={[
           txt(11, true, C.muted),
@@ -334,7 +430,7 @@ export default function SettingsScreen({
             <Ionicons name="share-social-outline" size={20} color={C.blue} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={txt(14, true)}>Share Abhyas Tracker</Text>
+            <Text style={txt(14, true, C.ink)}>Share Abhyas Tracker</Text>
             <Text style={[txt(12, false, C.muted), { marginTop: 2 }]}>
               Recommend study tracker to fellow aspirants
             </Text>
@@ -366,7 +462,7 @@ export default function SettingsScreen({
             <Ionicons name="mail-outline" size={20} color={C.blue} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={txt(14, true)}>Support & Helpdesk</Text>
+            <Text style={txt(14, true, C.ink)}>Support & Helpdesk</Text>
             <Text style={[txt(12, false, C.muted), { marginTop: 2 }]}>
               {SUPPORT_EMAIL}
             </Text>
@@ -375,7 +471,7 @@ export default function SettingsScreen({
         </TouchableOpacity>
       </View>
 
-      {/* SECTION C & D: Rating and Privacy */}
+      {/* SECTION D: About & Legal */}
       <Text
         style={[
           txt(11, true, C.muted),
@@ -421,7 +517,7 @@ export default function SettingsScreen({
             <Ionicons name="star-outline" size={20} color="#f59e0b" />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={txt(14, true)}>Rate Abhyas Tracker</Text>
+            <Text style={txt(14, true, C.ink)}>Rate Abhyas Tracker</Text>
             <Text style={[txt(12, false, C.muted), { marginTop: 2 }]}>
               Support our journey with your store review
             </Text>
@@ -450,10 +546,10 @@ export default function SettingsScreen({
               marginRight: 12
             }}
           >
-            <Ionicons name="shield-checkmark-outline" size={20} color="#10b981" />
+            <Ionicons name="shield-checkmark-outline" size={20} color={C.blue} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={txt(14, true)}>Privacy Policy</Text>
+            <Text style={txt(14, true, C.ink)}>Privacy Policy</Text>
             <Text style={[txt(12, false, C.muted), { marginTop: 2 }]}>
               How your study data and credentials are kept safe
             </Text>
@@ -519,7 +615,9 @@ export default function SettingsScreen({
         <TouchableOpacity
           onPress={onSignOut}
           style={{
-            backgroundColor: C.soft,
+            backgroundColor: isDarkMode ? '#1E3A2E' : '#ECFDF5',
+            borderColor: C.line,
+            borderWidth: 1,
             borderRadius: 14,
             paddingVertical: 14,
             alignItems: 'center',
@@ -527,7 +625,7 @@ export default function SettingsScreen({
           }}
           accessibilityLabel="Sign Out"
         >
-          <Text style={txt(13, true, C.blue)}>Sign Out of Abhyas</Text>
+          <Text style={txt(14, true, C.blue)}>Sign Out of Abhyas</Text>
         </TouchableOpacity>
       )}
 
@@ -541,7 +639,7 @@ export default function SettingsScreen({
         <View
           style={{
             flex: 1,
-            backgroundColor: 'rgba(15, 23, 42, 0.6)',
+            backgroundColor: 'rgba(15, 23, 42, 0.65)',
             justifyContent: 'flex-end'
           }}
         >
@@ -562,7 +660,7 @@ export default function SettingsScreen({
                 marginBottom: 16
               }}
             >
-              <Text style={txt(18, true)}>Privacy Policy</Text>
+              <Text style={txt(18, true, C.ink)}>Privacy Policy</Text>
               <TouchableOpacity
                 onPress={() => setPrivacyModalVisible(false)}
                 style={{ padding: 4 }}
@@ -576,21 +674,21 @@ export default function SettingsScreen({
                 Abhyas Tracker is designed to provide UPSC & MPSC aspirants with an isolated, focused study environment.
               </Text>
 
-              <Text style={[txt(14, true), { marginTop: 10, marginBottom: 4 }]}>
+              <Text style={[txt(14, true, C.ink), { marginTop: 10, marginBottom: 4 }]}>
                 1. Data Collection & Usage
               </Text>
               <Text style={[txt(13, false, C.muted), { lineHeight: 20, marginBottom: 12 }]}>
                 We collect your name and email address strictly for authentication. Study timer durations, subject progress, and revision targets are stored so you can monitor your academic preparation.
               </Text>
 
-              <Text style={[txt(14, true), { marginTop: 10, marginBottom: 4 }]}>
+              <Text style={[txt(14, true, C.ink), { marginTop: 10, marginBottom: 4 }]}>
                 2. No Third-Party Tracking
               </Text>
               <Text style={[txt(13, false, C.muted), { lineHeight: 20, marginBottom: 12 }]}>
                 Your competitive exam data belongs to you. We do not sell your personal data or provide tracking information to commercial advertisers.
               </Text>
 
-              <Text style={[txt(14, true), { marginTop: 10, marginBottom: 4 }]}>
+              <Text style={[txt(14, true, C.ink), { marginTop: 10, marginBottom: 4 }]}>
                 3. Secure Storage
               </Text>
               <Text style={[txt(13, false, C.muted), { lineHeight: 20, marginBottom: 16 }]}>
@@ -702,6 +800,6 @@ export default function SettingsScreen({
           </View>
         </View>
       </Modal>
-    </View>
+    </ScrollView>
   );
 }
