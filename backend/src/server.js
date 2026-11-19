@@ -215,6 +215,27 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Network information for connecting physical devices to the backend
+app.get('/api/network-info', (req, res) => {
+  const os = require('os');
+  const nets = os.networkInterfaces();
+  const addresses = [];
+  const port = process.env.PORT || 4000;
+  for (const name of Object.keys(nets)) {
+    for (const net of nets[name]) {
+      if (net.family === 'IPv4' && !net.internal) {
+        addresses.push({ interface: name, ip: net.address, url: `http://${net.address}:${port}/api` });
+      }
+    }
+  }
+  res.json({
+    ok: true,
+    port,
+    currentHost: req.hostname,
+    addresses,
+    primaryUrl: addresses.length > 0 ? addresses[0].url : `http://localhost:${port}/api`
+  });
+});
 // Build robust, injection-safe user lookup queries for both MongoDB and JSON DB fallback
 function buildUserLookupQueries(rawTarget) {
   const target = String(rawTarget || '').trim().toLowerCase();
@@ -293,6 +314,30 @@ app.post('/api/auth/send-otp', async (req, res) => {
   let recipientEmail = cleanTarget;
   let user = null;
 
+  if (cleanTarget.includes('@')) {
+    let existingUser = null;
+    try {
+      existingUser = await withDb(
+        () => User.findOne({ email: cleanTarget }),
+        () => {
+          const db = readJsonDb();
+          return (db.users || []).find(u => u.email && u.email.toLowerCase() === cleanTarget);
+        }
+      );
+    } catch {}
+
+    if (type === 'signup' && existingUser) {
+      return res.status(409).json({
+        error: 'An account with this email already exists. Please log in with your password or use Instant OTP Login.'
+      });
+    }
+
+    if ((type === 'login' || type === 'forgot' || type === 'reset-password') && !existingUser) {
+      return res.status(404).json({
+        error: `No registered student account found for ${cleanTarget}. Please verify your email address or sign up first!`
+      });
+    }
+  }
   if (method === 'mobile' || !cleanTarget.includes('@')) {
     const lookup = buildUserLookupQueries(cleanTarget);
     const cleanMobile = lookup.digits;
@@ -482,7 +527,7 @@ app.post('/api/auth/reset-password', async (req, res) => {
 // -------------------------------------------------------------
 app.post('/api/auth/register', async (req, res) => {
     try {
-        const { name, email, password, phone, mobile } = req.body || {};
+        const { name, email, password, phone, mobile, gender } = req.body || {};
         const cleanPassword = String(password || '').trim();
         if (!name || !email || !cleanPassword || cleanPassword.length < 6) {
             return res.status(400).json({ error: 'Name, email, and password (6+ characters) required' });
@@ -490,6 +535,8 @@ app.post('/api/auth/register', async (req, res) => {
         const normalizedEmail = String(email).trim().toLowerCase();
         const cleanPhone = String(phone || mobile || '').trim();
         const hash = bcrypt.hashSync(cleanPassword, 10);
+        const isGirlName = /^(bhumika|pooja|priya|sneha|shreya|anita|sunita|radha|rani|komal|kajal|deepa|divya|aarti|jyoti|kavita|swati|neha|rupali|pranita|pratiksha|ashwini|monika|pallavi|sheetal|rohini|smita|sonali|anuradha|varsha|megha|namrata|tejaswini|manisha|shubhangi|vaishali|renuka|sayali|shital|rutuja|sakshi|tanvi|akanksha|aishwarya|ananya|diya|ishita|anushka|ria|riya|aditi)\b/i.test(String(name).trim());
+        const userGender = gender ? (gender.toLowerCase().includes('boy') ? 'boy' : 'girl') : (isGirlName ? 'girl' : 'boy');
         const newUser = {
             id: Date.now().toString(),
             name: String(name).trim(),
@@ -497,6 +544,7 @@ app.post('/api/auth/register', async (req, res) => {
             phone: cleanPhone,
             mobile: cleanPhone,
             role: 'student',
+            gender: userGender,
             passwordHash: hash
         };
 
@@ -1018,7 +1066,7 @@ app.post('/api/sessions', auth(), async (req, res) => {
         const { subjectId, minutes, mode, focusScore, startedAt, durationSeconds } = req.body || {};
         const m = Number(minutes);
         if (!Number.isFinite(m) || m <= 0 || m > 1440) {
-            return res.status(400).json({ error: 'Minutes must be 1–1440' });
+            return res.status(400).json({ error: 'Minutes must be 1â€“1440' });
         }
         const validStartedAt = (startedAt && !isNaN(new Date(startedAt).getTime()))
             ? new Date(startedAt).toISOString()

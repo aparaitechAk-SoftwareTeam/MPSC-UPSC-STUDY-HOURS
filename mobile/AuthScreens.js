@@ -117,8 +117,12 @@ function Field({
         secureTextEntry={secureTextEntry}
         keyboardType={keyboardType || "default"}
         autoCapitalize={
-          keyboardType === "email-address" ? "none" : "sentences"
+          keyboardType === "email-address" || secureTextEntry || (label && label.toLowerCase().includes("password"))
+            ? "none"
+            : "sentences"
         }
+        autoCorrect={false}
+        spellCheck={false}
         maxLength={maxLength}
       />
     </View>
@@ -400,13 +404,9 @@ export default function AuthScreens({
 
       setTimerSeconds(30);
       setCanResend(false);
-      const deliveryNote = data.code
-        ? `${data.message || 'Verification code sent.'} (OTP: ${data.code})`
-        : (data.message || `Verification code sent to your ${method === "mobile" ? "mobile" : "email inbox"}.`);
+      setOtp("");
+      const deliveryNote = data.message || `Verification code sent to your ${method === "mobile" ? "mobile" : "email inbox"}. Please check your inbox and spam folder.`;
       setNoticeMsg(deliveryNote);
-      if (data.code) {
-        setOtp(String(data.code));
-      }
       return data;
     } catch (e) {
       const msg = (e.message && e.message.includes("fetch"))
@@ -535,54 +535,6 @@ export default function AuthScreens({
     }
   }
 
-  // --- Passwordless Login via OTP ---
-  async function handleRequestLoginOtp() {
-    setLocalError("");
-    const target = email.trim().toLowerCase();
-    if (!target || !isEmailValid(target)) {
-      setLocalError("Please enter a valid registered email address.");
-      return;
-    }
-
-    const result = await requestOtp(target, "login");
-    if (result) {
-      setOtp("");
-      setScreen("login-otp");
-    }
-  }
-
-  async function handleVerifyLoginOtp(otpCode = otp) {
-    setLocalError("");
-    const cleaned = String(otpCode || "").replace(/\D/g, "");
-    if (cleaned.length < 6) {
-      setLocalError("Please enter the complete 6-digit code.");
-      return;
-    }
-
-    setIsLocalSubmitting(true);
-    try {
-      const target = email.trim().toLowerCase();
-      const res = await smartApiFetch("/auth/login-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ target, code: cleaned, otp: cleaned }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Unable to sign in with OTP");
-
-      if (typeof onLogin === "function") {
-        await onLogin({
-          token: data.token,
-          user: data.user,
-        });
-      }
-    } catch (e) {
-      setLocalError(e.message || "Unable to sign in with OTP");
-    } finally {
-      setIsLocalSubmitting(false);
-    }
-  }
-
   // --- Forgot Password: Step 1 Send Code ---
   async function handleForgotSendOtp() {
     setLocalError("");
@@ -706,7 +658,7 @@ export default function AuthScreens({
     setLoginRole("student");
     setLocalError("");
     const targetEmail = (email || "").trim();
-    const targetPass = password;
+    const targetPass = (password || "").trim();
     if (!targetEmail) {
       setLocalError("Please enter your registered student email address.");
       return;
@@ -749,7 +701,7 @@ export default function AuthScreens({
     setLoginRole("admin");
     setLocalError("");
     const targetEmail = (adminEmail || "").trim();
-    const targetPass = adminPassword;
+    const targetPass = (adminPassword || "").trim();
     if (!targetEmail) {
       setLocalError("Please enter your administrator email address.");
       return;
@@ -876,7 +828,7 @@ export default function AuthScreens({
             zIndex: 999,
           }}
         >
-          <TouchableOpacity
+<TouchableOpacity
             onPress={handleToggleTheme}
             activeOpacity={0.8}
             accessibilityLabel={isDark ? "Switch to Day Mode" : "Switch to Night Mode"}
@@ -909,8 +861,13 @@ export default function AuthScreens({
         >
           <ScrollView
             style={{ flex: 1, backgroundColor: theme.bg }}
-            contentContainerStyle={[styles.container, { backgroundColor: theme.bg }]}
+            contentContainerStyle={[
+              styles.container,
+              { backgroundColor: theme.bg, flexGrow: 1, paddingBottom: 160 }
+            ]}
             keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            bounces={false}
           >
             {/* Logo & Header */}
             <View style={[styles.logo, { backgroundColor: theme.logoBg, shadowColor: theme.logoBg }]}>
@@ -925,6 +882,7 @@ export default function AuthScreens({
             {Boolean(effectiveError) && (
               <View style={styles.errorBanner}>
                 <Text style={styles.errorText}>{effectiveError}</Text>
+
               </View>
             )}
 
@@ -936,224 +894,84 @@ export default function AuthScreens({
             )}
 
             {/* ============================================================== */}
-            {/* SCREEN 1: SIGN IN (STUDENT / ADMIN PORTAL)                     */}
+            {/* SCREEN 1: STUDENT SIGN IN                                     */}
             {/* ============================================================== */}
             {screen === "login" && (
               <View style={[styles.card, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
-                {/* 2 Clean Tabs: Student Login | Admin Login (No 3rd Sign Up tab) */}
-                <View style={[styles.roleTabRow, { backgroundColor: isDark ? "#1e293b" : "#F1F5F9" }]}>
-                  <TouchableOpacity
-                    style={[
-                      styles.roleTab,
-                      loginRole === "student" && {
-                        backgroundColor: theme.primaryBtn,
-                        borderColor: theme.primaryBtn,
-                      },
-                    ]}
-                    onPress={() => {
-                      setLocalError("");
-                      setNoticeMsg("");
-                      setLoginRole("student");
-                    }}
-                  >
-                    <Ionicons
-                      name="school"
-                      size={15}
-                      color={loginRole === "student" ? "#FFFFFF" : (isDark ? "#94a3b8" : "#475569")}
-                      style={{ marginRight: 6 }}
-                    />
-                    <Text
-                      style={[
-                        styles.roleTabText,
-                        { color: loginRole === "student" ? "#FFFFFF" : (isDark ? "#94a3b8" : "#475569") },
-                      ]}
-                      numberOfLines={1}
-                    >
-                      Student Login
+                <Text style={[styles.heading, { color: theme.heading }]}>Welcome Back!</Text>
+                <Text style={[styles.subtitle, { color: theme.subtitle }]}>
+                  Sign in with your student credentials to continue your preparation.
+                </Text>
+
+                <Field
+                  label="Student Email Address"
+                  value={email}
+                  onChangeText={(val) => {
+                    setLocalError("");
+                    setEmail(val);
+                  }}
+                  placeholder="Enter your registered email address"
+                  keyboardType="email-address"
+                />
+
+                <Field
+                  label="Password"
+                  value={password}
+                  onChangeText={(val) => {
+                    setLocalError("");
+                    setPassword(val);
+                  }}
+                  placeholder="Enter your password"
+                  secureTextEntry={!showPassword}
+                />
+
+                <View style={styles.rowBetween}>
+                  <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                    <Text style={[styles.link, { color: theme.link }]}>
+                      {showPassword ? "Hide password" : "Show password"}
                     </Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    style={[
-                      styles.roleTab,
-                      loginRole === "admin" && {
-                        backgroundColor: "#7c3aed",
-                        borderColor: "#7c3aed",
-                      },
-                    ]}
                     onPress={() => {
                       setLocalError("");
                       setNoticeMsg("");
-                      setLoginRole("admin");
+                      setOtp("");
+                      setScreen("forgot-contact");
                     }}
                   >
-                    <Ionicons
-                      name="shield-checkmark"
-                      size={15}
-                      color={loginRole === "admin" ? "#FFFFFF" : (isDark ? "#94a3b8" : "#475569")}
-                      style={{ marginRight: 6 }}
-                    />
-                    <Text
-                      style={[
-                        styles.roleTabText,
-                        { color: loginRole === "admin" ? "#FFFFFF" : (isDark ? "#94a3b8" : "#475569") },
-                      ]}
-                      numberOfLines={1}
-                    >
-                      Admin Login
-                    </Text>
+                    <Text style={[styles.forgot, { color: theme.forgot }]}>Forgot password?</Text>
                   </TouchableOpacity>
                 </View>
 
-                {loginRole === "student" ? (
-                  <>
-                    <Text style={[styles.heading, { color: theme.heading }]}>Welcome Back!</Text>
-                    <Text style={[styles.subtitle, { color: theme.subtitle }]}>
-                      Sign in with your student credentials to continue your preparation.
-                    </Text>
-
-                    <Field
-                      label="Student Email Address"
-                      value={email}
-                      onChangeText={(val) => {
-                        setLocalError("");
-                        setEmail(val);
-                      }}
-                      placeholder="Enter your registered email address"
-                      keyboardType="email-address"
-                    />
-
-                    <Field
-                      label="Password"
-                      value={password}
-                      onChangeText={(val) => {
-                        setLocalError("");
-                        setPassword(val);
-                      }}
-                      placeholder="Enter your password"
-                      secureTextEntry={!showPassword}
-                    />
-
-                    <View style={styles.rowBetween}>
-                      <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                        <Text style={[styles.link, { color: theme.link }]}>
-                          {showPassword ? "Hide password" : "Show password"}
-                        </Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        onPress={() => {
-                          setLocalError("");
-                          setNoticeMsg("");
-                          setOtp("");
-                          setScreen("forgot-contact");
-                        }}
-                      >
-                        <Text style={[styles.forgot, { color: theme.forgot }]}>Forgot password?</Text>
-                      </TouchableOpacity>
-                    </View>
-
-                    {/* Single Clean Submit Button */}
-                    <View style={{ marginTop: 8 }}>
-                      <TouchableOpacity
-                        style={[styles.primaryButton, { backgroundColor: theme.primaryBtn }]}
-                        onPress={handleSignInAsStudent}
-                        activeOpacity={0.85}
-                        disabled={isSubmitting}
-                      >
-                        {isSubmitting ? (
-                          <ActivityIndicator color="#FFFFFF" size="small" />
-                        ) : (
-                          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center" }}>
-                            <Ionicons name="school" size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
-                            <Text style={styles.primaryButtonText}>Sign In as Student</Text>
-                          </View>
-                        )}
-                      </TouchableOpacity>
-                    </View>
-
-                    <SwitchLink
-                      text="Don't have an account?"
-                      link="Sign Up"
-                      onPress={() => {
-                        setLocalError("");
-                        setNoticeMsg("");
-                        setScreen("signup");
-                      }}
-                    />
-                  </>
-                ) : (
-                  <>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                      <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: "#7c3aed", alignItems: "center", justifyContent: "center" }}>
-                        <Ionicons name="shield-checkmark" size={18} color="#FFFFFF" />
+                {/* Single Clean Submit Button */}
+                <View style={{ marginTop: 8 }}>
+                  <TouchableOpacity
+                    style={[styles.primaryButton, { backgroundColor: theme.primaryBtn }]}
+                    onPress={handleSignInAsStudent}
+                    activeOpacity={0.85}
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <ActivityIndicator color="#FFFFFF" size="small" />
+                    ) : (
+                      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center" }}>
+                        <Ionicons name="school" size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
+                        <Text style={styles.primaryButtonText}>Sign In as Student</Text>
                       </View>
-                      <Text style={[styles.heading, { color: theme.heading, marginBottom: 0 }]}>Admin Sign In</Text>
-                    </View>
-                    <Text style={[styles.subtitle, { color: theme.subtitle }]}>
-                      Enter your administrator credentials to access the management portal.
-                    </Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
 
-                    <Field
-                      label="Admin Email Address"
-                      value={adminEmail}
-                      onChangeText={(val) => {
-                        setLocalError("");
-                        setAdminEmail(val);
-                      }}
-                      placeholder="Enter your admin email address"
-                      keyboardType="email-address"
-                    />
-
-                    <Field
-                      label="Admin Password"
-                      value={adminPassword}
-                      onChangeText={(val) => {
-                        setLocalError("");
-                        setAdminPassword(val);
-                      }}
-                      placeholder="Enter admin password"
-                      secureTextEntry={!showAdminPassword}
-                    />
-
-                    <View style={styles.rowBetween}>
-                      <TouchableOpacity onPress={() => setShowAdminPassword(!showAdminPassword)}>
-                        <Text style={[styles.link, { color: theme.link }]}>
-                          {showAdminPassword ? "Hide password" : "Show password"}
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-
-                    {/* Single Clean Submit Button */}
-                    <View style={{ marginTop: 8 }}>
-                      <TouchableOpacity
-                        style={[styles.primaryButton, { backgroundColor: "#7c3aed" }]}
-                        onPress={handleSignInAsAdminSubmit}
-                        activeOpacity={0.85}
-                        disabled={isSubmitting}
-                      >
-                        {isSubmitting ? (
-                          <ActivityIndicator color="#FFFFFF" size="small" />
-                        ) : (
-                          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center" }}>
-                            <Ionicons name="shield-checkmark" size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
-                            <Text style={styles.primaryButtonText}>Sign In & Open Admin Portal</Text>
-                          </View>
-                        )}
-                      </TouchableOpacity>
-                    </View>
-
-                    <SwitchLink
-                      text="Student account?"
-                      link="Switch to Student Login"
-                      onPress={() => {
-                        setLocalError("");
-                        setNoticeMsg("");
-                        setLoginRole("student");
-                      }}
-                    />
-                  </>
-                )}
+                <SwitchLink
+                  text="Don't have an account?"
+                  link="Sign Up"
+                  onPress={() => {
+                    setLocalError("");
+                    setNoticeMsg("");
+                    setScreen("signup");
+                  }}
+                />
               </View>
             )}
 
@@ -1722,6 +1540,8 @@ export default function AuthScreens({
               Learn consistently. Track progress. Achieve your goals.
             </Text>
           </ScrollView>
+
+
         </KeyboardAvoidingView>
 
         {/* Server Connection Configuration Modal */}
@@ -1841,7 +1661,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flexGrow: 1,
-    justifyContent: "center",
+    justifyContent: Platform.OS === "web" ? "center" : "flex-start",
     paddingHorizontal: 20,
     paddingVertical: 24,
     maxWidth: 480,

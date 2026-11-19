@@ -10,13 +10,29 @@
       "supportsTablet": true
     },
     "android": {
-      "package": "com.aparaitech.abhyastracker"
+      "package": "com.aparaitech.abhyastracker",
+      "versionCode": 4,
+      "adaptiveIcon": {
+        "backgroundColor": "#247C78"
+      },
+      "permissions": [
+        "INTERNET",
+        "VIBRATE",
+        "ACCESS_NETWORK_STATE"
+      ],
+      "usesCleartextTraffic": true,
+      "softwareKeyboardLayoutMode": "pan"
     },
     "web": {
       "bundler": "metro"
     },
     "plugins": [
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "dce9cc9e-4da0-4062-bfe7-3bab08bd860b"
+      }
+    }
   }
 }
