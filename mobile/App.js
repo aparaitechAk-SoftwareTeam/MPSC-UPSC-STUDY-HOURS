@@ -1080,43 +1080,6 @@ function MainApp() {
 
   const [notifOpen, setNotifOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [serverUrlInput, setServerUrlInput] = useState(getApiBase());
-  const [serverStatus, setServerStatus] = useState('online');
-  const [serverTesting, setServerTesting] = useState(false);
-  const [serverTestMsg, setServerTestMsg] = useState('');
-
-  const handleTestServerConnection = async (targetOverride) => {
-    setServerTesting(true);
-    setServerTestMsg('');
-    try {
-      const target = (typeof targetOverride === 'string' ? targetOverride : serverUrlInput).trim() || getApiBase();
-      const ok = await testApiConnection(target);
-      if (ok) {
-        setServerStatus('online');
-        setServerTestMsg(lang === 'mr' ? '✅ सर्व्हर यशस्वीरित्या जोडला गेला! (200 OK)' : '✅ Server connected successfully! (200 OK)');
-      } else {
-        setServerStatus('offline');
-        setServerTestMsg(lang === 'mr' ? '❌ सर्व्हरशी संपर्क होऊ शकला नाही. वाय-फाय/हॉटस्पॉट तपासा.' : '❌ Server unreachable. Verify Wi-Fi or Hotspot.');
-      }
-    } catch (e) {
-      setServerStatus('offline');
-      setServerTestMsg('❌ ' + e.message);
-    } finally {
-      setServerTesting(false);
-    }
-  };
-
-  const handleSaveServerUrl = async (presetUrl) => {
-    const target = (typeof presetUrl === 'string' ? presetUrl : serverUrlInput).trim();
-    if (!target) {
-      await setCustomApiBase(null);
-      setServerTestMsg(lang === 'mr' ? 'ऑटो-डिटेक्शन रीसेट केले.' : 'Auto-detection reset.');
-    } else {
-      await setCustomApiBase(target);
-      await handleTestServerConnection(target);
-    }
-    refresh();
-  };
   const [selectedTrackDate, setSelectedTrackDate] = useState(today());
   const [expandedSubjectId, setExpandedSubjectId] = useState(null);
 
@@ -5179,208 +5142,6 @@ function MainApp() {
                 </View>
               </View>
 
-              {/* 5b. Server & Network Connection (Wi-Fi & Hotspot) */}
-              <View style={{ marginBottom: 16, paddingTop: 14, borderTopWidth: 1, borderColor: C.line }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <Ionicons name="wifi-outline" size={16} color={C.blue} />
-                    <Text style={txt(12, true)}>{lang === 'mr' ? 'सर्व्हर व नेटवर्क कनेक्टिव्हिटी' : 'Server & Network Connectivity'}</Text>
-                  </View>
-                  <View style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    backgroundColor: serverStatus === 'online' ? (isDark ? '#064e3b' : '#ecfdf5') : (isDark ? '#451a03' : '#fef3c7'),
-                    paddingHorizontal: 8,
-                    paddingVertical: 2,
-                    borderRadius: 10
-                  }}>
-                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: serverStatus === 'online' ? '#10b981' : '#f59e0b', marginRight: 4 }} />
-                    <Text style={{ fontSize: 9.5, fontWeight: '700', color: serverStatus === 'online' ? '#059669' : '#d97706' }}>
-                      {serverStatus === 'online' ? (lang === 'mr' ? 'सक्रिय' : 'Online') : (lang === 'mr' ? 'तपासा' : 'Check')}
-                    </Text>
-                  </View>
-                </View>
-                <Text style={[txt(10, false, C.muted), { marginBottom: 8 }]}>
-                  {lang === 'mr'
-                    ? 'वाय-फाय, हॉटस्पॉट किंवा क्लाउड सर्व्हर पत्ता कॉन्फिगर करा'
-                    : 'Works across all Wi-Fi networks & mobile hotspots. Set or test server IP.'}
-                </Text>
-
-                {/* Server Input */}
-                <View style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  backgroundColor: isDark ? '#1e293b' : '#f8fafc',
-                  borderWidth: 1,
-                  borderColor: C.line,
-                  borderRadius: 10,
-                  paddingHorizontal: 10,
-                  marginBottom: 8
-                }}>
-                  <Ionicons name="link-outline" size={15} color={C.muted} style={{ marginRight: 6 }} />
-                  <TextInput
-                    value={serverUrlInput}
-                    onChangeText={(val) => {
-                      setServerUrlInput(val);
-                      setServerTestMsg('');
-                    }}
-                    placeholder="http://10.116.34.214:4000/api"
-                    placeholderTextColor={C.muted}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    style={{
-                      flex: 1,
-                      fontSize: 11.5,
-                      color: C.ink,
-                      paddingVertical: 8
-                    }}
-                  />
-                  {Boolean(serverUrlInput) && (
-                    <TouchableOpacity onPress={() => setServerUrlInput('')} style={{ padding: 4 }}>
-                      <Ionicons name="close-circle" size={15} color={C.muted} />
-                    </TouchableOpacity>
-                  )}
-                </View>
-
-                {/* Quick Presets */}
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
-                  <TouchableOpacity
-                    onPress={() => {
-                      setServerUrlInput('');
-                      handleSaveServerUrl('');
-                    }}
-                    style={{
-                      backgroundColor: isDark ? '#1e3850' : '#eff6ff',
-                      paddingHorizontal: 8,
-                      paddingVertical: 4,
-                      borderRadius: 8,
-                      borderWidth: 1,
-                      borderColor: '#93c5fd'
-                    }}
-                  >
-                    <Text style={{ fontSize: 10, fontWeight: '700', color: '#1d4ed8' }}>
-                      ⚡ Auto Detect (Any Wi-Fi)
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={() => {
-                      setServerUrlInput('http://localhost:4000/api');
-                      setServerTestMsg('');
-                    }}
-                    style={{
-                      backgroundColor: isDark ? '#1e3850' : '#f0f9ff',
-                      paddingHorizontal: 8,
-                      paddingVertical: 4,
-                      borderRadius: 8,
-                      borderWidth: 1,
-                      borderColor: '#93c5fd'
-                    }}
-                  >
-                    <Text style={{ fontSize: 10, fontWeight: '700', color: '#1d4ed8' }}>
-                      Localhost (4000)
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={() => {
-                      setServerUrlInput('http://192.168.137.1:4000/api');
-                      setServerTestMsg('');
-                    }}
-                    style={{
-                      backgroundColor: isDark ? '#1e3850' : '#f0fdf4',
-                      paddingHorizontal: 8,
-                      paddingVertical: 4,
-                      borderRadius: 8,
-                      borderWidth: 1,
-                      borderColor: '#86efac'
-                    }}
-                  >
-                    <Text style={{ fontSize: 10, fontWeight: '700', color: '#15803d' }}>
-                      Win Hotspot (192.168.137.1)
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={() => {
-                      setServerUrlInput('http://192.168.43.1:4000/api');
-                      setServerTestMsg('');
-                    }}
-                    style={{
-                      backgroundColor: isDark ? '#3b2f15' : '#fffbeb',
-                      paddingHorizontal: 8,
-                      paddingVertical: 4,
-                      borderRadius: 8,
-                      borderWidth: 1,
-                      borderColor: '#fde68a'
-                    }}
-                  >
-                    <Text style={{ fontSize: 10, fontWeight: '700', color: '#b45309' }}>
-                      Phone Hotspot (192.168.43.1)
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
-                {/* Test & Save buttons */}
-                <View style={{ flexDirection: 'row', gap: 8 }}>
-                  <TouchableOpacity
-                    onPress={() => handleTestServerConnection(serverUrlInput)}
-                    disabled={serverTesting}
-                    style={{
-                      flex: 1,
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      backgroundColor: isDark ? '#1e293b' : '#f1f5f9',
-                      paddingVertical: 8,
-                      borderRadius: 8,
-                      borderWidth: 1,
-                      borderColor: C.line
-                    }}
-                  >
-                    {serverTesting ? (
-                      <ActivityIndicator size="small" color={C.blue} />
-                    ) : (
-                      <>
-                        <Ionicons name="pulse-outline" size={14} color={C.blue} style={{ marginRight: 4 }} />
-                        <Text style={{ fontSize: 11, fontWeight: '700', color: C.blue }}>
-                          {lang === 'mr' ? 'कनेक्शन तपासा' : 'Test Connection'}
-                        </Text>
-                      </>
-                    )}
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={() => handleSaveServerUrl(serverUrlInput)}
-                    style={{
-                      flex: 1,
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      backgroundColor: C.blue,
-                      paddingVertical: 8,
-                      borderRadius: 8
-                    }}
-                  >
-                    <Ionicons name="checkmark-sharp" size={14} color="#ffffff" style={{ marginRight: 4 }} />
-                    <Text style={{ fontSize: 11, fontWeight: '800', color: '#ffffff' }}>
-                      {lang === 'mr' ? 'लागू करा' : 'Save & Connect'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
-                {Boolean(serverTestMsg) && (
-                  <Text style={{
-                    fontSize: 10.5,
-                    fontWeight: '600',
-                    marginTop: 6,
-                    color: serverTestMsg.includes('✅') ? '#059669' : '#dc2626'
-                  }}>
-                    {serverTestMsg}
-                  </Text>
-                )}
-              </View>
-
               {/* 6. Sign Out Button */}
               <View style={{ marginBottom: 12, paddingTop: 14, borderTopWidth: 1, borderColor: C.line }}>
                 <TouchableOpacity
@@ -5929,6 +5690,14 @@ function MainApp() {
               onOpenNotifications={() => {
                 setSettingsOpen(false);
                 setNotifOpen(true);
+              }}
+              onNavigateTab={(targetTab) => {
+                setSettingsOpen(false);
+                setProfileOpen(false);
+                setRemindersOpen(false);
+                setNotifOpen(false);
+                handleTabChange(targetTab);
+                refresh();
               }}
               req={req}
               lang={lang}

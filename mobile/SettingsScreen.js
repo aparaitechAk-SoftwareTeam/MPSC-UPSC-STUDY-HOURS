@@ -28,6 +28,7 @@ export default function SettingsScreen({
   onSignOut,
   onOpenReminders,
   onOpenNotifications,
+  onNavigateTab,
   req,
   lang = 'en'
 }) {
@@ -232,6 +233,74 @@ export default function SettingsScreen({
             <Text style={txt(11, true, C.blue)}>MPSC · UPSC Aspirant</Text>
           </View>
         </View>
+      </View>
+
+      {/* SECTION: App Sections & Quick Access */}
+      <Text
+        style={[
+          txt(11, true, C.muted),
+          { textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8, marginLeft: 4 }
+        ]}
+      >
+        {lang === 'mr' ? 'सर्व विभाग व अभ्यासक्रम' : 'App Sections & Quick Access'}
+      </Text>
+
+      <View
+        style={{
+          backgroundColor: C.white,
+          borderRadius: 18,
+          borderWidth: 1,
+          borderColor: C.line,
+          marginBottom: 20,
+          overflow: 'hidden'
+        }}
+      >
+        {[
+          { id: 'Dashboard', name: lang === 'mr' ? 'डॅशबोर्ड' : 'Dashboard', icon: 'home-outline', desc: lang === 'mr' ? 'दैनिक अभ्यास विहंगावलोकन, ध्येय व सातत्य' : 'Daily overview, focus goals & streaks', color: '#3b82f6', bg: isDarkMode ? '#1e3a5f' : '#eff6ff' },
+          { id: 'Syllabus', name: lang === 'mr' ? 'अभ्यासक्रम ट्रॅकर' : 'Syllabus Tracker', icon: 'book-outline', desc: lang === 'mr' ? 'यूपीएससी व एमपीएससी सविस्तर अभ्यासक्रम' : 'UPSC & MPSC curriculum & topic mastery', color: '#8b5cf6', bg: isDarkMode ? '#2d2159' : '#f5f3ff' },
+          { id: 'Timer', name: lang === 'mr' ? 'फोकस टाइमर' : 'Focus Timer', icon: 'stopwatch-outline', desc: lang === 'mr' ? 'पोमोडोरो, स्टॉपवॉच व सखोल अभ्यास सत्र' : 'Pomodoro timer & study sessions', color: '#0ea5e9', bg: isDarkMode ? '#1e3850' : '#f0f9ff' },
+          { id: 'Planner', name: lang === 'mr' ? 'स्टडी प्लॅनर' : 'Study Planner', icon: 'calendar-outline', desc: lang === 'mr' ? 'आजचे, उद्याचे व साप्ताहिक अभ्यास नियोजन' : 'Plan study targets for today & tomorrow', color: '#10b981', bg: isDarkMode ? '#153e30' : '#ecfdf5' },
+          { id: 'Analytics', name: lang === 'mr' ? 'अभ्यास विश्लेषण' : 'Study Analytics', icon: 'analytics-outline', desc: lang === 'mr' ? 'अभ्यास तास, सातत्य व विषयवार अहवाल' : 'Study trends, charts & subject breakdown', color: '#f59e0b', bg: isDarkMode ? '#3b2f15' : '#fffbeb' },
+          { id: 'Ticket Support', name: lang === 'mr' ? 'सपोर्ट व मदत' : 'Ticket Support', icon: 'headset-outline', desc: lang === 'mr' ? 'मार्गदर्शक मदत, शंका व तक्रार निवारण' : 'Ask doubts & reach academic support', color: '#ec4899', bg: isDarkMode ? '#3f182c' : '#fdf2f8' }
+        ].map((item, idx, arr) => (
+          <TouchableOpacity
+            key={item.id}
+            onPress={() => {
+              if (typeof onNavigateTab === 'function') {
+                onNavigateTab(item.id);
+              } else if (onBack) {
+                onBack();
+              }
+            }}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              padding: 14,
+              borderBottomWidth: idx < arr.length - 1 ? 1 : 0,
+              borderBottomColor: C.line
+            }}
+            accessibilityLabel={item.name}
+          >
+            <View
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: 10,
+                backgroundColor: item.bg || C.soft,
+                justifyContent: 'center',
+                alignItems: 'center',
+                marginRight: 12
+              }}
+            >
+              <Ionicons name={item.icon} size={20} color={item.color || C.blue} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={txt(14, true, C.ink)}>{item.name}</Text>
+              <Text style={[txt(12, false, C.muted), { marginTop: 2 }]}>{item.desc}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={C.muted} />
+          </TouchableOpacity>
+        ))}
       </View>
 
       {/* SECTION A: Appearance */}
