@@ -560,10 +560,9 @@ export default function StudentProfileScreen({
             value={name}
             onChangeText={(value) => { setName(value); if (!showValidation) setShowValidation(true); }}
             icon="person-outline"
-           editing={editing}
+            editing={editing}
             error={profileErrors.name}
-              styles={styles}
-              C={C} />
+          />
           <View style={styles.separator} />
 
           <ProfileField
@@ -574,10 +573,9 @@ export default function StudentProfileScreen({
             onChangeText={(value) => { setEmail(value); if (!showValidation) setShowValidation(true); }}
             icon="mail-outline"
             keyboardType="email-address"
-           editing={editing}
+            editing={editing}
             error={profileErrors.email}
-              styles={styles}
-              C={C} />
+          />
           <View style={styles.separator} />
 
           <ProfileField
@@ -588,10 +586,9 @@ export default function StudentProfileScreen({
             onChangeText={(value) => { setMobile(value); if (!showValidation) setShowValidation(true); }}
             icon="call-outline"
             keyboardType="phone-pad"
-           editing={editing}
+            editing={editing}
             error={profileErrors.mobile}
-              styles={styles}
-              C={C} />
+          />
           <View style={styles.separator} />
 
           <ProfileField
@@ -601,10 +598,9 @@ export default function StudentProfileScreen({
             value={exam}
             onChangeText={(value) => { setExam(value); if (!showValidation) setShowValidation(true); }}
             icon="school-outline"
-           editing={editing}
+            editing={editing}
             error={profileErrors.exam}
-              styles={styles}
-              C={C} />
+          />
           <View style={styles.separator} />
 
           <ProfileField
@@ -614,10 +610,9 @@ export default function StudentProfileScreen({
             value={subjects}
             onChangeText={(value) => { setSubjects(value); if (!showValidation) setShowValidation(true); }}
             icon="book-outline"
-           editing={editing}
+            editing={editing}
             error={profileErrors.subjects}
-              styles={styles}
-              C={C} />
+          />
         </View>
 
         {/* All App Sections & Tools (Dashboard, Syllabus Tracker, Focus Timer, Study Planner, Study Analytics, Premium, Ticket Support) */}
