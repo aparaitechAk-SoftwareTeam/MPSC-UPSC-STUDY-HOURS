@@ -11,7 +11,7 @@
     },
     "android": {
       "package": "com.aparaitech.abhyastracker",
-      "versionCode": 4,
+      "versionCode": 5,
       "adaptiveIcon": {
         "backgroundColor": "#247C78"
       },
@@ -30,6 +30,7 @@
       "expo-font"
     ],
     "extra": {
+      "apiUrl": "https://mpsc-upsc-study-hours.onrender.com/api",
       "eas": {
         "projectId": "dce9cc9e-4da0-4062-bfe7-3bab08bd860b"
       }

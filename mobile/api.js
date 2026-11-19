@@ -4,6 +4,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 let customApiBase = null;
 let cachedApiBase = null;
 
+// Production Cloud Backend URL (Render) - Guaranteed fallback for standalone APKs
+export const DEFAULT_PROD_API_URL = 'https://mpsc-upsc-study-hours.onrender.com/api';
+
 // Immediately restore saved server IP from local storage
 AsyncStorage.getItem('@abhyas_custom_api_base').then((saved) => {
   if (saved && saved.trim()) {
@@ -54,6 +57,8 @@ export const getCandidateApiUrls = () => {
     candidates.push(`http://${host}:4000/api`);
     if (host !== 'localhost') candidates.push('http://localhost:4000/api');
     if (host !== '127.0.0.1') candidates.push('http://127.0.0.1:4000/api');
+    candidates.push(DEFAULT_PROD_API_URL);
+    return Array.from(new Set(candidates.filter(Boolean)));
   }
 
   // 2. User-defined custom server override (if configured)
@@ -66,14 +71,18 @@ export const getCandidateApiUrls = () => {
     candidates.push(process.env.EXPO_PUBLIC_API_URL.trim().replace(/\/+$/, ''));
   }
 
-  // 4. Metro Bundler dynamic host (Expo Go on physical mobile devices / emulators)
-  // In Expo Go, scriptURL contains the EXACT current IP of the development PC on WHATEVER Wi-Fi it is currently on!
+  // 4. Standalone APK or Production build (Metro bundler not running)
+  // When running on a standalone mobile build (APK), prioritize the cloud backend!
   const scriptURL = NativeModules?.SourceCode?.scriptURL;
-  if (scriptURL) {
+  if (!scriptURL) {
+    candidates.push(DEFAULT_PROD_API_URL);
+  } else {
+    // Metro Bundler dynamic host (Expo Go on physical mobile devices / emulators)
     const metroHost = scriptURL.split('://')[1]?.split('/')[0]?.split(':')[0];
     if (metroHost && metroHost !== 'localhost' && metroHost !== '127.0.0.1') {
       candidates.push(`http://${metroHost}:4000/api`);
     }
+    candidates.push(DEFAULT_PROD_API_URL);
   }
 
   // 5. Common Mobile Hotspot Gateways (Windows Mobile Hotspot, Android Hotspot, iOS Hotspot)
@@ -89,6 +98,9 @@ export const getCandidateApiUrls = () => {
   // 7. Standard local loopback endpoints
   candidates.push('http://localhost:4000/api');
   candidates.push('http://127.0.0.1:4000/api');
+
+  // 8. Cloud production fallback
+  candidates.push(DEFAULT_PROD_API_URL);
 
   // De-duplicate while preserving candidate priority
   return Array.from(new Set(candidates.filter(Boolean)));
@@ -114,7 +126,11 @@ export const getApiBase = () => {
   if (process.env.EXPO_PUBLIC_API_URL && typeof process.env.EXPO_PUBLIC_API_URL === 'string' && process.env.EXPO_PUBLIC_API_URL.trim()) {
     return process.env.EXPO_PUBLIC_API_URL.trim().replace(/\/+$/, '');
   }
-  return getCandidateApiUrls()[0] || 'http://localhost:4000/api';
+  const scriptURL = NativeModules?.SourceCode?.scriptURL;
+  if (!scriptURL) {
+    return DEFAULT_PROD_API_URL;
+  }
+  return getCandidateApiUrls()[0] || DEFAULT_PROD_API_URL;
 };
 
 export const setApiBase = (url) => {
@@ -207,5 +223,6 @@ export default {
   setCustomApiBase,
   getCustomApiBase,
   testApiConnection,
-  smartApiFetch
+  smartApiFetch,
+  DEFAULT_PROD_API_URL
 };
