@@ -45,7 +45,18 @@ const ProfileField = ({
               value={value}
               onChangeText={onChangeText}
               keyboardType={keyboardType || 'default'}
-              style={[s.input || { fontSize: 13, paddingVertical: 2, color: C?.ink || INK_LIGHT }, error ? (s.inputError || { borderColor: '#DC2626' }) : null]}
+              style={{
+                fontSize: 13.5,
+                fontWeight: '600',
+                color: C?.ink || INK_LIGHT,
+                backgroundColor: C?.soft || '#ECFDF5',
+                borderWidth: 1.5,
+                borderColor: error ? '#DC2626' : (C?.blue || GREEN),
+                borderRadius: 8,
+                paddingHorizontal: 10,
+                paddingVertical: 7,
+                marginTop: 2
+              }}
               placeholder={`Enter ${(label || '').toLowerCase()}`}
               placeholderTextColor={C?.muted || MUTED_LIGHT}
             />
@@ -64,12 +75,21 @@ export default function StudentProfileScreen({
   user,
   onBack,
   onSignOut,
-  onOpenSettings, onOpenReminders, onProfileUpdated,
+  onOpenSettings,
+  onOpenReminders,
+  onOpenNotifications,
+  onOpenPlanner,
+  onOpenAnalytics,
+  onNavigateTab,
+  unreadCount = 0,
+  onProfileUpdated,
   studyGoal = 6,
   studyStreak = 0,
+  totalMinutes = 0,
   lang = 'en',
   theme,
   isDarkMode = false,
+  onToggleTheme
 }) {
   const t = (k, fb = '') => getTranslation(lang, k, fb);
   const C = {
@@ -257,6 +277,88 @@ export default function StudentProfileScreen({
   setSignOutConfirmOpen(true);
 };
 
+  const formatTotalTime = (mins) => {
+    const totalMins = Number(mins) || 0;
+    const h = Math.floor(totalMins / 60);
+    const m = totalMins % 60;
+    if (lang === 'mr') {
+      return h > 0 ? `${h} तास ${m} मि.` : `${m} मिनिटे`;
+    }
+    return h > 0 ? `${h}h ${m}m` : `${m}m`;
+  };
+
+  const handleItemPress = (itemId) => {
+    if (typeof onNavigateTab === 'function') {
+      onNavigateTab(itemId);
+    } else if (itemId === 'Planner' && onOpenPlanner) {
+      onOpenPlanner();
+    } else if (itemId === 'Analytics' && onOpenAnalytics) {
+      onOpenAnalytics();
+    } else if (onBack) {
+      onBack();
+    }
+  };
+
+  const navigationHubItems = [
+    {
+      id: 'Dashboard',
+      title: t('dashboard', 'Dashboard'),
+      desc: lang === 'mr' ? 'दैनिक अभ्यास विहंगावलोकन, ध्येय व सातत्य' : 'Daily study goals, overview & streak',
+      icon: 'home-outline',
+      color: '#3b82f6',
+      bg: isDarkMode ? '#1e3a5f' : '#eff6ff'
+    },
+    {
+      id: 'Syllabus',
+      title: t('syllabus', 'Syllabus Tracker'),
+      desc: lang === 'mr' ? 'यूपीएससी व एमपीएससी सविस्तर अभ्यासक्रम ट्रॅकर' : 'UPSC & MPSC curriculum & topic mastery',
+      icon: 'book-outline',
+      color: '#8b5cf6',
+      bg: isDarkMode ? '#2d2159' : '#f5f3ff'
+    },
+    {
+      id: 'Timer',
+      title: t('timer', 'Focus Timer'),
+      desc: lang === 'mr' ? 'पोमोडोरो, स्टॉपवॉच व सखोल अभ्यास सत्र' : 'Pomodoro, deep work & study clock',
+      icon: 'stopwatch-outline',
+      color: '#0ea5e9',
+      bg: isDarkMode ? '#1e3850' : '#f0f9ff'
+    },
+    {
+      id: 'Planner',
+      title: t('planner', 'Study Planner'),
+      desc: lang === 'mr' ? 'आजचे, उद्याचे व साप्ताहिक अभ्यास नियोजन' : 'Today, tomorrow & weekly study schedules',
+      icon: 'calendar-outline',
+      color: '#10b981',
+      bg: isDarkMode ? '#153e30' : '#ecfdf5'
+    },
+    {
+      id: 'Analytics',
+      title: t('analytics', 'Study Analytics'),
+      desc: lang === 'mr' ? 'अभ्यास तास, सातत्य व विषयवार अहवाल' : 'Study hours, focus score & subject analysis',
+      icon: 'analytics-outline',
+      color: '#f59e0b',
+      bg: isDarkMode ? '#3b2f15' : '#fffbeb'
+    },
+    {
+      id: 'Premium',
+      title: t('upgradeToPremium', 'Abhyas Premium'),
+      desc: lang === 'mr' ? 'अमर्याद अभ्यास इतिहास, प्रगत विश्लेषण व AI मेंटर' : 'Unlimited study history, advanced analytics & AI mentor',
+      icon: 'ribbon-outline',
+      color: '#1d4ed8',
+      bg: isDarkMode ? '#1e3a5f' : '#eff6ff',
+      badge: 'PRO'
+    },
+    {
+      id: 'Ticket Support',
+      title: t('ticketSupport', 'Ticket Support'),
+      desc: lang === 'mr' ? 'मार्गदर्शक मदत, शंका व तक्रार निवारण' : 'Mentor queries, feedback & helpdesk',
+      icon: 'headset-outline',
+      color: '#ec4899',
+      bg: isDarkMode ? '#3f182c' : '#fdf2f8'
+    }
+  ];
+
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView
@@ -273,19 +375,145 @@ export default function StudentProfileScreen({
             <Ionicons name="arrow-back" size={23} color={C.ink} />
           </TouchableOpacity>
 
-          <Text style={styles.headerTitle}>{t('myProfile', 'My Profile')}</Text>
-
-          <View style={styles.headerButton}>
-            <Ionicons name="person-circle-outline" size={25} color={C.blue} />
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Text style={styles.headerTitle}>{t('myProfile', 'My Profile')}</Text>
+            {!editing ? (
+              <TouchableOpacity
+                onPress={() => setEditing(true)}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 4,
+                  backgroundColor: C.soft,
+                  paddingHorizontal: 10,
+                  paddingVertical: 5,
+                  borderRadius: 14,
+                  borderWidth: 1.5,
+                  borderColor: C.blue
+                }}
+                accessibilityLabel="Edit Profile"
+                activeOpacity={0.7}
+              >
+                <Ionicons name="create-outline" size={16} color={C.blue} />
+                <Text style={{ fontSize: 12, fontWeight: '700', color: C.blue }}>
+                  {lang === 'mr' ? 'बदल करा' : 'Edit'}
+                </Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                onPress={() => {
+                  setName(user?.name || '');
+                  setEmail(user?.email || '');
+                  setMobile(user?.mobile || user?.phone || '');
+                  setExam(user?.examTarget || 'MPSC / UPSC');
+                  setSubjects(user?.preferredSubjects || 'Polity, History');
+                  setEditing(false);
+                }}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 4,
+                  backgroundColor: isDarkMode ? '#3b181e' : '#fef2f2',
+                  paddingHorizontal: 10,
+                  paddingVertical: 5,
+                  borderRadius: 14,
+                  borderWidth: 1.5,
+                  borderColor: '#fca5a5'
+                }}
+                accessibilityLabel="Cancel editing"
+                activeOpacity={0.7}
+              >
+                <Ionicons name="close-circle-outline" size={16} color="#ef4444" />
+                <Text style={{ fontSize: 12, fontWeight: '700', color: '#ef4444' }}>
+                  {lang === 'mr' ? 'रद्द' : 'Cancel'}
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
+
+          {/* Right Header Action: Save button when editing, removed unused profile icon completely */}
+          {editing ? (
+            <TouchableOpacity
+              onPress={saveProfile}
+              disabled={savingProfile}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 5,
+                backgroundColor: C.blue,
+                paddingHorizontal: 12,
+                paddingVertical: 8,
+                borderRadius: 12
+              }}
+              accessibilityLabel="Save profile"
+              activeOpacity={0.75}
+            >
+              <Ionicons name="checkmark" size={18} color="#FFFFFF" />
+              <Text style={{ fontSize: 12.5, fontWeight: '800', color: '#FFFFFF' }}>
+                {savingProfile ? '...' : (lang === 'mr' ? 'जतन करा' : 'Save')}
+              </Text>
+            </TouchableOpacity>
+          ) : (
+            <View style={{ width: 43 }} />
+          )}
         </View>
+
+        {/* Edit mode active banner */}
+        {editing && (
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 8,
+              backgroundColor: isDarkMode ? '#1e3a5f' : '#eff6ff',
+              borderWidth: 1.5,
+              borderColor: C.blue,
+              borderRadius: 12,
+              paddingVertical: 10,
+              paddingHorizontal: 14,
+              marginBottom: 16
+            }}
+          >
+            <Ionicons name="create" size={18} color={C.blue} />
+            <Text style={{ fontSize: 12.5, fontWeight: '700', color: C.blue, flex: 1 }}>
+              {lang === 'mr'
+                ? 'माहिती संपादन मोड सक्रिय — खालील माहिती बदला आणि वर "जतन करा" दाबा.'
+                : 'Edit mode active — Update your details below and tap "Save".'}
+            </Text>
+          </View>
+        )}
 
         <View style={styles.profileCard}>
           <View style={styles.avatar}>
             <Ionicons name="person" size={39} color={C.blue} />
           </View>
 
-          <Text style={styles.name}>{name || t('aspirant', 'Student Name')}</Text>
+          {editing ? (
+            <View style={{ width: '100%', alignItems: 'center', marginVertical: 4 }}>
+              <TextInput
+                value={name}
+                onChangeText={(val) => { setName(val); if (!showValidation) setShowValidation(true); }}
+                style={{
+                  fontSize: 18,
+                  fontWeight: '800',
+                  color: C.ink,
+                  textAlign: 'center',
+                  backgroundColor: C.soft,
+                  borderWidth: 1.5,
+                  borderColor: C.blue,
+                  borderRadius: 10,
+                  paddingHorizontal: 14,
+                  paddingVertical: 6,
+                  minWidth: 200,
+                  maxWidth: '90%'
+                }}
+                placeholder={lang === 'mr' ? 'पूर्ण नाव टाका' : 'Enter your name'}
+                placeholderTextColor={C.muted}
+              />
+            </View>
+          ) : (
+            <Text style={styles.name}>{name || t('aspirant', 'Student Name')}</Text>
+          )}
           <Text style={styles.subtitle}>{t('aspirantSubtitle', 'MPSC / UPSC Aspirant')}</Text>
 
           <View style={styles.accountBadge}>
@@ -302,7 +530,7 @@ export default function StudentProfileScreen({
               <Ionicons name="flag-outline" size={22} color={C.blue} />
             </View>
             <Text style={styles.statValue}>{studyGoal} {t('hours', 'hrs')}</Text>
-            <Text style={styles.statLabel}>{t('dailyStudyGoal', 'Daily Study Goal')}</Text>
+            <Text style={styles.statLabel}>{t('dailyStudyGoal', 'Daily Goal')}</Text>
           </View>
 
           <View style={styles.statCard}>
@@ -311,6 +539,14 @@ export default function StudentProfileScreen({
             </View>
             <Text style={styles.statValue}>{studyStreak} {t('days', 'days')}</Text>
             <Text style={styles.statLabel}>{t('studyStreak', 'Study Streak')}</Text>
+          </View>
+
+          <View style={styles.statCard}>
+            <View style={[styles.statIcon, { backgroundColor: isDarkMode ? '#1e3850' : '#f0f9ff' }]}>
+              <Ionicons name="time-outline" size={22} color="#0ea5e9" />
+            </View>
+            <Text style={styles.statValue}>{formatTotalTime(totalMinutes)}</Text>
+            <Text style={styles.statLabel}>{lang === 'mr' ? 'एकूण वेळ' : 'Total Time'}</Text>
           </View>
         </View>
 
@@ -384,10 +620,89 @@ export default function StudentProfileScreen({
               C={C} />
         </View>
 
+        {/* All App Sections & Tools (Dashboard, Syllabus Tracker, Focus Timer, Study Planner, Study Analytics, Premium, Ticket Support) */}
+        <Text style={styles.sectionTitle}>
+          {lang === 'mr' ? 'सर्व विभाग व अभ्यासक्रम' : 'All App Sections & Tools'}
+        </Text>
+
+        <View style={styles.detailsCard}>
+          {navigationHubItems.map((item, index) => (
+            <React.Fragment key={item.id}>
+              <TouchableOpacity
+                style={styles.preferenceRow}
+                activeOpacity={0.75}
+                onPress={() => handleItemPress(item.id)}
+                accessibilityRole="button"
+                accessibilityLabel={item.title}
+              >
+                <View style={[styles.fieldIcon, { backgroundColor: item.bg }]}>
+                  <Ionicons name={item.icon} size={21} color={item.color} />
+                </View>
+                <View style={styles.fieldContent}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Text style={styles.fieldValue}>{item.title}</Text>
+                    {Boolean(item.badge) && (
+                      <View style={{ backgroundColor: '#fee2e2', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2, marginLeft: 8 }}>
+                        <Text style={{ color: '#dc2626', fontSize: 10, fontWeight: '800' }}>{item.badge}</Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text style={styles.preferenceHint}>{item.desc}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={19} color={C.muted} />
+              </TouchableOpacity>
+              {index < navigationHubItems.length - 1 && <View style={styles.separator} />}
+            </React.Fragment>
+          ))}
+        </View>
+
         <Text style={styles.sectionTitle}>{t('preferences', 'Preferences')}</Text>
 
         <View style={styles.detailsCard}>
-          <TouchableOpacity style={styles.preferenceRow} activeOpacity={0.75} onPress={onOpenReminders} accessibilityRole="button" accessibilityLabel="Study Reminders"><View style={styles.fieldIcon}><Ionicons name="notifications-outline" size={21} color={C.blue} />
+          {/* Notifications */}
+          <TouchableOpacity
+            style={styles.preferenceRow}
+            activeOpacity={0.75}
+            onPress={onOpenNotifications}
+            accessibilityRole="button"
+            accessibilityLabel="Notifications"
+          >
+            <View style={styles.fieldIcon}>
+              <Ionicons name="notifications-outline" size={21} color={C.blue} />
+              {unreadCount > 0 && (
+                <View
+                  style={{
+                    position: 'absolute',
+                    top: 2,
+                    right: 2,
+                    width: 8,
+                    height: 8,
+                    borderRadius: 4,
+                    backgroundColor: '#ef4444'
+                  }}
+                />
+              )}
+            </View>
+            <View style={styles.fieldContent}>
+              <Text style={styles.fieldValue}>
+                {t('notificationsTitle', 'Notifications')}
+                {unreadCount > 0 ? ` (${unreadCount})` : ''}
+              </Text>
+              <Text style={styles.preferenceHint}>
+                {unreadCount > 0
+                  ? `${unreadCount} ${t('unreadAlerts', 'new notifications')}`
+                  : t('viewNotifications', 'View all announcements and alerts')}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={C.muted} />
+          </TouchableOpacity>
+
+          <View style={styles.separator} />
+
+          {/* Study Reminders */}
+          <TouchableOpacity style={styles.preferenceRow} activeOpacity={0.75} onPress={onOpenReminders} accessibilityRole="button" accessibilityLabel="Study Reminders">
+            <View style={styles.fieldIcon}>
+              <Ionicons name="alarm-outline" size={21} color={C.blue} />
             </View>
             <View style={styles.fieldContent}>
               <Text style={styles.fieldValue}>{t('studyReminders', 'Study Reminders')}</Text>
@@ -400,7 +715,10 @@ export default function StudentProfileScreen({
 
           <View style={styles.separator} />
 
-          <TouchableOpacity style={styles.preferenceRow} activeOpacity={0.75} onPress={onOpenSettings} accessibilityRole="button" accessibilityLabel="Privacy and Account"><View style={styles.fieldIcon}><Ionicons name="shield-checkmark-outline" size={21} color={C.blue} />
+          {/* Privacy & Account / Settings */}
+          <TouchableOpacity style={styles.preferenceRow} activeOpacity={0.75} onPress={onOpenSettings} accessibilityRole="button" accessibilityLabel="Privacy and Account">
+            <View style={styles.fieldIcon}>
+              <Ionicons name="shield-checkmark-outline" size={21} color={C.blue} />
             </View>
             <View style={styles.fieldContent}>
               <Text style={styles.fieldValue}>{t('privacyAndAccount', 'Privacy & Account')}</Text>
@@ -410,9 +728,40 @@ export default function StudentProfileScreen({
             </View>
             <Ionicons name="chevron-forward" size={20} color={C.muted} />
           </TouchableOpacity>
+
+          {/* Dark / Light Mode Switch */}
+          {typeof onToggleTheme === 'function' && (
+            <>
+              <View style={styles.separator} />
+              <TouchableOpacity
+                style={styles.preferenceRow}
+                activeOpacity={0.75}
+                onPress={onToggleTheme}
+                accessibilityRole="button"
+                accessibilityLabel="Toggle Dark Mode"
+              >
+                <View style={[styles.fieldIcon, { backgroundColor: isDarkMode ? '#1e293b' : '#f1f5f9' }]}>
+                  <Ionicons name={isDarkMode ? 'sunny-outline' : 'moon-outline'} size={21} color={C.blue} />
+                </View>
+                <View style={styles.fieldContent}>
+                  <Text style={styles.fieldValue}>
+                    {isDarkMode ? (lang === 'mr' ? 'दिवस मोड (Light Theme)' : 'Day Mode (Light)') : (lang === 'mr' ? 'रात्र मोड (Dark Theme)' : 'Night Mode (Dark)')}
+                  </Text>
+                  <Text style={styles.preferenceHint}>
+                    {isDarkMode ? (lang === 'mr' ? 'प्रकाशित थीमवर बदला' : 'Switch to light mode') : (lang === 'mr' ? 'डोळ्यांना आराम देणारी गडद थीम' : 'Switch to comfortable dark mode')}
+                  </Text>
+                </View>
+                <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, backgroundColor: isDarkMode ? '#1e293b' : '#e2e8f0' }}>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: C.ink }}>
+                    {isDarkMode ? 'ON' : 'OFF'}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            </>
+          )}
         </View>
 
-        {editing ? (
+        {editing && (
           <View style={styles.buttonRow}>
             <TouchableOpacity
               style={styles.cancelButton}
@@ -443,14 +792,6 @@ export default function StudentProfileScreen({
               </Text>
             </TouchableOpacity>
           </View>
-        ) : (
-          <TouchableOpacity
-            style={styles.editButton}
-            onPress={() => setEditing(true)}
-          >
-            <Ionicons name="create-outline" size={20} color="#FFFFFF" />
-            <Text style={styles.editButtonText}>{t('editProfile', 'Edit Profile')}</Text>
-          </TouchableOpacity>
         )}
 
         <TouchableOpacity
